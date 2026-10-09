@@ -31,3 +31,15 @@ Where the docs and reality disagree, or a choice the docs leave open. Newest pha
 | 18 | Bundle schema | Frozen at end of P1 (`src/schema/bundle.ts`). Additions over the TDD: `kind`, `variant`, `sample`, `disclosure`, `status`/`stopReason`, `hypotheses`, `beliefEvents`, `noiseFloor`, `cassettes`, `replayOf`; Decision `effects`/`evidencePack`/`grade`/`enrichment`; Guard `active`/`retiredAt`; Probe `control`/`predictionHash`; `credits` = `{byEndpoint,total,budget}`; metrics may be `null` (not computable) | Everything P2–P9 and the dashboard need, decided once |
 | 19 | sha256 | `src/bundle/hash.ts` is a pure-JS sha256 (tested against `node:crypto`) | The dashboard recomputes bundle hashes in the browser |
 | 20 | Claude Code never touches `packages/web` | Generated bundle JSON is written to `packages/web/public/bundles/` (no UI code) | BUILD_PLAN P1/P3/P8 sanction this explicitly |
+
+## P2 · Contracts and deterministic checker
+
+| # | Docs say | Reality / decision | Why |
+| --- | --- | --- | --- |
+| 21 | — | 26 claims (11 Crustdata, 15 Dodo) in `src/contracts/`, each quoting ≤25 words of doc text with its URL; promises only implied by the docs are prefixed `[implied]` | Don't invent promises |
+| 22 | Partial-refund rounding (TDD required beliefs) | The Dodo docs make no rounding promise, so there is no claim. "Immediate vs next billing date" on plan change can't be expressed by any expect rule | Recorded as a gap for P6's required-beliefs map |
+| 23 | Refund guide | "Only one refund per payment can be in progress" (Dodo refund guide) | Relevant to the retry/duplicate cases |
+| 24 | Crustdata enrich | Also documents 404 "No data found" next to 200 with empty `matches`; 402 on insufficient credits ("Do not retry"); `x-ratelimit-*` headers; identifier arrays capped at 25 | Doc pages differ; both outcomes are claims |
+| 25 | `ReconStep` | Added `setup?: boolean`: setup steps feed `$from` refs but are never checked against the claim | Otherwise a setup 200 trips `statusOnError` |
+| 26 | Checker association | Claims with recon steps are evaluated only on their own recon exchanges; queue/probe traffic is matched by op only for `recon: []` claims and never for `statusOnError`/`errorOnUnknownParam`/`consistentWithin` | Those rules need deliberately crafted requests |
+| 27 | `entire graph` raw-client check | Entire CLI not installed; the static scan in `test/tools.test.ts` checks that nothing outside `src/tools` imports the raw clients | Until Entire is installed |

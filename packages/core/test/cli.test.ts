@@ -30,6 +30,11 @@ describe("cli", () => {
     await expect(parse(args)).rejects.toBeInstanceOf(NotImplementedError);
   });
 
+  it("notarize has --recon-only and --replay flags", () => {
+    const notarize = buildProgram().commands.find((c) => c.name() === "notarize");
+    expect(notarize?.options.map((o) => o.long)).toEqual(["--tool", "--priors-from", "--recon-only", "--replay"]);
+  });
+
   it("rejects an unknown tool", async () => {
     await expect(parse(["notarize", "--tool", "stripe"])).rejects.toThrow();
   });

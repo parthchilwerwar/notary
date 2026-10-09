@@ -30,7 +30,30 @@ export function buildProgram(): Command {
     .description("Run the notarization loop for one tool")
     .addOption(new Option("--tool <tool>", "tool to notarize").choices(["crustdata", "dodo"]).makeOptionMandatory())
     .addOption(new Option("--priors-from <tool>", "seed priors from another tool's defect classes").choices(["crustdata", "dodo"]))
-    .action(() => notImplemented("notarize", "P2/P4/P5"));
+    .option("--recon-only", "run the recon sweep and the deterministic checker only, then write a notarize bundle")
+    .option("--replay", "with --recon-only: replay the recon-<tool> cassette (no network, no keys)")
+    .action(async (opts: { tool: "crustdata" | "dodo"; reconOnly?: boolean; replay?: boolean }) => {
+      if (!opts.reconOnly) notImplemented("notarize", "P4/P5");
+      const { reconOnly } = await import("./checker/notarize.js");
+      const { initTracing, shutdownTracing } = await import("./trace/index.js");
+      // Replay touches no network at all, tracing export included.
+      if (!opts.replay) await initTracing({ serviceName: "notary" });
+      try {
+        if (opts.replay) {
+          const { DEFAULT_CASSETTE_DIR, listCassettes } = await import("./tools/index.js");
+          if (!listCassettes(DEFAULT_CASSETTE_DIR).includes(`recon-${opts.tool}`)) {
+            console.error(`No cassette recon-${opts.tool} in ${DEFAULT_CASSETTE_DIR}; record one first with a live --recon-only run.`);
+            process.exitCode = 1;
+            return;
+          }
+        }
+        const result = await reconOnly({ tool: opts.tool, replay: opts.replay === true });
+        for (const line of result.lines) (result.exitCode === 0 ? console.log : console.error)(line);
+        if (result.exitCode !== 0) process.exitCode = result.exitCode;
+      } finally {
+        if (!opts.replay) await shutdownTracing();
+      }
+    });
 
   program
     .command("run")

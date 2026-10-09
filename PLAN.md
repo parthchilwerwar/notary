@@ -6,7 +6,7 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 
 - [x] **P0 · Scaffold** — pnpm monorepo, schema stubs, CLI skeleton, neatlogs smoke span, Entire enabled
 - [x] **P1 · Tool clients, recorder, schema freeze** — Crustdata + Dodo raw clients, cassette recorder with redaction, credit ledger, Dodo test-mode lock, final bundle schema, sample bundle
-- [ ] **P2 · Contracts and deterministic checker** — claims from real docs, checker, recon sweep
+- [x] **P2 · Contracts and deterministic checker** — claims from real docs, checker, recon sweep
 - [ ] **P3 · Seeded world and naive run** — Dodo seed script, seeded queue + expected outcomes, policy table, naive executor, grader, first bundle
 - [ ] **P4 · Reflector and probes** — Bedrock client with roles, batched hypotheses, probe templates, cost-aware scoring, commit-then-run, verdict rules
 - [ ] **P5 · Beliefs and adversary** — beta-binomial store, lifecycle incl. `unlearned`, adversary (`bedrock` + `session`), evidence-validity check
@@ -35,3 +35,7 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 
 **P1 (Oct 10).** Recorder (live/replay, redaction, occurrence-keyed replay), Crustdata + Dodo raw clients behind `createTools({wrap})`, credit ledger, Dodo test-mode lock, frozen bundle schema + content hash, `notary export --sample` → `packages/web/public/bundles/sample-42.json` (validates, hash matches). `pnpm check:secrets` + pre-commit hook. 63 tests pass. Endpoints in `docs/ENDPOINTS.md`.
 - [ ] BLOCKED: one live recorded call per API — `CRUSTDATA_API_KEY` and `DODO_PAYMENTS_API_KEY` not set (attempt returned `MissingCredentialError`, no network call). No cassettes exist yet.
+
+**P2 (Oct 10).** 26 claims from real docs (`src/contracts/`), deterministic checker for all 8 expect rules (`src/checker/`), recon runner with budget/repeat/delay caps, `notarize --recon-only [--replay]`. Determinism verified in unit tests (checkAll twice → identical JSON; replay recon over a test cassette twice → identical anomalies). 116 tests pass.
+- [ ] BLOCKED: recon on real recorded traffic — `notarize --recon-only` prints `BLOCKED: CRUSTDATA_API_KEY not set` / `DODO_PAYMENTS_API_KEY not set` (exit 3). Once keys exist: run live once, then `--replay` twice and diff.
+- [ ] BLOCKED: `entire graph` raw-client check (Entire CLI not installed); static-scan test passes instead.
