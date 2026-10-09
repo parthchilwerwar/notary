@@ -1,0 +1,268 @@
+/**
+ * `notary notarize --tool <t> [--replay]`: recon -> deterministic checker -> probe loop, then a
+ * notarize bundle in packages/core/runs/<runId>/.
+ *
+ * live   — recon records into cassette `recon-<tool>`, probes into `probes-<tool>`.
+ * replay — both cassettes are served (no tool network, no tool keys). Hypotheses still need the
+ *          reflector model (LLM replay is P8).
+ * BLOCKED (exit 3) before any network call when a tool key (live), the reflector model id or
+ * AWS_REGION is missing; also when a credential error surfaces mid-run.
+ *
+ * P5 TODO hook: beliefs (Beta updates per confirmed/refuted probe), the adversary and belief
+ * events plug in after runProbeLoop (see `beliefsHook` below); until then the bundle's beliefs are
+ * empty and its disclosure says so.
+ */
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { finalizeBundle, writeBundle } from "../bundle/index.js";
+import { RUNS_DIR } from "../checker/notarize.js";
+import { runRecon } from "../checker/recon.js";
+import type { ReconResult } from "../checker/recon.js";
+import { LlmClient, ModelConfigError } from "../llm/index.js";
+import type { LlmLike, UsageMeter } from "../llm/index.js";
+import { DEFAULT_MANIFEST_PATH, loadManifest } from "../queue/manifest.js";
+import type { Probe, RoleUsage, RunBundle, Tool, UsageByRole } from "../schema/index.js";
+import { DEFAULT_DB_PATH, openDb } from "../store/db.js";
+import {
+  CreditLedger,
+  DEFAULT_CASSETTE_DIR,
+  TestModeLockError,
+  createTools,
+  isBlocked,
+  listCassettes,
+} from "../tools/index.js";
+import { runProbeLoop } from "./loop.js";
+import type { ProbeLoopResult } from "./loop.js";
+import { BurstCounter, SimplePaymentPool, probeIoFromTools } from "./templates/index.js";
+
+export const SEEDED_QUEUE_PATH = fileURLToPath(new URL("../../fixtures/queue/seeded.json", import.meta.url));
+
+const TOOL_KEY: Record<Tool, string> = { crustdata: "CRUSTDATA_API_KEY", dodo: "DODO_PAYMENTS_API_KEY" };
+
+const ZERO: RoleUsage = { inputTokens: 0, outputTokens: 0, usd: 0, calls: 0 };
+
+export interface NotarizeOptions {
+  tool: Tool;
+  replay?: boolean;
+  env?: NodeJS.ProcessEnv;
+  runsDir?: string;
+  cassetteDir?: string;
+  dbPath?: string;
+  /** Injected model client (tests); default LlmClient from env. */
+  llm?: LlmLike & { meter?: UsageMeter };
+  manifestPath?: string;
+  queuePath?: string;
+  sleep?: (ms: number) => Promise<void>;
+  now?: () => Date;
+}
+
+export interface NotarizeResult {
+  exitCode: number;
+  lines: string[];
+  status: RunBundle["status"];
+  runId?: string;
+  bundlePath?: string;
+  loop?: ProbeLoopResult;
+}
+
+function blocked(reasons: string[]): NotarizeResult {
+  return { exitCode: 3, lines: reasons.map((r) => (r.startsWith("BLOCKED:") ? r : `BLOCKED: ${r}`)), status: "blocked" };
+}
+
+function compactStamp(d: Date): string {
+  return d.toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
+}
+
+/** Succeeded seeded payments the seeded queue never references, last handles first. */
+export function probePaymentPool(manifestPath: string, queuePath: string): { ids: string[]; note?: string } {
+  if (!existsSync(manifestPath)) return { ids: [], note: "no seed manifest: refund probes are skipped" };
+  const manifest = loadManifest(manifestPath);
+  const queueText = existsSync(queuePath) ? readFileSync(queuePath, "utf8") : "";
+  const used = new Set([...queueText.matchAll(/"pay:([A-Za-z0-9._-]+)"/g)].map((m) => m[1]!));
+  const ids = Object.entries(manifest.payments)
+    .filter(([handle, p]) => !used.has(handle) && p.status === "succeeded")
+    .sort(([a], [b]) => (a < b ? 1 : a > b ? -1 : 0))
+    .map(([, p]) => p.paymentId);
+  return { ids };
+}
+
+function preflight(opts: NotarizeOptions, env: NodeJS.ProcessEnv): { llm?: LlmLike & { meter?: UsageMeter }; result?: NotarizeResult } {
+  const reasons: string[] = [];
+  if (!opts.replay && !(env[TOOL_KEY[opts.tool]] ?? "").trim()) reasons.push(`${TOOL_KEY[opts.tool]} not set`);
+  let llm = opts.llm;
+  if (!llm) {
+    let client: LlmClient;
+    try {
+      client = new LlmClient({ env });
+    } catch (err) {
+      if (err instanceof ModelConfigError) return { result: { exitCode: 1, lines: [err.message], status: "failed" } };
+      throw err;
+    }
+    try {
+      client.modelFor("reflector");
+    } catch (err) {
+      if (isBlocked(err)) reasons.push(err.message);
+      else throw err;
+    }
+    if (!(env.AWS_REGION ?? "").trim()) reasons.push("AWS_REGION not set");
+    llm = client;
+  }
+  if (reasons.length) return { result: blocked(reasons) };
+  return { llm };
+}
+
+function countVerdicts(probes: readonly Probe[]): Record<string, number> {
+  const out: Record<string, number> = { confirmed: 0, refuted: 0, inconclusive: 0, uninformative: 0, invalid: 0 };
+  for (const p of probes) if (p.verdict) out[p.verdict] = (out[p.verdict] ?? 0) + 1;
+  return out;
+}
+
+/** P5 hook: beliefs and the adversary consume the loop result here. Not built in P4. */
+function beliefsHook(_loop: ProbeLoopResult): RunBundle["beliefs"] {
+  // TODO(P5): Beta(α, β) per claim from informative probe verdicts, candidate/notarized lifecycle,
+  // adversary review, belief_events. Returns empty until then.
+  return { before: [], after: [] };
+}
+
+export async function notarize(opts: NotarizeOptions): Promise<NotarizeResult> {
+  const env = opts.env ?? process.env;
+  const now = opts.now ?? (() => new Date());
+  const mode = opts.replay ? "replay" : "live";
+  const cassetteDir = opts.cassetteDir ?? DEFAULT_CASSETTE_DIR;
+
+  const pre = preflight(opts, env);
+  if (pre.result) return pre.result;
+  const llm = pre.llm!;
+
+  if (opts.replay) {
+    const have = listCassettes(cassetteDir);
+    const missing = [`recon-${opts.tool}`, `probes-${opts.tool}`].filter((c) => !have.includes(c));
+    if (missing.length) {
+      return {
+        exitCode: 1,
+        lines: [`No cassette ${missing.join(", ")} in ${cassetteDir}; record with a live notarize run first.`],
+        status: "failed",
+      };
+    }
+  }
+
+  const started = now();
+  const ledger = new CreditLedger({ env });
+  const db = openDb(opts.dbPath ?? DEFAULT_DB_PATH);
+  try {
+    let recon: ReconResult;
+    let loop: ProbeLoopResult;
+    try {
+      recon = await runRecon({
+        tool: opts.tool,
+        mode,
+        cassetteDir,
+        ledger,
+        env,
+        ...(opts.sleep ? { sleep: opts.sleep } : {}),
+      });
+      const runId =
+        mode === "replay" ? `notarize-${opts.tool}-replay-${recon.cassetteHash.slice(0, 12)}` : `notarize-${opts.tool}-${compactStamp(started)}`;
+      const tools = createTools({ mode, cassette: `probes-${opts.tool}`, cassetteDir, ledger, env });
+      const pool = opts.tool === "dodo" ? probePaymentPool(opts.manifestPath ?? DEFAULT_MANIFEST_PATH, opts.queuePath ?? SEEDED_QUEUE_PATH) : { ids: [] };
+      loop = await runProbeLoop({
+        tool: opts.tool,
+        anomalies: recon.anomalies,
+        claims: recon.entries.map((e) => e.claim),
+        entries: recon.entries,
+        tools: probeIoFromTools(tools, opts.sleep ? { sleep: opts.sleep } : {}),
+        llm,
+        db,
+        runId,
+        ledger,
+        burst: new BurstCounter(),
+        payments: new SimplePaymentPool(pool.ids),
+        ...(opts.now ? { now: opts.now } : {}),
+      });
+      return await writeNotarizeBundle({ opts, mode, runId, started, now, recon, loop, ledger, llm, poolNote: pool.note });
+    } catch (err) {
+      if (isBlocked(err) || err instanceof TestModeLockError) return blocked([err.message]);
+      throw err;
+    }
+  } finally {
+    db.close();
+  }
+}
+
+async function writeNotarizeBundle(a: {
+  opts: NotarizeOptions;
+  mode: "live" | "replay";
+  runId: string;
+  started: Date;
+  now: () => Date;
+  recon: ReconResult;
+  loop: ProbeLoopResult;
+  ledger: CreditLedger;
+  llm: LlmLike & { meter?: UsageMeter };
+  poolNote?: string | undefined;
+}): Promise<NotarizeResult> {
+  const { recon, loop, ledger, runId } = a;
+  const tool = a.opts.tool;
+  const stopReason = recon.stoppedReason ?? loop.stoppedReason;
+  const status: RunBundle["status"] = stopReason ? "stopped_budget" : "completed";
+  const usageByRole: UsageByRole = a.llm.meter?.snapshot() ?? { executor: ZERO, reflector: loop.usage, adversary: ZERO };
+  const verdicts = countVerdicts(loop.probes);
+  const disclosure = [
+    "Notarize run (P4): anomalies from the deterministic checker, rival hypotheses proposed by the reflector model, probes with predictions committed before each call, verdicts by deterministic rules. Beliefs and adversary review arrive in P5.",
+  ];
+  if (a.mode === "replay") disclosure.push("Replayed from cassettes; no tool network calls.");
+  if (tool === "dodo") disclosure.push("Dodo Payments test mode only; refund probes use seeded payments the seeded queue does not reference.");
+
+  const bundle = finalizeBundle({
+    runId,
+    kind: "notarize",
+    variant: "notarize",
+    mode: a.mode,
+    sample: false,
+    disclosure,
+    startedAt: a.started.toISOString(),
+    finishedAt: a.now().toISOString(),
+    status,
+    ...(stopReason ? { stopReason } : {}),
+    seed: 0,
+    tool,
+    queue: [],
+    decisions: [],
+    claims: recon.entries.map((e) => e.claim),
+    anomalies: recon.anomalies,
+    hypotheses: loop.hypotheses,
+    probes: loop.probes,
+    beliefs: beliefsHook(loop),
+    beliefEvents: [],
+    guards: [],
+    usageByRole,
+    credits: { byEndpoint: ledger.byEndpoint, total: ledger.total, budget: ledger.budget },
+    metrics: {
+      claims: recon.entries.length,
+      anomalies: recon.anomalies.length,
+      hypotheses: loop.hypotheses.length,
+      hypothesesRejected: loop.rejected.length,
+      probes: loop.probes.length,
+      ...Object.fromEntries(Object.entries(verdicts).map(([k, v]) => [`probes.${k}`, v])),
+      abstained: loop.abstained.length,
+      anomaliesSkipped: loop.skipped.length,
+    },
+    traceLinks: {},
+    cassettes: [`recon-${tool}`, `probes-${tool}`],
+  });
+  const dir = join(a.opts.runsDir ?? RUNS_DIR, runId);
+  const { bundlePath } = await writeBundle(bundle, dir);
+
+  const lines = [
+    `notarize: tool=${tool} mode=${a.mode} runId=${runId}`,
+    `claims: ${recon.entries.length}  anomalies: ${recon.anomalies.length}  hypotheses: ${loop.hypotheses.length} (rejected ${loop.rejected.length})`,
+    `probes: ${loop.probes.length}  ${Object.entries(verdicts).map(([k, v]) => `${k}=${v}`).join(" ")}  abstained: ${loop.abstained.length}`,
+    `credits: ${ledger.total}/${ledger.budget}  reflector: ${usageByRole.reflector.calls} calls, $${usageByRole.reflector.usd}`,
+  ];
+  if (a.poolNote) lines.push(`note: ${a.poolNote}`);
+  for (const s of loop.skipped) lines.push(`skipped ${s.anomalyId}: ${s.reason}`);
+  if (stopReason) lines.push(`STOPPED: ${stopReason}`);
+  lines.push(`bundle: ${bundlePath}`);
+  return { exitCode: 0, lines, status, runId, bundlePath, loop };
+}

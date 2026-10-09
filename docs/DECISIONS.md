@@ -54,3 +54,17 @@ Where the docs and reality disagree, or a choice the docs leave open. Newest pha
 | 31 | Naive executor | Doc-trusting, no deliberate bugs: one page (100) of refunds/payments as the existing-refund precheck, one retry on timeout/5xx, minor-unit amounts as given. The `client-timeout-then-retry` item races a 200 ms client timeout; if none fires, that's recorded | Naive failures must come from real tool behavior |
 | 32 | "Existing refund on a later page" case | Probably won't trip the naive agent: that customer has a single refund, which `listRefunds` returns on page 1. Left as is; if the naive run shows zero misses, it's reported honestly | No forced failures |
 | 33 | Executor model (Bedrock) | Queue decisions are policy code; the executor role isn't used in P3 | TDD: "The policy is plain code, not a prompt" |
+
+## P4 · Reflector and probes
+
+| # | Docs say | Reality / decision | Why |
+| --- | --- | --- | --- |
+| 34 | `better-sqlite3` (TDD "Stack") | Node's built-in `node:sqlite` (`DatabaseSync`); prints a harmless ExperimentalWarning on Node 24 | No native build on Windows; same single-file store |
+| 35 | Bedrock client | `@aws-sdk/client-bedrock-runtime` 3.1148.0, Converse API, temperature 0, default AWS credential chain (env keys or SSO profile). Credential errors become `BLOCKED` | Never read or log credentials |
+| 36 | USD per role | Env overrides `NOTARY_PRICE_<ROLE>_IN/_OUT` first, else a small table of Claude Bedrock list prices; unknown model → $0 plus a recorded warning, never a guess. Newer model ids need the env override | No invented prices |
+| 37 | Separation of duties | Reflector and adversary model ids must differ (also across `us.`/`global.` prefixes), else `ModelConfigError` | TDD security rule |
+| 38 | Hypothesis → prediction | The model only proposes `{class, statement, distinguishingTest}`. Each template maps a defect class to a predicted observation in code; a class the template can't speak to gets a wildcard that separates nothing | Models only explain/propose; verdicts stay deterministic |
+| 39 | Template choice | Templates are picked by the cost-aware score (λ = 1 by default, `NOTARY_PROBE_LAMBDA`), not by the model's `distinguishingTest` | The score is the TDD's selection rule |
+| 40 | Prediction immutability | Prediction, sha256 and `committedAt` are written before any HTTP call; an SQLite trigger forbids changing them or deleting probes; `recordResult` re-verifies the hash | FR-4 / commit-then-run |
+| 41 | `header_burst` | At most 10 requests per run across all probes, free read ops only, polite delays | TDD probe limits |
+| 42 | Refund probes | Only use seeded payments that the queue never references; skipped (with reason) until the seed manifest exists | Probes never disturb the graded queue |

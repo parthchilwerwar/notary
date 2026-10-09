@@ -20,7 +20,7 @@ describe("cli", () => {
   });
 
   it.each([
-    [["notarize", "--tool", "crustdata"]],
+    [["notarize", "--tool", "crustdata", "--priors-from", "dodo"]],
     [["run", "--queue", "fixtures/queue/seeded.json"]],
     [["replay"]],
     [["export"]],
