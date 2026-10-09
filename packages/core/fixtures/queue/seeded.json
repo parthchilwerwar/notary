@@ -1,0 +1,213 @@
+[
+  {
+    "id": "q01",
+    "customerId": "cust:smb-plausible",
+    "companyDomain": "plausible.io",
+    "type": "refund",
+    "plan": "starter",
+    "paymentId": "pay:smb-plausible-starter",
+    "currency": "USD",
+    "reason": "We signed up by mistake this month, please refund the subscription charge."
+  },
+  {
+    "id": "q02",
+    "customerId": "cust:mid-sentry",
+    "companyDomain": "sentry.io",
+    "type": "refund",
+    "plan": "scale",
+    "paymentId": "pay:mid-sentry-scale",
+    "currency": "USD",
+    "reason": "Scale was more than we needed this cycle; asking for a refund of the monthly charge."
+  },
+  {
+    "id": "q03",
+    "customerId": "cust:smb-buttondown",
+    "companyDomain": "buttondown.com",
+    "type": "refund",
+    "plan": "starter",
+    "paymentId": "pay:smb-buttondown-addon",
+    "amount": 1999,
+    "currency": "USD",
+    "reason": "Bought the add-on pack by mistake, please refund $19.99.",
+    "note": "units: amount is minor units (1999 = $19.99); the free-text reason states dollars"
+  },
+  {
+    "id": "q04",
+    "customerId": "cust:smb-fathom",
+    "companyDomain": "usefathom.com",
+    "type": "refund",
+    "plan": "growth",
+    "paymentId": "pay:smb-fathom-addon",
+    "currency": "USD",
+    "reason": "The add-on pack did not work for our setup, please refund it.",
+    "note": "partial-rounding: the policy share of an odd amount (50% of 1999) must floor to 999"
+  },
+  {
+    "id": "q05",
+    "customerId": "cust:mid-supabase",
+    "companyDomain": "supabase.com",
+    "type": "refund",
+    "plan": "growth",
+    "paymentId": "pay:mid-supabase-growth",
+    "currency": "USD",
+    "reason": "Charged after we asked to cancel; please refund this month.",
+    "note": "client-timeout-then-retry"
+  },
+  {
+    "id": "q06",
+    "customerId": "cust:smb-fathom",
+    "companyDomain": "usefathom.com",
+    "type": "refund",
+    "plan": "growth",
+    "paymentId": "pay:smb-fathom-growth",
+    "currency": "USD",
+    "reason": "We barely used Growth this month, can we get the charge back?"
+  },
+  {
+    "id": "q07",
+    "customerId": "cust:mid-retool",
+    "companyDomain": "retool.com",
+    "type": "refund",
+    "plan": "growth",
+    "paymentId": "pay:mid-retool-topup-001",
+    "currency": "USD",
+    "reason": "Our first usage top-up was a duplicate charge, please refund it.",
+    "note": "existing-refund-on-later-page: this payment was already refunded during seeding; the customer has 106 payments, so it sits past the first 100-item page of listPayments"
+  },
+  {
+    "id": "q08",
+    "customerId": "cust:ent-shopify",
+    "companyDomain": "shopify.com",
+    "type": "credit",
+    "plan": "growth",
+    "amount": 5000,
+    "currency": "USD",
+    "reason": "Two hours of downtime during our sale; requesting a $50.00 account credit."
+  },
+  {
+    "id": "q09",
+    "customerId": "cust:mid-sentry",
+    "companyDomain": "sentry.io",
+    "type": "partial_refund",
+    "plan": "scale",
+    "paymentId": "pay:mid-sentry-onboarding",
+    "amount": 12000,
+    "currency": "USD",
+    "reason": "Only one of the onboarding sessions happened; please refund $120.00 of the $150.00 package."
+  },
+  {
+    "id": "q10",
+    "customerId": "cust:ent-shopify",
+    "companyDomain": "shopify.com",
+    "type": "partial_refund",
+    "plan": "growth",
+    "paymentId": "pay:ent-shopify-growth",
+    "amount": 2500,
+    "currency": "USD",
+    "reason": "Seats were removed mid-cycle; please refund $25.00 of this month's charge."
+  },
+  {
+    "id": "q11",
+    "customerId": "cust:smb-buttondown",
+    "companyDomain": "buttondown.com",
+    "type": "partial_refund",
+    "plan": "starter",
+    "paymentId": "pay:smb-buttondown-starter",
+    "amount": 5000,
+    "currency": "USD",
+    "reason": "Please refund $50.00 for the outage last week.",
+    "note": "over-refund: the requested 5000 exceeds the 2900 payment; policy denies"
+  },
+  {
+    "id": "q12",
+    "customerId": "cust:smb-plausible",
+    "companyDomain": "plausible.io",
+    "type": "plan_change",
+    "plan": "starter",
+    "subscriptionId": "sub:smb-plausible",
+    "targetPlan": "growth",
+    "reason": "We need more sites, please move us to Growth."
+  },
+  {
+    "id": "q13",
+    "customerId": "cust:ent-salesforce",
+    "companyDomain": "salesforce.com",
+    "type": "plan_change",
+    "plan": "scale",
+    "subscriptionId": "sub:ent-salesforce",
+    "targetPlan": "growth",
+    "reason": "Downgrade this workspace to Growth effective now."
+  },
+  {
+    "id": "q14",
+    "customerId": "cust:mid-retool",
+    "companyDomain": "retool.com",
+    "type": "plan_change",
+    "plan": "growth",
+    "subscriptionId": "sub:mid-retool",
+    "targetPlan": "scale",
+    "reason": "We keep buying top-ups; upgrade us to Scale."
+  },
+  {
+    "id": "q15",
+    "customerId": "cust:ent-microsoft",
+    "companyDomain": "microsoft.com",
+    "type": "credit",
+    "plan": "scale",
+    "amount": 25000,
+    "currency": "USD",
+    "reason": "SLA breach in September; requesting the contractual $250.00 credit."
+  },
+  {
+    "id": "q16",
+    "customerId": "cust:smb-buttondown",
+    "companyDomain": "buttondown.com",
+    "type": "credit",
+    "plan": "starter",
+    "amount": 1000,
+    "currency": "USD",
+    "reason": "Can we get $10.00 of credit for the slow support reply?"
+  },
+  {
+    "id": "q17",
+    "customerId": "cust:mid-supabase",
+    "companyDomain": "supabase.com",
+    "type": "credit",
+    "plan": "growth",
+    "amount": 50000,
+    "currency": "USD",
+    "reason": "Requesting a $500.00 credit for the incident that affected our launch.",
+    "note": "over-cap: 50000 is above the mid-market credit cap of 20000; policy escalates"
+  },
+  {
+    "id": "q18",
+    "customerId": "cust:smb-fathom",
+    "companyDomain": "usefathom.com",
+    "type": "credit",
+    "plan": "growth",
+    "amount": 1500,
+    "currency": "USD",
+    "reason": "Requesting $15.00 credit for the dashboard outage."
+  },
+  {
+    "id": "q19",
+    "customerId": "cust:ent-atlassian",
+    "companyDomain": "atlassian.com",
+    "type": "refund",
+    "plan": "growth",
+    "paymentId": "pay:ent-atlassian-growth",
+    "currency": "USD",
+    "reason": "Procurement says this charge was not approved; refund it in full."
+  },
+  {
+    "id": "q20",
+    "customerId": "cust:mid-zapier",
+    "companyDomain": "zapier.com",
+    "type": "refund",
+    "plan": "growth",
+    "paymentId": "pay:mid-zapier-growth",
+    "currency": "USD",
+    "reason": "Duplicate workspace; please refund this month's Growth charge.",
+    "note": "tier-boundary: Zapier is publicly reported at roughly 800 employees, near the 1000-employee enterprise threshold; mid_market approves this refund, enterprise would escalate"
+  }
+]

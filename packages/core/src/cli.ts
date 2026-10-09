@@ -1,13 +1,9 @@
 import { existsSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { Command, Option } from "commander";
+import { NotImplementedError } from "./errors.js";
 
-export class NotImplementedError extends Error {
-  constructor(command: string, phase: string) {
-    super(`notary ${command}: not implemented yet (lands in ${phase}, see PLAN.md)`);
-    this.name = "NotImplementedError";
-  }
-}
+export { NotImplementedError };
 
 function notImplemented(command: string, phase: string): never {
   throw new NotImplementedError(command, phase);
@@ -61,7 +57,27 @@ export function buildProgram(): Command {
     .requiredOption("--queue <file>", "queue fixture to work")
     .option("--naive", "disable gating and guards (run-1 baseline)")
     .option("--resume", "continue from the last incomplete item")
-    .action(() => notImplemented("run", "P3/P6"));
+    .option("--replay <cassette>", "replay a recorded run from its cassette (no network, no keys)")
+    .action(async (opts: { queue: string; naive?: boolean; resume?: boolean; replay?: string }) => {
+      if (opts.resume) notImplemented("run --resume", "P6");
+      if (!opts.naive) notImplemented("run (guarded)", "P6");
+      const { runQueue } = await import("./queue/run.js");
+      const { initTracing, shutdownTracing } = await import("./trace/index.js");
+      const replay = opts.replay !== undefined;
+      if (!replay) await initTracing({ serviceName: "notary" });
+      try {
+        const result = await runQueue({
+          queueFile: opts.queue,
+          variant: "naive",
+          mode: replay ? "replay" : "live",
+          ...(replay ? { cassette: opts.replay! } : {}),
+        });
+        for (const line of result.lines) (result.exitCode === 0 ? console.log : console.error)(line);
+        if (result.exitCode !== 0) process.exitCode = result.exitCode;
+      } finally {
+        if (!replay) await shutdownTracing();
+      }
+    });
 
   program
     .command("replay")

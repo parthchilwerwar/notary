@@ -35,6 +35,13 @@ describe("cli", () => {
     expect(notarize?.options.map((o) => o.long)).toEqual(["--tool", "--priors-from", "--recon-only", "--replay"]);
   });
 
+  it("run: guarded (no --naive) and --resume are P6; --replay takes a cassette", async () => {
+    await expect(parse(["run", "--queue", "x"])).rejects.toThrow(/run \(guarded\).*P6/);
+    await expect(parse(["run", "--queue", "x", "--naive", "--resume"])).rejects.toThrow(/run --resume.*P6/);
+    const run = buildProgram().commands.find((c) => c.name() === "run");
+    expect(run?.options.map((o) => o.long)).toEqual(["--queue", "--naive", "--resume", "--replay"]);
+  });
+
   it("rejects an unknown tool", async () => {
     await expect(parse(["notarize", "--tool", "stripe"])).rejects.toThrow();
   });

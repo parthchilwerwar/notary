@@ -43,3 +43,14 @@ Where the docs and reality disagree, or a choice the docs leave open. Newest pha
 | 25 | `ReconStep` | Added `setup?: boolean`: setup steps feed `$from` refs but are never checked against the claim | Otherwise a setup 200 trips `statusOnError` |
 | 26 | Checker association | Claims with recon steps are evaluated only on their own recon exchanges; queue/probe traffic is matched by op only for `recon: []` claims and never for `statusOnError`/`errorOnUnknownParam`/`consistentWithin` | Those rules need deliberately crafted requests |
 | 27 | `entire graph` raw-client check | Entire CLI not installed; the static scan in `test/tools.test.ts` checks that nothing outside `src/tools` imports the raw clients | Until Entire is installed |
+
+## P3 · Seeded world and naive run
+
+| # | Docs say | Reality / decision | Why |
+| --- | --- | --- | --- |
+| 28 | Seed script creates payments | Dodo test mode documents no API-only way to *complete* a payment: the first payment per customer needs a hosted checkout with the test card (11 human checkouts). The other ~108 use `POST /checkouts` with `confirm:true` + the saved `payment_method_id`; the docs don't say whether that charges without customer action. If it fails, the seed stops and writes no manifest | Doc facts; nothing faked |
+| 29 | Policy | Tiers: SMB < 50 employees, enterprise ≥ 1000, mid-market between; headcount first (`headcount.total`, then ranges), funding only when headcount is missing ($500M+ enterprise, $20M+ mid). Partial = 50% floored to the minor unit. Credit caps SMB $50 / mid $200 / ent $1,000 | `src/queue/policy.ts` |
+| 30 | Expected outcomes | `fixtures/queue/expected.json` was written by hand from the policy table with tiers from public knowledge; a test re-derives each outcome through `decidePolicy` to catch drift | Ground truth before any run |
+| 31 | Naive executor | Doc-trusting, no deliberate bugs: one page (100) of refunds/payments as the existing-refund precheck, one retry on timeout/5xx, minor-unit amounts as given. The `client-timeout-then-retry` item races a 200 ms client timeout; if none fires, that's recorded | Naive failures must come from real tool behavior |
+| 32 | "Existing refund on a later page" case | Probably won't trip the naive agent: that customer has a single refund, which `listRefunds` returns on page 1. Left as is; if the naive run shows zero misses, it's reported honestly | No forced failures |
+| 33 | Executor model (Bedrock) | Queue decisions are policy code; the executor role isn't used in P3 | TDD: "The policy is plain code, not a prompt" |

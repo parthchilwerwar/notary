@@ -10,7 +10,8 @@
   "scripts": {
     "notary": "tsx src/cli.ts",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "seed:dodo": "tsx scripts/seed-dodo.ts"
   },
   "dependencies": {
     "commander": "^15.0.0",

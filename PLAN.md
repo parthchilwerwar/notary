@@ -7,7 +7,7 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 - [x] **P0 · Scaffold** — pnpm monorepo, schema stubs, CLI skeleton, neatlogs smoke span, Entire enabled
 - [x] **P1 · Tool clients, recorder, schema freeze** — Crustdata + Dodo raw clients, cassette recorder with redaction, credit ledger, Dodo test-mode lock, final bundle schema, sample bundle
 - [x] **P2 · Contracts and deterministic checker** — claims from real docs, checker, recon sweep
-- [ ] **P3 · Seeded world and naive run** — Dodo seed script, seeded queue + expected outcomes, policy table, naive executor, grader, first bundle
+- [x] **P3 · Seeded world and naive run** — Dodo seed script, seeded queue + expected outcomes, policy table, naive executor, grader, first bundle
 - [ ] **P4 · Reflector and probes** — Bedrock client with roles, batched hypotheses, probe templates, cost-aware scoring, commit-then-run, verdict rules
 - [ ] **P5 · Beliefs and adversary** — beta-binomial store, lifecycle incl. `unlearned`, adversary (`bedrock` + `session`), evidence-validity check
 - [ ] **P6 · Guards, gated queue, recovery** — guard compiler, `guarded()` clients, required-beliefs gating, evidence packs, `--resume`, local API + SSE
@@ -39,3 +39,6 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 **P2 (Oct 10).** 26 claims from real docs (`src/contracts/`), deterministic checker for all 8 expect rules (`src/checker/`), recon runner with budget/repeat/delay caps, `notarize --recon-only [--replay]`. Determinism verified in unit tests (checkAll twice → identical JSON; replay recon over a test cassette twice → identical anomalies). 116 tests pass.
 - [ ] BLOCKED: recon on real recorded traffic — `notarize --recon-only` prints `BLOCKED: CRUSTDATA_API_KEY not set` / `DODO_PAYMENTS_API_KEY not set` (exit 3). Once keys exist: run live once, then `--replay` twice and diff.
 - [ ] BLOCKED: `entire graph` raw-client check (Entire CLI not installed); static-scan test passes instead.
+
+**P3 (Oct 10).** Policy table + `tierFromCompany`/`decidePolicy`, seed plan + `scripts/seed-dodo.ts` (`seed:dodo --plan` verified: 6 products, 11 customers, 119 payments, 142 writes, 11 human checkouts), seeded queue (20) + hand-written expected outcomes, naive executor, deterministic grader (duplicates / wrong unit / missed existing refund, accuracy, automation; null when not computable), `notary run --naive`. 166 tests pass.
+- [ ] BLOCKED: live seed + naive run — `BLOCKED: DODO_PAYMENTS_API_KEY not set` (exit 3). Seeding also needs 11 hosted test-card checkouts by a human (see DECISIONS #28). Then: `pnpm --filter @notary/core seed:dodo`, `pnpm notary run --queue packages/core/fixtures/queue/seeded.json --naive`.
