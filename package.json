@@ -1,0 +1,14 @@
+{
+  "name": "notary",
+  "private": true,
+  "description": "An agent that won't touch money until it has proven how its tools actually behave.",
+  "packageManager": "pnpm@11.7.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "notary": "pnpm --filter @notary/core run notary",
+    "test": "pnpm -r run test",
+    "typecheck": "pnpm -r run typecheck"
+  }
+}

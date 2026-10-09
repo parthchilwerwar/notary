@@ -1,0 +1,10 @@
+{
+  "name": "@notary/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Notary dashboard. Placeholder until U1; owned by Codex.",
+  "scripts": {
+    "test": "echo \"web: no tests yet (placeholder until U1)\"",
+    "typecheck": "echo \"web: nothing to typecheck yet (placeholder until U1)\""
+  }
+}
