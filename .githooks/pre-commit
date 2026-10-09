@@ -1,0 +1,3 @@
+#!/bin/sh
+# Block commits that contain key-shaped strings or .env secret values (scripts/check-secrets.mjs).
+exec node "$(git rev-parse --show-toplevel)/scripts/check-secrets.mjs"

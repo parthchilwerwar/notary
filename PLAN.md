@@ -5,7 +5,7 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 ## Claude Code — `packages/core`
 
 - [x] **P0 · Scaffold** — pnpm monorepo, schema stubs, CLI skeleton, neatlogs smoke span, Entire enabled
-- [ ] **P1 · Tool clients, recorder, schema freeze** — Crustdata + Dodo raw clients, cassette recorder with redaction, credit ledger, Dodo test-mode lock, final bundle schema, sample bundle
+- [x] **P1 · Tool clients, recorder, schema freeze** — Crustdata + Dodo raw clients, cassette recorder with redaction, credit ledger, Dodo test-mode lock, final bundle schema, sample bundle
 - [ ] **P2 · Contracts and deterministic checker** — claims from real docs, checker, recon sweep
 - [ ] **P3 · Seeded world and naive run** — Dodo seed script, seeded queue + expected outcomes, policy table, naive executor, grader, first bundle
 - [ ] **P4 · Reflector and probes** — Bedrock client with roles, batched hypotheses, probe templates, cost-aware scoring, commit-then-run, verdict rules
@@ -24,7 +24,7 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 
 ## Gates
 
-- [ ] Schema freeze (end of P1)
+- [x] Schema freeze (end of P1) — `packages/core/src/schema/bundle.ts`; changes now need user approval
 - [ ] Feature freeze (Mon 12:00 IST)
 
 ## Notes
@@ -32,3 +32,6 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 **P0 (Oct 10).** Workspace, schema stubs, CLI skeleton (all commands stubbed), `src/trace/` + `notary doctor`, `.env.example`, `CLAUDE.md`, `docs/DECISIONS.md`. 25 tests pass, typecheck clean. Two "done when" items are still open and must close before P1 work starts:
 - [ ] Live test span in neatlogs: `notary doctor` currently reports `NEATLOGS_API_KEY not set; no span sent`. Add the key to `.env` and re-run `pnpm notary doctor`.
 - [ ] Entire checkpoint: the Entire CLI isn't installed, so this commit has none. Install it and run `entire enable`.
+
+**P1 (Oct 10).** Recorder (live/replay, redaction, occurrence-keyed replay), Crustdata + Dodo raw clients behind `createTools({wrap})`, credit ledger, Dodo test-mode lock, frozen bundle schema + content hash, `notary export --sample` → `packages/web/public/bundles/sample-42.json` (validates, hash matches). `pnpm check:secrets` + pre-commit hook. 63 tests pass. Endpoints in `docs/ENDPOINTS.md`.
+- [ ] BLOCKED: one live recorded call per API — `CRUSTDATA_API_KEY` and `DODO_PAYMENTS_API_KEY` not set (attempt returned `MissingCredentialError`, no network call). No cassettes exist yet.

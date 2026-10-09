@@ -9,4 +9,8 @@ export const ClaimSchema = z.object({
   docText: z.string(),
   expect: ExpectRuleSchema,
   docUrl: z.string(),
+  // HTTP endpoint the operation maps to, e.g. "POST /refunds".
+  endpoint: z.string().optional(),
+  // Estimated credits per call; feeds the probe cost score.
+  costCredits: z.number().nonnegative().optional(),
 });

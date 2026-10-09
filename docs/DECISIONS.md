@@ -14,3 +14,20 @@ Where the docs and reality disagree, or a choice the docs leave open. Newest pha
 | 6 | neatlogs `init`, `span`, `trace`, `log` (TDD "Integrations") | All exist in `neatlogs` 1.1.26, but per-span metadata only works through `trace({ attributes })`; `span()` ignores `metadata`/`tags`; `init({ metadata })` never reaches spans, so `withSpan` stamps `notary.runId` itself; `log()` needs `init({ captureLogs: true })`; flushing is `flush()` / `shutdown()` | Read from the SDK's README and shipped code; full notes in `packages/core/src/trace/index.ts` |
 | 7 | — | `neatlogs` resolved to 1.1.26, not 1.1.28 | 1.1.27/1.1.28 were under a day old and held back by pnpm's minimum release age |
 | 8 | — | `protobufjs` build scripts disabled in `pnpm-workspace.yaml` | Its postinstall only prints a version warning; nothing depends on it |
+
+## P1 · Tool clients, recorder, schema freeze
+
+| # | Docs say | Reality / decision | Why |
+| --- | --- | --- | --- |
+| 9 | Crustdata endpoint unspecified | `POST /company/enrich` (2 credits/record, +2 with technographics; headcount/funding must be requested by name; 15 req/min), `POST /company/identify` (free), `GET /account/credits` (free). Auth `Authorization: Bearer` + `x-api-version: 2025-11-01`. Ledger settles from `X-Credits-Used`, else list price | Crustdata docs; see `docs/ENDPOINTS.md` |
+| 10 | Dodo "idempotency" implied | No `Idempotency-Key` header is documented. Only wallet ledger entries take an `idempotency_key` body field | Retry safety on refunds must be proven by probes, not assumed |
+| 11 | Dodo pagination | `page_size` (max 100) + `page_number`; responses are `{items}` with no `has_more`/total; `listRefunds` has no `payment_id` filter | Makes the `pagination_completeness` and "missed existing refund" cases real |
+| 12 | Dodo amounts | Guides say smallest currency unit; the refund schema's `items[].amount` states no unit | Exactly the kind of claim Notary must notarize |
+| 13 | "Credit or discount" action | Implemented via the customer wallet ledger (`createWalletLedgerEntry`); Dodo discounts are checkout codes and don't fit | Closest real mechanism |
+| 14 | `POST /payments` | Deprecated in favour of `POST /checkouts`; both exposed | Seed script (P3) picks whichever works in test mode |
+| 15 | Dodo live-key prefix | Docs define none, so the lock is `NOTARY_MODE=test` + exact test base URL `https://test.dodopayments.com` | Matches `.env.example` |
+| 16 | `undici` fetch | Node 24 global `fetch` (which is undici) | No extra dependency |
+| 17 | Recorder | Callers receive the *redacted* body even in live mode, so live and replay make identical decisions; identical repeated requests are keyed by `requestHash` + `occurrence` | Replay must reproduce live exactly |
+| 18 | Bundle schema | Frozen at end of P1 (`src/schema/bundle.ts`). Additions over the TDD: `kind`, `variant`, `sample`, `disclosure`, `status`/`stopReason`, `hypotheses`, `beliefEvents`, `noiseFloor`, `cassettes`, `replayOf`; Decision `effects`/`evidencePack`/`grade`/`enrichment`; Guard `active`/`retiredAt`; Probe `control`/`predictionHash`; `credits` = `{byEndpoint,total,budget}`; metrics may be `null` (not computable) | Everything P2–P9 and the dashboard need, decided once |
+| 19 | sha256 | `src/bundle/hash.ts` is a pure-JS sha256 (tested against `node:crypto`) | The dashboard recomputes bundle hashes in the browser |
+| 20 | Claude Code never touches `packages/web` | Generated bundle JSON is written to `packages/web/public/bundles/` (no UI code) | BUILD_PLAN P1/P3/P8 sanction this explicitly |

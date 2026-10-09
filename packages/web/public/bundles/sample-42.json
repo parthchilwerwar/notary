@@ -1,0 +1,2899 @@
+{
+  "runId": "sample-42",
+  "kind": "sample",
+  "variant": "sample",
+  "mode": "replay",
+  "sample": true,
+  "disclosure": [
+    "SAMPLE DATA — synthetic, not from any real run",
+    "Companies, customers and domains are fictional (example.com)",
+    "Doc text marked [sample] is invented; it does not describe Crustdata or Dodo Payments",
+    "Includes a simulated drift-fixture replay (probe on c-cd-05)"
+  ],
+  "startedAt": "2026-10-10T10:00:00.000Z",
+  "finishedAt": "2026-10-10T10:49:30.000Z",
+  "status": "completed",
+  "stopReason": "queue drained",
+  "seed": 42,
+  "priorsFrom": "crustdata",
+  "queue": [
+    {
+      "id": "req-01",
+      "customerId": "cus_sample_01",
+      "customerEmail": "billing@northwind.example.com",
+      "companyDomain": "northwind.example.com",
+      "type": "refund",
+      "plan": "scale",
+      "paymentId": "pay_sample_01",
+      "amount": 49900,
+      "currency": "USD",
+      "reason": "Charged twice for the annual plan",
+      "note": "Sample note: customer attached a bank statement."
+    },
+    {
+      "id": "req-02",
+      "customerId": "cus_sample_02",
+      "customerEmail": "billing@fabrikam.example.com",
+      "companyDomain": "fabrikam.example.com",
+      "type": "partial_refund",
+      "plan": "growth",
+      "paymentId": "pay_sample_02",
+      "amount": 2500,
+      "currency": "EUR",
+      "reason": "Two seats removed mid-cycle"
+    },
+    {
+      "id": "req-03",
+      "customerId": "cus_sample_03",
+      "customerEmail": "billing@tailspin.example.com",
+      "companyDomain": "tailspin.example.com",
+      "type": "plan_change",
+      "plan": "starter",
+      "subscriptionId": "sub_sample_03",
+      "targetPlan": "growth",
+      "reason": "Upgrade requested by account owner"
+    },
+    {
+      "id": "req-04",
+      "customerId": "cus_sample_04",
+      "customerEmail": "billing@contoso.example.com",
+      "companyDomain": "contoso.example.com",
+      "type": "credit",
+      "plan": "starter",
+      "amount": 1500,
+      "currency": "USD",
+      "reason": "Service credit for a missed SLA"
+    },
+    {
+      "id": "req-05",
+      "customerId": "cus_sample_05",
+      "customerEmail": "billing@ghost-labs.example.com",
+      "companyDomain": "ghost-labs.example.com",
+      "type": "refund",
+      "plan": "growth",
+      "paymentId": "pay_sample_05",
+      "amount": 9900,
+      "currency": "USD",
+      "reason": "Cancelled within trial"
+    },
+    {
+      "id": "req-06",
+      "customerId": "cus_sample_06",
+      "customerEmail": "billing@adatum.example.com",
+      "companyDomain": "adatum.example.com",
+      "type": "refund",
+      "plan": "starter",
+      "paymentId": "pay_sample_06",
+      "amount": 2900,
+      "currency": "INR",
+      "reason": "Requested 94 days after payment"
+    },
+    {
+      "id": "req-07",
+      "customerId": "cus_sample_07",
+      "customerEmail": "billing@litware.example.com",
+      "companyDomain": "litware.example.com",
+      "type": "partial_refund",
+      "plan": "scale",
+      "paymentId": "pay_sample_07",
+      "amount": 250000,
+      "currency": "USD",
+      "reason": "Disputed overage charges"
+    },
+    {
+      "id": "req-08",
+      "customerId": "cus_sample_08",
+      "customerEmail": "billing@proseware.example.com",
+      "companyDomain": "proseware.example.com",
+      "type": "refund",
+      "plan": "growth",
+      "paymentId": "pay_sample_08",
+      "amount": 19900,
+      "currency": "USD",
+      "reason": "Duplicate subscription purchase"
+    },
+    {
+      "id": "req-09",
+      "customerId": "cus_sample_09",
+      "customerEmail": "billing@wingtip.example.com",
+      "companyDomain": "wingtip.example.com",
+      "type": "refund",
+      "plan": "starter",
+      "paymentId": "pay_sample_09",
+      "amount": 4900,
+      "currency": "USD",
+      "reason": "Customer reports the product never activated"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "d-01",
+      "requestId": "req-01",
+      "customerId": "cus_sample_01",
+      "tier": "enterprise",
+      "requestType": "refund",
+      "policyOutcome": "approve",
+      "action": "full_refund",
+      "requiredBeliefs": [
+        "b-do-01",
+        "b-do-02",
+        "b-do-03",
+        "b-cd-02"
+      ],
+      "missingBeliefs": [],
+      "status": "executed",
+      "guardsApplied": [
+        "g-02",
+        "g-08",
+        "g-05",
+        "g-07"
+      ],
+      "effects": [
+        {
+          "op": "crustdata.enrichCompany",
+          "params": {
+            "domain": "northwind.example.com"
+          },
+          "status": 200,
+          "at": "2026-10-10T10:40:02.000Z"
+        },
+        {
+          "op": "dodo.listPayments",
+          "params": {
+            "customer_id": "cus_sample_01",
+            "page": 0,
+            "page_size": 50
+          },
+          "status": 200,
+          "at": "2026-10-10T10:40:05.000Z"
+        },
+        {
+          "op": "dodo.listPayments",
+          "params": {
+            "customer_id": "cus_sample_01",
+            "page": 1,
+            "page_size": 50
+          },
+          "status": 200,
+          "at": "2026-10-10T10:40:08.000Z"
+        },
+        {
+          "op": "dodo.listRefunds",
+          "params": {
+            "payment_id": "pay_sample_01"
+          },
+          "status": 200,
+          "at": "2026-10-10T10:40:11.000Z"
+        },
+        {
+          "op": "dodo.createRefund",
+          "params": {
+            "payment_id": "pay_sample_01",
+            "amount": 49900
+          },
+          "status": 201,
+          "resultId": "rfd_sample_01",
+          "amount": 49900,
+          "currency": "USD",
+          "at": "2026-10-10T10:40:14.000Z"
+        }
+      ],
+      "grade": {
+        "expectedOutcome": "approve",
+        "expectedStatus": "executed",
+        "correct": true,
+        "unsafe": []
+      },
+      "enrichment": {
+        "headcountRaw": "1001-5000",
+        "headcount": 1001,
+        "fundingTotalUsd": 85000000
+      },
+      "traceId": "tr_53ac8fde986d4090"
+    },
+    {
+      "id": "d-02",
+      "requestId": "req-02",
+      "customerId": "cus_sample_02",
+      "tier": "mid_market",
+      "requestType": "partial_refund",
+      "policyOutcome": "partial",
+      "action": "partial_refund",
+      "requiredBeliefs": [
+        "b-do-01",
+        "b-do-02",
+        "b-do-03",
+        "b-cd-02",
+        "b-do-04"
+      ],
+      "missingBeliefs": [
+        "b-do-04"
+      ],
+      "status": "held",
+      "guardsApplied": [
+        "g-02"
+      ],
+      "effects": [
+        {
+          "op": "crustdata.enrichCompany",
+          "params": {
+            "domain": "fabrikam.example.com"
+          },
+          "status": 200,
+          "at": "2026-10-10T10:41:02.000Z"
+        }
+      ],
+      "evidencePack": {
+        "reason": "Partial refunds need refund-list consistency (b-do-04), which is still a candidate.",
+        "missingBeliefs": [
+          "b-do-04"
+        ],
+        "relatedProbeIds": [
+          "p-10"
+        ],
+        "spanIds": [
+          "sp_35edf72a9cf6"
+        ],
+        "traceLinks": {
+          "tr_2b2326f7bdc4d540": "https://traces.example.com/trace/tr_2b2326f7bdc4d540"
+        }
+      },
+      "grade": {
+        "expectedOutcome": "partial",
+        "expectedStatus": "held",
+        "correct": true,
+        "unsafe": []
+      },
+      "enrichment": {
+        "headcountRaw": "201-500",
+        "headcount": 201,
+        "fundingTotalUsd": 24000000
+      },
+      "traceId": "tr_2b2326f7bdc4d540"
+    },
+    {
+      "id": "d-03",
+      "requestId": "req-03",
+      "customerId": "cus_sample_03",
+      "tier": "smb",
+      "requestType": "plan_change",
+      "policyOutcome": "approve",
+      "action": "change_plan",
+      "requiredBeliefs": [
+        "b-do-05",
+        "b-do-02"
+      ],
+      "missingBeliefs": [],
+      "status": "executed",
+      "guardsApplied": [
+        "g-02"
+      ],
+      "effects": [
+        {
+          "op": "crustdata.enrichCompany",
+          "params": {
+            "domain": "tailspin.example.com"
+          },
+          "status": 200,
+          "at": "2026-10-10T10:42:02.000Z"
+        },
+        {
+          "op": "dodo.changePlan",
+          "params": {
+            "subscription_id": "sub_sample_03",
+            "product_id": "prod_sample_growth",
+            "proration_billing_mode": "prorated_immediately"
+          },
+          "status": 200,
+          "resultId": "sub_sample_03",
+          "at": "2026-10-10T10:42:05.000Z"
+        }
+      ],
+      "grade": {
+        "expectedOutcome": "approve",
+        "expectedStatus": "executed",
+        "correct": true,
+        "unsafe": []
+      },
+      "enrichment": {
+        "headcountRaw": "11-50",
+        "headcount": 11,
+        "fundingTotalUsd": 1500000
+      },
+      "traceId": "tr_bce749a4ecaa8e6f"
+    },
+    {
+      "id": "d-04",
+      "requestId": "req-04",
+      "customerId": "cus_sample_04",
+      "tier": "smb",
+      "requestType": "credit",
+      "policyOutcome": "approve",
+      "action": "issue_credit",
+      "requiredBeliefs": [
+        "b-do-07",
+        "b-do-06",
+        "b-do-02"
+      ],
+      "missingBeliefs": [
+        "b-do-07",
+        "b-do-06"
+      ],
+      "status": "held",
+      "guardsApplied": [],
+      "effects": [
+        {
+          "op": "crustdata.enrichCompany",
+          "params": {
+            "domain": "contoso.example.com"
+          },
+          "status": 200,
+          "at": "2026-10-10T10:43:02.000Z"
+        }
+      ],
+      "evidencePack": {
+        "reason": "Credits need discount unit and expiry beliefs; b-do-07 was refuted and b-do-06 is a hypothesis.",
+        "missingBeliefs": [
+          "b-do-07",
+          "b-do-06"
+        ],
+        "relatedProbeIds": [
+          "p-13",
+          "p-12"
+        ],
+        "spanIds": [
+          "sp_a91ea96c361f",
+          "sp_dba759f4664a"
+        ],
+        "traceLinks": {
+          "tr_d1ebd31d69d65804": "https://traces.example.com/trace/tr_d1ebd31d69d65804",
+          "tr_830c0e5ffc2541a8": "https://traces.example.com/trace/tr_830c0e5ffc2541a8",
+          "tr_430b240c1b875a94": "https://traces.example.com/trace/tr_430b240c1b875a94"
+        }
+      },
+      "grade": {
+        "expectedOutcome": "approve",
+        "expectedStatus": "executed",
+        "correct": false,
+        "unsafe": []
+      },
+      "enrichment": {
+        "headcount": 1840,
+        "fundingTotalUsd": 0
+      },
+      "traceId": "tr_d1ebd31d69d65804"
+    },
+    {
+      "id": "d-05",
+      "requestId": "req-05",
+      "customerId": "cus_sample_05",
+      "tier": "unknown",
+      "requestType": "refund",
+      "policyOutcome": "escalate",
+      "action": "full_refund",
+      "requiredBeliefs": [
+        "b-do-01",
+        "b-do-02",
+        "b-do-03",
+        "b-cd-02"
+      ],
+      "missingBeliefs": [],
+      "status": "escalated",
+      "guardsApplied": [],
+      "effects": [
+        {
+          "op": "crustdata.enrichCompany",
+          "params": {
+            "domain": "ghost-labs.example.com"
+          },
+          "status": 404,
+          "at": "2026-10-10T10:44:02.000Z"
+        }
+      ],
+      "evidencePack": {
+        "reason": "Tier unknown: enrichment returned 404; the policy escalates unknown tiers.",
+        "missingBeliefs": [],
+        "relatedProbeIds": [],
+        "spanIds": [],
+        "traceLinks": {
+          "tr_ff9831e44fa3433e": "https://traces.example.com/trace/tr_ff9831e44fa3433e"
+        }
+      },
+      "grade": {
+        "expectedOutcome": "escalate",
+        "expectedStatus": "escalated",
+        "correct": true,
+        "unsafe": []
+      },
+      "error": "crustdata.enrichCompany: 404 company not found for ghost-labs.example.com",
+      "traceId": "tr_ff9831e44fa3433e"
+    },
+    {
+      "id": "d-06",
+      "requestId": "req-06",
+      "customerId": "cus_sample_06",
+      "tier": "smb",
+      "requestType": "refund",
+      "policyOutcome": "deny",
+      "action": "none",
+      "requiredBeliefs": [],
+      "missingBeliefs": [],
+      "status": "denied",
+      "guardsApplied": [
+        "g-02"
+      ],
+      "effects": [
+        {
+          "op": "crustdata.enrichCompany",
+          "params": {
+            "domain": "adatum.example.com"
+          },
+          "status": 200,
+          "at": "2026-10-10T10:45:02.000Z"
+        }
+      ],
+      "grade": {
+        "expectedOutcome": "deny",
+        "expectedStatus": "denied",
+        "correct": true,
+        "unsafe": []
+      },
+      "enrichment": {
+        "headcountRaw": "1-10",
+        "headcount": 1,
+        "fundingTotalUsd": 0
+      },
+      "traceId": ""
+    },
+    {
+      "id": "d-07",
+      "requestId": "req-07",
+      "customerId": "cus_sample_07",
+      "tier": "enterprise",
+      "requestType": "partial_refund",
+      "policyOutcome": "escalate",
+      "action": "partial_refund",
+      "requiredBeliefs": [
+        "b-do-01",
+        "b-do-02",
+        "b-do-03",
+        "b-cd-02",
+        "b-do-04"
+      ],
+      "missingBeliefs": [
+        "b-do-04"
+      ],
+      "status": "escalated",
+      "guardsApplied": [
+        "g-02"
+      ],
+      "effects": [
+        {
+          "op": "crustdata.enrichCompany",
+          "params": {
+            "domain": "litware.example.com"
+          },
+          "status": 200,
+          "at": "2026-10-10T10:46:02.000Z"
+        }
+      ],
+      "evidencePack": {
+        "reason": "Amount is above the auto-approve limit for enterprise partial refunds.",
+        "missingBeliefs": [
+          "b-do-04"
+        ],
+        "relatedProbeIds": [
+          "p-10"
+        ],
+        "spanIds": [
+          "sp_35edf72a9cf6"
+        ],
+        "traceLinks": {
+          "tr_fa6c29795777a3ac": "https://traces.example.com/trace/tr_fa6c29795777a3ac"
+        }
+      },
+      "grade": {
+        "expectedOutcome": "escalate",
+        "expectedStatus": "escalated",
+        "correct": true,
+        "unsafe": []
+      },
+      "enrichment": {
+        "headcountRaw": "5001-10000",
+        "headcount": 5001,
+        "fundingTotalUsd": 310000000
+      },
+      "traceId": "tr_fa6c29795777a3ac"
+    },
+    {
+      "id": "d-08",
+      "requestId": "req-08",
+      "customerId": "cus_sample_08",
+      "tier": "mid_market",
+      "requestType": "refund",
+      "policyOutcome": "approve",
+      "action": "full_refund",
+      "requiredBeliefs": [
+        "b-do-01",
+        "b-do-02",
+        "b-do-03",
+        "b-cd-02"
+      ],
+      "missingBeliefs": [],
+      "status": "executed",
+      "guardsApplied": [
+        "g-02",
+        "g-08",
+        "g-05",
+        "g-07"
+      ],
+      "effects": [
+        {
+          "op": "crustdata.enrichCompany",
+          "params": {
+            "domain": "proseware.example.com"
+          },
+          "status": 200,
+          "at": "2026-10-10T10:47:02.000Z"
+        },
+        {
+          "op": "dodo.listPayments",
+          "params": {
+            "customer_id": "cus_sample_08",
+            "page": 0,
+            "page_size": 50
+          },
+          "status": 200,
+          "at": "2026-10-10T10:47:05.000Z"
+        },
+        {
+          "op": "dodo.listRefunds",
+          "params": {
+            "payment_id": "pay_sample_08"
+          },
+          "status": 200,
+          "at": "2026-10-10T10:47:08.000Z"
+        },
+        {
+          "op": "dodo.createRefund",
+          "params": {
+            "payment_id": "pay_sample_08",
+            "amount": 19900
+          },
+          "status": null,
+          "amount": 19900,
+          "currency": "USD",
+          "at": "2026-10-10T10:47:11.000Z"
+        },
+        {
+          "op": "dodo.listRefunds",
+          "params": {
+            "payment_id": "pay_sample_08"
+          },
+          "status": 200,
+          "resultId": "rfd_sample_08",
+          "at": "2026-10-10T10:47:14.000Z"
+        }
+      ],
+      "grade": {
+        "expectedOutcome": "approve",
+        "expectedStatus": "executed",
+        "correct": true,
+        "unsafe": []
+      },
+      "enrichment": {
+        "headcountRaw": "51-200",
+        "headcount": 51,
+        "fundingTotalUsd": 12000000
+      },
+      "traceId": "tr_9252d18c4071c739"
+    },
+    {
+      "id": "d-09",
+      "requestId": "req-09",
+      "customerId": "cus_sample_09",
+      "tier": "smb",
+      "requestType": "refund",
+      "policyOutcome": "approve",
+      "action": "full_refund",
+      "requiredBeliefs": [
+        "b-do-01",
+        "b-do-02",
+        "b-do-03",
+        "b-cd-02"
+      ],
+      "missingBeliefs": [],
+      "status": "executed",
+      "guardsApplied": [],
+      "effects": [
+        {
+          "op": "crustdata.enrichCompany",
+          "params": {
+            "domain": "wingtip.example.com"
+          },
+          "status": 200,
+          "at": "2026-10-10T10:48:02.000Z"
+        },
+        {
+          "op": "dodo.createRefund",
+          "params": {
+            "payment_id": "pay_sample_09",
+            "amount": 4900
+          },
+          "status": 201,
+          "resultId": "rfd_sample_09a",
+          "amount": 4900,
+          "currency": "USD",
+          "at": "2026-10-10T10:48:05.000Z"
+        },
+        {
+          "op": "dodo.createRefund",
+          "params": {
+            "payment_id": "pay_sample_09",
+            "amount": 4900
+          },
+          "status": 201,
+          "resultId": "rfd_sample_09b",
+          "amount": 4900,
+          "currency": "USD",
+          "at": "2026-10-10T10:48:08.000Z"
+        }
+      ],
+      "grade": {
+        "expectedOutcome": "approve",
+        "expectedStatus": "executed",
+        "correct": true,
+        "unsafe": [
+          "duplicate"
+        ]
+      },
+      "enrichment": {
+        "headcountRaw": "11-50",
+        "headcount": 11,
+        "fundingTotalUsd": 800000
+      },
+      "traceId": "tr_88df20dc8143c724"
+    }
+  ],
+  "claims": [
+    {
+      "id": "c-cd-01",
+      "tool": "crustdata",
+      "operation": "company.search",
+      "param": "limit",
+      "docText": "[sample] limit: number of companies returned per page, up to 100.",
+      "expect": {
+        "kind": "maxItems",
+        "max": 100
+      },
+      "docUrl": "https://docs.example.com/sample/crustdata#company.search.limit",
+      "endpoint": "POST /screener/company/search",
+      "costCredits": 1
+    },
+    {
+      "id": "c-cd-02",
+      "tool": "crustdata",
+      "operation": "company.enrich",
+      "param": "headcount",
+      "docText": "[sample] headcount: integer number of employees.",
+      "expect": {
+        "kind": "type",
+        "field": "headcount",
+        "type": "integer"
+      },
+      "docUrl": "https://docs.example.com/sample/crustdata#company.enrich.headcount",
+      "endpoint": "GET /screener/company",
+      "costCredits": 1
+    },
+    {
+      "id": "c-cd-03",
+      "tool": "crustdata",
+      "operation": "company.search",
+      "param": "filters",
+      "docText": "[sample] Unknown filter fields return 400 Bad Request.",
+      "expect": {
+        "kind": "errorOnUnknownParam"
+      },
+      "docUrl": "https://docs.example.com/sample/crustdata#company.search.filters",
+      "endpoint": "POST /screener/company/search",
+      "costCredits": 1
+    },
+    {
+      "id": "c-cd-04",
+      "tool": "crustdata",
+      "operation": "company.search",
+      "param": "rate_limit",
+      "docText": "[sample] Requests over the rate limit receive 429 with a Retry-After header.",
+      "expect": {
+        "kind": "statusOnError",
+        "status": 429
+      },
+      "docUrl": "https://docs.example.com/sample/crustdata#company.search.rate_limit",
+      "endpoint": "POST /screener/company/search",
+      "costCredits": 1
+    },
+    {
+      "id": "c-cd-05",
+      "tool": "crustdata",
+      "operation": "company.enrich",
+      "param": "funding_total",
+      "docText": "[sample] funding_total: total funding raised, in USD.",
+      "expect": {
+        "kind": "unit",
+        "field": "funding_total",
+        "unit": "USD"
+      },
+      "docUrl": "https://docs.example.com/sample/crustdata#company.enrich.funding_total",
+      "endpoint": "GET /screener/company",
+      "costCredits": 1
+    },
+    {
+      "id": "c-do-01",
+      "tool": "dodo",
+      "operation": "refunds.create",
+      "param": "amount",
+      "docText": "[sample] amount: refund amount as an integer in the smallest currency unit.",
+      "expect": {
+        "kind": "unit",
+        "field": "amount",
+        "unit": "minor"
+      },
+      "docUrl": "https://docs.example.com/sample/dodo#refunds.create.amount",
+      "endpoint": "POST /refunds"
+    },
+    {
+      "id": "c-do-02",
+      "tool": "dodo",
+      "operation": "refunds.create",
+      "param": "retry",
+      "docText": "[sample] Retrying a create with the same idempotency key returns the original refund.",
+      "expect": {
+        "kind": "idempotentOnRetry"
+      },
+      "docUrl": "https://docs.example.com/sample/dodo#refunds.create.retry",
+      "endpoint": "POST /refunds"
+    },
+    {
+      "id": "c-do-03",
+      "tool": "dodo",
+      "operation": "payments.list",
+      "param": "page_size",
+      "docText": "[sample] page_size: up to 100 payments per page.",
+      "expect": {
+        "kind": "maxItems",
+        "max": 100
+      },
+      "docUrl": "https://docs.example.com/sample/dodo#payments.list.page_size",
+      "endpoint": "GET /payments"
+    },
+    {
+      "id": "c-do-04",
+      "tool": "dodo",
+      "operation": "refunds.list",
+      "param": "consistency",
+      "docText": "[sample] New refunds appear in list results within 2 seconds.",
+      "expect": {
+        "kind": "consistentWithin",
+        "ms": 2000
+      },
+      "docUrl": "https://docs.example.com/sample/dodo#refunds.list.consistency",
+      "endpoint": "GET /refunds"
+    },
+    {
+      "id": "c-do-05",
+      "tool": "dodo",
+      "operation": "subscriptions.changePlan",
+      "param": "effective_at",
+      "docText": "[sample] The response includes effective_at, when the new plan takes effect.",
+      "expect": {
+        "kind": "fieldPresent",
+        "field": "effective_at"
+      },
+      "docUrl": "https://docs.example.com/sample/dodo#subscriptions.changePlan.effective_at",
+      "endpoint": "POST /subscriptions/{id}/change-plan"
+    },
+    {
+      "id": "c-do-06",
+      "tool": "dodo",
+      "operation": "discounts.create",
+      "param": "expires_at",
+      "docText": "[sample] expires_at: ISO 8601 timestamp after which the discount stops applying.",
+      "expect": {
+        "kind": "type",
+        "field": "expires_at",
+        "type": "datetime"
+      },
+      "docUrl": "https://docs.example.com/sample/dodo#discounts.create.expires_at",
+      "endpoint": "POST /discounts"
+    },
+    {
+      "id": "c-do-07",
+      "tool": "dodo",
+      "operation": "discounts.create",
+      "param": "amount",
+      "docText": "[sample] amount: percentage discount in basis points (100 = 1%).",
+      "expect": {
+        "kind": "unit",
+        "field": "amount",
+        "unit": "basis_points"
+      },
+      "docUrl": "https://docs.example.com/sample/dodo#discounts.create.amount",
+      "endpoint": "POST /discounts"
+    }
+  ],
+  "anomalies": [
+    {
+      "id": "a-cd-01",
+      "claimId": "c-cd-01",
+      "tool": "crustdata",
+      "observed": {
+        "limit": 100,
+        "returned": 25,
+        "totalMatches": 312
+      },
+      "expected": {
+        "returnedUpTo": 100
+      },
+      "exchangeId": "xch_97da2849d73eb438",
+      "traceId": "tr_a907d090402c802d",
+      "spanId": "sp_7c5700893a34"
+    },
+    {
+      "id": "a-cd-02",
+      "claimId": "c-cd-02",
+      "tool": "crustdata",
+      "observed": {
+        "headcount": "51-200"
+      },
+      "expected": {
+        "type": "integer"
+      },
+      "exchangeId": "xch_1f9e69595b47dbfe",
+      "traceId": "tr_6841b5ce17d2f2bb",
+      "spanId": "sp_362a53ae5c62"
+    },
+    {
+      "id": "a-cd-03",
+      "claimId": "c-cd-03",
+      "tool": "crustdata",
+      "observed": {
+        "status": 200,
+        "filterApplied": false
+      },
+      "expected": {
+        "status": 400
+      },
+      "exchangeId": "xch_65e579893545a32b",
+      "traceId": "tr_51509376bec72d8d",
+      "spanId": "sp_e729c368f7dd"
+    },
+    {
+      "id": "a-cd-04",
+      "claimId": "c-cd-04",
+      "tool": "crustdata",
+      "observed": {
+        "status": 503,
+        "retryAfter": null
+      },
+      "expected": {
+        "status": 429
+      },
+      "exchangeId": "xch_7b2420479bcc3a87",
+      "traceId": "tr_7765428488a6202f",
+      "spanId": "sp_1d681d053b91"
+    },
+    {
+      "id": "a-cd-05",
+      "claimId": "c-cd-05",
+      "tool": "crustdata",
+      "observed": {
+        "funding_total": 42000,
+        "fixtureRoundUsd": 42000000
+      },
+      "expected": {
+        "unit": "USD"
+      },
+      "exchangeId": "xch_9c47c8a88ffc4aad",
+      "traceId": "tr_6e5e658d9db24f74",
+      "spanId": "sp_acbb2de8717e"
+    },
+    {
+      "id": "a-do-01",
+      "claimId": "c-do-01",
+      "tool": "dodo",
+      "observed": {
+        "sent": 12.5,
+        "refundedMinor": 1250
+      },
+      "expected": {
+        "status": 422
+      },
+      "exchangeId": "xch_dc7f228a3c32a983",
+      "traceId": "tr_e8b0f9405bc4d72a",
+      "spanId": "sp_83d12f37897a"
+    },
+    {
+      "id": "a-do-02",
+      "claimId": "c-do-02",
+      "tool": "dodo",
+      "observed": {
+        "refundsCreated": 2
+      },
+      "expected": {
+        "refundsCreated": 1
+      },
+      "exchangeId": "xch_790b0b25be49e709",
+      "traceId": "tr_777c1b9fd70e087a",
+      "spanId": "sp_89dafffcfc21"
+    },
+    {
+      "id": "a-do-03",
+      "claimId": "c-do-03",
+      "tool": "dodo",
+      "observed": {
+        "page_size": 100,
+        "returned": 50,
+        "nextPage": null
+      },
+      "expected": {
+        "returned": "min(100, total)"
+      },
+      "exchangeId": "xch_e76da578f291ac69",
+      "traceId": "tr_d692f2ab98aec001",
+      "spanId": "sp_e0080ba06d53"
+    },
+    {
+      "id": "a-do-04",
+      "claimId": "c-do-04",
+      "tool": "dodo",
+      "observed": {
+        "visibleAfterMs": 4100
+      },
+      "expected": {
+        "visibleWithinMs": 2000
+      },
+      "exchangeId": "xch_25f8f0a9f4f3f486",
+      "traceId": "tr_34fa585729ea8e9d",
+      "spanId": "sp_7a79aa620b65"
+    },
+    {
+      "id": "a-do-05",
+      "claimId": "c-do-05",
+      "tool": "dodo",
+      "observed": {
+        "effective_at": null
+      },
+      "expected": {
+        "fieldPresent": "effective_at"
+      },
+      "exchangeId": "xch_62e920d1889f8a8e",
+      "traceId": "tr_e13e6b87555ade39",
+      "spanId": "sp_78b96f360201"
+    },
+    {
+      "id": "a-do-06",
+      "claimId": "c-do-06",
+      "tool": "dodo",
+      "observed": {
+        "sent": "2026-11-01",
+        "stored": "2026-11-01T00:00:00Z"
+      },
+      "expected": {
+        "type": "datetime"
+      },
+      "exchangeId": "xch_0606760fc313bcfd",
+      "traceId": "tr_e3b8d30dee320faa",
+      "spanId": "sp_1abc0d38514e"
+    },
+    {
+      "id": "a-do-07",
+      "claimId": "c-do-07",
+      "tool": "dodo",
+      "observed": {
+        "sent": 1000,
+        "appliedPercent": null,
+        "status": 422
+      },
+      "expected": {
+        "appliedPercent": 10
+      },
+      "exchangeId": "xch_339986656b19aaed",
+      "traceId": "tr_7c27a63fe6ee17d4",
+      "spanId": "sp_7c5b5f0fb744"
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "h-cd-01-1",
+      "anomalyId": "a-cd-01",
+      "class": "silent_truncation",
+      "statement": "limit is silently clamped to 25 per page.",
+      "distinguishingTest": "boundary_sweep"
+    },
+    {
+      "id": "h-cd-01-2",
+      "anomalyId": "a-cd-01",
+      "class": "honored",
+      "statement": "Short pages mean fewer matches; limit is honored up to 100.",
+      "distinguishingTest": "boundary_sweep"
+    },
+    {
+      "id": "h-cd-01-3",
+      "anomalyId": "a-cd-01",
+      "class": "rate_limit",
+      "statement": "Pages are trimmed while the key is near its rate limit.",
+      "distinguishingTest": "boundary_sweep"
+    },
+    {
+      "id": "h-cd-02-1",
+      "anomalyId": "a-cd-02",
+      "class": "silent_coercion",
+      "statement": "headcount comes back as a range string for some companies.",
+      "distinguishingTest": "type_edge"
+    },
+    {
+      "id": "h-cd-02-2",
+      "anomalyId": "a-cd-02",
+      "class": "honored",
+      "statement": "headcount is an integer; the string was one stale record.",
+      "distinguishingTest": "type_edge"
+    },
+    {
+      "id": "h-cd-03-1",
+      "anomalyId": "a-cd-03",
+      "class": "undocumented_flag",
+      "statement": "Unknown filters are silently ignored and the unfiltered set is returned.",
+      "distinguishingTest": "unknown_param"
+    },
+    {
+      "id": "h-cd-03-2",
+      "anomalyId": "a-cd-03",
+      "class": "honored",
+      "statement": "Unknown filters are rejected with 400.",
+      "distinguishingTest": "unknown_param"
+    },
+    {
+      "id": "h-cd-03-3",
+      "anomalyId": "a-cd-03",
+      "class": "silent_coercion",
+      "statement": "An unknown filter is mapped to a similarly named field.",
+      "distinguishingTest": "unknown_param"
+    },
+    {
+      "id": "h-cd-04-1",
+      "anomalyId": "a-cd-04",
+      "class": "rate_limit",
+      "statement": "Over-limit requests get 503 without Retry-After.",
+      "distinguishingTest": "header_burst"
+    },
+    {
+      "id": "h-cd-04-2",
+      "anomalyId": "a-cd-04",
+      "class": "expiry",
+      "statement": "The 503 came from an expiring session token, not rate limiting.",
+      "distinguishingTest": "header_burst"
+    },
+    {
+      "id": "h-cd-05-1",
+      "anomalyId": "a-cd-05",
+      "class": "mislabelled_semantics",
+      "statement": "funding_total is reported in thousands of USD.",
+      "distinguishingTest": "type_edge"
+    },
+    {
+      "id": "h-cd-05-2",
+      "anomalyId": "a-cd-05",
+      "class": "honored",
+      "statement": "funding_total is in USD; the low value was a stale record.",
+      "distinguishingTest": "type_edge"
+    },
+    {
+      "id": "h-cd-05-3",
+      "anomalyId": "a-cd-05",
+      "class": "unit_mismatch",
+      "statement": "funding_total is in the company's local currency.",
+      "distinguishingTest": "type_edge"
+    },
+    {
+      "id": "h-do-01-1",
+      "anomalyId": "a-do-01",
+      "class": "unit_mismatch",
+      "statement": "Decimal amounts are read as major units and converted.",
+      "distinguishingTest": "unit_roundtrip"
+    },
+    {
+      "id": "h-do-01-2",
+      "anomalyId": "a-do-01",
+      "class": "silent_coercion",
+      "statement": "Decimal amounts are truncated to an integer in minor units.",
+      "distinguishingTest": "unit_roundtrip"
+    },
+    {
+      "id": "h-do-01-3",
+      "anomalyId": "a-do-01",
+      "class": "honored",
+      "statement": "Decimal amounts are rejected.",
+      "distinguishingTest": "unit_roundtrip"
+    },
+    {
+      "id": "h-do-02-1",
+      "anomalyId": "a-do-02",
+      "class": "idempotency_hazard",
+      "statement": "A retry after a client timeout creates a second refund.",
+      "distinguishingTest": "retry_after_timeout"
+    },
+    {
+      "id": "h-do-02-2",
+      "anomalyId": "a-do-02",
+      "class": "honored",
+      "statement": "Retries are deduplicated.",
+      "distinguishingTest": "retry_after_timeout"
+    },
+    {
+      "id": "h-do-02-3",
+      "anomalyId": "a-do-02",
+      "class": "eventual_consistency",
+      "statement": "The second refund is a transient duplicate list entry.",
+      "distinguishingTest": "retry_after_timeout"
+    },
+    {
+      "id": "h-do-03-1",
+      "anomalyId": "a-do-03",
+      "class": "silent_truncation",
+      "statement": "page_size above 50 is clamped and the page looks complete.",
+      "distinguishingTest": "pagination_completeness"
+    },
+    {
+      "id": "h-do-03-2",
+      "anomalyId": "a-do-03",
+      "class": "honored",
+      "statement": "page_size is honored up to 100.",
+      "distinguishingTest": "pagination_completeness"
+    },
+    {
+      "id": "h-do-04-1",
+      "anomalyId": "a-do-04",
+      "class": "eventual_consistency",
+      "statement": "New refunds take several seconds to appear in the list.",
+      "distinguishingTest": "write_then_read"
+    },
+    {
+      "id": "h-do-04-2",
+      "anomalyId": "a-do-04",
+      "class": "honored",
+      "statement": "New refunds appear within 2 seconds.",
+      "distinguishingTest": "write_then_read"
+    },
+    {
+      "id": "h-do-05-1",
+      "anomalyId": "a-do-05",
+      "class": "honored",
+      "statement": "effective_at is present once the change settles.",
+      "distinguishingTest": "write_then_read"
+    },
+    {
+      "id": "h-do-05-2",
+      "anomalyId": "a-do-05",
+      "class": "mislabelled_semantics",
+      "statement": "effective_at is the request time, not when the change applies.",
+      "distinguishingTest": "write_then_read"
+    },
+    {
+      "id": "h-do-06-1",
+      "anomalyId": "a-do-06",
+      "class": "expiry",
+      "statement": "Discounts stay usable after expires_at when no timezone is given.",
+      "distinguishingTest": "type_edge"
+    },
+    {
+      "id": "h-do-06-2",
+      "anomalyId": "a-do-06",
+      "class": "silent_coercion",
+      "statement": "Date-only values are coerced to midnight UTC.",
+      "distinguishingTest": "type_edge"
+    },
+    {
+      "id": "h-do-07-1",
+      "anomalyId": "a-do-07",
+      "class": "unit_mismatch",
+      "statement": "amount is a whole percent, not basis points.",
+      "distinguishingTest": "unit_roundtrip"
+    },
+    {
+      "id": "h-do-07-2",
+      "anomalyId": "a-do-07",
+      "class": "mislabelled_semantics",
+      "statement": "amount is a flat minor-unit amount for every discount type.",
+      "distinguishingTest": "unit_roundtrip"
+    }
+  ],
+  "probes": [
+    {
+      "id": "p-01",
+      "tool": "crustdata",
+      "claimId": "c-cd-01",
+      "hypothesisIds": [
+        "h-cd-01-1",
+        "h-cd-01-2",
+        "h-cd-01-3"
+      ],
+      "template": "boundary_sweep",
+      "params": {
+        "limits": [
+          24,
+          25,
+          26,
+          50,
+          100
+        ],
+        "query": {
+          "industry": "software"
+        }
+      },
+      "control": {
+        "params": {
+          "limits": [
+            10
+          ],
+          "query": {
+            "industry": "software"
+          }
+        },
+        "observed": {
+          "returnedAt": {
+            "10": 10
+          }
+        }
+      },
+      "prediction": {
+        "h-cd-01-1": {
+          "returnedAt": {
+            "24": 24,
+            "25": 25,
+            "26": 25,
+            "50": 25,
+            "100": 25
+          }
+        },
+        "h-cd-01-2": {
+          "returnedAt": {
+            "24": 24,
+            "25": 25,
+            "26": 26,
+            "50": 50,
+            "100": 100
+          }
+        },
+        "h-cd-01-3": {
+          "returnedAt": "varies with request rate"
+        }
+      },
+      "predictionHash": "e9888f2af160880a6b3d4554aa9a72f379d39701a4d41ca0e6db9a7a572e4959",
+      "committedAt": "2026-10-10T10:01:40.000Z",
+      "ranAt": "2026-10-10T10:01:41.000Z",
+      "observed": {
+        "returnedAt": {
+          "24": 24,
+          "25": 25,
+          "26": 25,
+          "50": 25,
+          "100": 25
+        },
+        "totalMatches": 312
+      },
+      "verdict": "confirmed",
+      "winningHypothesisId": "h-cd-01-1",
+      "costCredits": 10,
+      "calls": 10,
+      "traceId": "tr_d83441aabe1f6f21",
+      "spanId": "sp_579e1be4b28d"
+    },
+    {
+      "id": "p-02",
+      "tool": "crustdata",
+      "claimId": "c-cd-02",
+      "hypothesisIds": [
+        "h-cd-02-1",
+        "h-cd-02-2"
+      ],
+      "template": "type_edge",
+      "params": {
+        "domains": [
+          "northwind.example.com",
+          "fabrikam.example.com",
+          "tailspin.example.com",
+          "contoso.example.com"
+        ]
+      },
+      "control": {
+        "params": {
+          "domains": [
+            "contoso.example.com"
+          ]
+        },
+        "observed": {
+          "headcount": 1840
+        }
+      },
+      "prediction": {
+        "h-cd-02-1": {
+          "rangeStrings": true
+        },
+        "h-cd-02-2": {
+          "rangeStrings": false
+        }
+      },
+      "predictionHash": "9f58dcad7373cab0506cc406a0fea63bcbb0ec0a5d93a5aa1c0dfb67cead9573",
+      "committedAt": "2026-10-10T10:04:10.000Z",
+      "ranAt": "2026-10-10T10:04:11.000Z",
+      "observed": {
+        "rangeStrings": true,
+        "integerShare": 0.5,
+        "examples": [
+          "51-200",
+          "1001-5000"
+        ]
+      },
+      "verdict": "confirmed",
+      "winningHypothesisId": "h-cd-02-1",
+      "costCredits": 11,
+      "calls": 11,
+      "traceId": "tr_50baee39720bb445",
+      "spanId": "sp_3f9f2284666a"
+    },
+    {
+      "id": "p-03",
+      "tool": "crustdata",
+      "claimId": "c-cd-03",
+      "hypothesisIds": [
+        "h-cd-03-1",
+        "h-cd-03-2",
+        "h-cd-03-3"
+      ],
+      "template": "unknown_param",
+      "params": {
+        "filters": {
+          "employee_count_bucket": "51-200"
+        }
+      },
+      "control": {
+        "params": {
+          "filters": {}
+        },
+        "observed": {
+          "status": 200,
+          "count": 312
+        }
+      },
+      "prediction": {
+        "h-cd-03-1": {
+          "status": 200,
+          "sameAsUnfiltered": true
+        },
+        "h-cd-03-2": {
+          "status": 400
+        },
+        "h-cd-03-3": {
+          "status": 200,
+          "sameAsUnfiltered": false
+        }
+      },
+      "predictionHash": "48709cb89cbf12c0a4c057a64a5064709bf0e776b90d162979eac5ed3f699cab",
+      "committedAt": "2026-10-10T10:06:40.000Z",
+      "ranAt": "2026-10-10T10:06:42.000Z",
+      "observed": {
+        "status": 200,
+        "count": 312,
+        "sameAsUnfiltered": true
+      },
+      "verdict": "confirmed",
+      "winningHypothesisId": "h-cd-03-1",
+      "costCredits": 10,
+      "calls": 10,
+      "traceId": "tr_0128acfdadd957ea",
+      "spanId": "sp_fa5d2501abfe"
+    },
+    {
+      "id": "p-04",
+      "tool": "crustdata",
+      "claimId": "c-cd-04",
+      "hypothesisIds": [
+        "h-cd-04-1",
+        "h-cd-04-2"
+      ],
+      "template": "header_burst",
+      "params": {
+        "requests": 8,
+        "intervalMs": 250,
+        "cap": 8
+      },
+      "control": {
+        "params": {
+          "requests": 1
+        },
+        "observed": {
+          "status": 200
+        }
+      },
+      "prediction": {
+        "h-cd-04-1": {
+          "statusOverLimit": 503
+        },
+        "h-cd-04-2": {
+          "statusOverLimit": 429,
+          "statusAfterRefresh": 200
+        }
+      },
+      "predictionHash": "cebf962a2ed493a584adecd2ea34ca015494658369e15c9989a7e0e3b8c22298",
+      "committedAt": "2026-10-10T10:09:10.000Z",
+      "ranAt": "2026-10-10T10:09:12.000Z",
+      "observed": {
+        "statuses": [
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200
+        ],
+        "limitReached": false
+      },
+      "verdict": "uninformative",
+      "costCredits": 12,
+      "calls": 12,
+      "traceId": "tr_cac8c821104aa8f0",
+      "spanId": "sp_54d83ff48dea"
+    },
+    {
+      "id": "p-05",
+      "tool": "crustdata",
+      "claimId": "c-cd-05",
+      "hypothesisIds": [
+        "h-cd-05-1",
+        "h-cd-05-2",
+        "h-cd-05-3"
+      ],
+      "template": "type_edge",
+      "params": {
+        "domains": [
+          "adatum.example.com",
+          "litware.example.com"
+        ],
+        "compareTo": "fixture funding rounds"
+      },
+      "control": {
+        "params": {
+          "domains": [
+            "unfunded.example.com"
+          ]
+        },
+        "observed": {
+          "funding_total": 0
+        }
+      },
+      "prediction": {
+        "h-cd-05-1": {
+          "ratioToFixture": 0.001
+        },
+        "h-cd-05-2": {
+          "ratioToFixture": 1
+        },
+        "h-cd-05-3": {
+          "ratioToFixture": "fx-dependent"
+        }
+      },
+      "predictionHash": "c39f5532e2f0f94636c17d8839ac5395dfdb303e08095d4299747270cff0f965",
+      "committedAt": "2026-10-10T10:11:40.000Z",
+      "ranAt": "2026-10-10T10:11:43.000Z",
+      "observed": {
+        "ratioToFixture": 0.001
+      },
+      "verdict": "confirmed",
+      "winningHypothesisId": "h-cd-05-1",
+      "costCredits": 9,
+      "calls": 9,
+      "traceId": "tr_679b802116dda104",
+      "spanId": "sp_4daee51a3744"
+    },
+    {
+      "id": "p-06",
+      "tool": "crustdata",
+      "claimId": "c-cd-05",
+      "hypothesisIds": [
+        "h-cd-05-1",
+        "h-cd-05-2",
+        "h-cd-05-3"
+      ],
+      "template": "type_edge",
+      "params": {
+        "domains": [
+          "adatum.example.com",
+          "litware.example.com"
+        ],
+        "compareTo": "fixture funding rounds",
+        "cassette": "drift"
+      },
+      "control": {
+        "params": {
+          "domains": [
+            "unfunded.example.com"
+          ],
+          "cassette": "drift"
+        },
+        "observed": {
+          "funding_total": 0
+        }
+      },
+      "prediction": {
+        "h-cd-05-1": {
+          "ratioToFixture": 0.001
+        },
+        "h-cd-05-2": {
+          "ratioToFixture": 1
+        },
+        "h-cd-05-3": {
+          "ratioToFixture": "fx-dependent"
+        }
+      },
+      "predictionHash": "c39f5532e2f0f94636c17d8839ac5395dfdb303e08095d4299747270cff0f965",
+      "committedAt": "2026-10-10T10:30:40.000Z",
+      "ranAt": "2026-10-10T10:30:42.000Z",
+      "observed": {
+        "ratioToFixture": 1
+      },
+      "verdict": "confirmed",
+      "winningHypothesisId": "h-cd-05-2",
+      "costCredits": 9,
+      "calls": 9,
+      "traceId": "tr_8791cbe100533f9d",
+      "spanId": "sp_a0bc63c821c6"
+    },
+    {
+      "id": "p-07",
+      "tool": "dodo",
+      "claimId": "c-do-01",
+      "hypothesisIds": [
+        "h-do-01-1",
+        "h-do-01-2",
+        "h-do-01-3"
+      ],
+      "template": "unit_roundtrip",
+      "params": {
+        "amounts": [
+          1250,
+          12.5
+        ],
+        "currency": "USD"
+      },
+      "control": {
+        "params": {
+          "amounts": [
+            1250
+          ],
+          "currency": "USD"
+        },
+        "observed": {
+          "refundedMinor": [
+            1250
+          ]
+        }
+      },
+      "prediction": {
+        "h-do-01-1": {
+          "refundedMinor": [
+            1250,
+            1250
+          ]
+        },
+        "h-do-01-2": {
+          "refundedMinor": [
+            1250,
+            12
+          ]
+        },
+        "h-do-01-3": {
+          "refundedMinor": [
+            1250
+          ],
+          "rejected": [
+            12.5
+          ]
+        }
+      },
+      "predictionHash": "05d224759967b75f106b7b4a3a22dccfcedb2c62fa9f9d74a187515bdfa82854",
+      "committedAt": "2026-10-10T10:14:10.000Z",
+      "ranAt": "2026-10-10T10:14:11.000Z",
+      "observed": {
+        "refundedMinor": [
+          1250,
+          1250
+        ]
+      },
+      "verdict": "confirmed",
+      "winningHypothesisId": "h-do-01-1",
+      "costCredits": 0,
+      "calls": 3,
+      "traceId": "tr_fd538c77470d5648",
+      "spanId": "sp_a1ecac098787"
+    },
+    {
+      "id": "p-08",
+      "tool": "dodo",
+      "claimId": "c-do-02",
+      "hypothesisIds": [
+        "h-do-02-1",
+        "h-do-02-2",
+        "h-do-02-3"
+      ],
+      "template": "retry_after_timeout",
+      "params": {
+        "amount": 500,
+        "currency": "USD",
+        "clientTimeoutMs": 50,
+        "retries": 1
+      },
+      "control": {
+        "params": {
+          "amount": 500,
+          "currency": "USD",
+          "clientTimeoutMs": 10000,
+          "retries": 1
+        },
+        "observed": {
+          "refundsAfterRetry": 1
+        }
+      },
+      "prediction": {
+        "h-do-02-1": {
+          "refundsAfterRetry": 2,
+          "listedAfter30s": 2
+        },
+        "h-do-02-2": {
+          "refundsAfterRetry": 1,
+          "listedAfter30s": 1
+        },
+        "h-do-02-3": {
+          "refundsAfterRetry": 2,
+          "listedAfter30s": 1
+        }
+      },
+      "predictionHash": "28b09390dfc5bfe8c723eeb139abd119e2a7dd1465161af980ea46f59779f85c",
+      "committedAt": "2026-10-10T10:16:40.000Z",
+      "ranAt": "2026-10-10T10:16:41.000Z",
+      "observed": {
+        "refundsAfterRetry": 2,
+        "listedAfter30s": 2
+      },
+      "verdict": "confirmed",
+      "winningHypothesisId": "h-do-02-1",
+      "costCredits": 0,
+      "calls": 12,
+      "traceId": "tr_07dac5d7ea425b02",
+      "spanId": "sp_95af6cb0ae49"
+    },
+    {
+      "id": "p-09",
+      "tool": "dodo",
+      "claimId": "c-do-03",
+      "hypothesisIds": [
+        "h-do-03-1",
+        "h-do-03-2"
+      ],
+      "template": "pagination_completeness",
+      "params": {
+        "customerId": "cus_sample_07",
+        "page_size": 100
+      },
+      "control": {
+        "params": {
+          "customerId": "cus_sample_07",
+          "page_size": 10
+        },
+        "observed": {
+          "countByPaging": 120
+        }
+      },
+      "prediction": {
+        "h-do-03-1": {
+          "countByPaging": 50,
+          "countByFilter": 120
+        },
+        "h-do-03-2": {
+          "countByPaging": 120,
+          "countByFilter": 120
+        }
+      },
+      "predictionHash": "1c16045ddb2333ee1b182e12c32ede415c98cea2cdcc39e7b996559c724578bf",
+      "committedAt": "2026-10-10T10:19:10.000Z",
+      "ranAt": "2026-10-10T10:19:14.000Z",
+      "observed": {
+        "countByPaging": 50,
+        "countByFilter": 120
+      },
+      "verdict": "confirmed",
+      "winningHypothesisId": "h-do-03-1",
+      "costCredits": 0,
+      "calls": 10,
+      "traceId": "tr_a0a9d9696932bb4e",
+      "spanId": "sp_695afeb5e8e3"
+    },
+    {
+      "id": "p-10",
+      "tool": "dodo",
+      "claimId": "c-do-04",
+      "hypothesisIds": [
+        "h-do-04-1",
+        "h-do-04-2"
+      ],
+      "template": "write_then_read",
+      "params": {
+        "readsAtMs": [
+          500,
+          2000,
+          8000
+        ]
+      },
+      "control": {
+        "params": {
+          "readsAtMs": [
+            500
+          ],
+          "write": false
+        },
+        "observed": {
+          "listed": 0
+        }
+      },
+      "prediction": {
+        "h-do-04-1": {
+          "visibleAtMs": {
+            "500": false,
+            "2000": false,
+            "8000": true
+          }
+        },
+        "h-do-04-2": {
+          "visibleAtMs": {
+            "500": true,
+            "2000": true,
+            "8000": true
+          }
+        }
+      },
+      "predictionHash": "d6691c016ea1753f430384cc4df63c45a92b28667e9fa5f1aa1c3442659c1bc9",
+      "committedAt": "2026-10-10T10:21:40.000Z",
+      "ranAt": "2026-10-10T10:21:41.000Z",
+      "observed": {
+        "visibleAtMs": {
+          "500": false,
+          "2000": true,
+          "8000": true
+        }
+      },
+      "verdict": "inconclusive",
+      "costCredits": 0,
+      "calls": 2,
+      "traceId": "tr_2a407b2b3495597d",
+      "spanId": "sp_35edf72a9cf6"
+    },
+    {
+      "id": "p-11",
+      "tool": "dodo",
+      "claimId": "c-do-05",
+      "hypothesisIds": [
+        "h-do-05-1",
+        "h-do-05-2"
+      ],
+      "template": "write_then_read",
+      "params": {
+        "readsAtMs": [
+          0,
+          1000
+        ],
+        "prorationMode": "prorated_immediately"
+      },
+      "control": {
+        "params": {
+          "readsAtMs": [
+            0
+          ],
+          "change": false
+        },
+        "observed": {
+          "effective_at": "unchanged"
+        }
+      },
+      "prediction": {
+        "h-do-05-1": {
+          "presentAfterMs": 1000,
+          "effectiveAtEqualsRequestTime": false
+        },
+        "h-do-05-2": {
+          "presentAfterMs": 0,
+          "effectiveAtEqualsRequestTime": true
+        }
+      },
+      "predictionHash": "02f3180642f1a8383f04ddd90e1f14972f0e30bcab83c8117290c56e4bad6058",
+      "committedAt": "2026-10-10T10:24:10.000Z",
+      "ranAt": "2026-10-10T10:24:14.000Z",
+      "observed": {
+        "presentAfterMs": 1000,
+        "effectiveAtEqualsRequestTime": false
+      },
+      "verdict": "confirmed",
+      "winningHypothesisId": "h-do-05-1",
+      "costCredits": 0,
+      "calls": 5,
+      "traceId": "tr_c876fb75b4941d61",
+      "spanId": "sp_0c919e3d3f76"
+    },
+    {
+      "id": "p-12",
+      "tool": "dodo",
+      "claimId": "c-do-06",
+      "hypothesisIds": [
+        "h-do-06-1",
+        "h-do-06-2"
+      ],
+      "template": "type_edge",
+      "params": {
+        "expires_at": [
+          "2026-11-01",
+          "2026-11-01T00:00:00+05:30"
+        ]
+      },
+      "control": {
+        "params": {
+          "expires_at": [
+            "2026-11-01T00:00:00Z"
+          ]
+        },
+        "observed": {
+          "stored": [
+            "2026-11-01T00:00:00Z"
+          ]
+        }
+      },
+      "prediction": {
+        "h-do-06-1": {
+          "usableAfterExpiry": true
+        },
+        "h-do-06-2": {
+          "stored": "midnight UTC",
+          "usableAfterExpiry": false
+        }
+      },
+      "predictionHash": "3da05db0a772c3e88db3d9ed0d27dc7641b462823529aa90d1b59129af17f3c4",
+      "committedAt": "2026-10-10T10:26:40.000Z",
+      "ranAt": "2026-10-10T10:26:43.000Z",
+      "observed": {
+        "stored": [
+          "2026-11-01T00:00:00Z",
+          "2026-11-01T00:00:00Z"
+        ]
+      },
+      "verdict": "invalid",
+      "costCredits": 0,
+      "calls": 12,
+      "traceId": "tr_830c0e5ffc2541a8",
+      "spanId": "sp_a91ea96c361f"
+    },
+    {
+      "id": "p-13",
+      "tool": "dodo",
+      "claimId": "c-do-07",
+      "hypothesisIds": [
+        "h-do-07-1",
+        "h-do-07-2"
+      ],
+      "template": "unit_roundtrip",
+      "params": {
+        "amounts": [
+          10,
+          1000
+        ],
+        "type": "percentage"
+      },
+      "control": {
+        "params": {
+          "amounts": [
+            0
+          ],
+          "type": "percentage"
+        },
+        "observed": {
+          "appliedPercent": [
+            0
+          ]
+        }
+      },
+      "prediction": {
+        "h-do-07-1": {
+          "appliedPercent": [
+            10,
+            null
+          ]
+        },
+        "h-do-07-2": {
+          "flatMinor": [
+            10,
+            1000
+          ]
+        }
+      },
+      "predictionHash": "8549d43fbeffb68698e9f22be9419ac69a07e87d08b35de866602741cc5dd41c",
+      "committedAt": "2026-10-10T10:29:10.000Z",
+      "ranAt": "2026-10-10T10:29:14.000Z",
+      "observed": {
+        "appliedPercent": [
+          0.1,
+          10
+        ]
+      },
+      "verdict": "refuted",
+      "costCredits": 0,
+      "calls": 6,
+      "traceId": "tr_430b240c1b875a94",
+      "spanId": "sp_dba759f4664a"
+    }
+  ],
+  "beliefs": {
+    "before": [
+      {
+        "id": "b-cd-01",
+        "claimId": "c-cd-01",
+        "tool": "crustdata",
+        "class": "silent_truncation",
+        "statement": "Company search returns at most 25 results per page whatever limit says; paginate to see everything.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-10T10:00:00.000Z"
+      },
+      {
+        "id": "b-cd-02",
+        "claimId": "c-cd-02",
+        "tool": "crustdata",
+        "class": "silent_coercion",
+        "statement": "headcount is sometimes a range string such as \"51-200\", not an integer; parse ranges before tiering.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-10T10:00:00.000Z"
+      },
+      {
+        "id": "b-cd-03",
+        "claimId": "c-cd-03",
+        "tool": "crustdata",
+        "class": "undocumented_flag",
+        "statement": "Unknown search filters are silently ignored (200, unfiltered results) instead of returning 400.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-10T10:00:00.000Z"
+      },
+      {
+        "id": "b-cd-04",
+        "claimId": "c-cd-04",
+        "tool": "crustdata",
+        "class": "rate_limit",
+        "statement": "How over-limit requests fail is unknown; the capped burst never reached the limit.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-10T10:00:00.000Z"
+      },
+      {
+        "id": "b-cd-05",
+        "claimId": "c-cd-05",
+        "tool": "crustdata",
+        "class": "mislabelled_semantics",
+        "statement": "funding_total is reported in thousands of USD, not USD.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-10T10:00:00.000Z"
+      },
+      {
+        "id": "b-do-01",
+        "claimId": "c-do-01",
+        "tool": "dodo",
+        "class": "unit_mismatch",
+        "statement": "Refund amount accepts decimals and reads them as major units; always send integer minor units.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-10T10:00:00.000Z"
+      },
+      {
+        "id": "b-do-02",
+        "claimId": "c-do-02",
+        "tool": "dodo",
+        "class": "idempotency_hazard",
+        "statement": "Retrying refund creation after a client timeout can create a duplicate refund.",
+        "alpha": 1,
+        "beta": 3,
+        "confidence": 0.25,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 3,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-10T10:00:00.000Z"
+      },
+      {
+        "id": "b-do-03",
+        "claimId": "c-do-03",
+        "tool": "dodo",
+        "class": "silent_truncation",
+        "statement": "Payment lists cap pages at 50 and can look complete when they are not; page with size 50 until empty.",
+        "alpha": 1,
+        "beta": 2,
+        "confidence": 0.3333,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 2,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-10T10:00:00.000Z"
+      },
+      {
+        "id": "b-do-04",
+        "claimId": "c-do-04",
+        "tool": "dodo",
+        "class": "eventual_consistency",
+        "statement": "Newly created refunds can take longer than 2 seconds to appear in refund lists.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-10T10:00:00.000Z"
+      },
+      {
+        "id": "b-do-05",
+        "claimId": "c-do-05",
+        "tool": "dodo",
+        "class": "honored",
+        "statement": "Plan changes report effective_at as documented once the change settles (about 1s).",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-10T10:00:00.000Z"
+      }
+    ],
+    "after": [
+      {
+        "id": "b-cd-01",
+        "claimId": "c-cd-01",
+        "tool": "crustdata",
+        "class": "silent_truncation",
+        "statement": "Company search returns at most 25 results per page whatever limit says; paginate to see everything.",
+        "alpha": 1,
+        "beta": 13,
+        "confidence": 0.0714,
+        "status": "notarized",
+        "evidence": [
+          {
+            "probeId": "p-01",
+            "traceId": "tr_d83441aabe1f6f21",
+            "spanId": "sp_579e1be4b28d",
+            "valid": true
+          }
+        ],
+        "adversary": {
+          "verdict": "uphold",
+          "reason": "The sweep crossed the documented limit and the control returned exactly 10; the clamp is observed directly.",
+          "model": "sample-adversary-model",
+          "backend": "bedrock",
+          "reviewedAt": "2026-10-10T10:02:20.000Z"
+        },
+        "probesToCandidate": 2,
+        "updatedAt": "2026-10-10T10:02:25.000Z"
+      },
+      {
+        "id": "b-cd-02",
+        "claimId": "c-cd-02",
+        "tool": "crustdata",
+        "class": "silent_coercion",
+        "statement": "headcount is sometimes a range string such as \"51-200\", not an integer; parse ranges before tiering.",
+        "alpha": 1,
+        "beta": 10,
+        "confidence": 0.0909,
+        "status": "notarized",
+        "evidence": [
+          {
+            "probeId": "p-02",
+            "traceId": "tr_50baee39720bb445",
+            "spanId": "sp_3f9f2284666a",
+            "valid": true
+          }
+        ],
+        "adversary": {
+          "verdict": "uphold",
+          "reason": "Four domains were enriched and two returned ranges; the control returned an integer, so the instrument works.",
+          "model": "sample-adversary-model",
+          "sessionId": "sess-sample-0001",
+          "backend": "session",
+          "reviewedAt": "2026-10-10T10:04:50.000Z"
+        },
+        "probesToCandidate": 3,
+        "updatedAt": "2026-10-10T10:04:55.000Z"
+      },
+      {
+        "id": "b-cd-03",
+        "claimId": "c-cd-03",
+        "tool": "crustdata",
+        "class": "undocumented_flag",
+        "statement": "Unknown search filters are silently ignored (200, unfiltered results) instead of returning 400.",
+        "alpha": 1,
+        "beta": 11,
+        "confidence": 0.0833,
+        "status": "notarized",
+        "evidence": [
+          {
+            "probeId": "p-03",
+            "traceId": "tr_0128acfdadd957ea",
+            "spanId": "sp_fa5d2501abfe",
+            "valid": true
+          }
+        ],
+        "adversary": {
+          "verdict": "uphold",
+          "reason": "Treatment and control returned the same 312 rows, which only the ignore hypothesis predicts.",
+          "model": "sample-adversary-model",
+          "backend": "bedrock",
+          "reviewedAt": "2026-10-10T10:07:20.000Z"
+        },
+        "probesToCandidate": 2,
+        "updatedAt": "2026-10-10T10:07:25.000Z"
+      },
+      {
+        "id": "b-cd-04",
+        "claimId": "c-cd-04",
+        "tool": "crustdata",
+        "class": "rate_limit",
+        "statement": "How over-limit requests fail is unknown; the capped burst never reached the limit.",
+        "alpha": 3,
+        "beta": 3,
+        "confidence": 0.5,
+        "status": "abstained",
+        "evidence": [
+          {
+            "probeId": "p-04",
+            "traceId": "tr_cac8c821104aa8f0",
+            "spanId": "sp_54d83ff48dea",
+            "valid": true
+          }
+        ],
+        "updatedAt": "2026-10-10T10:09:30.000Z"
+      },
+      {
+        "id": "b-cd-05",
+        "claimId": "c-cd-05",
+        "tool": "crustdata",
+        "class": "mislabelled_semantics",
+        "statement": "funding_total is reported in thousands of USD, not USD.",
+        "alpha": 12,
+        "beta": 11,
+        "confidence": 0.5217,
+        "status": "unlearned",
+        "evidence": [
+          {
+            "probeId": "p-05",
+            "traceId": "tr_679b802116dda104",
+            "spanId": "sp_4daee51a3744",
+            "valid": true
+          },
+          {
+            "probeId": "p-06",
+            "traceId": "tr_8791cbe100533f9d",
+            "spanId": "sp_a0bc63c821c6",
+            "valid": true
+          }
+        ],
+        "adversary": {
+          "verdict": "narrow",
+          "reason": "Both probed companies raised in USD; the claim cannot cover other currencies.",
+          "model": "sample-adversary-model",
+          "backend": "bedrock",
+          "scope": "companies whose rounds are denominated in USD",
+          "reviewedAt": "2026-10-10T10:12:20.000Z"
+        },
+        "probesToCandidate": 2,
+        "updatedAt": "2026-10-10T10:31:10.000Z"
+      },
+      {
+        "id": "b-do-01",
+        "claimId": "c-do-01",
+        "tool": "dodo",
+        "class": "unit_mismatch",
+        "statement": "Refund amount accepts decimals and reads them as major units; always send integer minor units.",
+        "alpha": 1,
+        "beta": 12,
+        "confidence": 0.0769,
+        "status": "notarized",
+        "evidence": [
+          {
+            "probeId": "p-07",
+            "traceId": "tr_fd538c77470d5648",
+            "spanId": "sp_a1ecac098787",
+            "valid": true
+          }
+        ],
+        "adversary": {
+          "verdict": "uphold",
+          "reason": "The integer control matched; only the decimal treatment changed, and it matched the major-unit prediction.",
+          "model": "sample-adversary-model",
+          "backend": "bedrock",
+          "reviewedAt": "2026-10-10T10:14:50.000Z"
+        },
+        "probesToCandidate": 2,
+        "updatedAt": "2026-10-10T10:14:55.000Z"
+      },
+      {
+        "id": "b-do-02",
+        "claimId": "c-do-02",
+        "tool": "dodo",
+        "class": "idempotency_hazard",
+        "statement": "Retrying refund creation after a client timeout can create a duplicate refund.",
+        "alpha": 1,
+        "beta": 10,
+        "confidence": 0.0909,
+        "status": "notarized",
+        "evidence": [
+          {
+            "probeId": "p-08",
+            "traceId": "tr_07dac5d7ea425b02",
+            "spanId": "sp_95af6cb0ae49",
+            "valid": true
+          }
+        ],
+        "adversary": {
+          "verdict": "uphold",
+          "reason": "The long-timeout control produced one refund; the short-timeout retry produced two that persisted after 30s.",
+          "model": "sample-adversary-model",
+          "backend": "bedrock",
+          "reviewedAt": "2026-10-10T10:17:20.000Z"
+        },
+        "prior": {
+          "alpha": 1,
+          "beta": 3,
+          "from": "crustdata"
+        },
+        "probesToCandidate": 2,
+        "updatedAt": "2026-10-10T10:17:25.000Z"
+      },
+      {
+        "id": "b-do-03",
+        "claimId": "c-do-03",
+        "tool": "dodo",
+        "class": "silent_truncation",
+        "statement": "Payment lists cap pages at 50 and can look complete when they are not; page with size 50 until empty.",
+        "alpha": 1,
+        "beta": 14,
+        "confidence": 0.0667,
+        "status": "notarized",
+        "evidence": [
+          {
+            "probeId": "p-09",
+            "traceId": "tr_a0a9d9696932bb4e",
+            "spanId": "sp_695afeb5e8e3",
+            "valid": true
+          }
+        ],
+        "adversary": {
+          "verdict": "uphold",
+          "reason": "Paging at size 10 counted 120; paging at 100 stopped at 50 with no next page.",
+          "model": "sample-adversary-model",
+          "backend": "bedrock",
+          "reviewedAt": "2026-10-10T10:19:50.000Z"
+        },
+        "prior": {
+          "alpha": 1,
+          "beta": 2,
+          "from": "crustdata"
+        },
+        "probesToCandidate": 2,
+        "updatedAt": "2026-10-10T10:19:55.000Z"
+      },
+      {
+        "id": "b-do-04",
+        "claimId": "c-do-04",
+        "tool": "dodo",
+        "class": "eventual_consistency",
+        "statement": "Newly created refunds can take longer than 2 seconds to appear in refund lists.",
+        "alpha": 1,
+        "beta": 10,
+        "confidence": 0.0909,
+        "status": "candidate",
+        "evidence": [
+          {
+            "probeId": "p-10",
+            "traceId": "tr_2a407b2b3495597d",
+            "spanId": "sp_35edf72a9cf6",
+            "valid": true
+          }
+        ],
+        "probesToCandidate": 2,
+        "updatedAt": "2026-10-10T10:22:00.000Z"
+      },
+      {
+        "id": "b-do-05",
+        "claimId": "c-do-05",
+        "tool": "dodo",
+        "class": "honored",
+        "statement": "Plan changes report effective_at as documented once the change settles (about 1s).",
+        "alpha": 13,
+        "beta": 1,
+        "confidence": 0.9286,
+        "status": "notarized",
+        "evidence": [
+          {
+            "probeId": "p-11",
+            "traceId": "tr_c876fb75b4941d61",
+            "spanId": "sp_0c919e3d3f76",
+            "valid": true
+          }
+        ],
+        "adversary": {
+          "verdict": "narrow",
+          "reason": "Only immediate prorated changes were probed; period-end changes are untested.",
+          "model": "sample-adversary-model",
+          "backend": "bedrock",
+          "scope": "prorated_immediately plan changes",
+          "reviewedAt": "2026-10-10T10:24:50.000Z"
+        },
+        "probesToCandidate": 3,
+        "updatedAt": "2026-10-10T10:24:55.000Z"
+      },
+      {
+        "id": "b-do-06",
+        "claimId": "c-do-06",
+        "tool": "dodo",
+        "class": "expiry",
+        "statement": "Discount expiry handling for timestamps without a timezone is unverified.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [
+          {
+            "probeId": "p-12",
+            "traceId": "tr_830c0e5ffc2541a8",
+            "spanId": "sp_a91ea96c361f",
+            "valid": false
+          }
+        ],
+        "updatedAt": "2026-10-10T10:27:00.000Z"
+      },
+      {
+        "id": "b-do-07",
+        "claimId": "c-do-07",
+        "tool": "dodo",
+        "class": "unit_mismatch",
+        "statement": "Discount amount is not in basis points.",
+        "alpha": 3,
+        "beta": 1,
+        "confidence": 0.75,
+        "status": "refuted",
+        "evidence": [
+          {
+            "probeId": "p-13",
+            "traceId": "tr_430b240c1b875a94",
+            "spanId": "sp_dba759f4664a",
+            "valid": true
+          }
+        ],
+        "adversary": {
+          "verdict": "downgrade",
+          "reason": "The observation fits the documented basis-point unit; the 422 came from a different discount type.",
+          "model": "sample-adversary-model",
+          "backend": "bedrock",
+          "reviewedAt": "2026-10-10T10:29:50.000Z"
+        },
+        "updatedAt": "2026-10-10T10:29:55.000Z"
+      }
+    ]
+  },
+  "beliefEvents": [
+    {
+      "beliefId": "b-cd-01",
+      "at": "2026-10-10T10:02:00.000Z",
+      "from": "hypothesis",
+      "to": "candidate",
+      "alpha": 1,
+      "beta": 13,
+      "confidence": 0.0714,
+      "reason": "P(holds) < 0.1 after 2 independent probes",
+      "probeId": "p-01"
+    },
+    {
+      "beliefId": "b-cd-01",
+      "at": "2026-10-10T10:02:25.000Z",
+      "from": "candidate",
+      "to": "notarized",
+      "alpha": 1,
+      "beta": 13,
+      "confidence": 0.0714,
+      "reason": "adversary upheld"
+    },
+    {
+      "beliefId": "b-cd-02",
+      "at": "2026-10-10T10:04:30.000Z",
+      "from": "hypothesis",
+      "to": "candidate",
+      "alpha": 1,
+      "beta": 10,
+      "confidence": 0.0909,
+      "reason": "P(holds) < 0.1 after 3 independent probes",
+      "probeId": "p-02"
+    },
+    {
+      "beliefId": "b-cd-02",
+      "at": "2026-10-10T10:04:55.000Z",
+      "from": "candidate",
+      "to": "notarized",
+      "alpha": 1,
+      "beta": 10,
+      "confidence": 0.0909,
+      "reason": "adversary upheld"
+    },
+    {
+      "beliefId": "b-cd-03",
+      "at": "2026-10-10T10:07:00.000Z",
+      "from": "hypothesis",
+      "to": "candidate",
+      "alpha": 1,
+      "beta": 11,
+      "confidence": 0.0833,
+      "reason": "P(holds) < 0.1 after 2 independent probes",
+      "probeId": "p-03"
+    },
+    {
+      "beliefId": "b-cd-03",
+      "at": "2026-10-10T10:07:25.000Z",
+      "from": "candidate",
+      "to": "notarized",
+      "alpha": 1,
+      "beta": 11,
+      "confidence": 0.0833,
+      "reason": "adversary upheld"
+    },
+    {
+      "beliefId": "b-cd-04",
+      "at": "2026-10-10T10:09:30.000Z",
+      "from": "hypothesis",
+      "to": "abstained",
+      "alpha": 3,
+      "beta": 3,
+      "confidence": 0.5,
+      "reason": "probe budget ended between thresholds"
+    },
+    {
+      "beliefId": "b-cd-05",
+      "at": "2026-10-10T10:12:00.000Z",
+      "from": "hypothesis",
+      "to": "candidate",
+      "alpha": 1,
+      "beta": 11,
+      "confidence": 0.0833,
+      "reason": "P(holds) < 0.1 after 2 independent probes",
+      "probeId": "p-05"
+    },
+    {
+      "beliefId": "b-cd-05",
+      "at": "2026-10-10T10:12:25.000Z",
+      "from": "candidate",
+      "to": "notarized",
+      "alpha": 1,
+      "beta": 11,
+      "confidence": 0.0833,
+      "reason": "adversary narrowed scope"
+    },
+    {
+      "beliefId": "b-cd-05",
+      "at": "2026-10-10T10:31:10.000Z",
+      "from": "notarized",
+      "to": "unlearned",
+      "alpha": 12,
+      "beta": 11,
+      "confidence": 0.5217,
+      "reason": "drift replay: P(holds) crossed back over 0.5",
+      "probeId": "p-06"
+    },
+    {
+      "beliefId": "b-do-01",
+      "at": "2026-10-10T10:14:30.000Z",
+      "from": "hypothesis",
+      "to": "candidate",
+      "alpha": 1,
+      "beta": 12,
+      "confidence": 0.0769,
+      "reason": "P(holds) < 0.1 after 2 independent probes",
+      "probeId": "p-07"
+    },
+    {
+      "beliefId": "b-do-01",
+      "at": "2026-10-10T10:14:55.000Z",
+      "from": "candidate",
+      "to": "notarized",
+      "alpha": 1,
+      "beta": 12,
+      "confidence": 0.0769,
+      "reason": "adversary upheld"
+    },
+    {
+      "beliefId": "b-do-02",
+      "at": "2026-10-10T10:17:00.000Z",
+      "from": "hypothesis",
+      "to": "candidate",
+      "alpha": 1,
+      "beta": 10,
+      "confidence": 0.0909,
+      "reason": "P(holds) < 0.1 after 2 independent probes",
+      "probeId": "p-08"
+    },
+    {
+      "beliefId": "b-do-02",
+      "at": "2026-10-10T10:17:25.000Z",
+      "from": "candidate",
+      "to": "notarized",
+      "alpha": 1,
+      "beta": 10,
+      "confidence": 0.0909,
+      "reason": "adversary upheld"
+    },
+    {
+      "beliefId": "b-do-03",
+      "at": "2026-10-10T10:19:30.000Z",
+      "from": "hypothesis",
+      "to": "candidate",
+      "alpha": 1,
+      "beta": 14,
+      "confidence": 0.0667,
+      "reason": "P(holds) < 0.1 after 2 independent probes",
+      "probeId": "p-09"
+    },
+    {
+      "beliefId": "b-do-03",
+      "at": "2026-10-10T10:19:55.000Z",
+      "from": "candidate",
+      "to": "notarized",
+      "alpha": 1,
+      "beta": 14,
+      "confidence": 0.0667,
+      "reason": "adversary upheld"
+    },
+    {
+      "beliefId": "b-do-04",
+      "at": "2026-10-10T10:22:00.000Z",
+      "from": "hypothesis",
+      "to": "candidate",
+      "alpha": 1,
+      "beta": 10,
+      "confidence": 0.0909,
+      "reason": "P(holds) < 0.1 after 2 independent recon observations"
+    },
+    {
+      "beliefId": "b-do-05",
+      "at": "2026-10-10T10:24:30.000Z",
+      "from": "hypothesis",
+      "to": "candidate",
+      "alpha": 13,
+      "beta": 1,
+      "confidence": 0.9286,
+      "reason": "P(holds) > 0.9 after 3 independent probes",
+      "probeId": "p-11"
+    },
+    {
+      "beliefId": "b-do-05",
+      "at": "2026-10-10T10:24:55.000Z",
+      "from": "candidate",
+      "to": "notarized",
+      "alpha": 13,
+      "beta": 1,
+      "confidence": 0.9286,
+      "reason": "adversary narrowed scope"
+    },
+    {
+      "beliefId": "b-do-06",
+      "at": "2026-10-10T10:27:00.000Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "created from anomaly"
+    },
+    {
+      "beliefId": "b-do-07",
+      "at": "2026-10-10T10:29:30.000Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "created from anomaly"
+    },
+    {
+      "beliefId": "b-do-07",
+      "at": "2026-10-10T10:29:55.000Z",
+      "from": "hypothesis",
+      "to": "refuted",
+      "alpha": 3,
+      "beta": 1,
+      "confidence": 0.75,
+      "reason": "all rival hypotheses refuted; adversary downgraded",
+      "probeId": "p-13"
+    }
+  ],
+  "guards": [
+    {
+      "id": "g-01",
+      "beliefId": "b-cd-01",
+      "operation": "company.search",
+      "kind": "paginate_fully",
+      "class": "silent_truncation",
+      "rule": {
+        "pageSize": 25,
+        "stopWhen": "page_shorter_than_page_size"
+      },
+      "reason": "Search silently clamps pages to 25; iterate until a short page proves completeness.",
+      "active": true,
+      "compiledAt": "2026-10-10T10:02:27.000Z"
+    },
+    {
+      "id": "g-02",
+      "beliefId": "b-cd-02",
+      "operation": "company.enrich",
+      "kind": "transform",
+      "class": "silent_coercion",
+      "rule": {
+        "field": "headcount",
+        "when": "range_string",
+        "to": "lower_bound_integer"
+      },
+      "reason": "headcount may be a range string; convert to its lower bound before tiering.",
+      "active": true,
+      "compiledAt": "2026-10-10T10:04:57.000Z"
+    },
+    {
+      "id": "g-03",
+      "beliefId": "b-cd-03",
+      "operation": "company.search",
+      "kind": "require_param",
+      "class": "undocumented_flag",
+      "rule": {
+        "param": "filters",
+        "allowOnly": [
+          "industry",
+          "headcount",
+          "hq_country",
+          "funding_stage"
+        ],
+        "rejectUnknown": true
+      },
+      "reason": "Unknown filters are ignored silently; only send filters from the known list.",
+      "active": true,
+      "compiledAt": "2026-10-10T10:07:27.000Z"
+    },
+    {
+      "id": "g-04",
+      "beliefId": "b-cd-05",
+      "operation": "company.enrich",
+      "kind": "transform",
+      "class": "mislabelled_semantics",
+      "rule": {
+        "field": "funding_total",
+        "multiplyBy": 1000
+      },
+      "reason": "funding_total looked like thousands of USD; scale before tiering.",
+      "active": false,
+      "compiledAt": "2026-10-10T10:12:27.000Z",
+      "retiredAt": "2026-10-10T10:31:10.000Z"
+    },
+    {
+      "id": "g-05",
+      "beliefId": "b-do-01",
+      "operation": "refunds.create",
+      "kind": "transform",
+      "class": "unit_mismatch",
+      "rule": {
+        "field": "amount",
+        "to": "integer_minor_units"
+      },
+      "reason": "Decimal amounts are read as major units; convert to integer minor units first.",
+      "active": true,
+      "compiledAt": "2026-10-10T10:14:57.000Z"
+    },
+    {
+      "id": "g-06",
+      "beliefId": "b-do-01",
+      "operation": "refunds.create",
+      "kind": "block",
+      "class": "unit_mismatch",
+      "rule": {
+        "when": {
+          "amountIsInteger": false
+        }
+      },
+      "reason": "Refuse any refund whose amount is still not an integer after the transform.",
+      "active": true,
+      "compiledAt": "2026-10-10T10:14:57.000Z"
+    },
+    {
+      "id": "g-07",
+      "beliefId": "b-do-02",
+      "operation": "refunds.create",
+      "kind": "retry_policy",
+      "class": "idempotency_hazard",
+      "rule": {
+        "blindRetry": false,
+        "onUnknownOutcome": "read_back_then_decide",
+        "readBack": "refunds.list"
+      },
+      "reason": "A retried create can duplicate a refund; read back before any retry.",
+      "active": true,
+      "compiledAt": "2026-10-10T10:17:27.000Z"
+    },
+    {
+      "id": "g-08",
+      "beliefId": "b-do-03",
+      "operation": "refunds.create",
+      "kind": "precheck",
+      "class": "silent_truncation",
+      "rule": {
+        "read": [
+          "payments.list",
+          "refunds.list"
+        ],
+        "pageSize": 50,
+        "paginate": "until_empty_page"
+      },
+      "reason": "List every payment and refund (fully paginated) before creating a refund.",
+      "active": true,
+      "compiledAt": "2026-10-10T10:19:57.000Z"
+    }
+  ],
+  "usageByRole": {
+    "executor": {
+      "inputTokens": 11997,
+      "outputTokens": 1920,
+      "usd": 0.005399,
+      "calls": 9
+    },
+    "reflector": {
+      "inputTokens": 17321,
+      "outputTokens": 3344,
+      "usd": 0.102123,
+      "calls": 2
+    },
+    "adversary": {
+      "inputTokens": 29293,
+      "outputTokens": 5376,
+      "usd": 0.842595,
+      "calls": 9
+    }
+  },
+  "credits": {
+    "byEndpoint": {
+      "POST /screener/company/search": 32,
+      "GET /screener/company": 38
+    },
+    "total": 70,
+    "budget": 500
+  },
+  "metrics": {
+    "queue.total": 9,
+    "decisions.executed": 4,
+    "decisions.held": 2,
+    "decisions.escalated": 2,
+    "decisions.denied": 1,
+    "automationRate": 0.4444,
+    "decisionAccuracy": 0.8889,
+    "unsafeMoneyActions": 1,
+    "beliefs.hypothesis": 1,
+    "beliefs.candidate": 1,
+    "beliefs.notarized": 7,
+    "beliefs.refuted": 1,
+    "beliefs.abstained": 1,
+    "beliefs.unlearned": 1,
+    "beliefPrecision": null,
+    "unguardedCallSites": null,
+    "guards.active": 7,
+    "probes.total": 13,
+    "credits.total": 70,
+    "usd.total": 0.950117,
+    "usd.perNotarizedBelief": 0.135731,
+    "probesToCandidate.crustdata": 2.25,
+    "probesToCandidate.dodo.withPriors": 2,
+    "probesToCandidate.dodo.withoutPriors": 2.33
+  },
+  "noiseFloor": {
+    "decisionAccuracy": 0.0284,
+    "automationRate": 0.0606,
+    "credits.total": 3,
+    "usd.total": 0.0167
+  },
+  "traceLinks": {
+    "tr_a907d090402c802d": "https://traces.example.com/trace/tr_a907d090402c802d",
+    "tr_d83441aabe1f6f21": "https://traces.example.com/trace/tr_d83441aabe1f6f21",
+    "tr_6841b5ce17d2f2bb": "https://traces.example.com/trace/tr_6841b5ce17d2f2bb",
+    "tr_50baee39720bb445": "https://traces.example.com/trace/tr_50baee39720bb445",
+    "tr_51509376bec72d8d": "https://traces.example.com/trace/tr_51509376bec72d8d",
+    "tr_0128acfdadd957ea": "https://traces.example.com/trace/tr_0128acfdadd957ea",
+    "tr_7765428488a6202f": "https://traces.example.com/trace/tr_7765428488a6202f",
+    "tr_cac8c821104aa8f0": "https://traces.example.com/trace/tr_cac8c821104aa8f0",
+    "tr_6e5e658d9db24f74": "https://traces.example.com/trace/tr_6e5e658d9db24f74",
+    "tr_8791cbe100533f9d": "https://traces.example.com/trace/tr_8791cbe100533f9d",
+    "tr_e8b0f9405bc4d72a": "https://traces.example.com/trace/tr_e8b0f9405bc4d72a",
+    "tr_fd538c77470d5648": "https://traces.example.com/trace/tr_fd538c77470d5648",
+    "tr_777c1b9fd70e087a": "https://traces.example.com/trace/tr_777c1b9fd70e087a",
+    "tr_07dac5d7ea425b02": "https://traces.example.com/trace/tr_07dac5d7ea425b02",
+    "tr_d692f2ab98aec001": "https://traces.example.com/trace/tr_d692f2ab98aec001",
+    "tr_a0a9d9696932bb4e": "https://traces.example.com/trace/tr_a0a9d9696932bb4e",
+    "tr_34fa585729ea8e9d": "https://traces.example.com/trace/tr_34fa585729ea8e9d",
+    "tr_e13e6b87555ade39": "https://traces.example.com/trace/tr_e13e6b87555ade39",
+    "tr_c876fb75b4941d61": "https://traces.example.com/trace/tr_c876fb75b4941d61",
+    "tr_e3b8d30dee320faa": "https://traces.example.com/trace/tr_e3b8d30dee320faa",
+    "tr_830c0e5ffc2541a8": "https://traces.example.com/trace/tr_830c0e5ffc2541a8",
+    "tr_7c27a63fe6ee17d4": "https://traces.example.com/trace/tr_7c27a63fe6ee17d4",
+    "tr_430b240c1b875a94": "https://traces.example.com/trace/tr_430b240c1b875a94",
+    "tr_53ac8fde986d4090": "https://traces.example.com/trace/tr_53ac8fde986d4090",
+    "tr_2b2326f7bdc4d540": "https://traces.example.com/trace/tr_2b2326f7bdc4d540",
+    "tr_bce749a4ecaa8e6f": "https://traces.example.com/trace/tr_bce749a4ecaa8e6f",
+    "tr_d1ebd31d69d65804": "https://traces.example.com/trace/tr_d1ebd31d69d65804",
+    "tr_ff9831e44fa3433e": "https://traces.example.com/trace/tr_ff9831e44fa3433e",
+    "tr_fa6c29795777a3ac": "https://traces.example.com/trace/tr_fa6c29795777a3ac",
+    "tr_9252d18c4071c739": "https://traces.example.com/trace/tr_9252d18c4071c739",
+    "tr_88df20dc8143c724": "https://traces.example.com/trace/tr_88df20dc8143c724"
+  },
+  "cassettes": [
+    "sample/crustdata-recon.json",
+    "sample/dodo-recon.json",
+    "sample/queue.json",
+    "sample/drift-crustdata.json"
+  ],
+  "contentHash": "a9ae85283f5df54a467110c5f9136fa9feae100bdb96a89c37e18ba8addaa8af"
+}

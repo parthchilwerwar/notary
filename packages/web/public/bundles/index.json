@@ -1,0 +1,12 @@
+[
+  {
+    "runId": "sample-42",
+    "kind": "sample",
+    "variant": "sample",
+    "mode": "replay",
+    "sample": true,
+    "startedAt": "2026-10-10T10:00:00.000Z",
+    "status": "completed",
+    "contentHash": "a9ae85283f5df54a467110c5f9136fa9feae100bdb96a89c37e18ba8addaa8af"
+  }
+]

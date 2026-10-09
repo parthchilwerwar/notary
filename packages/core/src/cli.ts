@@ -49,7 +49,19 @@ export function buildProgram(): Command {
   program
     .command("export")
     .description("Write TOOLS.md, guards.json and the latest bundles")
-    .action(() => notImplemented("export", "P1/P8"));
+    .option("--sample", "write a synthetic SAMPLE bundle (for dashboard development) to packages/web/public/bundles/")
+    .option("--out <dir>", "with --sample: write to this directory instead")
+    .option("--seed <n>", "with --sample: PRNG seed", "42")
+    .action(async (opts: { sample?: boolean; out?: string; seed: string }) => {
+      if (!opts.sample) notImplemented("export", "P8");
+      const seed = Number(opts.seed);
+      if (!Number.isInteger(seed)) throw new Error(`--seed must be an integer, got ${JSON.stringify(opts.seed)}`);
+      const { buildSampleBundle, writeBundle } = await import("./bundle/index.js");
+      const dir = opts.out ?? fileURLToPath(new URL("../../web/public/bundles/", import.meta.url));
+      const { bundlePath, indexPath } = await writeBundle(buildSampleBundle(seed), dir);
+      console.log(`SAMPLE bundle (synthetic, not a run result) written to ${bundlePath}`);
+      console.log(`index updated: ${indexPath}`);
+    });
 
   program
     .command("serve")

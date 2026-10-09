@@ -9,6 +9,7 @@
   "scripts": {
     "notary": "pnpm --filter @notary/core run notary",
     "test": "pnpm -r run test",
-    "typecheck": "pnpm -r run typecheck"
+    "typecheck": "pnpm -r run typecheck",
+    "check:secrets": "node scripts/check-secrets.mjs"
   }
 }

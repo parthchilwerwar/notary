@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./schema": "./src/schema/index.ts"
+    "./schema": "./src/schema/index.ts",
+    "./bundle/hash": "./src/bundle/hash.ts"
   },
   "scripts": {
     "notary": "tsx src/cli.ts",
