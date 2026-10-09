@@ -82,6 +82,12 @@ export interface ProbeLoopOptions {
   /** Default NOTARY_MAX_PROBES_PER_CLAIM, else 5. */
   maxProbesPerClaim?: number;
   maxProbesPerRun?: number;
+  /**
+   * Replay alignment (compare-priors): the probe sequence number for the n-th probe (1-based) of a
+   * claim, so probe ids and request tags match a recording made by another run of the same loop.
+   * undefined (or no hook) -> the run's running count, as before.
+   */
+  probeSeq?: (claimId: string, nthForClaim: number) => number | undefined;
   now?: () => Date;
 }
 
@@ -201,9 +207,10 @@ export async function runProbeLoop(opts: ProbeLoopOptions): Promise<ProbeLoopRes
         break;
       }
       seq += 1;
+      const pseq = opts.probeSeq?.(claim.id, used + 1) ?? seq;
       const baseCtx: ProbeContext = {
         runId: opts.runId,
-        tag: `${opts.runId}-p${seq}`.replace(/[^A-Za-z0-9._-]/g, "-"),
+        tag: `${opts.runId}-p${pseq}`.replace(/[^A-Za-z0-9._-]/g, "-"),
         anomaly,
         ...(() => {
           const entry = entries.get(claim.id) ?? contractEntryById(claim.id);
@@ -254,7 +261,7 @@ export async function runProbeLoop(opts: ProbeLoopOptions): Promise<ProbeLoopRes
           io: opts.tools,
           db: opts.db,
           runId: opts.runId,
-          probeId: `${opts.runId}-p${String(seq).padStart(3, "0")}`,
+          probeId: `${opts.runId}-p${String(pseq).padStart(3, "0")}`,
           claim,
           template: module,
           design,

@@ -31,41 +31,72 @@ export function buildProgram(): Command {
     .addOption(
       new Option("--adversary <backend>", "adversary backend for candidate beliefs").choices(["bedrock", "session"]).default("bedrock"),
     )
-    .action(async (opts: { tool: "crustdata" | "dodo"; priorsFrom?: string; reconOnly?: boolean; replay?: boolean; adversary?: "bedrock" | "session" }) => {
-      if (opts.priorsFrom) notImplemented("notarize --priors-from", "P7");
-      const { initTracing, shutdownTracing } = await import("./trace/index.js");
-      if (!opts.reconOnly) {
-        // Full loop: recon -> checker -> hypotheses -> probes -> beliefs -> evidence check -> adversary.
-        const { notarize } = await import("./reflect/notarize.js");
-        await initTracing({ serviceName: "notary" });
+    .option("--priors-bundle <path>", "with --priors-from: use this notarize bundle instead of the source tool's latest")
+    .option("--compare-priors", "replay the probe loop twice over the probes-<tool> cassette (without / with priors) and record probes-to-candidate for both")
+    .action(
+      async (opts: {
+        tool: "crustdata" | "dodo";
+        priorsFrom?: "crustdata" | "dodo";
+        reconOnly?: boolean;
+        replay?: boolean;
+        adversary?: "bedrock" | "session";
+        priorsBundle?: string;
+        comparePriors?: boolean;
+      }) => {
+        if (opts.priorsBundle && !opts.priorsFrom && !opts.comparePriors) throw new Error("--priors-bundle goes with --priors-from or --compare-priors");
+        if (opts.reconOnly && (opts.priorsFrom || opts.comparePriors)) throw new Error("--recon-only runs no probe loop; it takes no --priors-from or --compare-priors");
+        if (opts.comparePriors) {
+          // Replay only (no tool network): the probe loop twice, without and with transfer priors.
+          const { comparePriors } = await import("./reflect/compare-priors.js");
+          const result = await comparePriors({
+            tool: opts.tool,
+            ...(opts.priorsFrom ? { priorsFrom: opts.priorsFrom } : {}),
+            ...(opts.priorsBundle ? { priorsBundle: opts.priorsBundle } : {}),
+          });
+          for (const line of result.lines) (result.exitCode === 0 ? console.log : console.error)(line);
+          if (result.exitCode !== 0) process.exitCode = result.exitCode;
+          return;
+        }
+        const { initTracing, shutdownTracing } = await import("./trace/index.js");
+        if (!opts.reconOnly) {
+          // Full loop: recon -> checker -> hypotheses -> probes -> beliefs -> evidence check -> adversary.
+          const { notarize } = await import("./reflect/notarize.js");
+          await initTracing({ serviceName: "notary" });
+          try {
+            const result = await notarize({
+              tool: opts.tool,
+              replay: opts.replay === true,
+              adversary: opts.adversary ?? "bedrock",
+              ...(opts.priorsFrom ? { priorsFrom: opts.priorsFrom } : {}),
+              ...(opts.priorsBundle ? { priorsBundle: opts.priorsBundle } : {}),
+            });
+            for (const line of result.lines) (result.exitCode === 0 ? console.log : console.error)(line);
+            if (result.exitCode !== 0) process.exitCode = result.exitCode;
+          } finally {
+            await shutdownTracing();
+          }
+          return;
+        }
+        const { reconOnly } = await import("./checker/notarize.js");
+        // Replay touches no network at all, tracing export included.
+        if (!opts.replay) await initTracing({ serviceName: "notary" });
         try {
-          const result = await notarize({ tool: opts.tool, replay: opts.replay === true, adversary: opts.adversary ?? "bedrock" });
+          if (opts.replay) {
+            const { DEFAULT_CASSETTE_DIR, listCassettes } = await import("./tools/index.js");
+            if (!listCassettes(DEFAULT_CASSETTE_DIR).includes(`recon-${opts.tool}`)) {
+              console.error(`No cassette recon-${opts.tool} in ${DEFAULT_CASSETTE_DIR}; record one first with a live --recon-only run.`);
+              process.exitCode = 1;
+              return;
+            }
+          }
+          const result = await reconOnly({ tool: opts.tool, replay: opts.replay === true });
           for (const line of result.lines) (result.exitCode === 0 ? console.log : console.error)(line);
           if (result.exitCode !== 0) process.exitCode = result.exitCode;
         } finally {
-          await shutdownTracing();
+          if (!opts.replay) await shutdownTracing();
         }
-        return;
-      }
-      const { reconOnly } = await import("./checker/notarize.js");
-      // Replay touches no network at all, tracing export included.
-      if (!opts.replay) await initTracing({ serviceName: "notary" });
-      try {
-        if (opts.replay) {
-          const { DEFAULT_CASSETTE_DIR, listCassettes } = await import("./tools/index.js");
-          if (!listCassettes(DEFAULT_CASSETTE_DIR).includes(`recon-${opts.tool}`)) {
-            console.error(`No cassette recon-${opts.tool} in ${DEFAULT_CASSETTE_DIR}; record one first with a live --recon-only run.`);
-            process.exitCode = 1;
-            return;
-          }
-        }
-        const result = await reconOnly({ tool: opts.tool, replay: opts.replay === true });
-        for (const line of result.lines) (result.exitCode === 0 ? console.log : console.error)(line);
-        if (result.exitCode !== 0) process.exitCode = result.exitCode;
-      } finally {
-        if (!opts.replay) await shutdownTracing();
-      }
-    });
+      },
+    );
 
   program
     .command("run")
@@ -148,7 +179,14 @@ export function buildProgram(): Command {
     .description("Guard registry commands")
     .command("coverage")
     .description("entire-graph caller check; non-zero exit on any unguarded call site")
-    .action(() => notImplemented("guards coverage", "P7"));
+    .option("--json", "machine-readable report (unguarded_call_sites, sites, totals)")
+    .addOption(new Option("--backend <backend>", "caller backend; auto uses entire when on PATH").choices(["auto", "entire", "tsc"]).default("auto"))
+    .action(async (opts: { json?: boolean; backend: "auto" | "entire" | "tsc" }) => {
+      const { runCoverage, formatCoverage, coverageExitCode } = await import("./guards/coverage.js");
+      const report = runCoverage({ backend: opts.backend });
+      console.log(opts.json ? JSON.stringify(report, null, 2) : formatCoverage(report));
+      process.exitCode = coverageExitCode(report);
+    });
 
   program
     .command("doctor")

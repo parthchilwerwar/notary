@@ -20,17 +20,33 @@ describe("cli", () => {
   });
 
   it.each([
-    [["notarize", "--tool", "crustdata", "--priors-from", "dodo"]],
     [["replay"]],
     [["export"]],
-    [["guards", "coverage"]],
   ])("stubs %j with a not-implemented error", async (args) => {
     await expect(parse(args)).rejects.toBeInstanceOf(NotImplementedError);
   });
 
+  it("guards coverage has --json and --backend auto|entire|tsc", () => {
+    const coverage = buildProgram()
+      .commands.find((c) => c.name() === "guards")
+      ?.commands.find((c) => c.name() === "coverage");
+    expect(coverage?.options.map((o) => o.long)).toEqual(["--json", "--backend"]);
+    const backend = coverage?.options.find((o) => o.long === "--backend");
+    expect(backend?.argChoices).toEqual(["auto", "entire", "tsc"]);
+    expect(backend?.defaultValue).toBe("auto");
+  });
+
   it("notarize has --recon-only, --replay and --adversary flags", () => {
     const notarize = buildProgram().commands.find((c) => c.name() === "notarize");
-    expect(notarize?.options.map((o) => o.long)).toEqual(["--tool", "--priors-from", "--recon-only", "--replay", "--adversary"]);
+    expect(notarize?.options.map((o) => o.long)).toEqual([
+      "--tool",
+      "--priors-from",
+      "--recon-only",
+      "--replay",
+      "--adversary",
+      "--priors-bundle",
+      "--compare-priors",
+    ]);
     const adv = notarize?.options.find((o) => o.long === "--adversary");
     expect(adv?.argChoices).toEqual(["bedrock", "session"]);
     expect(adv?.defaultValue).toBe("bedrock");
@@ -52,6 +68,12 @@ describe("cli", () => {
       ["--host", "127.0.0.1"],
     ]);
     await expect(parse(["serve", "--port", "http"])).rejects.toThrow(/--port must be/);
+  });
+
+  it("notarize: --priors-bundle needs --priors-from/--compare-priors; --recon-only takes neither", async () => {
+    await expect(parse(["notarize", "--tool", "dodo", "--priors-bundle", "x.json"])).rejects.toThrow(/--priors-bundle goes with/);
+    await expect(parse(["notarize", "--tool", "dodo", "--recon-only", "--priors-from", "crustdata"])).rejects.toThrow(/--recon-only runs no probe loop/);
+    await expect(parse(["notarize", "--tool", "dodo", "--recon-only", "--compare-priors"])).rejects.toThrow(/--recon-only runs no probe loop/);
   });
 
   it("rejects an unknown tool", async () => {

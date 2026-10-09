@@ -13,6 +13,14 @@
  * every cited span (FR-10, from runs/<runId>/spans.jsonl written by the local span sink), then
  * the adversary (`--adversary bedrock|session`, default bedrock) reviews each candidate. A missing
  * adversary model prints BLOCKED and leaves the candidates as candidates (exit 3).
+ *
+ * P7 transfer priors (`--priors-from <tool>` [`--priors-bundle <path>`]): the source tool's latest
+ * notarize bundle (runs/<runId>/<runId>.json, hash-verified) gives per-defect-class base rates and
+ * each NEW belief of this run starts from its claim's transfer prior (src/beliefs/priors.ts).
+ * Beliefs that already exist in the store keep their state. No source bundle -> BLOCKED (exit 3).
+ * Every notarize bundle records probes_to_candidate_<claimId> (null if never reached) and
+ * probes_to_candidate_mean; with priors also priors_strength / priors_applied / priors_informative
+ * and bundle.priorsFrom.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -25,6 +33,8 @@ import { LlmClient, ModelConfigError } from "../llm/index.js";
 import type { LlmLike, UsageMeter } from "../llm/index.js";
 import type { AdversaryBackend, ReviewBeliefArgs, ReviewOutcome } from "../adversary/index.js";
 import { runBeliefsPhase } from "../beliefs/phase.js";
+import { loadPriorsSource, priorStrengthFromEnv, probesToCandidateMetrics, transferPriors } from "../beliefs/priors.js";
+import type { PriorsSource } from "../beliefs/priors.js";
 import { BeliefStore, beliefIdFor } from "../beliefs/store.js";
 import { claimById } from "../contracts/index.js";
 import { GuardRegistry, compileGuards, wireRetirement } from "../guards/index.js";
@@ -41,9 +51,11 @@ import {
   isBlocked,
   listCassettes,
 } from "../tools/index.js";
+import type { Cassette } from "../tools/index.js";
 import { maxProbesPerClaimFromEnv, runProbeLoop } from "./loop.js";
 import type { ProbeLoopResult } from "./loop.js";
 import { BurstCounter, SimplePaymentPool, probeIoFromTools } from "./templates/index.js";
+import type { ProbeIo } from "./templates/index.js";
 
 export const SEEDED_QUEUE_PATH = fileURLToPath(new URL("../../fixtures/queue/seeded.json", import.meta.url));
 
@@ -68,6 +80,25 @@ export interface NotarizeOptions {
   adversary?: AdversaryBackend;
   /** Injected adversary reviewer (tests); default reviewBelief. */
   review?: (args: ReviewBeliefArgs) => Promise<ReviewOutcome>;
+  /** P7: start new beliefs from transfer priors learned on this tool (its latest notarize bundle). */
+  priorsFrom?: Tool;
+  /** P7: use this notarize bundle as the priors source instead of the latest in runsDir. */
+  priorsBundle?: string;
+  /** P7: prior strength in pseudo-counts; default NOTARY_PRIOR_STRENGTH, else 2. */
+  priorStrength?: number;
+}
+
+/** What the bundle records about the transfer priors of a run. */
+export interface PriorsContext {
+  from: Tool;
+  sourceRunId: string;
+  strength: number;
+  /** New beliefs created from a prior this run. */
+  applied: number;
+  /** Of those, priors other than Beta(1, 1). */
+  informative: number;
+  /** Beliefs that already existed (kept their state; no prior applied). */
+  preexisting: number;
 }
 
 export interface NotarizeResult {
@@ -89,6 +120,31 @@ function compactStamp(d: Date): string {
 }
 
 /** Succeeded seeded payments the seeded queue never references, last handles first. */
+/**
+ * The raw (unguarded) REPLAY ProbeIo of every probing path: probes must see the raw recorded
+ * response to confirm or refute a belief (DECISIONS #56), so this module is the one place outside
+ * recon that builds unwrapped tools. Used by `--compare-priors` (src/reflect/compare-priors.ts)
+ * and drift replay (src/beliefs/drift.ts). Replay only: no network, no keys.
+ */
+export function rawReplayProbeIo(opts: {
+  cassette?: string;
+  cassettes?: Cassette[];
+  cassetteDir?: string;
+  ledger: CreditLedger;
+  env?: NodeJS.ProcessEnv;
+}): ProbeIo {
+  return probeIoFromTools(
+    createTools({
+      mode: "replay",
+      ...(opts.cassette ? { cassette: opts.cassette } : {}),
+      ...(opts.cassettes ? { cassettes: opts.cassettes } : {}),
+      ...(opts.cassetteDir ? { cassetteDir: opts.cassetteDir } : {}),
+      ledger: opts.ledger,
+      env: opts.env ?? {},
+    }),
+  );
+}
+
 export function probePaymentPool(manifestPath: string, queuePath: string): { ids: string[]; note?: string } {
   if (!existsSync(manifestPath)) return { ids: [], note: "no seed manifest: refund probes are skipped" };
   const manifest = loadManifest(manifestPath);
@@ -101,7 +157,7 @@ export function probePaymentPool(manifestPath: string, queuePath: string): { ids
   return { ids };
 }
 
-function preflight(opts: NotarizeOptions, env: NodeJS.ProcessEnv): { llm?: LlmLike & { meter?: UsageMeter }; result?: NotarizeResult } {
+export function preflight(opts: Pick<NotarizeOptions, "tool" | "replay" | "llm">, env: NodeJS.ProcessEnv): { llm?: LlmLike & { meter?: UsageMeter }; result?: NotarizeResult } {
   const reasons: string[] = [];
   if (!opts.replay && !(env[TOOL_KEY[opts.tool]] ?? "").trim()) reasons.push(`${TOOL_KEY[opts.tool]} not set`);
   let llm = opts.llm;
@@ -138,7 +194,18 @@ export async function notarize(opts: NotarizeOptions): Promise<NotarizeResult> {
   const mode = opts.replay ? "replay" : "live";
   const cassetteDir = opts.cassetteDir ?? DEFAULT_CASSETTE_DIR;
 
+  const runsDir = opts.runsDir ?? RUNS_DIR;
+
+  // P7: the priors source is checked first, so a missing one is reported with any other BLOCKED reason.
+  let source: PriorsSource | undefined;
+  if (opts.priorsFrom) {
+    if (opts.priorsFrom === opts.tool) {
+      return { exitCode: 1, lines: [`--priors-from must name the other tool (got ${opts.priorsFrom} for --tool ${opts.tool})`], status: "failed" };
+    }
+    source = loadPriorsSource({ tool: opts.priorsFrom, runsDir, ...(opts.priorsBundle ? { bundlePath: opts.priorsBundle } : {}) });
+  }
   const pre = preflight(opts, env);
+  if (source?.blocked) return blocked([source.blocked, ...(pre.result?.status === "blocked" ? pre.result.lines : [])]);
   if (pre.result) return pre.result;
   const llm = pre.llm!;
 
@@ -157,7 +224,6 @@ export async function notarize(opts: NotarizeOptions): Promise<NotarizeResult> {
   const started = now();
   const ledger = new CreditLedger({ env });
   const db = openDb(opts.dbPath ?? DEFAULT_DB_PATH);
-  const runsDir = opts.runsDir ?? RUNS_DIR;
   const previousSink = spanSinkPath();
   try {
     let recon: ReconResult;
@@ -183,7 +249,24 @@ export async function notarize(opts: NotarizeOptions): Promise<NotarizeResult> {
       const registry = new GuardRegistry(db, { now });
       const unwire = wireRetirement(beliefStore, registry);
       const eventsSince = beliefStore.lastEventSeq();
-      for (const c of claims) beliefStore.ensure(c);
+      // P7: transfer priors for the beliefs this run creates (existing beliefs keep their state).
+      const strength = opts.priorStrength ?? priorStrengthFromEnv(env);
+      const transfer = source?.bundle
+        ? transferPriors({ sourceBeliefs: source.bundle.beliefs.after, targetClaims: claims, strength, from: opts.priorsFrom! })
+        : undefined;
+      const priors = transfer?.priors;
+      const preexisting = new Set(claims.filter((c) => beliefStore.byClaim(c.id)).map((c) => c.id));
+      for (const c of claims) beliefStore.ensure(c, priors?.[c.id]);
+      const priorsContext: PriorsContext | undefined = transfer
+        ? {
+            from: transfer.from,
+            sourceRunId: source!.bundle!.runId,
+            strength,
+            applied: claims.filter((c) => !preexisting.has(c.id)).length,
+            informative: transfer.perClaim.filter((p) => p.informative && !preexisting.has(p.claimId)).length,
+            preexisting: preexisting.size,
+          }
+        : undefined;
       const beliefsBefore = beliefStore.list(opts.tool);
       const pool = opts.tool === "dodo" ? probePaymentPool(opts.manifestPath ?? DEFAULT_MANIFEST_PATH, opts.queuePath ?? SEEDED_QUEUE_PATH) : { ids: [] };
       loop = await runProbeLoop({
@@ -200,6 +283,7 @@ export async function notarize(opts: NotarizeOptions): Promise<NotarizeResult> {
         maxProbesPerClaim: maxProbesPerClaimFromEnv(env),
         burst: new BurstCounter(),
         payments: new SimplePaymentPool(pool.ids),
+        ...(priors ? { priors } : {}),
         ...(opts.now ? { now: opts.now } : {}),
       });
       const abstainedClaimIds = recon.anomalies.filter((an) => loop.abstained.includes(an.id)).map((an) => an.claimId);
@@ -218,6 +302,7 @@ export async function notarize(opts: NotarizeOptions): Promise<NotarizeResult> {
         backend: opts.adversary ?? "bedrock",
         llm,
         env,
+        ...(priors ? { priors } : {}),
         ...(opts.review ? { review: opts.review } : {}),
         ...(opts.now ? { now: opts.now } : {}),
       });
@@ -234,7 +319,21 @@ export async function notarize(opts: NotarizeOptions): Promise<NotarizeResult> {
       );
       unwire();
       const guards = registry.all().filter((g) => g.operation.startsWith(`${opts.tool}.`));
-      return await writeNotarizeBundle({ opts, mode, runId, started, now, recon, loop, beliefs, ledger, llm, poolNote: pool.note, guards });
+      return await writeNotarizeBundle({
+        opts,
+        mode,
+        runId,
+        started,
+        now,
+        recon,
+        loop,
+        beliefs,
+        ledger,
+        llm,
+        poolNote: pool.note,
+        guards,
+        ...(priorsContext ? { priors: priorsContext } : {}),
+      });
     } catch (err) {
       if (isBlocked(err) || err instanceof TestModeLockError) return blocked([err.message]);
       throw err;
@@ -258,6 +357,7 @@ async function writeNotarizeBundle(a: {
   llm: LlmLike & { meter?: UsageMeter };
   poolNote?: string | undefined;
   guards: Guard[];
+  priors?: PriorsContext;
 }): Promise<NotarizeResult> {
   const { recon, loop, ledger, runId, beliefs } = a;
   const tool = a.opts.tool;
@@ -271,6 +371,13 @@ async function writeNotarizeBundle(a: {
   if (beliefs.adversaryBlocked) disclosure.push(`Adversary review did not run (${beliefs.adversaryBlocked}); candidate beliefs stay candidates.`);
   if (a.mode === "replay") disclosure.push("Replayed from cassettes; no tool network calls.");
   if (tool === "dodo") disclosure.push("Dodo Payments test mode only; refund probes use seeded payments the seeded queue does not reference.");
+  if (a.priors) {
+    disclosure.push(
+      `Transfer priors from ${a.priors.from} notarize bundle ${a.priors.sourceRunId}: each new belief started from Beta(1 + s(1 - r), 1 + s*r), r = the ${a.priors.from} base rate of its claim's suspected defect class, s = ${a.priors.strength} pseudo-counts (Beta(1, 1) when ${a.priors.from} settled nothing relevant).`,
+    );
+  }
+  const claimIds = recon.entries.map((e) => e.claim.id);
+  const ptc = probesToCandidateMetrics(beliefs.after, claimIds);
 
   const bundle = finalizeBundle({
     runId,
@@ -285,6 +392,7 @@ async function writeNotarizeBundle(a: {
     ...(stopReason ? { stopReason } : {}),
     seed: 0,
     tool,
+    ...(a.priors ? { priorsFrom: a.priors.from } : {}),
     queue: [],
     decisions: [],
     claims: recon.entries.map((e) => e.claim),
@@ -317,6 +425,16 @@ async function writeNotarizeBundle(a: {
       "adversary.narrow": beliefs.reviews.narrow,
       "adversary.downgrade": beliefs.reviews.downgrade,
       "adversary.failed": beliefs.reviews.failed,
+      probes_to_candidate_mean: ptc.mean,
+      ...Object.fromEntries(Object.entries(ptc.perClaim).map(([id, n]) => [`probes_to_candidate_${id}`, n])),
+      ...(a.priors
+        ? {
+            priors_strength: a.priors.strength,
+            priors_applied: a.priors.applied,
+            priors_informative: a.priors.informative,
+            priors_preexisting: a.priors.preexisting,
+          }
+        : {}),
     },
     traceLinks: {},
     cassettes: [`recon-${tool}`, `probes-${tool}`],
@@ -332,6 +450,12 @@ async function writeNotarizeBundle(a: {
     `credits: ${ledger.total}/${ledger.budget}  reflector: ${usageByRole.reflector.calls} calls, $${usageByRole.reflector.usd}`,
   ];
   lines.push(...beliefs.lines);
+  lines.push(`probes to candidate: mean ${ptc.mean ?? "n/a"} over ${ptc.reached}/${claimIds.length} claims that reached candidate`);
+  if (a.priors) {
+    lines.push(
+      `priors: from ${a.priors.from} (${a.priors.sourceRunId}), strength ${a.priors.strength}: applied to ${a.priors.applied} new belief(s), ${a.priors.informative} informative; ${a.priors.preexisting} existing belief(s) kept their state`,
+    );
+  }
   if (a.poolNote) lines.push(`note: ${a.poolNote}`);
   for (const s of loop.skipped) lines.push(`skipped ${s.anomalyId}: ${s.reason}`);
   if (stopReason) lines.push(`STOPPED: ${stopReason}`);

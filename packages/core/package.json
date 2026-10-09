@@ -11,7 +11,8 @@
     "notary": "tsx src/cli.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "seed:dodo": "tsx scripts/seed-dodo.ts"
+    "seed:dodo": "tsx scripts/seed-dodo.ts",
+    "make:drift": "tsx scripts/make-drift.ts"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.1148.0",

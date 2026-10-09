@@ -93,3 +93,13 @@ Where the docs and reality disagree, or a choice the docs leave open. Newest pha
 | 55 | Recovery | Per-item state in SQLite; the pending write is persisted before it's sent. On `--resume`, an in-flight item is read back (fully paginated): landed → executed, no resend; proven not landed → reprocessed; undecidable → held | "No blind write retries" |
 | 56 | `entire graph` coverage | Not installed; a static scan asserts every `createTools` call passes a `wrap`, except recon and probing, which deliberately exercise raw tool behavior | Until P7's coverage command can use Entire |
 | 57 | Local API | hono 4.13.13 + @hono/node-server 2.1.4; read-only (writes → 405), localhost-only CORS, binds 127.0.0.1 by default. A tampered bundle returns 200 with `X-Notary-Hash-Mismatch: 1` and an `error` field so the dashboard shows it | TDD dashboard contract |
+
+## P7 · Transfer, drift, coverage
+
+| # | Docs say | Reality / decision | Why |
+| --- | --- | --- | --- |
+| 58 | Transfer priors (TDD step 9) | Base rate per defect class = settled (notarized/candidate) source beliefs that came out violated with class c ÷ settled beliefs relevant to c. Target claim → suspected class from `src/contracts/priors-map.ts` (copied from the contract comments, no LLM). Prior = Beta(1 + s(1−r), 1 + s·r), s = `NOTARY_PRIOR_STRENGTH` (default 2); no evidence → Beta(1,1) | Deterministic, small pseudo-counts |
+| 59 | "probes-to-candidate with vs without priors" | `notarize --compare-priors` replays the *same* cassette twice (no new spending) and records `probes_to_candidate_with_priors` / `_without_priors` | Paired comparison on identical traffic |
+| 60 | Drift fixture | `make:drift` copies a **real** cassette, changes exactly one response field, recomputes the hash and stamps a `drift` disclosure block. No fixture exists yet because no real cassette exists. The un-learning path is tested on a temp test cassette (confidence 0.94 → 0.81 → 0.66 → 0.50 → 0.36 → `unlearned`, guard retired) | A fabricated "real" drift fixture would be fake data |
+| 61 | `entire graph` callers | Real command (Entire docs, https://docs.entire.io/cli-reference/graph): `entire graph neighbors --symbol Class.method --direction in --format json`. Implemented as the `entire` backend but **unverified** (Entire not installed). The default fallback is a TypeScript-checker walk over src + scripts | FR-17 must still be checkable |
+| 62 | Coverage allow-list | Raw-by-design call sites: recon, probing (`notarize.ts`), seeding, and the naive baseline's identity wrap in `queue/run.ts`. Everything else must route through `guarded` | Probes must see raw tool behavior; naive is the unguarded control |

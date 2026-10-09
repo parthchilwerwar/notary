@@ -11,7 +11,7 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 - [x] **P4 · Reflector and probes** — Bedrock client with roles, batched hypotheses, probe templates, cost-aware scoring, commit-then-run, verdict rules
 - [x] **P5 · Beliefs and adversary** — beta-binomial store, lifecycle incl. `unlearned`, adversary (`bedrock` + `session`), evidence-validity check
 - [x] **P6 · Guards, gated queue, recovery** — guard compiler, `guarded()` clients, required-beliefs gating, evidence packs, `--resume`, local API + SSE
-- [ ] **P7 · Transfer, drift, coverage** — `--priors-from`, drift fixture, `notary guards coverage`
+- [x] **P7 · Transfer, drift, coverage** — `--priors-from`, drift fixture, `notary guards coverage`
 - [ ] **P8 · Replay and evaluation** — `notary replay`, noise floor, metrics, `docs/EVALUATION.md`, `export/TOOLS.md`
 - [ ] **P9 · Self-audit and README** — `docs/AUDIT.md`, `README.md`, `docs/ARCHITECTURE.md`
 - [ ] **P10 · Business plan, final runs, recording** — `docs/BUSINESS.md`, final bundles, demo footage
@@ -51,3 +51,9 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 
 **P6 (Oct 10).** Guard compiler (6 kinds) + registry + `guarded()` passed as createTools' wrap, retire-on-unlearn, required-beliefs gate with evidence packs, guarded `notary run`, per-item SQLite run state + `run --resume` with read-back before retry (crash-and-resume tested with doubles), `notary serve` (Hono, `/api/bundles`, `/api/bundles/:id`, SSE `/api/stream`; checked live with curl). 397 tests pass.
 - [ ] BLOCKED: guarded run on the seeded queue (zero-unsafe check) and a real kill-and-resume — `BLOCKED: DODO_PAYMENTS_API_KEY not set`; also needs notarized beliefs from a live P5 run.
+
+**P7 (Oct 10).** Transfer priors (`--priors-from`, `--compare-priors`), probes-to-candidate metrics, `make:drift` tool + `replayDrift` (un-learning + guard retirement tested on a temp test cassette), `notary guards coverage` — run for real on this repo: **27 sites, 21 guarded, 6 raw-by-design, 0 unguarded, exit 0** (tsc backend). 428 tests pass.
+- [ ] BLOCKED: Dodo notarize with vs without priors — needs a Crustdata notarize bundle and live keys (`BLOCKED: no notarize bundle for crustdata`).
+- [ ] BLOCKED: real drift fixture — no real cassette to derive it from.
+- [ ] Unverified: `entire` coverage backend (Entire not installed).
+- [ ] Carry to P8: `notarize --replay` mints a new runId, so recorded probe tags may not match on replay.
