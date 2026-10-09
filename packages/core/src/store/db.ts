@@ -306,34 +306,54 @@ export class NotaryDb {
   /** All probes of a run in commit order, validated against the frozen Probe schema. */
   loadProbes(runId: string): Probe[] {
     const rows = this.db.prepare("SELECT * FROM probes WHERE run_id = ? ORDER BY seq").all(runId) as Row[];
-    return rows.map((r) => {
-      const control =
-        r.control_json == null
-          ? undefined
-          : {
-              ...(JSON.parse(str(r.control_json)) as { params: Record<string, unknown> }),
-              ...(r.control_observed_json == null ? {} : { observed: JSON.parse(str(r.control_observed_json)) }),
-            };
-      return ProbeSchema.parse({
-        id: r.id,
-        tool: r.tool,
-        claimId: r.claim_id,
-        hypothesisIds: JSON.parse(str(r.hypothesis_ids_json)),
-        template: r.template,
-        params: JSON.parse(str(r.params_json)),
-        ...(control === undefined ? {} : { control }),
-        prediction: JSON.parse(str(r.prediction_json)),
-        predictionHash: r.prediction_hash,
-        committedAt: r.committed_at,
-        ...(r.ran_at == null ? {} : { ranAt: r.ran_at }),
-        ...(r.observed_json == null ? {} : { observed: JSON.parse(str(r.observed_json)) }),
-        ...(r.verdict == null ? {} : { verdict: r.verdict }),
-        ...(r.winning_hypothesis_id == null ? {} : { winningHypothesisId: r.winning_hypothesis_id }),
-        costCredits: Number(r.cost_credits),
-        calls: Number(r.calls),
-        traceId: r.trace_id,
-        ...(r.span_id == null ? {} : { spanId: r.span_id }),
-      });
+    return rows.map((r) => this.toProbe(r));
+  }
+
+  /** Every probe run on these claims (any run), in commit order, with the run that ran it. */
+  loadProbesByClaims(claimIds: readonly string[]): Array<{ runId: string; probe: Probe }> {
+    if (claimIds.length === 0) return [];
+    const rows = this.db
+      .prepare(`SELECT * FROM probes WHERE claim_id IN (${claimIds.map(() => "?").join(", ")}) ORDER BY seq`)
+      .all(...claimIds) as Row[];
+    return rows.map((r) => ({ runId: str(r.run_id), probe: this.toProbe(r) }));
+  }
+
+  /** Probes by id (any run); unknown ids are skipped. */
+  loadProbesByIds(ids: readonly string[]): Probe[] {
+    if (ids.length === 0) return [];
+    const rows = this.db
+      .prepare(`SELECT * FROM probes WHERE id IN (${ids.map(() => "?").join(", ")}) ORDER BY seq`)
+      .all(...ids) as Row[];
+    return rows.map((r) => this.toProbe(r));
+  }
+
+  private toProbe(r: Row): Probe {
+    const control =
+      r.control_json == null
+        ? undefined
+        : {
+            ...(JSON.parse(str(r.control_json)) as { params: Record<string, unknown> }),
+            ...(r.control_observed_json == null ? {} : { observed: JSON.parse(str(r.control_observed_json)) }),
+          };
+    return ProbeSchema.parse({
+      id: r.id,
+      tool: r.tool,
+      claimId: r.claim_id,
+      hypothesisIds: JSON.parse(str(r.hypothesis_ids_json)),
+      template: r.template,
+      params: JSON.parse(str(r.params_json)),
+      ...(control === undefined ? {} : { control }),
+      prediction: JSON.parse(str(r.prediction_json)),
+      predictionHash: r.prediction_hash,
+      committedAt: r.committed_at,
+      ...(r.ran_at == null ? {} : { ranAt: r.ran_at }),
+      ...(r.observed_json == null ? {} : { observed: JSON.parse(str(r.observed_json)) }),
+      ...(r.verdict == null ? {} : { verdict: r.verdict }),
+      ...(r.winning_hypothesis_id == null ? {} : { winningHypothesisId: r.winning_hypothesis_id }),
+      costCredits: Number(r.cost_credits),
+      calls: Number(r.calls),
+      traceId: r.trace_id,
+      ...(r.span_id == null ? {} : { spanId: r.span_id }),
     });
   }
 }

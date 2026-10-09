@@ -15,7 +15,9 @@
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.1148.0",
+    "@hono/node-server": "^2.1.4",
     "commander": "^15.0.0",
+    "hono": "^4.13.13",
     "neatlogs": "^1.1.26",
     "zod": "^4.6.5"
   },

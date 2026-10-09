@@ -70,23 +70,27 @@ export function buildProgram(): Command {
   program
     .command("run")
     .description("Work the billing queue and write a run bundle")
-    .requiredOption("--queue <file>", "queue fixture to work")
+    .option("--queue <file>", "queue fixture to work (required unless --resume)")
     .option("--naive", "disable gating and guards (run-1 baseline)")
-    .option("--resume", "continue from the last incomplete item")
+    .option("--resume", "continue an interrupted guarded run from its last incomplete item")
+    .option("--run <runId>", "with --resume: the run to continue (default: the latest unfinished one)")
     .option("--replay <cassette>", "replay a recorded run from its cassette (no network, no keys)")
-    .action(async (opts: { queue: string; naive?: boolean; resume?: boolean; replay?: string }) => {
-      if (opts.resume) notImplemented("run --resume", "P6");
-      if (!opts.naive) notImplemented("run (guarded)", "P6");
+    .action(async (opts: { queue?: string; naive?: boolean; resume?: boolean; run?: string; replay?: string }) => {
+      if (opts.resume && (opts.naive || opts.replay !== undefined)) throw new Error("--resume continues a live guarded run; it takes no --naive or --replay");
+      if (!opts.resume && !opts.queue) throw new Error("run needs --queue <file> (or --resume)");
+      if (opts.run && !opts.resume) throw new Error("--run <runId> is only used with --resume");
       const { runQueue } = await import("./queue/run.js");
       const { initTracing, shutdownTracing } = await import("./trace/index.js");
       const replay = opts.replay !== undefined;
       if (!replay) await initTracing({ serviceName: "notary" });
       try {
         const result = await runQueue({
-          queueFile: opts.queue,
-          variant: "naive",
+          ...(opts.queue ? { queueFile: opts.queue } : {}),
+          variant: opts.naive ? "naive" : "guarded",
           mode: replay ? "replay" : "live",
           ...(replay ? { cassette: opts.replay! } : {}),
+          ...(opts.resume ? { resume: true } : {}),
+          ...(opts.run ? { runId: opts.run } : {}),
         });
         for (const line of result.lines) (result.exitCode === 0 ? console.log : console.error)(line);
         if (result.exitCode !== 0) process.exitCode = result.exitCode;
@@ -120,8 +124,24 @@ export function buildProgram(): Command {
 
   program
     .command("serve")
-    .description("Local API + SSE for the dashboard's live mode")
-    .action(() => notImplemented("serve", "P6"));
+    .description("Local API + SSE for the dashboard's live mode (read-only)")
+    .option("--port <port>", "port to listen on", "8787")
+    .option("--host <host>", "interface to bind (loopback by default)", "127.0.0.1")
+    .action(async (opts: { port: string; host: string }) => {
+      const port = Number(opts.port);
+      if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error(`--port must be 0-65535, got ${JSON.stringify(opts.port)}`);
+      const loopback = ["127.0.0.1", "localhost", "::1"].includes(opts.host);
+      if (!loopback) console.warn(`warning: binding ${opts.host} exposes the API beyond this machine`);
+      const { startServer } = await import("./api/server.js");
+      const server = await startServer({ port, host: opts.host });
+      console.log(`notary serve: listening on ${server.url}`);
+      console.log(`  GET ${server.url}/api/bundles  GET ${server.url}/api/bundles/:id  GET ${server.url}/api/stream (SSE)`);
+      const shutdown = (): void => {
+        void server.close().then(() => process.exit(0));
+      };
+      process.once("SIGINT", shutdown);
+      process.once("SIGTERM", shutdown);
+    });
 
   program
     .command("guards")

@@ -331,4 +331,46 @@ describe("raw clients stay private", () => {
     walk(srcDir);
     expect(offenders).toEqual([]);
   });
+
+  /**
+   * Stand-in for the `entire graph` caller check (Entire CLI not installed, DECISIONS #27): since the
+   * raw clients are only reachable through createTools(), every createTools() CALL in src/ must pass
+   * a `wrap`. The only exceptions are the measurement paths, which must see the raw tool behavior the
+   * guards would otherwise hide (recon sweep, probe loop). The queue (money) path has no exception.
+   */
+  it("every createTools() call outside src/tools passes a wrap (measurement paths excepted)", () => {
+    const srcDir = fileURLToPath(new URL("../src/", import.meta.url));
+    const MEASUREMENT = new Set(["checker/recon.ts", "reflect/notarize.ts"]);
+    const calls: Array<{ at: string; rel: string; wrapped: boolean }> = [];
+    const walk = (d: string) => {
+      for (const entry of readdirSync(d, { withFileTypes: true })) {
+        const full = join(d, entry.name);
+        const rel = relative(srcDir, full).split(sep).join("/");
+        if (entry.isDirectory()) {
+          if (rel !== "tools") walk(full);
+          continue;
+        }
+        if (!/\.(ts|mts)$/.test(entry.name)) continue;
+        // Blank out comments (keeping offsets and newlines) so prose mentioning createTools() is ignored.
+        const text = readFileSync(full, "utf8").replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, (m) => m.replace(/[^\n]/g, " "));
+        for (const m of text.matchAll(/\bcreateTools\s*\(/g)) {
+          let depth = 0;
+          let end = m.index + m[0].length - 1;
+          for (; end < text.length; end++) {
+            if (text[end] === "(") depth++;
+            else if (text[end] === ")" && --depth === 0) break;
+          }
+          const args = text.slice(m.index + m[0].length, end);
+          const line = text.slice(0, m.index).split("\n").length;
+          calls.push({ at: `${rel}:${line}`, rel, wrapped: /\bwrap\b/.test(args) });
+        }
+      }
+    };
+    walk(srcDir);
+    const unguarded = calls.filter((c) => !c.wrapped && !MEASUREMENT.has(c.rel)).map((c) => c.at);
+    expect(unguarded).toEqual([]);
+    const queueCalls = calls.filter((c) => c.rel.startsWith("queue/"));
+    expect(queueCalls.length).toBeGreaterThanOrEqual(2);
+    expect(queueCalls.every((c) => c.wrapped)).toBe(true);
+  });
 });

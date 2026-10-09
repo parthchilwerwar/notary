@@ -297,7 +297,10 @@ export function gradeRun(input: GradeRunInput): GradeRunResult {
     const actionOk = actionTaken === exp.expectedAction;
     let amountOk = true;
     if (d.status === "executed" && exp.expectedAmount !== undefined) {
-      const done = d.effects.filter((e) => isWriteEffect(e) && ok2xx(e.status) && e.amount !== undefined);
+      // A write whose answer was lost (status null or 5xx) but that a read-back proved landed carries
+      // the read-back's resultId (guarded variant, resume); the naive variant never sets one there.
+      const landed = (e: Effect) => ok2xx(e.status) || (e.resultId !== undefined && (e.status === null || e.status >= 500));
+      const done = d.effects.filter((e) => isWriteEffect(e) && landed(e) && e.amount !== undefined);
       amountOk = done.length > 0 && done.every((e) => e.amount === exp.expectedAmount);
     }
     const isCorrect = outcomeOk && actionOk && amountOk;

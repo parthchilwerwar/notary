@@ -25,10 +25,12 @@ import { LlmClient, ModelConfigError } from "../llm/index.js";
 import type { LlmLike, UsageMeter } from "../llm/index.js";
 import type { AdversaryBackend, ReviewBeliefArgs, ReviewOutcome } from "../adversary/index.js";
 import { runBeliefsPhase } from "../beliefs/phase.js";
-import { BeliefStore } from "../beliefs/store.js";
+import { BeliefStore, beliefIdFor } from "../beliefs/store.js";
+import { claimById } from "../contracts/index.js";
+import { GuardRegistry, compileGuards, wireRetirement } from "../guards/index.js";
 import type { BeliefsPhaseResult } from "../beliefs/phase.js";
 import { DEFAULT_MANIFEST_PATH, loadManifest } from "../queue/manifest.js";
-import type { Probe, RoleUsage, RunBundle, Tool, UsageByRole } from "../schema/index.js";
+import type { Guard, Probe, RoleUsage, RunBundle, Tool, UsageByRole } from "../schema/index.js";
 import { DEFAULT_DB_PATH, openDb } from "../store/db.js";
 import { setSpanSink, spanSinkPath } from "../trace/index.js";
 import {
@@ -177,6 +179,9 @@ export async function notarize(opts: NotarizeOptions): Promise<NotarizeResult> {
       // Beliefs before this run; the probe loop updates them verdict by verdict.
       const claims = recon.entries.map((e) => e.claim);
       const beliefStore = new BeliefStore(db, opts.now ? { now: opts.now } : {});
+      // A belief that leaves notarized (unlearned, invalid evidence) retires its guards at once (FR-8).
+      const registry = new GuardRegistry(db, { now });
+      const unwire = wireRetirement(beliefStore, registry);
       const eventsSince = beliefStore.lastEventSeq();
       for (const c of claims) beliefStore.ensure(c);
       const beliefsBefore = beliefStore.list(opts.tool);
@@ -216,7 +221,20 @@ export async function notarize(opts: NotarizeOptions): Promise<NotarizeResult> {
         ...(opts.review ? { review: opts.review } : {}),
         ...(opts.now ? { now: opts.now } : {}),
       });
-      return await writeNotarizeBundle({ opts, mode, runId, started, now, recon, loop, beliefs, ledger, llm, poolNote: pool.note });
+      // Compile the notarized beliefs (all tools) into the registry; this tool's guards go in the bundle.
+      const allBeliefs = beliefStore.list();
+      const cited = [...new Set(allBeliefs.filter((b) => b.status === "notarized").flatMap((b) => b.evidence.map((e) => e.probeId)))];
+      registry.sync(
+        compileGuards({
+          beliefs: allBeliefs,
+          claimFor: (claimId) => claimById(claimId) ?? (beliefStore.byClaim(claimId) ? beliefStore.claimFor(beliefIdFor(claimId)) : undefined),
+          probes: db.loadProbesByIds(cited),
+          now,
+        }),
+      );
+      unwire();
+      const guards = registry.all().filter((g) => g.operation.startsWith(`${opts.tool}.`));
+      return await writeNotarizeBundle({ opts, mode, runId, started, now, recon, loop, beliefs, ledger, llm, poolNote: pool.note, guards });
     } catch (err) {
       if (isBlocked(err) || err instanceof TestModeLockError) return blocked([err.message]);
       throw err;
@@ -239,6 +257,7 @@ async function writeNotarizeBundle(a: {
   ledger: CreditLedger;
   llm: LlmLike & { meter?: UsageMeter };
   poolNote?: string | undefined;
+  guards: Guard[];
 }): Promise<NotarizeResult> {
   const { recon, loop, ledger, runId, beliefs } = a;
   const tool = a.opts.tool;
@@ -274,7 +293,7 @@ async function writeNotarizeBundle(a: {
     probes: loop.probes,
     beliefs: { before: beliefs.before, after: beliefs.after },
     beliefEvents: beliefs.events,
-    guards: [],
+    guards: a.guards,
     usageByRole,
     credits: { byEndpoint: ledger.byEndpoint, total: ledger.total, budget: ledger.budget },
     metrics: {

@@ -21,10 +21,8 @@ describe("cli", () => {
 
   it.each([
     [["notarize", "--tool", "crustdata", "--priors-from", "dodo"]],
-    [["run", "--queue", "fixtures/queue/seeded.json"]],
     [["replay"]],
     [["export"]],
-    [["serve"]],
     [["guards", "coverage"]],
   ])("stubs %j with a not-implemented error", async (args) => {
     await expect(parse(args)).rejects.toBeInstanceOf(NotImplementedError);
@@ -38,11 +36,22 @@ describe("cli", () => {
     expect(adv?.defaultValue).toBe("bedrock");
   });
 
-  it("run: guarded (no --naive) and --resume are P6; --replay takes a cassette", async () => {
-    await expect(parse(["run", "--queue", "x"])).rejects.toThrow(/run \(guarded\).*P6/);
-    await expect(parse(["run", "--queue", "x", "--naive", "--resume"])).rejects.toThrow(/run --resume.*P6/);
+  it("run: needs --queue unless --resume; --resume is guarded-live only; --run goes with --resume", async () => {
+    await expect(parse(["run"])).rejects.toThrow(/needs --queue/);
+    await expect(parse(["run", "--queue", "x", "--naive", "--resume"])).rejects.toThrow(/--resume continues a live guarded run/);
+    await expect(parse(["run", "--resume", "--replay", "c"])).rejects.toThrow(/--resume continues a live guarded run/);
+    await expect(parse(["run", "--queue", "x", "--run", "r1"])).rejects.toThrow(/only used with --resume/);
     const run = buildProgram().commands.find((c) => c.name() === "run");
-    expect(run?.options.map((o) => o.long)).toEqual(["--queue", "--naive", "--resume", "--replay"]);
+    expect(run?.options.map((o) => o.long)).toEqual(["--queue", "--naive", "--resume", "--run", "--replay"]);
+  });
+
+  it("serve takes --port (default 8787) and --host (default loopback) and rejects a bad port", async () => {
+    const serve = buildProgram().commands.find((c) => c.name() === "serve");
+    expect(serve?.options.map((o) => [o.long, o.defaultValue])).toEqual([
+      ["--port", "8787"],
+      ["--host", "127.0.0.1"],
+    ]);
+    await expect(parse(["serve", "--port", "http"])).rejects.toThrow(/--port must be/);
   });
 
   it("rejects an unknown tool", async () => {

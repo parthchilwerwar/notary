@@ -10,7 +10,7 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 - [x] **P3 · Seeded world and naive run** — Dodo seed script, seeded queue + expected outcomes, policy table, naive executor, grader, first bundle
 - [x] **P4 · Reflector and probes** — Bedrock client with roles, batched hypotheses, probe templates, cost-aware scoring, commit-then-run, verdict rules
 - [x] **P5 · Beliefs and adversary** — beta-binomial store, lifecycle incl. `unlearned`, adversary (`bedrock` + `session`), evidence-validity check
-- [ ] **P6 · Guards, gated queue, recovery** — guard compiler, `guarded()` clients, required-beliefs gating, evidence packs, `--resume`, local API + SSE
+- [x] **P6 · Guards, gated queue, recovery** — guard compiler, `guarded()` clients, required-beliefs gating, evidence packs, `--resume`, local API + SSE
 - [ ] **P7 · Transfer, drift, coverage** — `--priors-from`, drift fixture, `notary guards coverage`
 - [ ] **P8 · Replay and evaluation** — `notary replay`, noise floor, metrics, `docs/EVALUATION.md`, `export/TOOLS.md`
 - [ ] **P9 · Self-audit and README** — `docs/AUDIT.md`, `README.md`, `docs/ARCHITECTURE.md`
@@ -48,3 +48,6 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 
 **P5 (Oct 10).** Beta-binomial belief store (P(θ>0.5) confidence, append-only events, unlearn on crossing 0.5), probe-until-settled loop (cap 5/claim), local span sink + FR-10 evidence-validity check, adversary with `bedrock` and `session` (headless Claude Code, verdict committed) backends, `notarize --adversary`. 340 tests pass.
 - [ ] BLOCKED: `notarize --tool crustdata` end to end (no Crustdata key, no reflector/adversary model ids or AWS credentials). No real belief or adversary verdict exists yet.
+
+**P6 (Oct 10).** Guard compiler (6 kinds) + registry + `guarded()` passed as createTools' wrap, retire-on-unlearn, required-beliefs gate with evidence packs, guarded `notary run`, per-item SQLite run state + `run --resume` with read-back before retry (crash-and-resume tested with doubles), `notary serve` (Hono, `/api/bundles`, `/api/bundles/:id`, SSE `/api/stream`; checked live with curl). 397 tests pass.
+- [ ] BLOCKED: guarded run on the seeded queue (zero-unsafe check) and a real kill-and-resume — `BLOCKED: DODO_PAYMENTS_API_KEY not set`; also needs notarized beliefs from a live P5 run.

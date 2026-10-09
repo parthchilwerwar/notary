@@ -3,18 +3,18 @@
  * below are an in-memory test double (FakeWorld), never the network, and the bundles written go
  * to a temp dir. Nothing here is a run result.
  */
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { verifyBundle } from "../src/bundle/index.js";
-import { NotImplementedError } from "../src/errors.js";
 import { executeQueue } from "../src/queue/executor.js";
 import type { PolicyFns, QueueTools } from "../src/queue/executor.js";
 import { collectGroundTruth, gradeRun } from "../src/queue/grader.js";
 import type { ExpectedEntry, GroundTruthSnapshot, GTRefund } from "../src/queue/grader.js";
 import type { SeedManifest } from "../src/queue/manifest.js";
 import { runQueue } from "../src/queue/run.js";
+import { NotaryDb } from "../src/store/db.js";
 import type { Decision, Effect, QueueRequest } from "../src/schema/index.js";
 import { BudgetExceededError, CreditLedger, ToolHttpError } from "../src/tools/index.js";
 import type { ToolResult } from "../src/tools/index.js";
@@ -213,10 +213,8 @@ const run = (w: FakeWorld, queue: QueueRequest[], extra: Partial<Parameters<type
 // Executor (naive)
 
 describe("executor: naive", () => {
-  it("guarded is not implemented until P6", async () => {
-    await expect(executeQueue({ queue: [], manifest, tools: world().tools(), variant: "guarded" })).rejects.toBeInstanceOf(
-      NotImplementedError,
-    );
+  it("guarded needs a gate (the guarded variant itself is tested in gate.test.ts)", async () => {
+    await expect(executeQueue({ queue: [], manifest, tools: world().tools(), variant: "guarded" })).rejects.toThrow(/needs a gate/);
   });
 
   it("records every call as an effect, with the write's status, resultId and minor-unit amount", async () => {
@@ -589,9 +587,17 @@ describe("runQueue", () => {
     expect(res).toMatchObject({ exitCode: 3, status: "blocked", lines: ["BLOCKED: DODO_PAYMENTS_API_KEY not set"] });
   });
 
-  it("guarded and --resume are not implemented yet", async () => {
-    await expect(runQueue({ queueFile: "x", variant: "guarded", mode: "live" })).rejects.toBeInstanceOf(NotImplementedError);
-    await expect(runQueue({ queueFile: "x", variant: "naive", mode: "live", resume: true })).rejects.toBeInstanceOf(NotImplementedError);
+  it("guarded is BLOCKED the same way, before opening any store; --resume with nothing to resume exits 1", async () => {
+    const q = writeFixtures([req("r1")], [exp("r1")]);
+    const dbPath = join(dir, "never.sqlite");
+    const res = await runQueue({ queueFile: q, variant: "guarded", mode: "live", env: { NOTARY_MODE: "test" }, dbPath, runsDir: dir, webBundlesDir: null });
+    expect(res).toMatchObject({ exitCode: 3, status: "blocked", lines: ["BLOCKED: DODO_PAYMENTS_API_KEY not set"] });
+    expect(existsSync(dbPath)).toBe(false);
+    const db = new NotaryDb(":memory:");
+    const resumed = await runQueue({ variant: "guarded", mode: "live", resume: true, db });
+    expect(resumed.exitCode).toBe(1);
+    expect(resumed.lines[0]).toMatch(/No interrupted run to resume/);
+    db.close();
   });
 
   it("writes a schema-valid, graded run bundle (test double tools, temp dir)", async () => {
