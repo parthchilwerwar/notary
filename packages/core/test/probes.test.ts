@@ -5,7 +5,9 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { contractEntryById } from "../src/contracts/index.js";
 import type { CompleteRequest, CompleteResult, LlmLike } from "../src/llm/client.js";
-import { runProbeLoop } from "../src/reflect/loop.js";
+import { BeliefStore, beliefIdFor } from "../src/beliefs/store.js";
+import { designFingerprint } from "../src/beliefs/params.js";
+import { DEFAULT_MAX_PROBES_PER_CLAIM, maxProbesPerClaimFromEnv, runProbeLoop } from "../src/reflect/loop.js";
 import { notarize } from "../src/reflect/notarize.js";
 import { CommitOrderError, runProbe } from "../src/reflect/runner.js";
 import { DEFAULT_PROBE_LAMBDA, lambdaFromEnv, rankDesigns, scoreDesign, separates } from "../src/reflect/score.js";
@@ -673,7 +675,7 @@ describe("runProbeLoop", () => {
       return { status: 200, body: { price: { price: f(p.price.price) } } };
     });
 
-  it("one batched propose call, a probe per anomaly, verdict recorded", async () => {
+  it("one batched propose call; the claim is probed with independent designs until its belief is a candidate", async () => {
     const db = freshDb();
     const llm = new FakeLlm([hypothesesReply([["honored", "unit_roundtrip"], ["unit_mismatch", "unit_roundtrip"]])]);
     const res = await runProbeLoop({
@@ -688,12 +690,85 @@ describe("runProbeLoop", () => {
     });
     expect(llm.requests).toHaveLength(1);
     expect(res.hypotheses).toHaveLength(4);
-    expect(res.probes).toHaveLength(2);
+    // 3 independent confirmed probes (distinct treatment amounts): Beta(1,4) = 0.0625 < 0.1 -> candidate.
+    expect(res.probes).toHaveLength(3);
     expect(res.probes.every((p) => p.verdict === "confirmed" && p.template === "unit_roundtrip")).toBe(true);
+    expect(res.probes.map((p) => p.params.sent)).toEqual([1234, 3517, 4321]);
     const winners = res.probes.map((p) => res.hypotheses.find((h) => h.id === p.winningHypothesisId)!.class);
-    expect(winners).toEqual(["unit_mismatch", "unit_mismatch"]);
+    expect(winners).toEqual(["unit_mismatch", "unit_mismatch", "unit_mismatch"]);
+    const belief = new BeliefStore(db).byClaim(claim.id)!;
+    expect(belief).toMatchObject({ status: "candidate", alpha: 1, beta: 4, class: "unit_mismatch", probesToCandidate: 3 });
+    expect(belief.evidence.map((e) => e.probeId)).toEqual(res.probes.map((p) => p.id));
+    expect(res.claimOutcomes).toEqual([{ claimId: claim.id, outcome: "candidate", probes: 3, reason: "candidate after 3 probe(s) this run" }]);
+    // the claim's second anomaly is not probed once the belief is a candidate
+    expect(res.skipped).toEqual([{ anomalyId: "anom-2", reason: `belief ${beliefIdFor(claim.id)} is already candidate` }]);
     expect(res.usage).toMatchObject({ calls: 1, inputTokens: 100 });
     expect(db.loadProbes("loop-1").map((p) => p.id)).toEqual(res.probes.map((p) => p.id));
+  });
+
+  it("never repeats a design fingerprint, within a run or across runs on the same belief", async () => {
+    const db = freshDb();
+    const reply = hypothesesReply([["honored", "unit_roundtrip"], ["unit_mismatch", "unit_roundtrip"]]);
+    const first = await runProbeLoop({
+      tool: "dodo", anomalies: [anomalyFor(claim)], claims: [claim], tools: echo((n) => n * 100),
+      llm: new FakeLlm([reply]), db, runId: "loop-fp1", ledger: new CreditLedger({ budget: 10 }), maxProbesPerClaim: 2,
+    });
+    const second = await runProbeLoop({
+      tool: "dodo", anomalies: [anomalyFor(claim)], claims: [claim], tools: echo((n) => n * 100),
+      llm: new FakeLlm([reply]), db, runId: "loop-fp2", ledger: new CreditLedger({ budget: 10 }),
+    });
+    const all = [...first.probes, ...second.probes];
+    const fps = all.map((p) => designFingerprint(claim, p));
+    expect(new Set(fps).size).toBe(fps.length);
+    expect(first.probes.map((p) => p.params.sent)).toEqual([1234, 3517]);
+    expect(second.probes.map((p) => p.params.sent)).toEqual([4321]);
+    expect(new BeliefStore(db).byClaim(claim.id)).toMatchObject({ status: "candidate", beta: 4 });
+  });
+
+  it("per-claim cap reached between thresholds -> abstained", async () => {
+    const db = freshDb();
+    const res = await runProbeLoop({
+      tool: "dodo", anomalies: [anomalyFor(claim)], claims: [claim], tools: echo((n) => n * 100),
+      llm: new FakeLlm([hypothesesReply([["honored", "unit_roundtrip"], ["unit_mismatch", "unit_roundtrip"]])]),
+      db, runId: "loop-cap", ledger: new CreditLedger({ budget: 10 }), maxProbesPerClaim: 2,
+    });
+    expect(res.probes).toHaveLength(2);
+    const store = new BeliefStore(db);
+    expect(store.byClaim(claim.id)).toMatchObject({ status: "abstained", beta: 3 });
+    expect(store.events(beliefIdFor(claim.id)).at(-1)!.reason).toMatch(/^abstain: per-claim probe cap reached \(2\/2\) between thresholds; P\(holds\)=0\.1250/);
+    expect(res.claimOutcomes[0]).toMatchObject({ outcome: "abstained", probes: 2 });
+  });
+
+  it("NOTARY_MAX_PROBES_PER_CLAIM: positive integer, default 5", () => {
+    expect(DEFAULT_MAX_PROBES_PER_CLAIM).toBe(5);
+    expect(maxProbesPerClaimFromEnv({})).toBe(5);
+    expect(maxProbesPerClaimFromEnv({ NOTARY_MAX_PROBES_PER_CLAIM: "3" })).toBe(3);
+    expect(maxProbesPerClaimFromEnv({ NOTARY_MAX_PROBES_PER_CLAIM: "0" })).toBe(5);
+    expect(maxProbesPerClaimFromEnv({ NOTARY_MAX_PROBES_PER_CLAIM: "2.5" })).toBe(5);
+  });
+
+  it("budget stop mid-claim -> the belief abstains with the budget reason", async () => {
+    const db = freshDb();
+    const enrich = claimOf("crustdata.enrich.headcount-total-integer");
+    const ledger = new CreditLedger({ budget: 6 });
+    // Charges the run ledger like the real Crustdata client: 2 credits per enriched identifier.
+    const io = new FakeIo((op, args) => {
+      const domains = (args[0] as { domains: string[] }).domains;
+      ledger.reserve(op, 2 * domains.length);
+      ledger.settle(op, 2 * domains.length);
+      return { status: 200, body: [{ matches: [{ company_data: { headcount: { total: domains[0]!.length * 100 } } }] }] };
+    });
+    const res = await runProbeLoop({
+      tool: "crustdata", anomalies: [anomalyFor(enrich)], claims: [enrich], tools: io,
+      llm: new FakeLlm([hypothesesReply([["honored", "type_edge"], ["silent_coercion", "type_edge"]])]),
+      db, runId: "loop-budget", ledger,
+    });
+    expect(res.probes.map((p) => p.verdict)).toEqual(["confirmed"]);
+    expect(res.stoppedReason).toMatch(/Credit budget exceeded/);
+    const store = new BeliefStore(db);
+    expect(store.byClaim(enrich.id)).toMatchObject({ status: "abstained", alpha: 2, beta: 1 });
+    expect(store.events(beliefIdFor(enrich.id)).at(-1)!.reason).toMatch(/^abstain: budget ended between thresholds \(Credit budget exceeded/);
+    expect(res.claimOutcomes[0]).toMatchObject({ claimId: enrich.id, outcome: "abstained", probes: 1 });
   });
 
   it("all rivals refuted -> re-propose once with the probe as evidence, then probe the new rivals", async () => {
@@ -714,9 +789,14 @@ describe("runProbeLoop", () => {
     });
     expect(llm.requests).toHaveLength(2);
     expect(llm.requests[1]!.messages[0]!.content).toContain("REFUTED");
-    expect(res.probes.map((p) => p.verdict)).toEqual(["refuted", "confirmed"]);
+    // the refuted design's fingerprint is spent; the new rivals get the two remaining variants
+    expect(res.probes.map((p) => p.verdict)).toEqual(["refuted", "confirmed", "confirmed"]);
+    expect(res.probes.map((p) => p.params.sent)).toEqual([1234, 3517, 4321]);
     expect(res.hypotheses.find((h) => h.id === res.probes[1]!.winningHypothesisId)!.class).toBe("silent_coercion");
     expect(res.abstained).toEqual([]);
+    // Beta(1,3) is between thresholds and no independent design is left: abstain
+    expect(new BeliefStore(db).byClaim(claim.id)).toMatchObject({ status: "abstained", beta: 3 });
+    expect(res.claimOutcomes[0]).toMatchObject({ outcome: "abstained", reason: "no further independent probe design between thresholds" });
     expect(db.loadHypotheses("loop-2")).toHaveLength(4);
   });
 

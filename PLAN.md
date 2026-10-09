@@ -9,7 +9,7 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 - [x] **P2 · Contracts and deterministic checker** — claims from real docs, checker, recon sweep
 - [x] **P3 · Seeded world and naive run** — Dodo seed script, seeded queue + expected outcomes, policy table, naive executor, grader, first bundle
 - [x] **P4 · Reflector and probes** — Bedrock client with roles, batched hypotheses, probe templates, cost-aware scoring, commit-then-run, verdict rules
-- [ ] **P5 · Beliefs and adversary** — beta-binomial store, lifecycle incl. `unlearned`, adversary (`bedrock` + `session`), evidence-validity check
+- [x] **P5 · Beliefs and adversary** — beta-binomial store, lifecycle incl. `unlearned`, adversary (`bedrock` + `session`), evidence-validity check
 - [ ] **P6 · Guards, gated queue, recovery** — guard compiler, `guarded()` clients, required-beliefs gating, evidence packs, `--resume`, local API + SSE
 - [ ] **P7 · Transfer, drift, coverage** — `--priors-from`, drift fixture, `notary guards coverage`
 - [ ] **P8 · Replay and evaluation** — `notary replay`, noise floor, metrics, `docs/EVALUATION.md`, `export/TOOLS.md`
@@ -45,3 +45,6 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 
 **P4 (Oct 10).** Bedrock client (3 roles, temp 0, per-role usage + USD, span per call), one batched fail-safe reflector call, 8 probe templates with control variants, cost-aware score, SQLite commit-then-run with immutable predictions, verdict rules exactly per TDD (each unit-tested), `notarize --tool` runs recon → checker → probe loop. 254 tests pass.
 - [ ] BLOCKED: live probe loop — `notarize --tool dodo` prints `BLOCKED: DODO_PAYMENTS_API_KEY not set` and `BLOCKED: NOTARY_MODEL_REFLECTOR not set`. Needs Crustdata/Dodo keys, Bedrock model ids + AWS credentials, and a neatlogs key to show the prediction span before the call.
+
+**P5 (Oct 10).** Beta-binomial belief store (P(θ>0.5) confidence, append-only events, unlearn on crossing 0.5), probe-until-settled loop (cap 5/claim), local span sink + FR-10 evidence-validity check, adversary with `bedrock` and `session` (headless Claude Code, verdict committed) backends, `notarize --adversary`. 340 tests pass.
+- [ ] BLOCKED: `notarize --tool crustdata` end to end (no Crustdata key, no reflector/adversary model ids or AWS credentials). No real belief or adversary verdict exists yet.

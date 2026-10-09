@@ -8,9 +8,11 @@
  * BLOCKED (exit 3) before any network call when a tool key (live), the reflector model id or
  * AWS_REGION is missing; also when a credential error surfaces mid-run.
  *
- * P5 TODO hook: beliefs (Beta updates per confirmed/refuted probe), the adversary and belief
- * events plug in after runProbeLoop (see `beliefsHook` below); until then the bundle's beliefs are
- * empty and its disclosure says so.
+ * P5 beliefs phase (src/beliefs/phase.ts) runs after runProbeLoop: ensure a belief per claim,
+ * apply every probe (only "confirmed" moves α/β), abstain what ended between thresholds, check
+ * every cited span (FR-10, from runs/<runId>/spans.jsonl written by the local span sink), then
+ * the adversary (`--adversary bedrock|session`, default bedrock) reviews each candidate. A missing
+ * adversary model prints BLOCKED and leaves the candidates as candidates (exit 3).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -21,9 +23,14 @@ import { runRecon } from "../checker/recon.js";
 import type { ReconResult } from "../checker/recon.js";
 import { LlmClient, ModelConfigError } from "../llm/index.js";
 import type { LlmLike, UsageMeter } from "../llm/index.js";
+import type { AdversaryBackend, ReviewBeliefArgs, ReviewOutcome } from "../adversary/index.js";
+import { runBeliefsPhase } from "../beliefs/phase.js";
+import { BeliefStore } from "../beliefs/store.js";
+import type { BeliefsPhaseResult } from "../beliefs/phase.js";
 import { DEFAULT_MANIFEST_PATH, loadManifest } from "../queue/manifest.js";
 import type { Probe, RoleUsage, RunBundle, Tool, UsageByRole } from "../schema/index.js";
 import { DEFAULT_DB_PATH, openDb } from "../store/db.js";
+import { setSpanSink, spanSinkPath } from "../trace/index.js";
 import {
   CreditLedger,
   DEFAULT_CASSETTE_DIR,
@@ -32,7 +39,7 @@ import {
   isBlocked,
   listCassettes,
 } from "../tools/index.js";
-import { runProbeLoop } from "./loop.js";
+import { maxProbesPerClaimFromEnv, runProbeLoop } from "./loop.js";
 import type { ProbeLoopResult } from "./loop.js";
 import { BurstCounter, SimplePaymentPool, probeIoFromTools } from "./templates/index.js";
 
@@ -55,6 +62,10 @@ export interface NotarizeOptions {
   queuePath?: string;
   sleep?: (ms: number) => Promise<void>;
   now?: () => Date;
+  /** Adversary backend for candidate beliefs (default bedrock). */
+  adversary?: AdversaryBackend;
+  /** Injected adversary reviewer (tests); default reviewBelief. */
+  review?: (args: ReviewBeliefArgs) => Promise<ReviewOutcome>;
 }
 
 export interface NotarizeResult {
@@ -64,6 +75,7 @@ export interface NotarizeResult {
   runId?: string;
   bundlePath?: string;
   loop?: ProbeLoopResult;
+  beliefs?: BeliefsPhaseResult;
 }
 
 function blocked(reasons: string[]): NotarizeResult {
@@ -118,13 +130,6 @@ function countVerdicts(probes: readonly Probe[]): Record<string, number> {
   return out;
 }
 
-/** P5 hook: beliefs and the adversary consume the loop result here. Not built in P4. */
-function beliefsHook(_loop: ProbeLoopResult): RunBundle["beliefs"] {
-  // TODO(P5): Beta(α, β) per claim from informative probe verdicts, candidate/notarized lifecycle,
-  // adversary review, belief_events. Returns empty until then.
-  return { before: [], after: [] };
-}
-
 export async function notarize(opts: NotarizeOptions): Promise<NotarizeResult> {
   const env = opts.env ?? process.env;
   const now = opts.now ?? (() => new Date());
@@ -150,6 +155,8 @@ export async function notarize(opts: NotarizeOptions): Promise<NotarizeResult> {
   const started = now();
   const ledger = new CreditLedger({ env });
   const db = openDb(opts.dbPath ?? DEFAULT_DB_PATH);
+  const runsDir = opts.runsDir ?? RUNS_DIR;
+  const previousSink = spanSinkPath();
   try {
     let recon: ReconResult;
     let loop: ProbeLoopResult;
@@ -164,7 +171,15 @@ export async function notarize(opts: NotarizeOptions): Promise<NotarizeResult> {
       });
       const runId =
         mode === "replay" ? `notarize-${opts.tool}-replay-${recon.cassetteHash.slice(0, 12)}` : `notarize-${opts.tool}-${compactStamp(started)}`;
+      // Local span sink: every span of this run (probes included) lands in runs/<runId>/spans.jsonl.
+      setSpanSink(join(runsDir, runId, "spans.jsonl"));
       const tools = createTools({ mode, cassette: `probes-${opts.tool}`, cassetteDir, ledger, env });
+      // Beliefs before this run; the probe loop updates them verdict by verdict.
+      const claims = recon.entries.map((e) => e.claim);
+      const beliefStore = new BeliefStore(db, opts.now ? { now: opts.now } : {});
+      const eventsSince = beliefStore.lastEventSeq();
+      for (const c of claims) beliefStore.ensure(c);
+      const beliefsBefore = beliefStore.list(opts.tool);
       const pool = opts.tool === "dodo" ? probePaymentPool(opts.manifestPath ?? DEFAULT_MANIFEST_PATH, opts.queuePath ?? SEEDED_QUEUE_PATH) : { ids: [] };
       loop = await runProbeLoop({
         tool: opts.tool,
@@ -176,16 +191,38 @@ export async function notarize(opts: NotarizeOptions): Promise<NotarizeResult> {
         db,
         runId,
         ledger,
+        beliefs: beliefStore,
+        maxProbesPerClaim: maxProbesPerClaimFromEnv(env),
         burst: new BurstCounter(),
         payments: new SimplePaymentPool(pool.ids),
         ...(opts.now ? { now: opts.now } : {}),
       });
-      return await writeNotarizeBundle({ opts, mode, runId, started, now, recon, loop, ledger, llm, poolNote: pool.note });
+      const abstainedClaimIds = recon.anomalies.filter((an) => loop.abstained.includes(an.id)).map((an) => an.claimId);
+      const beliefs = await runBeliefsPhase({
+        db,
+        store: beliefStore,
+        before: beliefsBefore,
+        eventsSince,
+        tool: opts.tool,
+        runsDir,
+        claims,
+        probes: loop.probes,
+        hypotheses: loop.hypotheses,
+        stoppedReason: recon.stoppedReason ?? loop.stoppedReason,
+        abstainedClaimIds,
+        backend: opts.adversary ?? "bedrock",
+        llm,
+        env,
+        ...(opts.review ? { review: opts.review } : {}),
+        ...(opts.now ? { now: opts.now } : {}),
+      });
+      return await writeNotarizeBundle({ opts, mode, runId, started, now, recon, loop, beliefs, ledger, llm, poolNote: pool.note });
     } catch (err) {
       if (isBlocked(err) || err instanceof TestModeLockError) return blocked([err.message]);
       throw err;
     }
   } finally {
+    setSpanSink(previousSink);
     db.close();
   }
 }
@@ -198,19 +235,21 @@ async function writeNotarizeBundle(a: {
   now: () => Date;
   recon: ReconResult;
   loop: ProbeLoopResult;
+  beliefs: BeliefsPhaseResult;
   ledger: CreditLedger;
   llm: LlmLike & { meter?: UsageMeter };
   poolNote?: string | undefined;
 }): Promise<NotarizeResult> {
-  const { recon, loop, ledger, runId } = a;
+  const { recon, loop, ledger, runId, beliefs } = a;
   const tool = a.opts.tool;
   const stopReason = recon.stoppedReason ?? loop.stoppedReason;
   const status: RunBundle["status"] = stopReason ? "stopped_budget" : "completed";
   const usageByRole: UsageByRole = a.llm.meter?.snapshot() ?? { executor: ZERO, reflector: loop.usage, adversary: ZERO };
   const verdicts = countVerdicts(loop.probes);
   const disclosure = [
-    "Notarize run (P4): anomalies from the deterministic checker, rival hypotheses proposed by the reflector model, probes with predictions committed before each call, verdicts by deterministic rules. Beliefs and adversary review arrive in P5.",
+    "Notarize run: anomalies from the deterministic checker, rival hypotheses proposed by the reflector model, probes with predictions committed before each call, verdicts by deterministic rules. Beliefs are Beta(α, β) over the doc claim holding (only confirmed probes update), every cited span is checked against runs/<runId>/spans.jsonl, and candidates are reviewed by the adversary.",
   ];
+  if (beliefs.adversaryBlocked) disclosure.push(`Adversary review did not run (${beliefs.adversaryBlocked}); candidate beliefs stay candidates.`);
   if (a.mode === "replay") disclosure.push("Replayed from cassettes; no tool network calls.");
   if (tool === "dodo") disclosure.push("Dodo Payments test mode only; refund probes use seeded payments the seeded queue does not reference.");
 
@@ -233,8 +272,8 @@ async function writeNotarizeBundle(a: {
     anomalies: recon.anomalies,
     hypotheses: loop.hypotheses,
     probes: loop.probes,
-    beliefs: beliefsHook(loop),
-    beliefEvents: [],
+    beliefs: { before: beliefs.before, after: beliefs.after },
+    beliefEvents: beliefs.events,
     guards: [],
     usageByRole,
     credits: { byEndpoint: ledger.byEndpoint, total: ledger.total, budget: ledger.budget },
@@ -247,6 +286,18 @@ async function writeNotarizeBundle(a: {
       ...Object.fromEntries(Object.entries(verdicts).map(([k, v]) => [`probes.${k}`, v])),
       abstained: loop.abstained.length,
       anomaliesSkipped: loop.skipped.length,
+      ...Object.fromEntries(
+        (["hypothesis", "candidate", "notarized", "refuted", "abstained", "unlearned"] as const).map((st) => [
+          `beliefs.${st}`,
+          beliefs.after.filter((b) => b.status === st).length,
+        ]),
+      ),
+      "evidence.checked": beliefs.evidence.checked,
+      "evidence.invalid": beliefs.evidence.invalid,
+      "adversary.uphold": beliefs.reviews.uphold,
+      "adversary.narrow": beliefs.reviews.narrow,
+      "adversary.downgrade": beliefs.reviews.downgrade,
+      "adversary.failed": beliefs.reviews.failed,
     },
     traceLinks: {},
     cassettes: [`recon-${tool}`, `probes-${tool}`],
@@ -258,11 +309,14 @@ async function writeNotarizeBundle(a: {
     `notarize: tool=${tool} mode=${a.mode} runId=${runId}`,
     `claims: ${recon.entries.length}  anomalies: ${recon.anomalies.length}  hypotheses: ${loop.hypotheses.length} (rejected ${loop.rejected.length})`,
     `probes: ${loop.probes.length}  ${Object.entries(verdicts).map(([k, v]) => `${k}=${v}`).join(" ")}  abstained: ${loop.abstained.length}`,
+    `claims probed: ${loop.claimOutcomes.length}  ${(["candidate", "abstained", "open"] as const).map((o) => `${o}=${loop.claimOutcomes.filter((c) => c.outcome === o).length}`).join(" ")}`,
     `credits: ${ledger.total}/${ledger.budget}  reflector: ${usageByRole.reflector.calls} calls, $${usageByRole.reflector.usd}`,
   ];
+  lines.push(...beliefs.lines);
   if (a.poolNote) lines.push(`note: ${a.poolNote}`);
   for (const s of loop.skipped) lines.push(`skipped ${s.anomalyId}: ${s.reason}`);
   if (stopReason) lines.push(`STOPPED: ${stopReason}`);
   lines.push(`bundle: ${bundlePath}`);
-  return { exitCode: 0, lines, status, runId, bundlePath, loop };
+  const blockedCandidates = beliefs.adversaryBlocked !== undefined && beliefs.after.some((b) => b.status === "candidate");
+  return { exitCode: blockedCandidates ? 3 : 0, lines, status, runId, bundlePath, loop, beliefs };
 }

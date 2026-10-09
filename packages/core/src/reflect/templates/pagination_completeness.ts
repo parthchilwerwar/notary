@@ -31,6 +31,8 @@ export const PAGINATION_TABLE: ClassTable = {
 
 export const PAGE_SIZE = 10;
 export const PAGES = 3;
+/** Page size per design variant (the control reads PAGES pages' worth in one call). */
+export const PAGE_SIZE_VARIANTS = [PAGE_SIZE, 5, 15] as const;
 
 /** Item id field per list op; otherwise the whole item (canonical JSON) is the identity. */
 const ID_FIELD: Record<string, string> = {
@@ -51,6 +53,7 @@ function idsOf(body: unknown, op: string): string[] | null {
 
 export const paginationCompleteness: ProbeTemplateModule = {
   name: "pagination_completeness",
+  variants: 3,
 
   appliesTo(claim) {
     return claim.expect.kind === "maxItems" && PAGED_LIST_OPS.has(claim.operation);
@@ -59,17 +62,20 @@ export const paginationCompleteness: ProbeTemplateModule = {
   design(claim, hypotheses, ctx) {
     if (!paginationCompleteness.appliesTo(claim)) return { skip: "pagination_completeness needs a maxItems claim on a paged list op" };
     const op = claim.operation;
+    const k = ctx.variant ?? 0;
+    const size = PAGE_SIZE_VARIANTS[k];
+    if (size === undefined) return { skip: `pagination_completeness: no variant ${k}` };
     const pages: ProbeStep[] = [];
     for (let n = 0; n < PAGES; n++) {
-      pages.push({ op, params: { page_size: PAGE_SIZE, page_number: n }, tag: "page", note: `page ${n} of size ${PAGE_SIZE}` });
+      pages.push({ op, params: { page_size: size, page_number: n }, tag: "page", note: `page ${n} of size ${size}` });
     }
     return finishDesign(
       {
         template: "pagination_completeness",
-        params: { steps: pages, op },
+        params: { steps: pages, op, ...(k > 0 ? { pageSize: size, variant: k } : {}) },
         control: {
           params: {
-            steps: [{ op, params: { page_size: PAGE_SIZE * PAGES, page_number: 0 }, tag: "all", note: `one page of ${PAGE_SIZE * PAGES}` }],
+            steps: [{ op, params: { page_size: size * PAGES, page_number: 0 }, tag: "all", note: `one page of ${size * PAGES}` }],
           },
         },
         predictions: predictionsFor(hypotheses, PAGINATION_TABLE),
@@ -84,6 +90,7 @@ export const paginationCompleteness: ProbeTemplateModule = {
 
   observe(exchanges, design): ProbeObservation {
     const op = String(design.params.op);
+    const pageSize = typeof design.params.pageSize === "number" ? design.params.pageSize : PAGE_SIZE;
     const pageExchanges = pick(exchanges, "treatment", "page");
     const all = pick(exchanges, "control", "all")[0];
     const pageIds = pageExchanges.map((ex) => (is2xx(ex) ? idsOf(ex.responseBody, op) : null));
@@ -95,7 +102,7 @@ export const paginationCompleteness: ProbeTemplateModule = {
     const walked: string[] = [];
     if (controlIds === null || pageIds.length < PAGES || pageIds.some((p) => p === null)) {
       note = "a read failed";
-    } else if (controlIds.length <= PAGE_SIZE) {
+    } else if (controlIds.length <= pageSize) {
       note = `set fits on one page (${controlIds.length} items): paging not exercised`;
     } else {
       for (const p of pageIds) walked.push(...p!);

@@ -30,9 +30,12 @@ describe("cli", () => {
     await expect(parse(args)).rejects.toBeInstanceOf(NotImplementedError);
   });
 
-  it("notarize has --recon-only and --replay flags", () => {
+  it("notarize has --recon-only, --replay and --adversary flags", () => {
     const notarize = buildProgram().commands.find((c) => c.name() === "notarize");
-    expect(notarize?.options.map((o) => o.long)).toEqual(["--tool", "--priors-from", "--recon-only", "--replay"]);
+    expect(notarize?.options.map((o) => o.long)).toEqual(["--tool", "--priors-from", "--recon-only", "--replay", "--adversary"]);
+    const adv = notarize?.options.find((o) => o.long === "--adversary");
+    expect(adv?.argChoices).toEqual(["bedrock", "session"]);
+    expect(adv?.defaultValue).toBe("bedrock");
   });
 
   it("run: guarded (no --naive) and --resume are P6; --replay takes a cassette", async () => {

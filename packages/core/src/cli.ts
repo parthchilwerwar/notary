@@ -28,15 +28,18 @@ export function buildProgram(): Command {
     .addOption(new Option("--priors-from <tool>", "seed priors from another tool's defect classes").choices(["crustdata", "dodo"]))
     .option("--recon-only", "run the recon sweep and the deterministic checker only, then write a notarize bundle")
     .option("--replay", "replay the recon-<tool> (and, without --recon-only, probes-<tool>) cassettes: no tool network, no tool keys")
-    .action(async (opts: { tool: "crustdata" | "dodo"; priorsFrom?: string; reconOnly?: boolean; replay?: boolean }) => {
+    .addOption(
+      new Option("--adversary <backend>", "adversary backend for candidate beliefs").choices(["bedrock", "session"]).default("bedrock"),
+    )
+    .action(async (opts: { tool: "crustdata" | "dodo"; priorsFrom?: string; reconOnly?: boolean; replay?: boolean; adversary?: "bedrock" | "session" }) => {
       if (opts.priorsFrom) notImplemented("notarize --priors-from", "P7");
       const { initTracing, shutdownTracing } = await import("./trace/index.js");
       if (!opts.reconOnly) {
-        // Full loop (P4): recon -> checker -> hypotheses -> probes. Beliefs/adversary hook in P5.
+        // Full loop: recon -> checker -> hypotheses -> probes -> beliefs -> evidence check -> adversary.
         const { notarize } = await import("./reflect/notarize.js");
         await initTracing({ serviceName: "notary" });
         try {
-          const result = await notarize({ tool: opts.tool, replay: opts.replay === true });
+          const result = await notarize({ tool: opts.tool, replay: opts.replay === true, adversary: opts.adversary ?? "bedrock" });
           for (const line of result.lines) (result.exitCode === 0 ? console.log : console.error)(line);
           if (result.exitCode !== 0) process.exitCode = result.exitCode;
         } finally {

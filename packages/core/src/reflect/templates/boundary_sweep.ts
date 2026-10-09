@@ -47,8 +47,14 @@ function reading(ex: Exchange | undefined): { status: number | null; length: num
   return { status: ex.status, length: list ? list.length : null };
 }
 
+/** Treatment sizes per variant: all above the documented max, each a distinct design. */
+export function boundaryOverValues(max: number): number[] {
+  return [max + 1, max + 10, max * 2];
+}
+
 export const boundarySweep: ProbeTemplateModule = {
   name: "boundary_sweep",
+  variants: 3,
 
   appliesTo(claim) {
     return claim.expect.kind === "maxItems" && claim.param !== "" && PAGED_LIST_OPS.has(claim.operation);
@@ -61,10 +67,17 @@ export const boundarySweep: ProbeTemplateModule = {
     const max = claim.expect.max;
     const op = claim.operation;
     const p = claim.param;
+    const k = ctx.variant ?? 0;
+    const over = boundaryOverValues(max)[k];
+    if (over === undefined) return { skip: `boundary_sweep: no variant ${k}` };
     return finishDesign(
       {
         template: "boundary_sweep",
-        params: { steps: [{ op, params: { [p]: max + 1 }, tag: "over", note: `${p}=${max + 1} (one over the documented max)` }], max },
+        params: {
+          steps: [{ op, params: { [p]: over }, tag: "over", note: `${p}=${over} (${over - max} over the documented max)` }],
+          max,
+          ...(k > 0 ? { variant: k } : {}),
+        },
         control: {
           params: {
             steps: [

@@ -87,16 +87,25 @@ export function classifyValue(type: string, v: unknown): string {
 
 const PRIORITY = ["other_type", "formatted_string", "numeric_string", "float"];
 
-function edgeRecipe(op: string, steps: readonly ProbeStep[], tag: string): { t: ProbeStep[]; c: ProbeStep[] } | null {
+/**
+ * Variant k > 0 exists only for Crustdata enrich: the treatment/control records rotate through the
+ * recon's domains (treatment = domains[k], control = domains[k+1 mod n]), so each variant reads a
+ * different record. Other recipes have a single design.
+ */
+function edgeRecipe(op: string, steps: readonly ProbeStep[], tag: string, k = 0): { t: ProbeStep[]; c: ProbeStep[] } | null {
   if (op === "crustdata.enrichCompany") {
     const base = steps.find((s) => s.op === op && Array.isArray(s.params.domains) && (s.params.domains as unknown[]).length >= 2);
     if (!base) return null;
-    const [a, b] = base.params.domains as string[];
+    const domains = base.params.domains as string[];
+    if (k >= domains.length) return null;
+    const a = domains[k]!;
+    const b = domains[(k + 1) % domains.length]!;
     return {
       t: [{ ...base, params: { ...base.params, domains: [a] }, tag: "read", note: `Enrich ${a}` }],
       c: [{ ...base, params: { ...base.params, domains: [b] }, tag: "read", note: `Enrich ${b}` }],
     };
   }
+  if (k > 0) return null;
   const credit = (amount: number, currency = "USD"): ProbeStep => ({
     op: "dodo.createWalletLedgerEntry",
     params: { customer_id: "$from:0:customer_id", amount, currency, entry_type: "credit", reason: `notary probe type_edge ${tag}` },
@@ -126,6 +135,7 @@ function edgeRecipe(op: string, steps: readonly ProbeStep[], tag: string): { t: 
 
 export const typeEdge: ProbeTemplateModule = {
   name: "type_edge",
+  variants: 3,
 
   appliesTo(claim) {
     return claim.expect.kind === "type";
@@ -133,12 +143,13 @@ export const typeEdge: ProbeTemplateModule = {
 
   design(claim, hypotheses, ctx) {
     if (claim.expect.kind !== "type") return { skip: "type_edge needs a type claim" };
-    const recipe = edgeRecipe(claim.operation, entryFor(claim, ctx)?.recon ?? [], ctx.tag);
-    if (!recipe) return { skip: `type_edge: no edge recipe for ${claim.operation}` };
+    const k = ctx.variant ?? 0;
+    const recipe = edgeRecipe(claim.operation, entryFor(claim, ctx)?.recon ?? [], ctx.tag, k);
+    if (!recipe) return { skip: k > 0 ? `type_edge: no variant ${k} for ${claim.operation}` : `type_edge: no edge recipe for ${claim.operation}` };
     return finishDesign(
       {
         template: "type_edge",
-        params: { steps: recipe.t, field: claim.expect.field, type: claim.expect.type },
+        params: { steps: recipe.t, field: claim.expect.field, type: claim.expect.type, ...(k > 0 ? { variant: k } : {}) },
         control: { params: { steps: recipe.c } },
         predictions: predictionsFor(hypotheses, TYPE_EDGE_TABLE),
       },

@@ -43,6 +43,9 @@ const OPS = new Set(["dodo.createProduct", "dodo.createWalletLedgerEntry", "dodo
 export const UNIT_AMOUNTS = { treatment: 1234, control: 2468 } as const;
 /** Refund amounts stay small: they must fit inside a seeded payment. */
 export const REFUND_UNIT_AMOUNTS = { treatment: 100, control: 150 } as const;
+/** Treatment amounts per design variant (control stays fixed); index 0 is the base amount. */
+export const UNIT_TREATMENT_VARIANTS = [UNIT_AMOUNTS.treatment, 3517, 4321] as const;
+export const REFUND_TREATMENT_VARIANTS = [REFUND_UNIT_AMOUNTS.treatment, 120, 130] as const;
 
 export function classifyRatio(sent: number, echoed: number): string {
   if (echoed === sent) return "equal";
@@ -101,6 +104,7 @@ function writeSteps(claim: Claim, ctx: ProbeContext, variant: "t" | "c", amount:
 
 export const unitRoundtrip: ProbeTemplateModule = {
   name: "unit_roundtrip",
+  variants: 3,
 
   appliesTo(claim) {
     return claim.expect.kind === "unit" && OPS.has(claim.operation);
@@ -109,12 +113,14 @@ export const unitRoundtrip: ProbeTemplateModule = {
   design(claim, hypotheses: readonly Hypothesis[], ctx): ProbeDesign | Skip {
     if (!unitRoundtrip.appliesTo(claim)) return { skip: "unit_roundtrip needs a unit claim on a known write op" };
     let paymentIds: string[] | undefined;
-    let amounts: { treatment: number; control: number } = UNIT_AMOUNTS;
+    const k = ctx.variant ?? 0;
+    if (k >= UNIT_TREATMENT_VARIANTS.length) return { skip: `unit_roundtrip: no variant ${k}` };
+    let amounts: { treatment: number; control: number } = { treatment: UNIT_TREATMENT_VARIANTS[k]!, control: UNIT_AMOUNTS.control };
     if (claim.operation === "dodo.createRefund") {
       const pool = ctx.payments.available();
       if (pool.length < 2) return { skip: "unit_roundtrip on refunds needs 2 probe-reserved succeeded payments (seed manifest)" };
       paymentIds = [pool[0]!, pool[1]!];
-      amounts = REFUND_UNIT_AMOUNTS;
+      amounts = { treatment: REFUND_TREATMENT_VARIANTS[k]!, control: REFUND_UNIT_AMOUNTS.control };
     }
     const t = writeSteps(claim, ctx, "t", amounts.treatment, paymentIds?.[0]);
     const c = writeSteps(claim, ctx, "c", amounts.control, paymentIds?.[1]);
@@ -122,7 +128,13 @@ export const unitRoundtrip: ProbeTemplateModule = {
     return finishDesign(
       {
         template: "unit_roundtrip",
-        params: { steps: t, sent: amounts.treatment, sentPath: claim.param, echoPath: claim.expect.kind === "unit" ? claim.expect.field : "" },
+        params: {
+          steps: t,
+          sent: amounts.treatment,
+          sentPath: claim.param,
+          echoPath: claim.expect.kind === "unit" ? claim.expect.field : "",
+          ...(k > 0 ? { variant: k } : {}),
+        },
         control: { params: { steps: c, sent: amounts.control } },
         predictions: predictionsFor(hypotheses, UNIT_TABLE),
         ...(paymentIds ? { paymentIds } : {}),

@@ -153,10 +153,19 @@ export interface ProbeContext {
   costs: CostModel;
   burst: BurstCounter;
   payments: PaymentPool;
+  /**
+   * Which design variant to build (0-based; default 0). Only templates that declare `variants > 1`
+   * read it; each variant changes the treatment's value at the claim's parameter (or, for
+   * type_edge, the input record) and stamps `variant: k` into the treatment params for k > 0, so
+   * every variant has its own design fingerprint (src/beliefs/params.ts).
+   */
+  variant?: number;
 }
 
 export interface ProbeTemplateModule {
   name: ProbeTemplate;
+  /** Distinct deterministic designs this template can build per claim (ctx.variant 0..n-1); default 1. */
+  variants?: number;
   appliesTo(claim: Claim): boolean;
   design(claim: Claim, hypotheses: readonly Hypothesis[], ctx: ProbeContext): ProbeDesign | Skip;
   execute(io: ProbeIo, design: ProbeDesign, ctx: ProbeContext): Promise<TaggedExchange[]>;

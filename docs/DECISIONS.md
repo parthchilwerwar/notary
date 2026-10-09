@@ -68,3 +68,17 @@ Where the docs and reality disagree, or a choice the docs leave open. Newest pha
 | 40 | Prediction immutability | Prediction, sha256 and `committedAt` are written before any HTTP call; an SQLite trigger forbids changing them or deleting probes; `recordResult` re-verifies the hash | FR-4 / commit-then-run |
 | 41 | `header_burst` | At most 10 requests per run across all probes, free read ops only, polite delays | TDD probe limits |
 | 42 | Refund probes | Only use seeded payments that the queue never references; skipped (with reason) until the seed manifest exists | Probes never disturb the graded queue |
+
+## P5 · Beliefs and adversary
+
+| # | Docs say | Reality / decision | Why |
+| --- | --- | --- | --- |
+| 43 | "P(holds) < 0.1 / > 0.9" (TDD step 7) | `confidence = P(θ > 0.5 \| Beta(α,β))`, where θ is the rate at which the doc claim holds (exact binomial sum for integer α,β). From Beta(1,1) a threshold takes **3** same-side confirmed probes: Beta(4,1) = 0.9375, Beta(1,4) = 0.0625 | The posterior *mean* would need ~9 violations to drop below 0.1 |
+| 44 | Updates | Only `confirmed` verdicts move α/β (honored → α+1, any defect class → β+1). Inconclusive, uninformative, invalid and refuted log an event but change nothing | FR-6 |
+| 45 | "at least two independent probes" | Independent = different probe id **and** different design fingerprint (template + treatment value at `claim.param` + variant). Repeats move α/β but add no independence; invalid evidence never counts | Documented rule, tested |
+| 46 | Probe loop | Keeps probing a claim until its belief is a candidate or `NOTARY_MAX_PROBES_PER_CLAIM` (default 5) / the budget ends, then abstains with the reason. Fingerprints are never reused, including across runs | Without this, beliefs could never reach candidate |
+| 47 | Crustdata type claims | `type_edge` has only 2 variants (the two recon domains), so these claims can abstain unless another template applies | Known limit; more domains cost credits |
+| 48 | Evidence source (FR-10) | `neatlogs-cli` is not installed, so the check reads `runs/<runId>/spans.jsonl`, which the span sink now writes even when neatlogs is off. A probe must vary `claim.param` (or, for count templates, send the operation more often; for `type_edge`, send the param across different records) | Offline-verifiable receipts |
+| 49 | Adversary input | Belief + claim + raw probe records (template, params, control, predictions with defect classes, observed, verdict, trace ids). Hypothesis statements / reflector prose are excluded and asserted absent | TDD step 8 |
+| 50 | `session` backend | Headless `claude -p --output-format json --tools Read,Write --permission-mode dontAsk --strict-mcp-config --disable-slash-commands`, allowed to read only `adversary/inbox/<id>.json` and edit only `adversary/verdicts/<id>.json`; `.env` reads disallowed. The verdict and inbox files are committed (`adversary: <verdict> <beliefId>`). The allowed-tools rule hasn't been exercised live yet | Entire checkpoints each review next to the belief |
+| 51 | Adversary verdicts | uphold → notarized; narrow → notarized with a narrowed scope; downgrade → back to `hypothesis`; malformed/failed → stays candidate | FR-7, fail safe |
