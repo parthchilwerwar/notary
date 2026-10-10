@@ -87,7 +87,7 @@ These values are copied from [`docs/EVALUATION.md` → Checks that don't need AP
 
 | Command | Result (from EVALUATION.md) |
 | --- | --- |
-| [`pnpm test`](docs/EVALUATION.md#checks-that-dont-need-api-keys) | PASS: 481 passed, 0 failed (481 tests in 28 files) |
+| [`pnpm test`](docs/EVALUATION.md#checks-that-dont-need-api-keys) | PASS: 537 passed, 0 failed (537 tests in 31 files) |
 | [`pnpm notary guards coverage --json`](docs/EVALUATION.md#checks-that-dont-need-api-keys) | PASS: unguarded_call_sites = 0 (27 sites: 21 guarded, 6 raw-by-design; backend tsc) |
 
 The coverage check uses the TypeScript-checker backend. The PRD asks for `entire graph` callers. That backend is implemented, but it is unverified because the Entire CLI isn't installed (see [limits](#honest-limits)).
