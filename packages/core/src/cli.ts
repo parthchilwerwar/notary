@@ -213,8 +213,17 @@ export function buildProgram(): Command {
     .option("--evidence", "only regenerate packages/web/public/evidence/evidence.json from facts on disk (doctor record, trace link template, entire, docs/BUSINESS.md)")
     .option("--certificates", "only write certificates from REAL bundles: packages/web/public/certificates/<tool>.json + report.json and export/REPORT.md (--out: certificates directory, --runs-dir, --root)")
     .option("--fixture", "with --certificates: build from the FIXTURE demo bundles (packages/core/runs/demo) into certificates/fixture/ and export/REPORT.fixture.md")
-    .action(async (opts: { sample?: boolean; content?: boolean; out?: string; seed: string; runsDir?: string; root?: string; checks: boolean; certificates?: boolean; fixture?: boolean }) => {
+    .option("--explain", "only write deterministic explain answers for every published run (real and fixture worlds kept apart) to packages/web/public/content/explain.json (--out: its directory)")
+    .action(async (opts: { sample?: boolean; content?: boolean; out?: string; seed: string; runsDir?: string; root?: string; checks: boolean; certificates?: boolean; fixture?: boolean; explain?: boolean }) => {
       if (opts.fixture && !opts.certificates) throw new Error("--fixture only applies to --certificates (fixture bundles are published by `notary demo --fixture --publish`)");
+      if (opts.explain) {
+        if (opts.sample || opts.content || opts.certificates || (opts as { evidence?: boolean }).evidence) throw new Error("--explain is a separate export; run it on its own");
+        const { writeExplain } = await import("./explain/export.js");
+        const { resolve } = await import("node:path");
+        const dir = opts.out ? resolve(process.env.INIT_CWD ?? process.cwd(), opts.out) : undefined;
+        for (const line of (await writeExplain(dir ? { contentDir: dir } : {})).lines) console.log(line);
+        return;
+      }
       if (opts.certificates) {
         if (opts.sample || opts.content || (opts as { evidence?: boolean }).evidence) throw new Error("--certificates is a separate export; run it on its own");
         const { writeCertificates } = await import("./certify/index.js");
@@ -269,7 +278,7 @@ export function buildProgram(): Command {
 
   program
     .command("serve")
-    .description("Local API + SSE for the dashboard's live mode (read-only)")
+    .description("Local API + SSE for the dashboard's live mode (reads; ask + approvals need the printed session token)")
     .option("--port <port>", "port to listen on", "8787")
     .option("--host <host>", "interface to bind (loopback by default)", "127.0.0.1")
     .action(async (opts: { port: string; host: string }) => {
@@ -278,11 +287,20 @@ export function buildProgram(): Command {
       const loopback = ["127.0.0.1", "localhost", "::1"].includes(opts.host);
       if (!loopback) console.warn(`warning: binding ${opts.host} exposes the API beyond this machine`);
       const { startServer } = await import("./api/server.js");
+      const { sessionBanner } = await import("./api/session.js");
+      const { initTracing, shutdownTracing } = await import("./trace/index.js");
+      // Ask / approval spans go to neatlogs when NEATLOGS_API_KEY is set (pass-through otherwise).
+      await initTracing({ serviceName: "serve" });
       const server = await startServer({ port, host: opts.host });
       console.log(`notary serve: listening on ${server.url}`);
       console.log(`  GET ${server.url}/api/bundles  GET ${server.url}/api/bundles/:id  GET ${server.url}/api/stream (SSE)`);
+      // The one and only place the session token is shown (never written to a file, journal or span).
+      for (const line of sessionBanner(server.url, server.session.token)) console.log(line);
       const shutdown = (): void => {
-        void server.close().then(() => process.exit(0));
+        void server
+          .close()
+          .then(() => shutdownTracing())
+          .then(() => process.exit(0));
       };
       process.once("SIGINT", shutdown);
       process.once("SIGTERM", shutdown);
