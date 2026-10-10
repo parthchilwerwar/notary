@@ -1,6 +1,6 @@
 # Dashboard phases
 
-One phase per Codex session, per the root AGENTS.md. U1 is the current phase; U2 and U3 are retained here for subsequent sessions.
+One phase per Codex session, per the root AGENTS.md. U4 is the current phase, as requested by the user. U2 live mode and U3 deployment remain scheduled separately.
 
 ## U1 — Shell, Queue and Beliefs
 
@@ -38,3 +38,20 @@ no live subscription or deployment has been implemented in U1.
 - [ ] Demo polish, consistent status colors, phone layout and empty/error states.
 - [ ] Static Vercel configuration serving public/bundles and public/evidence.
 - [ ] Build, deployment verification and `U3: <summary>` commit.
+
+## U4 — Design system and Overview
+
+- [x] Warm gray/white surfaces, pill navigation, Geist light/regular typography, large tabular KPIs, blue accent and a blue-to-warm insight card.
+- [x] shadcn/ui Button/Card primitives, Tailwind Vite integration and local aliases.
+- [x] Overview: safety comparison, queue flow tooltips, disjoint belief breakdown, dot-matrix probes, role USD, endpoint credits and a generated takeaway.
+- [x] Recharts custom SVG hatching and recorded step-line trends.
+- [x] Restyle Queue and Beliefs, implement bundle-backed Probe log, comparison, Economics and separate Evidence sections.
+- [x] Verify the full catalog in the browser, fixture disclosure and same-cohort comparison restrictions.
+- [x] Production build, 13 unit tests, and 28 Playwright page/theme/width combinations with screenshot review and tamper-rejection check.
+- [x] Commit `U4: design system and overview`.
+
+This phase supplies static content for the previously scheduled screens. It does
+not complete U2's live API/SSE work or U3's deployment. The user explicitly
+allows JSON-backed economics content in U4; the absent plan remains pending.
+Visual artifacts are in ignored `screenshots/U4` and can be regenerated with
+`npm run check:visual`. Only web changes are included in the U4 commit.

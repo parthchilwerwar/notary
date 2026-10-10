@@ -1,12 +1,14 @@
 # @notary/web
 
-Read-only React + Vite + Tailwind dashboard. U1 implements Queue and Beliefs;
-the later screens remain explicitly scheduled placeholders. See `TASKS.md` for
-the complete U1–U3 checklist.
+Read-only Notary dashboard built with React, Vite, Tailwind, shadcn/ui primitives
+and Recharts. The home page is Overview; Queue, Beliefs, Probe log, Runs
+comparison, Economics and Evidence share its visual system. Geist uses light and
+regular weights. Warm neutral surfaces, a blue accent and SVG diagonal hatching
+separate focus and baseline series. Green/red are reserved for safety deltas.
 
 ## Local development
 
-From `packages/web`:
+Run from `packages/web`:
 
 ```powershell
 pnpm --ignore-workspace --store-dir .pnpm-store install --frozen-lockfile --ignore-scripts
@@ -16,40 +18,69 @@ npm test
 npm run build
 ```
 
-The web package has its own lockfile and dependency store so dashboard sessions
-do not need to change the root workspace files. `dist` is the static production
-output. Vite serves `public` assets unchanged.
-The run commands use npm to avoid pnpm's automatic root-workspace install check.
-Dependency install scripts are disabled; Vite uses the platform binary shipped
-in the esbuild optional dependency.
+The web package has its own lockfile and dependency store. Use npm for run
+commands to avoid pnpm's automatic root workspace installation check. `dist`
+is the static output; Vite serves `public` assets unchanged.
 
-## Bundle integrity and provenance
+## Integrity and data sources
 
-The run picker reads `public/bundles/index.json` and fetches
-`public/bundles/<runId>.json`. Both are validated using the core's shared zod
-schemas. Before any bundle data appears, the browser recomputes its content hash
-with the core's browser-compatible hash function and checks index consistency.
-Schema errors, a mismatched hash, or `x-notary-hash-mismatch: 1` withhold all data
-and show a visible error. Requests are cancelled when switching bundles; a failed
-load never leaves the previous run's data on screen.
+The catalog reads `public/bundles/index.json` and the optional
+`public/bundles/fixture/index.json`. Every listed bundle must pass the shared core
+schema, a browser-recomputed content hash and index metadata checks before any
+catalog data is rendered. A corrupt bundle, mislabeled fixture or
+`x-notary-hash-mismatch: 1` withholds the catalog and displays a visible error.
+The fixture directory rejects bundles whose `sample` flag is false.
 
-All screen metrics come from bundle fields or array counts. Missing metrics show
-"Not computable". Confidence means P(documentation holds), not confidence that
-the discovered violation is true. Amounts remain in recorded minor units.
+Run selection defaults to a guarded queue run when available. The baseline
+picker permits only the same fixture/live cohort. Charts never combine those
+cohorts. Navigating to Probe log chooses a bundle with probes if the current run
+has none; returning to a queue screen chooses a guarded queue run. The selected
+run is always identified in the picker. Overview's experimental coverage can
+use a same-cohort notarization bundle and explicitly names that source.
 
-Every `sample: true` bundle carries the visible fixture banner regardless of its
-`mode` or `kind`. Only the selected bundle is displayed. All bundle disclosures
-and provenance are available above the screens. Trace links come exclusively
-from the bundle (including local JSONL receipt paths); missing links show span
-or trace identifiers as text. Local receipt files must be hosted separately to
-resolve on a static deployment. The synthetic sample includes example trace
-URLs, which are not evidence of live tracing.
+The fixture banner stays visible while scrolling. Evidence keeps integration
+receipts and the fixture comparison in separate sections, including when a live
+run is selected. Required tool content comes from
+`public/evidence/evidence.json`; omitted tools show Pending. Optional
+`public/economics.json` is shown as the cfo.ai plan; otherwise the screen shows
+"cfo.ai plan pending".
 
-Queue rows expand into request fields, policy/grade/enrichment, guard definitions,
-evidence packs and recorded API effects. Beliefs support before/after snapshots
-and status filters, with claims, citations, probe records, adversary reviews and
-the append-only belief history in expandable detail.
+Numbers are bundle fields, JSON fields or computations over them. Missing
+metrics remain unknown, rather than becoming zero. Model USD is summed from
+`usageByRole`; API credits are never given an invented USD exchange rate.
+Zero-cost roles are listed explicitly. A cost per belief with no notarized
+beliefs is undefined. The safety takeaway describes recorded differences and
+held refunds without claiming live causation.
 
-Tests cover published fixtures (including a fixture subdirectory if present),
-tampering, schema failures, index relabeling, mismatch headers, missing bundles,
-duplicate run identifiers and unsafe trace URLs.
+Queue flow counts requests, distinct decided request IDs and individual terminal
+outcomes. Executed/held/escalated are sibling branches, not successive funnel
+conversions; tooltips show signed differences between adjacent counts. Belief
+categories are disjoint: notarized above/below neutral confidence, abstained,
+adversary-downgraded and unresolved. Confidence means P(documentation holds).
+
+Trace links come exclusively from bundle receipts; absent links show recorded
+IDs. Local JSONL receipt links require the run files to be hosted separately.
+Fixtures and example URLs do not demonstrate live tracing. Live API/SSE and a
+Vercel deployment remain separate scheduled work in TASKS.md.
+
+## Visual quality checks
+
+With the local dev server running and Chrome installed:
+
+```powershell
+$env:NOTARY_PREVIEW_URL = 'http://127.0.0.1:5173'
+npm run check:visual
+```
+
+Playwright captures all seven pages in light/dark mode at desktop and phone
+widths, plus detail views. Artifacts go to ignored `screenshots/U4`; set
+`NOTARY_SCREENSHOTS` to change the output directory. The script checks page
+headings, theme, persistent fixture disclosure, horizontal overflow, browser
+errors and visible rejection of a tampered bundle. Probe screenshots use the
+type-edge filter for readable experimental records. Unit tests verify published
+bundle integrity, unsafe links, malformed indexes and derived overview metrics.
+
+U4 review fixed insight footer contrast, blank zero-value plots and responsive
+card/control spacing. Full-page screenshots and detail views were reviewed at
+both widths and themes; the overview, queue and experiment cards were also
+inspected at readable scale.

@@ -5,20 +5,9 @@ import type { RunBundle } from "../../core/src/schema";
 import { label, safeLink } from "./data";
 
 export function Status({ value }: { value: string }) {
-  const tone = ["executed", "notarized", "uphold", "completed"].includes(value)
-    ? "good"
-    : ["failed", "refuted", "unlearned", "downgrade"].includes(value)
-      ? "bad"
-      : [
-            "held",
-            "escalated",
-            "candidate",
-            "narrow",
-            "stopped_budget",
-            "blocked",
-          ].includes(value)
-        ? "warn"
-        : "neutral";
+  const tone = ["notarized", "uphold", "completed"].includes(value)
+    ? "accent"
+    : "neutral";
   return (
     <span className={`status ${tone}`}>
       <span aria-hidden="true" className="status-dot" />

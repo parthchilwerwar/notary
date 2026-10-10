@@ -68,13 +68,11 @@ describe("bundle trust boundary", () => {
   it("honors the server mismatch header even on an HTTP success", async () => {
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValue(
-          new Response(JSON.stringify(fixture), {
-            headers: { "X-Notary-Hash-Mismatch": "1" },
-          }),
-        ),
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify(fixture), {
+          headers: { "X-Notary-Hash-Mismatch": "1" },
+        }),
+      ),
     );
     await expect(loadBundle(entries[0])).rejects.toThrow("server reported");
   });
