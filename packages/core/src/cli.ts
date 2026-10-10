@@ -278,7 +278,7 @@ export function buildProgram(): Command {
 
   program
     .command("serve")
-    .description("Local API + SSE for the dashboard's live mode (reads; ask + approvals need the printed session token)")
+    .description("Local API + SSE for the dashboard's live mode (reads; starting runs, ask and approvals need the printed session token)")
     .option("--port <port>", "port to listen on", "8787")
     .option("--host <host>", "interface to bind (loopback by default)", "127.0.0.1")
     .action(async (opts: { port: string; host: string }) => {
@@ -293,6 +293,7 @@ export function buildProgram(): Command {
       await initTracing({ serviceName: "serve" });
       const server = await startServer({ port, host: opts.host });
       console.log(`notary serve: listening on ${server.url}`);
+      console.log(`  GET ${server.url}/api/health  GET ${server.url}/api/runs[/:id[/events]]  GET ${server.url}/api/certificates[/:id]`);
       console.log(`  GET ${server.url}/api/bundles  GET ${server.url}/api/bundles/:id  GET ${server.url}/api/stream (SSE)`);
       // The one and only place the session token is shown (never written to a file, journal or span).
       for (const line of sessionBanner(server.url, server.session.token)) console.log(line);

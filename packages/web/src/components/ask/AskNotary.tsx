@@ -8,7 +8,7 @@ import { CaretRightIcon as CaretRight } from "@phosphor-icons/react/dist/csr/Car
 import { Button } from "../ui/button";
 import { ErrorState, LoadingState } from "../ui/states";
 import { useData } from "../../state/DataProvider";
-import { LocalApiError, localFetch, useSessionToken } from "../../state/local-api";
+import { LocalApiError, useSessionToken } from "../../data";
 import { useExplainAnswers, useLocalAsk, type LocalAskAvailability } from "./data";
 import {
   READ_ONLY_NOTE,
@@ -181,6 +181,7 @@ function LocalAsk({
   ctx: CitationContext;
   onNavigate?: () => void;
 }) {
+  const { dataSource } = useData();
   const [token, setToken] = useSessionToken();
   const [draftToken, setDraftToken] = useState("");
   const [question, setQuestion] = useState("");
@@ -243,8 +244,8 @@ function LocalAsk({
     setInputError(undefined);
     setResult({ status: "asking", question: req.data.question });
     try {
-      const raw = await localFetch("/api/ask", { method: "POST", body: JSON.stringify(req.data) }, token);
-      const parsed = parseAskResponse(raw);
+      // LiveSource.ask validates the request and the answer with the shared schemas.
+      const parsed = parseAskResponse(await dataSource.ask(req.data));
       setResult(
         parsed.ok
           ? { status: "done", question: req.data.question, response: parsed.data }

@@ -1,0 +1,72 @@
+/* Redesign R2 design tokens — pure black and white. The only file that defines colors.
+   Neutral gray scale only; color appears only for meaning: red = unsafe/blocked,
+   green = safe/certified, amber = held. No gradients, glow, glass or shadows (1px hairlines only).
+   8px grid, 12px radius, Geist (Inter, system-ui fallback), tabular numbers for figures. */
+:root {
+  color-scheme: light;
+  --bg: #ffffff;
+  --fg: #0a0a0a;
+  --n-50: #fafafa;
+  --n-100: #f5f5f5;
+  --n-200: #e5e5e5;
+  --n-400: #a3a3a3;
+  --n-500: #737373;
+  --n-700: #404040;
+  --surface: var(--bg);
+  --subtle: var(--n-50);
+  --muted-bg: var(--n-100);
+  --line: var(--n-200);
+  --control-line: var(--n-400); /* form-control borders: >= 3:1 against --bg */
+  --muted: var(--n-500); /* 4.74:1 on #fff — body-safe secondary text */
+  --strong-muted: var(--n-700);
+  --primary: #0a0a0a; /* solid black primary buttons */
+  --primary-fg: #ffffff;
+  --focus: #0a0a0a;
+  /* meaning only */
+  --unsafe: #b91c1c;
+  --unsafe-bg: #fef2f2;
+  --safe: #15803d;
+  --safe-bg: #f0fdf4;
+  --held: #a16207;
+  --held-bg: #fefce8;
+
+  --font-sans: "Geist Variable", "Geist", Inter, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --radius: 12px;
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-5: 40px;
+  --space-6: 48px;
+  --space-8: 64px;
+  --hairline: 1px solid var(--line);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0a0a0a;
+  --fg: #fafafa;
+  --n-50: #0f0f0f;
+  --n-100: #171717;
+  --n-200: #262626;
+  --n-400: #525252;
+  --n-500: #a3a3a3;
+  --n-700: #d4d4d4;
+  --control-line: #737373;
+  --primary: #ffffff; /* solid white primary buttons */
+  --primary-fg: #0a0a0a;
+  --focus: #fafafa;
+  --unsafe: #f87171;
+  --unsafe-bg: #2a1212;
+  --safe: #4ade80;
+  --safe-bg: #0f2417;
+  --held: #facc15;
+  --held-bg: #2a2410;
+}
+
+.tabular,
+td,
+.figure {
+  font-variant-numeric: tabular-nums;
+}

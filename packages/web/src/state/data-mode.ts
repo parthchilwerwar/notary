@@ -1,10 +1,10 @@
 // Pure data-world helpers shared by the provider, the shell and tests. No React here.
 import type { BundleIndexEntry, RunBundle } from "../../../core/src/schema";
 import type { Certificate } from "../../../core/src/schema";
-import type { DataSource } from "../data";
+import type { CatalogOrigin as DataSource } from "../data";
 
 /**
- * Live     = a local `notary serve` answered at /api/bundles and the selected run is real.
+ * Live     = the data layer is in live mode (a local `notary serve` answered /api/health) and the selected run is real.
  * Recorded = real published bundles from static files.
  * Fixture  = the selected run is sample data (simulated APIs), wherever it came from.
  */

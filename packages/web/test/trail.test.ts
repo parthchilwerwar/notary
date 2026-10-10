@@ -10,8 +10,8 @@ import { validateBundle } from "../src/data";
 import {
   chooseScenario,
   verifyToolFile,
-  type CertificateWorld,
-} from "../src/state/certificates";
+  type CertificateView as CertificateWorld,
+} from "../src/data";
 import {
   classifySource,
   deriveCertificateTrail,

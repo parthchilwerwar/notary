@@ -2,7 +2,7 @@ import "./record-pages.css";
 import type { RunBundle } from "../../core/src/schema";
 import { Panel } from "./Overview";
 import { Comparison } from "./Comparison";
-import { safeLink } from "./data";
+import { PUBLISHED_FILES, safeLink } from "./data";
 import { FixtureBanner } from "./components/ui/fixture-banner";
 import { StatusPill } from "./components/ui/status-pill";
 import { EmptyState, ErrorState, LoadingState } from "./components/ui/states";
@@ -66,7 +66,7 @@ export function Evidence({
           </ErrorState>
         ) : evidence.status === "missing" ? (
           <EmptyState title="No evidence file published">
-            Integration receipts are published to <code>evidence/evidence.json</code>{" "}
+            Integration receipts are published to <code>{PUBLISHED_FILES.evidence}</code>{" "}
             by <code>pnpm notary export --evidence</code>.
           </EmptyState>
         ) : (
@@ -78,12 +78,14 @@ export function Evidence({
             return (
               <Panel key={name} title={name}>
                 <StatusPill
-                  value={entry?.status ?? "pending"}
+                  value={entry?.status ?? "not in evidence file"}
                   tone={entry?.status === "live" ? "safe" : "neutral"}
                 >
-                  {entry?.status ?? "Pending"}
+                  {entry?.status ?? "Not in evidence file"}
                 </StatusPill>
-                <p className="tool-purpose">{entry?.purpose ?? "Pending"}</p>
+                <p className="tool-purpose">
+                  {entry?.purpose ?? `No entry in ${PUBLISHED_FILES.evidence}.`}
+                </p>
                 {entry?.notes && (
                   <details className="record-details">
                     <summary>Evidence and limitations</summary>

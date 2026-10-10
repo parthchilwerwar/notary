@@ -98,3 +98,74 @@ Follow-up pass (on top of `77f5ce5`, fixes A-10 static allow-list, A-19, A-22):
 | `pnpm check:secrets` | PASS: clean, 172 files, 0 `.env` secret values |
 | `pnpm notary guards coverage` | PASS: 27 sites, 21 guarded, 6 raw-by-design (now per function and site count), 0 unguarded (tsc backend) |
 | `pnpm notary replay` | `BLOCKED: no recorded live runs to replay (fixtures/cassettes is empty)`, exit 3 |
+
+## Redesign R1 — hardcoded data audit (web)
+
+Oct 11, 2026. A read of every `.ts`/`.tsx` file under `packages/web/src` (chart internals in `components/dither-kit/**` excluded), looking for fixture JSON read directly, numbers or names typed into copy, and faked state. Line numbers are from before the R1 changes. **73 raw findings** (16 direct data-file reads, 19 copy claims, 4 hardcoded numbers, 18 hardcoded names, 16 faked or defaulted states; 6 high severity), grouped below into 44 rows.
+
+R1 added one data layer, `packages/web/src/data/`, the only code allowed to talk to `notary serve` or read `public/`. `test/data-boundary.test.ts` enforces this by failing on any reference outside `src/data/` to `bundles/`, `certificates/` (dashboard routes excluded), `content/explain|glossary`, `evidence/evidence`, `.timeline.json`, `economics.json`, `../public`, `import.meta.env.BASE_URL` or `import.meta.env.VITE_NOTARY_API`.
+
+How to read the Status column:
+- **Fixed R1**: fixed in this phase.
+- **Open → R2/R3/R4**: the redesign phase that rebuilds that screen fixes it. Until then the page is unchanged.
+
+### Direct data-file access (all fixed in R1)
+
+| # | Where (pre-R1) | What | Status |
+| --- | --- | --- | --- |
+| H-01 | `src/data.ts:58-87, 120-153` | `loadIndex`, `loadBundle` and `loadFixtureEntries` fetched `bundles/index.json`, `bundles/<id>.json` and `bundles/fixture/index.json` | **Fixed R1.** Moved to `src/data/published.ts` (`PublishedFiles`) and `src/data/verify.ts`, with the same schema, hash, index-entry and fixture-only checks. `src/data.ts` is deleted. |
+| H-02 | `src/data.ts:176-278` | `/api/bundles` probe and `loadDataWorld` (local API first, then static files) | **Fixed R1.** Replaced by `src/data/select.ts`: a `/api/health` probe validated with `HealthResponseSchema`, giving `LiveSource` or `ReplaySource`. |
+| H-03 | `src/optional-json.ts:6` | Generic `fetch(BASE_URL + path)` | **Fixed R1.** Now `src/data/http.ts` (`readJson`, `readOptionalJson`), used only inside `src/data/`. |
+| H-04 | `src/landing-data.ts:26-50` | Raw fetch of `evidence/evidence.json` | **Fixed R1.** Now `loadEvidence()` (data layer, schema-checked). |
+| H-05 | `src/landing-data.ts:287-303` | Landing replay read `bundles/fixture/<id>.timeline.json` | **Fixed R1.** Now reads `DataSource.getTimeline()`, still re-checked as a fixture timeline tied to its bundle hash. |
+| H-06 | `src/Economics.tsx:27` | `readOptionalJSON("economics.json")`, rendered as raw JSON with no schema | **Partly fixed R1.** Routed through `loadEconomicsPlan()`. **Open → R4:** there is still no core schema for the cfo.ai plan, so it is shown raw. |
+| H-07 | `src/components/ask/data.ts:19` | `readOptionalJSON("content/explain.json")` | **Fixed R1.** Now `DataSource.explain()` (`ExplainFileSchema`). |
+| H-08 | `src/state/certificates.ts:101-133` | Read the certificate reports, tool files and fixture index | **Fixed R1.** Moved to `PublishedFiles.certificateWorld()`. Seals and report pins are still recomputed. Live real certificates come from `GET /api/certificates`, with seals and pins re-checked. |
+| H-09 | `src/pages/trust.tsx:211-216` | The revocation demo read `certificates/fixture/index.json` directly. A raw `.parse` threw zod text. | **Fixed R1.** Now `loadFixtureCertificateIndex()` (safeParse with a "Data withheld" message) plus `DataSource.certificates()`. The scenario's source run must be a published fixture run, otherwise the page shows "missing". |
+| H-10 | `src/pages/mission-control/hooks.ts:25-56` | Timeline URLs built by hand: `/api/bundles/:id/timeline`, `bundles/fixture/<id>.timeline.json`, `bundles/<id>.timeline.json` | **Fixed R1.** Now `DataSource.getTimeline()`. A missing timeline raises `TimelineMissingError`, which the page shows as "not published". |
+| H-11 | `src/state/local-api.ts:40`, `src/state/live.ts:61` | `fetch(API_BASE…)` and `EventSource(/api/stream)` | **Fixed R1.** `local-api.ts` moved to `src/data/local-api.ts`. Live events now go through `DataSource.streamEvents()` (SSE `/api/runs/:id/events`, schema-checked, de-duplicated by seq). |
+| H-12 | `src/components/landing/RequiredTools.tsx:84` | `href=BASE_URL + "evidence/evidence.json"` | **Fixed R1.** Now `evidenceFileUrl()`. |
+| H-13 | `src/Landing.tsx:53-90` | The landing loaded static files itself and never used the local API | **Fixed R1.** It reads the selected `DataSource` through `useDataSource()`. |
+| H-14 | `src/pages/approvals/api.ts` | `POST /api/approvals` with a hand-built body | **Fixed R1.** Now `DataSource.approve(id, amount)` / `reject(id, reason)` → `POST /api/approvals/:id/approve\|reject`. The id is the pending item's own, or derived as the server derives it. Replay throws `ReplayOnlyError`. |
+| H-15 | `src/components/ask/AskNotary.tsx` | `localFetch("/api/ask")` | **Fixed R1.** Now `DataSource.ask()` (request and response validated). |
+| H-16 | Copy in `Evidence.tsx`, `RequiredTools.tsx`, `AppSidebar.tsx`, `MissionControlPage.tsx`, `Economics.tsx` | File paths typed into UI text | **Fixed R1.** Text now uses the `PUBLISHED_FILES` constants from the data layer. |
+
+### Faked or defaulted state
+
+| # | Where | What | Sev | Status |
+| --- | --- | --- | --- | --- |
+| H-17 | `src/state/certificates.ts:55-61` (`chooseScenario`) | A fixture run that is not a certificate source silently got the **first** scenario's certificates, which could be another simulated world. This also drove the sidebar revocation badge. | High | **Fixed R1.** Order is now: the scenario that lists the run, else the scenario of the same world (same `scenarioKey`), else nothing (`report: null`, shown as "missing"). Updates DECISIONS #125. |
+| H-18 | `src/landing-data.ts:55-70` (`landingResults`) | Naive and guarded were each the newest of their variant, with no world match. The landing could compare runs from two different fixture worlds. | High | **Fixed R1.** The naive side must share the guarded run's `scenarioKey`. Today's data pairs the same way as before. |
+| H-19 | `src/Evidence.tsx:81-86` | A tool missing from `evidence.json` was shown as status "pending" with purpose "Pending" | High | **Fixed R1.** It now shows "Not in evidence file" and names the file. |
+| H-20 | `src/components/trail/model.ts:1041` | "Not machine-checkable; guards block out-of-scope calls." has source `scope`, so it is tagged **Verified**, but no check produces it | High | Open → R3 (run/decision page rebuild): tag it as a record, or check that guards exist. |
+| H-21 | `AppSidebar.tsx:168`, `approvals/index.tsx:104`, `state/data-mode.ts:13-45`, `AppShell.tsx:244` | "Live", "API connected" and "Local notary serve" come from one check at load time and are never re-checked. "Live" also covers old recorded runs the API serves. | Med | Partly fixed R1: live now requires a schema-valid `/api/health`, not just any JSON. Open → R2 (shell): re-check, or use the SSE status. |
+| H-22 | `data-mode.ts:83-105` (`pickBaseline`) | Auto-picks a baseline nobody chose, down to "any same-cohort run". Overview and Economics then show "vs baseline" deltas against it. | Med | Open → R3: only auto-pick the opposite variant of the same scenario. |
+| H-23 | `mission-control/model.ts:525-531` (`usdView`) | `usdByRole[r] ?? 0` shows $0.00 for a role that was not recorded | Med | Open → R3: show "not recorded". |
+| H-24 | `components/landing/Results.tsx:80` | "Recorded live runs" for any non-sample pair, whatever `bundle.mode` | Med | Open → R4: show the recorded mode. |
+| H-25 | `Landing.tsx:64-68` | Fixture certificates were requested with a possibly undefined run id (this triggered H-17) | Med | **Fixed R1.** Skipped when there is no replay run. |
+| H-26 | `Overview.tsx:135-142` | A run with no probes shows another run's probes (labelled "Probe source") | Low | Open → R3. |
+| H-27 | `routes.tsx:86` badge "held" | The Approval desk badge counts the selected run's held decisions, not pending approvals | Low | Open → R2. |
+| H-28 | `Certificates.tsx:575-578, 66-85` | The provider pill says "certified" when even 1 claim is certified. The "Notarized by Notary" badge preview shows with 0 certificates. | Low | Open → R3. |
+| H-29 | `components/ask/model.ts:40` | An unknown fixture world becomes `fixture:default` | Low | Open → R3. |
+| H-30 | `trail/model.ts:1186` | Probe count `predictionLines \|\| evidence.length` | Low | Open → R3. |
+| H-31 | `BudgetMeters.tsx:78` | Says "One exact snapshot per run", but the code takes the latest of several | Low | Open → R3. |
+
+### Copy claims and hardcoded numbers or names
+
+| # | Where | What | Sev | Status |
+| --- | --- | --- | --- | --- |
+| H-32 | `components/landing/Hero.tsx:15`, `DoubleRefund.tsx:106-108` | "every API call returned 200" / "Every call returned 200." The same page's incident card says the first attempt **timed out**. | High | Open → R4 (landing rebuild): build the line from `findIncident(...).naive.attempts`, or drop it. |
+| H-33 | `DoubleRefund.tsx:141, 143` | "Retry after a timeout" and "The refund went out twice." are unconditional. `findIncident` can fall back to an incident with fewer than 2 writes. | Med | Open → R4: show only when `attempts[0].status === null`; use `naive.writes`. |
+| H-34 | `RequiredTools.tsx:26`, `MissionReplay.tsx:132` | "Three tools.", "the five stages" | Med/Low | Open → R4: use `tools.length` / `STAGES.length`. |
+| H-35 | `landing-data.ts:53` `REQUIRED_TOOLS`, `Evidence.tsx:74`, `AppSidebar.tsx:78-81` | `["neatlogs","Entire","cfo.ai"]` typed in twice, plus the sidebar hardwired to neatlogs. Extra entries in `evidence.json` are never shown. | Med | Open → R2/R4: iterate the evidence entries, and use `/api/health` integrations in live mode (`useIntegration`). |
+| H-36 | `ProcessSteps.tsx:8, 20, 46-47` | "Every concrete promise…", "a different, stronger model", "Deterministic code makes every decision" (the executor role is a model) | Med | Open → R4: use the report's claim count and the recorded adversary model; reword to match the recorded roles. |
+| H-37 | `Hero.tsx:11-12, 50-51`, `ProcessSteps.tsx:31` | "No certificate, no money moves." is stated as absolute, but the approval desk allows a human override | Med | Open → R4: qualify it ("…without a human override"). |
+| H-38 | `Results.tsx:90-91, 108-110` | Provider names and "Simulated Crustdata and Dodo with planted quirks…" typed by hand | Med | Open → R4: render the fixture bundle's `disclosure[]`. |
+| H-39 | `ProcessSteps.tsx:8, 15`, `DoubleRefund.tsx:146-148`, `Results.tsx:90`, `trail/model.ts:700, 948`, `approvals/*` "Dodo test mode", `Economics.tsx` "cfo.ai" | Provider and tool names typed by hand where the data names them | Low | Open → R3/R4. |
+| H-40 | `analytics.ts:25, 31, 79, 89` | Confidence split at the constant 0.5; request types typed by hand; "still unproven" | Low | Open → R3. |
+| H-41 | `AskNotary.tsx:275` | Placeholder "Why was q02 held?" (a hardcoded record id) | Low | Open → R3: build it from the selected run's first held decision. |
+| H-42 | `Hero.tsx:38-53`, `ProcessSteps.tsx:44`, `MissionControlPage.tsx:140`, `landing-data.ts:222-236` | Stage chain and labels typed by hand (mission-control builds them from the schema) | Low | Open → R4: use `TimelineStageSchema` / `STAGE_LABEL`. |
+| H-43 | `mission-control/model.ts:165` | `FAILED_RUN_STATUSES` typed by hand | Low | Open → R3. |
+| H-44 | `Hero.tsx:23`, `FinalCTA.tsx:33`, `LandingFooter.tsx:14`, `AppShell.tsx:119` | The GitHub URL repeated four times. Timezone fixed to Asia/Kolkata ("IST"). | Low | Open → R2/R4: one constant (presentation, not data). |
+
+Checked with no issues: `ResultsStrip`, `Queue`, `Beliefs`, `ProbeLog`, `Comparison`, `CommandPalette`, `RunPicker`, `EventFeed`, `StageGraph`, `ReplayControls`, `approvals/parts`, `ui/*`. `Math.random` and `Date.now()` are never used as displayed data. `state/live.ts` uses `Date.now()` only to decide which live events are new enough to toast.

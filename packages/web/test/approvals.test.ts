@@ -23,8 +23,8 @@ import {
   parseApprovalsList,
   rejectGate,
 } from "../src/pages/approvals/model";
-import { fetchApprovals, submitDecision } from "../src/pages/approvals/api";
-import { LocalApiError } from "../src/state/local-api";
+import { fetchApprovals, pendingId, submitDecision } from "../src/pages/approvals/api";
+import { LiveSource, LocalApiError, ReplayOnlyError, ReplaySource, approvalId } from "../src/data";
 
 // The page renders the decision trail; another module owns it, so render tests use a stand-in.
 vi.mock("../src/components/trail", () => ({
@@ -249,7 +249,7 @@ describe("server data validation", () => {
   });
 });
 
-describe("local API calls (mocked fetch)", () => {
+describe("local API calls through the data layer (mocked fetch)", () => {
   afterEach(() => vi.unstubAllGlobals());
 
   const respond = (status: number, body: unknown) =>
@@ -259,48 +259,69 @@ describe("local API calls (mocked fetch)", () => {
         headers: { "content-type": "application/json" },
       }),
     );
+  const live = (fetchImpl: typeof fetch, token: string | null = "tok") =>
+    new LiveSource({ base: "http://localhost:8787", fetchImpl, token: () => token });
 
-  it("posts the request with the bearer token and returns the validated record", async () => {
+  it("rejects: POST /api/approvals/:id/reject with the bearer token, validated record back", async () => {
     const fetchMock = respond(200, record());
-    vi.stubGlobal("fetch", fetchMock);
     const built = buildRejectRequest(item(), "customer withdrew");
     if (!built.ok) throw new Error(built.error);
-    await expect(submitDecision(built.request, "tok")).resolves.toEqual(record());
+    await expect(submitDecision(live(fetchMock), item(), built.request)).resolves.toEqual(record());
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
-    expect(url).toMatch(/\/api\/approvals$/);
+    expect(url).toBe(`http://localhost:8787/api/approvals/${approvalId("run-a", "run-a:q01")}/reject`);
     expect(init.method).toBe("POST");
-    expect(JSON.parse(String(init.body))).toEqual(built.request);
+    expect(JSON.parse(String(init.body))).toEqual({ reason: "customer withdrew" });
     expect((init.headers as Record<string, string>).Authorization).toBe("Bearer tok");
   });
 
+  it("approves by the pending item's own id with the typed amount", async () => {
+    const fetchMock = respond(200, record({ decision: "approved", confirmedAmount: 4900, status: "executed", reason: undefined }));
+    const built = buildApproveRequest(item({ id: "appr-feedfeedfeedfeed" }), "4900");
+    if (!built.ok) throw new Error(built.error);
+    await submitDecision(live(fetchMock), item({ id: "appr-feedfeedfeedfeed" }), built.request);
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("http://localhost:8787/api/approvals/appr-feedfeedfeedfeed/approve");
+    expect(JSON.parse(String(init.body))).toEqual({ confirmedAmount: 4900 });
+    expect(pendingId(item())).toBe(approvalId("run-a", "run-a:q01"));
+  });
+
   it("surfaces server errors verbatim", async () => {
-    vi.stubGlobal("fetch", respond(503, { error: "BLOCKED: DODO_PAYMENTS_API_KEY not set" }));
     const built = buildApproveRequest(item(), "4900");
     if (!built.ok) throw new Error(built.error);
-    const err = await submitDecision(built.request, "tok").catch((e: unknown) => e);
+    const err = await submitDecision(
+      live(respond(503, { error: "BLOCKED: DODO_PAYMENTS_API_KEY not set" })),
+      item(),
+      built.request,
+    ).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(LocalApiError);
     expect((err as LocalApiError).status).toBe(503);
     expect((err as LocalApiError).message).toBe("BLOCKED: DODO_PAYMENTS_API_KEY not set");
-
-    vi.stubGlobal("fetch", respond(409, { error: "decision run-a:q01 was already rejected (closed)" }));
-    await expect(submitDecision(built.request, "tok")).rejects.toThrow(
-      "decision run-a:q01 was already rejected (closed)",
-    );
+    await expect(
+      submitDecision(live(respond(409, { error: "decision run-a:q01 was already rejected (closed)" })), item(), built.request),
+    ).rejects.toThrow("decision run-a:q01 was already rejected (closed)");
   });
 
   it("rejects a 200 body that is not an approval record, and a schema-invalid list", async () => {
-    vi.stubGlobal("fetch", respond(200, { ok: true }));
     const built = buildRejectRequest(item(), "no");
     if (!built.ok) throw new Error(built.error);
-    await expect(submitDecision(built.request, "tok")).rejects.toThrow(/shared schema/);
-    vi.stubGlobal("fetch", respond(200, { testMode: "yes", pending: [], decided: [] }));
-    await expect(fetchApprovals("tok")).rejects.toThrow(/shared schema/);
+    await expect(submitDecision(live(respond(200, { ok: true })), item(), built.request)).rejects.toThrow(/shared schema/);
+    await expect(
+      fetchApprovals(live(respond(200, { testMode: "yes", pending: [], decided: [] }))),
+    ).rejects.toThrow(/shared schema/);
   });
 
   it("never calls the server without a token", async () => {
     const fetchMock = respond(200, {});
+    await expect(fetchApprovals(live(fetchMock, null))).rejects.toMatchObject({ status: 401 });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("replay: decisions are refused with ReplayOnlyError, no request sent", async () => {
+    const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
-    await expect(fetchApprovals(null)).rejects.toMatchObject({ status: 401 });
+    const built = buildRejectRequest(item(), "no");
+    if (!built.ok) throw new Error(built.error);
+    await expect(submitDecision(new ReplaySource(), item(), built.request)).rejects.toBeInstanceOf(ReplayOnlyError);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
@@ -343,6 +364,7 @@ describe("rendered desk", { timeout: 30_000 }, () => {
     const { ConfirmDialog } = await import("../src/pages/approvals/ConfirmDialog");
     const html = renderToStaticMarkup(
       createElement(ConfirmDialog, {
+        source: new ReplaySource(),
         kind: "approve",
         item: item(),
         token: "tok",

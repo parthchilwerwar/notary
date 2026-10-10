@@ -5,8 +5,7 @@ import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import type { ApprovalRecord, PendingApproval } from "../../../../core/src/schema";
 import { Button } from "../../components/ui";
 import { notify } from "../../components/shell/notify";
-import { LocalApiError } from "../../state/local-api";
-import { label, number } from "../../data";
+import { LocalApiError, label, number, type DataSource } from "../../data";
 import { submitDecision } from "./api";
 import {
   amountDigits,
@@ -20,6 +19,7 @@ import {
 export type DialogKind = "approve" | "reject";
 
 export function ConfirmDialog({
+  source,
   kind,
   item,
   token,
@@ -27,8 +27,11 @@ export function ConfirmDialog({
   onDecided,
   onStale,
 }: {
+  /** The live data source the decision is sent through. */
+  source: DataSource;
   kind: DialogKind;
   item: PendingApproval;
+  /** Present when the desk offers actions; the data layer reads it from sessionStorage. */
   token: string | null;
   onClose: () => void;
   /** A validated record came back. */
@@ -72,7 +75,7 @@ export function ConfirmDialog({
     setBusy(true);
     setError(undefined);
     try {
-      const record = await submitDecision(built.request, token);
+      const record = await submitDecision(source, item, built.request);
       notify.success(
         `${record.requestId} ${record.decision} · ${record.status}`,
         { description: record.error ?? `Approval ${record.id} recorded.` },

@@ -1,22 +1,30 @@
-// GET/POST /api/approvals through the shared local client (token header, verbatim server errors).
-// Both bodies are validated with the shared schemas before anything is shown.
-import type { ApprovalRecord, ApprovalRequest, ApprovalsList } from "../../../../core/src/schema";
-import { localFetch } from "../../state/local-api";
-import { parseApprovalRecord, parseApprovalsList } from "./model";
+// Approval desk calls, through the data layer: DataSource.approvals() (GET /api/approvals, token
+// required) and approve/reject (POST /api/approvals/:id/approve|reject). LiveSource validates both
+// bodies with the shared schemas; ReplaySource throws ReplayOnlyError (the hosted desk is read-only).
+import type {
+  ApprovalRecord,
+  ApprovalRequest,
+  ApprovalsList,
+  PendingApproval,
+} from "../../../../core/src/schema";
+import { approvalId, type DataSource } from "../../data";
 
-export async function fetchApprovals(token: string | null): Promise<ApprovalsList> {
-  return parseApprovalsList(await localFetch("/api/approvals", {}, token));
+export function fetchApprovals(source: DataSource, signal?: AbortSignal): Promise<ApprovalsList> {
+  return source.approvals(signal);
 }
 
-/** Throws LocalApiError with the server's `{error}` text (400/403/404/409/503) on refusal. */
-export async function submitDecision(
+/** The id the server routes by: the pending item's own, else derived exactly as the server does. */
+export const pendingId = (item: Pick<PendingApproval, "id" | "runId" | "decisionId">) =>
+  item.id ?? approvalId(item.runId, item.decisionId);
+
+/** Throws LocalApiError with the server's `{error}` text (400/401/403/404/409/503) on refusal. */
+export function submitDecision(
+  source: DataSource,
+  item: Pick<PendingApproval, "id" | "runId" | "decisionId">,
   request: ApprovalRequest,
-  token: string | null,
 ): Promise<ApprovalRecord> {
-  const body = await localFetch(
-    "/api/approvals",
-    { method: "POST", body: JSON.stringify(request) },
-    token,
-  );
-  return parseApprovalRecord(body);
+  const id = pendingId(item);
+  return request.decision === "approved"
+    ? source.approve(id, request.confirmedAmount)
+    : source.reject(id, request.reason);
 }

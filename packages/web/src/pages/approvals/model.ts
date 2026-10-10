@@ -14,10 +14,10 @@ import {
   type PendingApproval,
   type RunBundle,
 } from "../../../../core/src/schema";
-import type { DataSource } from "../../data";
+import type { CatalogOrigin as DataSource } from "../../data";
 
 /**
- * local  = a local `notary serve` answered (/api/bundles): GET/POST /api/approvals exist.
+ * local  = live data source (a local `notary serve` answered /api/health): approvals can be decided.
  * hosted = static files only: read-only history, no actions at all.
  */
 export type DeskMode = "local" | "hosted";

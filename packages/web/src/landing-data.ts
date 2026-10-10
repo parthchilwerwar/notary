@@ -1,8 +1,7 @@
-// Data for the landing page (`/`). Every number the landing shows is derived here from a
-// published, verified data file: run bundles (hash-checked by data.ts), timeline files (tied to
-// their bundle by bundleHash), certificate reports (schema + seals checked by state/certificates)
-// and evidence.json. Nothing here is typed by hand.
-import { z } from "zod";
+// Data for the landing page (`/`). Every number the landing shows is derived here from data the
+// data layer (src/data) verified: run bundles (hash-checked), timelines (tied to their bundle by
+// bundleHash), certificate reports (schema + seals checked) and evidence.json. Nothing here is
+// typed by hand, and nothing here fetches.
 import { TimelineFileSchema } from "../../core/src/schema";
 import type {
   Decision,
@@ -12,42 +11,9 @@ import type {
   TimelineFile,
   TimelineStage,
 } from "../../core/src/schema";
-import { readOptionalJSON } from "./optional-json";
+import { scenarioKey, TimelineMissingError } from "./data";
 
-export const evidenceSchema = z.array(
-  z.object({
-    name: z.string(),
-    purpose: z.string(),
-    status: z.enum(["live", "pending"]),
-    links: z.array(z.object({ label: z.string(), url: z.string() })),
-    notes: z.string().optional(),
-  }),
-);
-export async function loadEvidence(signal?: AbortSignal) {
-  const r = await fetch(`${import.meta.env.BASE_URL}evidence/evidence.json`, {
-    signal,
-    cache: "no-store",
-  });
-  if (
-    r.status === 404 ||
-    (r.ok && !r.headers.get("content-type")?.includes("json"))
-  )
-    return [];
-  if (!r.ok) throw new Error("Tool evidence could not be loaded.");
-  let raw: unknown;
-  try {
-    raw = await r.json();
-  } catch (e) {
-    if ((e as Error).name === "AbortError") throw e;
-    throw new Error("evidence/evidence.json is not valid JSON. Data withheld.");
-  }
-  const parsed = evidenceSchema.safeParse(raw);
-  if (!parsed.success)
-    throw new Error(
-      "evidence/evidence.json does not match the evidence schema. Data withheld.",
-    );
-  return parsed.data;
-}
+export { evidenceSchema, loadEvidence } from "./data";
 
 /** The three sponsor tools the hackathon requires (hackathon.md; core export/evidence.ts). */
 export const REQUIRED_TOOLS = ["neatlogs", "Entire", "cfo.ai"] as const;
@@ -57,11 +23,13 @@ export function landingResults(all: RunBundle[]) {
   const cohort = all
     .filter((b) => b.sample !== live && b.kind === "run")
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
-  return {
-    sample: !live,
-    naive: cohort.find((b) => b.variant === "naive"),
-    guarded: cohort.find((b) => b.variant === "guarded"),
-  };
+  const guarded = cohort.find((b) => b.variant === "guarded");
+  // The naive side must come from the same world as the guarded run (same scenario key), so the
+  // landing never compares runs of two different simulated worlds.
+  const naive = guarded
+    ? cohort.find((b) => b.variant === "naive" && scenarioKey(b.runId) === scenarioKey(guarded.runId))
+    : cohort.find((b) => b.variant === "naive");
+  return { sample: !live, naive, guarded };
 }
 
 /** The fixture naive/guarded pair, regardless of live data (the problem section is fixture-only). */
@@ -284,19 +252,29 @@ export function verifyTimeline(raw: unknown, bundle: RunBundle): TimelineFile {
   return file;
 }
 
+/**
+ * The landing's fixture replay: each replayed run's timeline from the data source (already tied
+ * to its verified bundle there), re-checked as a fixture timeline. Unpublished timelines are skipped.
+ */
 export async function loadReplay(
   all: RunBundle[],
+  getTimeline: (runId: string, signal?: AbortSignal) => Promise<TimelineEvent[]>,
   signal?: AbortSignal,
 ): Promise<TimelineFile[]> {
   const ids = replayRunIds(all);
   const files = await Promise.all(
     ids.map(async (runId) => {
       const bundle = all.find((b) => b.runId === runId)!;
-      const raw = await readOptionalJSON(
-        `bundles/fixture/${encodeURIComponent(runId)}.timeline.json`,
-        signal,
-      );
-      return raw === undefined ? undefined : verifyTimeline(raw, bundle);
+      try {
+        const events = await getTimeline(runId, signal);
+        return verifyTimeline(
+          { runId, sample: bundle.sample, bundleHash: bundle.contentHash, events },
+          bundle,
+        );
+      } catch (e) {
+        if (e instanceof TimelineMissingError) return undefined;
+        throw e;
+      }
     }),
   );
   return files.filter((f): f is TimelineFile => !!f);

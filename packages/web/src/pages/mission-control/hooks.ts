@@ -1,11 +1,12 @@
-// Mission control's stateful pieces: loading the selected run's timeline (local API or the
-// published file) and the replay clock. All rules live in ./model.ts.
+// Mission control's stateful pieces: loading the selected run's timeline through the data layer
+// (DataSource.getTimeline — schema-checked and tied to the verified bundle's hash there) plus, in
+// live mode, the run's SSE events; and the replay clock. All rules live in ./model.ts.
 import { useCallback, useEffect, useMemo, useRef, useState, type RefCallback } from "react";
 import type { RunBundle, TimelineEvent, TimelineFile } from "../../../../core/src/schema";
-import { API_BASE } from "../../data";
+import { TimelineMissingError } from "../../data";
+import { useData } from "../../state/DataProvider";
 import {
   advance,
-  checkTimeline,
   cursorAt,
   elapsedAtCursor,
   mergeEvents,
@@ -18,62 +19,24 @@ import { useLiveTimeline, type LiveStatus } from "../../state/live";
 export type TimelineLoad =
   | { status: "loading" }
   | { status: "ready"; file: TimelineFile; from: string }
-  | { status: "missing"; tried: string[] }
+  | { status: "missing" }
   | { status: "error"; error: string };
 
-/** Where a run's timeline is published, in the order to try. */
-export function timelineUrls(bundle: Pick<RunBundle, "runId" | "sample">, local: boolean): string[] {
-  const id = encodeURIComponent(bundle.runId);
-  if (local) return [`${API_BASE}/api/bundles/${id}/timeline`];
-  const base = import.meta.env.BASE_URL;
-  // Fixture runs are published under bundles/fixture/; a sample bundle in the primary index
-  // (sample-42) would sit next to it under bundles/.
-  return bundle.sample
-    ? [`${base}bundles/fixture/${id}.timeline.json`, `${base}bundles/${id}.timeline.json`]
-    : [`${base}bundles/${id}.timeline.json`];
-}
-
-/** JSON body, or null for "not published" (404, or the dev server's HTML fallback). */
-async function fetchJson(url: string, signal: AbortSignal, local: boolean): Promise<unknown | null> {
-  const response = await fetch(url, { signal, cache: "no-store", headers: { accept: "application/json" } });
-  if (response.status === 404) return null;
-  const type = response.headers.get("content-type") ?? "";
-  if (response.ok && !type.includes("json")) return null;
-  if (!response.ok) {
-    let message = `Unable to load the ${local ? "" : "published "}timeline (${response.status}). Data withheld.`;
-    // Only the local API answers with a JSON { error } body worth quoting.
-    if (local) {
-      try {
-        const body = (await response.json()) as { error?: unknown };
-        if (typeof body?.error === "string") message = `The local API refused the timeline: ${body.error}.`;
-      } catch {
-        // Keep the status message.
-      }
-    }
-    throw new Error(message);
-  }
-  try {
-    return await response.json();
-  } catch {
-    throw new Error("The published timeline is not valid JSON. Data withheld.");
-  }
-}
-
 /**
- * The selected run's timeline, validated against the shared schema and tied to the verified
- * bundle (checkTimeline). In local mode, `timeline` stream events for this run are merged in;
- * a recorded run.finished re-reads the file, which is the source of truth.
+ * The selected run's timeline from the data source. In local mode, the run's live events are
+ * merged in; a recorded (non-live) run.finished re-reads the timeline, which is the source of truth.
  */
 export function useRunTimeline(
   bundle: RunBundle,
   local: boolean,
 ): { load: TimelineLoad; events: TimelineEvent[]; live: LiveStatus | null } {
+  const { dataSource } = useData();
   const [load, setLoad] = useState<TimelineLoad>({ status: "loading" });
   const [streamed, setStreamed] = useState<TimelineEvent[]>([]);
   const [reloadKey, setReloadKey] = useState(0);
   const runId = bundle.runId;
 
-  const live = useLiveTimeline(local, (event) => {
+  const live = useLiveTimeline(local ? runId : undefined, (event) => {
     if (event.runId !== runId) return;
     setStreamed((prev) => [...prev, event]);
     if (event.type === "run.finished" && event.data?.live !== true) setReloadKey((k) => k + 1);
@@ -81,19 +44,18 @@ export function useRunTimeline(
 
   useEffect(() => {
     const controller = new AbortController();
-    const urls = timelineUrls(bundle, local);
     setLoad((prev) => (prev.status === "ready" && prev.file.runId === runId ? prev : { status: "loading" }));
-    (async () => {
-      for (const url of urls) {
-        const raw = await fetchJson(url, controller.signal, local);
-        if (raw === null) continue;
-        const checked = checkTimeline(raw, bundle);
-        return checked.ok
-          ? ({ status: "ready", file: checked.file, from: url } as const)
-          : ({ status: "error", error: checked.error } as const);
-      }
-      return { status: "missing", tried: urls } as const;
-    })()
+    dataSource
+      .getTimeline(runId, controller.signal)
+      .then((events): TimelineLoad => ({
+        status: "ready",
+        // The data layer verified this timeline against the bundle's content hash.
+        file: { runId, sample: bundle.sample, bundleHash: bundle.contentHash, events },
+        from: dataSource.mode === "live" && !bundle.sample ? "the local API" : "the published timeline",
+      }))
+      .catch((e: Error): TimelineLoad =>
+        e instanceof TimelineMissingError ? { status: "missing" } : { status: "error", error: e.message },
+      )
       .then((next) => {
         if (controller.signal.aborted) return;
         setLoad(next);
@@ -102,13 +64,10 @@ export function useRunTimeline(
           const lastSeq = next.file.events.at(-1)?.seq ?? -1;
           setStreamed((prev) => prev.filter((e) => e.runId === runId && e.seq > lastSeq));
         }
-      })
-      .catch((e: Error) => {
-        if (!controller.signal.aborted) setLoad({ status: "error", error: e.message });
       });
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runId, bundle.contentHash, local, reloadKey]);
+  }, [runId, bundle.contentHash, local, reloadKey, dataSource]);
 
   useEffect(() => setStreamed([]), [runId]);
 

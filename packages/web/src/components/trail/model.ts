@@ -21,7 +21,7 @@ import type {
   RunBundle,
 } from "../../../../core/src/schema";
 import { canonicalJson, sha256Hex } from "../../../../core/src/bundle/hash";
-import type { CertificateWorld } from "../../state/certificates";
+import type { CertificateView as CertificateWorld } from "../../data";
 import { scenarioKey } from "../../state/data-mode";
 import { safeLink } from "../../data";
 

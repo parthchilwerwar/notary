@@ -1,5 +1,6 @@
-// One provider for the app's data world: the run index (local API first, else static files),
-// every hash-verified bundle, the selected run (from ?run=), its same-cohort baseline
+// One provider for the dashboard's data world, read through the data layer (src/data): the run
+// list of the selected DataSource (live `notary serve` or replay of published files), every
+// hash-verified bundle, the selected run (from ?run=), its same-cohort baseline
 // (?baseline=), the certificate world matching the selected run, and the tool evidence file.
 import {
   createContext,
@@ -12,11 +13,19 @@ import {
 } from "react";
 import { useSearchParams } from "react-router";
 import type { BundleIndexEntry, RunBundle } from "../../../core/src/schema";
-import { loadDataWorld, type DataSource } from "../data";
-import { loadEvidence } from "../landing-data";
-import type { z } from "zod";
-import type { evidenceSchema } from "../landing-data";
-import { loadCertificateWorld, type CertificateWorld } from "./certificates";
+import {
+  byNewest,
+  entryOfBundle,
+  finishedEntries,
+  loadEvidence,
+  toCertificateView,
+  useDataSource,
+  type CatalogOrigin,
+  type CertificateView,
+  type DataSource,
+  type EvidenceEntry,
+  type RunEntry,
+} from "../data";
 import {
   baselineCandidates,
   defaultRunId,
@@ -27,7 +36,7 @@ import {
   type RunGroup,
 } from "./data-mode";
 
-export type EvidenceEntry = z.infer<typeof evidenceSchema>[number];
+export type { EvidenceEntry };
 
 export type Loadable<T> =
   | { status: "loading" }
@@ -37,7 +46,12 @@ export type Loadable<T> =
 
 export type DataContextValue = {
   mode: DataMode;
-  source: DataSource;
+  /** "api" = live DataSource (local `notary serve`), "static" = replay of published files. */
+  source: CatalogOrigin;
+  /** The data layer's source. Pages call it for anything beyond the catalog (timelines, approvals, ask). */
+  dataSource: DataSource;
+  /** Runs the live server reports as still running (no bundle yet). Empty in replay. */
+  running: RunEntry[];
   /** Every index entry (real and fixture). Use `runGroups` to present them. */
   runs: BundleIndexEntry[];
   runGroups: RunGroup[];
@@ -55,7 +69,7 @@ export type DataContextValue = {
   loading: boolean;
   error?: string;
   reload: () => void;
-  certificates: Loadable<CertificateWorld>;
+  certificates: Loadable<CertificateView>;
   evidence: Loadable<EvidenceEntry[]>;
 };
 
@@ -72,12 +86,14 @@ type CatalogState =
   | { status: "error"; error: string }
   | {
       status: "ready";
-      source: DataSource;
+      source: CatalogOrigin;
       entries: BundleIndexEntry[];
+      running: RunEntry[];
       bundles: RunBundle[];
     };
 
 export function DataProvider({ children }: { children: ReactNode }) {
+  const { source: dataSource, mode: sourceMode, ready: sourceReady } = useDataSource();
   const [params, setParams] = useSearchParams();
   const [catalog, setCatalog] = useState<CatalogState>({ status: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
@@ -85,13 +101,27 @@ export function DataProvider({ children }: { children: ReactNode }) {
     status: "loading",
   });
   const [certificates, setCertificates] = useState<
-    Loadable<CertificateWorld>
+    Loadable<CertificateView>
   >({ status: "loading" });
 
   useEffect(() => {
+    if (!sourceReady) return;
     const controller = new AbortController();
     setCatalog({ status: "loading" });
-    loadDataWorld(controller.signal)
+    (async () => {
+      const runs = await dataSource.listRuns(controller.signal);
+      const entries = finishedEntries(runs).sort(byNewest);
+      // Every bundle is schema-checked and hash-verified by the data layer before it arrives here.
+      const bundles = (
+        await Promise.all(entries.map((e) => dataSource.getRun(e.runId, controller.signal)))
+      ).sort(byNewest);
+      return {
+        source: (sourceMode === "live" ? "api" : "static") as CatalogOrigin,
+        entries,
+        running: runs.filter((r) => r.state === "running"),
+        bundles,
+      };
+    })()
       .then((world) => {
         if (!controller.signal.aborted)
           setCatalog({ status: "ready", ...world });
@@ -101,7 +131,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           setCatalog({ status: "error", error: e.message });
       });
     return () => controller.abort();
-  }, [reloadKey]);
+  }, [reloadKey, dataSource, sourceMode, sourceReady]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -154,12 +184,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
     const controller = new AbortController();
     setCertificates({ status: "loading" });
-    loadCertificateWorld(bundle.sample, bundle.runId, controller.signal)
+    dataSource
+      .certificates(entryOfBundle(bundle), controller.signal)
       .then((world) => {
-        if (!controller.signal.aborted)
-          setCertificates(
-            world ? { status: "ready", data: world } : { status: "missing" },
-          );
+        if (controller.signal.aborted) return;
+        const view = toCertificateView(world);
+        setCertificates(view ? { status: "ready", data: view } : { status: "missing" });
       })
       .catch((e: Error) => {
         if (!controller.signal.aborted)
@@ -167,7 +197,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       });
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [certKey, reloadKey]);
+  }, [certKey, reloadKey, dataSource]);
 
   const setRun = useCallback(
     (runId: string) =>
@@ -190,10 +220,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   );
   const reload = useCallback(() => setReloadKey((v) => v + 1), []);
 
-  const source: DataSource = ready?.source ?? "static";
+  const source: CatalogOrigin = ready?.source ?? (sourceMode === "live" ? "api" : "static");
   const value: DataContextValue = {
     mode: resolveDataMode(source, bundle),
     source,
+    dataSource,
+    running: ready?.running ?? [],
     runs: entries,
     runGroups: groupRuns(entries, source),
     bundles,
@@ -204,7 +236,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     baselineCandidates: baselineCandidates(bundle, bundles),
     setRun,
     setBaseline,
-    loading: catalog.status === "loading",
+    loading: !sourceReady || catalog.status === "loading",
     error: catalog.status === "error" ? catalog.error : undefined,
     reload,
     certificates,

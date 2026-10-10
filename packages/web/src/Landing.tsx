@@ -14,13 +14,18 @@ import { Results } from "./components/landing/Results";
 import { FinalCTA } from "./components/landing/FinalCTA";
 import { LandingFooter } from "./components/landing/LandingFooter";
 import { useTheme } from "./useTheme";
-import { loadCatalog } from "./data";
-import { loadCertificateWorld } from "./state/certificates";
-import type { EvidenceEntry } from "./state/DataProvider";
+import {
+  byNewest,
+  entryOfBundle,
+  finishedEntries,
+  loadEvidence,
+  toCertificateView,
+  useDataSource,
+  type EvidenceEntry,
+} from "./data";
 import {
   fixturePair,
   landingResults,
-  loadEvidence,
   loadReplay,
   realRuns,
   replayRunIds,
@@ -32,6 +37,7 @@ const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 export default function Landing() {
   const [dark, setDark] = useTheme();
+  const { source, ready } = useDataSource();
   const [all, setAll] = useState<RunBundle[]>([]);
   const [bundleError, setBundleError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -47,34 +53,37 @@ export default function Landing() {
 
   useEffect(() => {
     document.title = "Notary — certificates for API behavior";
+  }, []);
+
+  useEffect(() => {
+    if (!ready) return;
     const controller = new AbortController();
     const { signal } = controller;
     const live = () => !signal.aborted;
-    loadCatalog(signal)
+    (async () => {
+      const entries = finishedEntries(await source.listRuns(signal));
+      // Hash-verified by the data layer.
+      return (await Promise.all(entries.map((e) => source.getRun(e.runId, signal)))).sort(byNewest);
+    })()
       .then(async (bundles) => {
         if (!live()) return;
         setAll(bundles);
         setLoading(false);
         await Promise.all([
-          loadReplay(bundles, signal)
+          loadReplay(bundles, (id, s) => source.getTimeline(id, s), signal)
             .then((files) => live() && setTimelines(files))
             .catch((e) => live() && setReplayError(message(e)))
             .finally(() => live() && setReplayLoading(false)),
           // The fixture certificate scenario whose sources include this world's notarize runs.
-          loadCertificateWorld(
-            true,
-            replayRunIds(bundles)[0],
-            signal,
-          )
-            .then(
-              (w) =>
-                live() &&
-                w &&
-                setFixtureReport({ scenario: w.scenario, report: w.report }),
-            )
-            .catch((e) => live() && setCertError(message(e))),
-          loadCertificateWorld(false, undefined, signal)
-            .then((w) => live() && w && setRealReport(w.report))
+          (async () => {
+            const first = bundles.find((b) => b.runId === replayRunIds(bundles)[0]);
+            if (!first) return;
+            const w = toCertificateView(await source.certificates(entryOfBundle(first), signal));
+            if (live() && w) setFixtureReport({ scenario: w.scenario, report: w.report });
+          })().catch((e) => live() && setCertError(message(e))),
+          source
+            .certificates(undefined, signal)
+            .then((w) => live() && w.report && setRealReport(w.report))
             .catch((e) => live() && setCertError(message(e))),
         ]);
       })
@@ -89,7 +98,7 @@ export default function Landing() {
       .catch((e) => live() && setToolError(message(e)))
       .finally(() => live() && setToolsLoading(false));
     return () => controller.abort();
-  }, []);
+  }, [source, ready]);
 
   const fixture = fixturePair(all);
   const real = landingResults(all.filter((b) => !b.sample));

@@ -13,8 +13,7 @@ import {
   StatusPill,
 } from "../../components/ui";
 import { useData } from "../../state/DataProvider";
-import { LocalApiError, useSessionToken } from "../../state/local-api";
-import { number } from "../../data";
+import { LocalApiError, number, useSessionToken } from "../../data";
 import { useBundle } from "../shared";
 import { fetchApprovals } from "./api";
 import { ConfirmDialog, type DialogKind } from "./ConfirmDialog";
@@ -37,7 +36,7 @@ type ListState =
   | { status: "error"; error: string };
 
 export function ApprovalsPage() {
-  const { source, bundles } = useData();
+  const { source, bundles, dataSource } = useData();
   const selected = useBundle();
   const mode = deskMode(source);
   const [token, setToken] = useSessionToken();
@@ -55,7 +54,7 @@ export function ApprovalsPage() {
     }
     let live = true;
     setList((s) => (s.status === "ready" ? s : { status: "loading" }));
-    fetchApprovals(token)
+    fetchApprovals(dataSource)
       .then((data) => {
         if (!live) return;
         setTokenError(undefined);
@@ -74,7 +73,7 @@ export function ApprovalsPage() {
     return () => {
       live = false;
     };
-  }, [mode, token, reloadKey, setToken]);
+  }, [mode, token, reloadKey, setToken, dataSource]);
 
   const data = list.status === "ready" ? list.data : undefined;
   const desk = useMemo(
@@ -238,6 +237,7 @@ export function ApprovalsPage() {
       {dialog && (
         <ConfirmDialog
           key={`${dialog.kind}:${dialog.row.key}`}
+          source={dataSource}
           kind={dialog.kind}
           item={dialog.row.item}
           token={token}

@@ -17,7 +17,7 @@ import { KpiCard } from "./components/ui/kpi-card";
 import { hatchBackground } from "./components/ui/hatch";
 import { Empty } from "./components";
 import { date, label, number, percent, safeLink } from "./data";
-import type { CertificateWorld } from "./state/certificates";
+import type { CertificateView as CertificateWorld } from "./data";
 import { recordPath, withRun } from "./state/data-mode";
 import "./certificates.css";
 import { useEffect, useState, type ReactNode } from "react";

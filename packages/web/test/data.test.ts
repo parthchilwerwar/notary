@@ -1,7 +1,18 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { BundleIndexSchema } from "../../core/src/schema/bundle";
-import { loadBundle, loadFixtureEntries, loadIndex, safeLink, validateBundle } from "../src/data";
+import type { BundleIndexEntry } from "../../core/src/schema";
+import { PublishedFiles, safeLink, validateBundle } from "../src/data";
+
+// Moved to the data layer (src/data/published.ts): the old loadIndex/loadBundle/loadFixtureEntries.
+const files = () => new PublishedFiles({ base: "/" });
+const loadIndex = () => files().primaryIndex();
+const loadFixtureEntries = () => files().fixtureIndex();
+const loadBundle = async (entry: BundleIndexEntry) => {
+  const f = files();
+  vi.spyOn(f, "entry").mockResolvedValue({ ...entry, dir: "bundles" });
+  return f.bundle(entry.runId);
+};
 
 const fixture = JSON.parse(
   readFileSync(

@@ -3,8 +3,11 @@
 // GET  -> ApprovalsList: `testMode` (the Dodo test-mode lock state), `pending` = held decisions with a
 //         write action from LOCAL runs (runs/<runId>/ bundles: verified, sample false, guarded, live;
 //         fixture/demo bundles are simulated and never listed) minus the ones already decided, and
-//         `decided` = every record in runs/<runId>/approvals.json.
-// POST -> ApprovalRequest.
+//         `decided` = every record in runs/<runId>/approvals.json. Each pending item carries `id`
+//         (approvalIdFor(runId, decisionId), the id its ApprovalRecord will carry).
+// POST /api/approvals/:id/approve  body ApproveBody {confirmedAmount}  (Redesign R1; same semantics)
+// POST /api/approvals/:id/reject   body RejectBody {reason}
+// POST /api/approvals -> ApprovalRequest (the original form, kept: {decision, runId, decisionId, ...}).
 //   rejected: a non-empty reason; closes the item (status "closed"); no external call; keyless.
 //   approved: only under the Dodo test-mode lock; `confirmedAmount` (typed by the human) must equal
 //     the held action's amount in minor units; at most once per decision (an existing record -> 409);
@@ -25,6 +28,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import type { Hono } from "hono";
+import { ApproveBodySchema, RejectBodySchema } from "../schema/api.js";
 import { ApprovalRequestSchema, ApprovalsFileSchema, ApprovalsListSchema } from "../schema/approval.js";
 import type { ApprovalRecord, ApprovalRequest, ApprovalsFile, ApprovalsList, PendingApproval } from "../schema/approval.js";
 import type { Decision, QueueRequest, RunBundle } from "../schema/index.js";
@@ -219,6 +223,7 @@ export async function listApprovals(opts: ApprovalsOptions): Promise<ApprovalsLi
     if (decidedIds.has(approvalIdFor(item.bundle.runId, item.decision.id))) continue;
     const { amount, currency } = heldAmount(item, manifest, opts.decidePolicy);
     pending.push({
+      id: approvalIdFor(item.bundle.runId, item.decision.id),
       runId: item.bundle.runId,
       decisionId: item.decision.id,
       requestId: item.request.id,
@@ -461,10 +466,37 @@ async function executeApproved(
   }
 }
 
-/** Mount GET/POST /api/approvals (token + localhost). */
+/** POST /api/approvals/:id/approve|reject: find the held item by its approval id, then decide as POST /api/approvals. */
+export async function decideApprovalById(id: string, decision: "approved" | "rejected", body: unknown, opts: ApprovalsOptions): Promise<DecideResult> {
+  const parsed = decision === "approved" ? ApproveBodySchema.safeParse(body) : RejectBodySchema.safeParse(body);
+  if (!parsed.success) {
+    return { status: 400, body: { error: `invalid ${decision === "approved" ? "approve" : "reject"} body: ${parsed.error.issues.map((i) => `${i.path.join(".") || "body"}: ${i.message}`).join("; ")}` } };
+  }
+  const item = (await heldItems(opts.runsDir)).find((h) => approvalIdFor(h.bundle.runId, h.decision.id) === id);
+  if (!item) return { status: 404, body: { error: `no held decision with approval id ${id} in the local runs` } };
+  const target = { runId: item.bundle.runId, decisionId: item.decision.id };
+  return await decideApproval({ decision, ...target, ...(parsed.data as object) }, opts);
+}
+
+/** Mount GET /api/approvals, POST /api/approvals and POST /api/approvals/:id/approve|reject (token + localhost). */
 export function mountApprovals(app: Hono, opts: ApprovalsOptions & { session: ApiSession }): void {
   const guard = requireLocalSession(opts.session);
   app.get("/api/approvals", guard, async (c) => c.json(await listApprovals(opts)));
+  for (const [path, decision] of [
+    ["/api/approvals/:id/approve", "approved"],
+    ["/api/approvals/:id/reject", "rejected"],
+  ] as const) {
+    app.post(path, guard, async (c) => {
+      let body: unknown;
+      try {
+        body = await c.req.json();
+      } catch {
+        return c.json({ error: "body must be JSON" }, 400);
+      }
+      const res = await decideApprovalById(c.req.param("id"), decision, body, opts);
+      return c.json(res.body as object, res.status);
+    });
+  }
   app.post("/api/approvals", guard, async (c) => {
     let body: unknown;
     try {

@@ -212,6 +212,24 @@ svg {
 .fixture-banner svg {
   color: var(--blue);
 }
+/* Data layer mode banner (src/data DataModeBanner): persistent in replay mode. */
+.replay-banner {
+  position: relative;
+  z-index: 40;
+  display: block;
+  padding: 8px 16px;
+  background: var(--fg);
+  color: var(--surface);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.replay-banner code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  color: inherit;
+  background: transparent;
+}
 .brand {
   color: var(--fg);
   font-size: 24px;

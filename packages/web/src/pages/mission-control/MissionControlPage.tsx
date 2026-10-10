@@ -1,5 +1,5 @@
 // Mission control: where the selected run stands, stage by stage, from its timeline.
-//   Live     (local `notary serve`, real run) — the API's timeline plus `timeline` SSE events.
+//   Live     (local `notary serve`, real run) — the API's timeline plus the run's SSE events.
 //   Replay   (hosted / static) — the published <runId>.timeline.json replayed event by event,
 //            labelled "Fixture replay" (sample runs) or "Recorded replay" (real runs).
 // Every number on screen is a count of, or a value carried by, the events shown so far.
@@ -41,6 +41,7 @@ const LIVE_TEXT: Record<LiveStatus, string> = {
   open: "stream connected",
   reconnecting: "reconnecting…",
   unavailable: "stream unavailable",
+  ended: "run finished",
 };
 
 /** How long an edge stays lit after a hand-off. */
@@ -235,8 +236,8 @@ function Body({
           </>
         ) : (
           <>
-            <code>pnpm notary export</code> publishes <code>{runId}.timeline.json</code> next to
-            each real bundle.
+            <code>pnpm notary export</code> publishes the run's timeline file next to each real
+            bundle.
           </>
         )}
       </EmptyState>

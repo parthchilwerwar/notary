@@ -5,6 +5,7 @@ import "./styles.css";
 import App from "./App";
 import { BrowserRouter, Routes, Route, Link, useLocation } from "react-router";
 import Landing from "./Landing";
+import { DataModeBanner, DataSourceProvider } from "./data";
 function RouteScroll() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -15,7 +16,9 @@ function RouteScroll() {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
+    <DataSourceProvider>
     <BrowserRouter>
+      <DataModeBanner />
       <RouteScroll />
       <Routes>
         <Route path="/" element={<Landing />} />
@@ -31,5 +34,6 @@ createRoot(document.getElementById("root")!).render(
         />
       </Routes>
     </BrowserRouter>
+    </DataSourceProvider>
   </StrictMode>,
 );

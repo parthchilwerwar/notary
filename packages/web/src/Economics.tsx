@@ -3,10 +3,9 @@ import { useEffect, useState } from "react";
 import type { RunBundle } from "../../core/src/schema";
 import { CostBreakdown, Panel, Delta } from "./Overview";
 import { totalUsd, unsafeDelta } from "./analytics";
-import { number, usd } from "./data";
+import { loadEconomicsPlan, number, PUBLISHED_FILES, usd } from "./data";
 import { Segments } from "./charts";
 import { Json } from "./components";
-import { readOptionalJSON } from "./optional-json";
 
 type PlanState =
   | { status: "loading" }
@@ -24,20 +23,15 @@ export function Economics({
   const [plan, setPlan] = useState<PlanState>({ status: "loading" });
   useEffect(() => {
     const controller = new AbortController();
-    readOptionalJSON("economics.json", controller.signal)
+    loadEconomicsPlan(controller.signal)
       .then((raw) => {
         if (!controller.signal.aborted)
           setPlan(raw === undefined ? { status: "missing" } : { status: "ready", plan: raw });
       })
       .catch((e: Error) => {
         if (controller.signal.aborted) return;
-        setPlan({
-          status: "error",
-          error:
-            e instanceof SyntaxError
-              ? "economics.json is not valid JSON. Plan withheld."
-              : e.message,
-        });
+        // The data layer names the file and withholds it on invalid JSON.
+        setPlan({ status: "error", error: e.message });
       });
     return () => controller.abort();
   }, []);
@@ -124,7 +118,7 @@ export function Economics({
           </p>
         ) : plan.status === "missing" ? (
           <p className="economics-plan-state">
-            No cfo.ai plan is published yet (<code>economics.json</code>). The
+            No cfo.ai plan is published yet (<code>{PUBLISHED_FILES.economics}</code>). The
             figures above come from the run bundle alone.
           </p>
         ) : (

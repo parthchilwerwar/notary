@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { readOptionalJSON } from "../src/optional-json";
+import { readOptionalJson } from "../src/data/http";
+// Moved to the data layer: the published-file reader (src/data/http.ts).
+const readOptionalJSON = (path: string) => readOptionalJson(`/${path}`, path);
 afterEach(() => vi.unstubAllGlobals());
 const reply = (response: Response) =>
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response));
@@ -53,7 +55,7 @@ describe("invalid JSON is a plain-language error", () => {
     );
   });
   it("does the same for the tool evidence file", async () => {
-    const { loadEvidence } = await import("../src/landing-data");
+    const { loadEvidence } = await import("../src/data");
     reply(new Response("{oops", { headers: { "content-type": "application/json" } }));
     await expect(loadEvidence()).rejects.toThrow("evidence/evidence.json is not valid JSON. Data withheld.");
     reply(new Response('[{"name":1}]', { headers: { "content-type": "application/json" } }));

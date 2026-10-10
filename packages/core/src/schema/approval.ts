@@ -35,6 +35,8 @@ export const ApprovalsFileSchema = z.object({
 
 // One held item as GET /api/approvals lists it.
 export const PendingApprovalSchema = z.object({
+  // Same id the ApprovalRecord will carry; used by POST /api/approvals/:id/approve|reject.
+  id: z.string().optional(),
   runId: z.string(),
   decisionId: z.string(),
   requestId: z.string(),

@@ -1,4 +1,4 @@
-// Security layer for the local API's write-capable endpoints (POST /api/ask, GET/POST /api/approvals).
+// Security layer for the local API's write-capable endpoints (POST /api/runs, POST /api/ask, GET/POST /api/approvals/**).
 //
 // - A per-session token: 32 crypto-random bytes (base64url), created when `notary serve` starts and
 //   printed once to the terminal. It lives only in this process's memory: never written to a file,
@@ -50,7 +50,7 @@ export function createSession(token: string = randomBytes(SESSION_TOKEN_BYTES).t
 export function sessionBanner(baseUrl: string, token: string): string[] {
   return [
     `  session token (this run only; never stored): ${token}`,
-    `  POST ${baseUrl}/api/ask  GET|POST ${baseUrl}/api/approvals  need: Authorization: Bearer <token>`,
+    `  POST ${baseUrl}/api/runs  POST ${baseUrl}/api/ask  GET|POST ${baseUrl}/api/approvals[/:id/approve|reject]  need: Authorization: Bearer <token>`,
   ];
 }
 

@@ -2,7 +2,7 @@
 // `notary export --evidence` wrote them to public/evidence/evidence.json.
 import { Link } from "react-router";
 import { Card, StatusPill } from "../ui";
-import { safeLink } from "../../data";
+import { evidenceFileUrl, PUBLISHED_FILES, safeLink } from "../../data";
 import { REQUIRED_TOOLS } from "../../landing-data";
 import type { EvidenceEntry } from "../../state/DataProvider";
 
@@ -52,7 +52,7 @@ export function RequiredTools({
                   </StatusPill>
                 )}
               </div>
-              <p>{tool?.purpose ?? "No entry in public/evidence/evidence.json."}</p>
+              <p>{tool?.purpose ?? `No entry in ${PUBLISHED_FILES.evidence}.`}</p>
               {tool?.notes && (
                 <details className="record-details">
                   <summary>Evidence and limitations</summary>
@@ -81,7 +81,7 @@ export function RequiredTools({
       <p className="chart-note">
         Full receipts: <Link to="/app/evidence">Evidence page</Link> ·{" "}
         <a
-          href={`${import.meta.env.BASE_URL}evidence/evidence.json`}
+          href={evidenceFileUrl()}
           target="_blank"
           rel="noreferrer"
         >

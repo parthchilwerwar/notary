@@ -140,6 +140,16 @@ export function tracingEnabled(): boolean {
   return sdk !== null;
 }
 
+// What `notary serve`'s GET /api/health reports for neatlogs (src/api/health.ts): the last init
+// outcome and the last flush verdict in this process. Never holds the key.
+let lastInitState: TracingState | null = null;
+let lastFlush: { ok: boolean; at: string } | null = null;
+
+/** The last initTracing outcome (null: never initialized in this process) and the last flush verdict. */
+export function tracingStatus(): { init: TracingState | null; lastFlush: { ok: boolean; at: string } | null } {
+  return { init: lastInitState, lastFlush };
+}
+
 /**
  * Initialise neatlogs once per process. Never throws: if tracing can't start, every helper
  * below silently becomes a pass-through.
@@ -149,10 +159,12 @@ export function initTracing(opts: { runId?: string; serviceName?: string } = {})
   if (initPromise) return initPromise;
 
   if (!(process.env.NEATLOGS_API_KEY ?? "").trim()) {
-    return Promise.resolve({ enabled: false, reason: "NEATLOGS_API_KEY not set" });
+    lastInitState = { enabled: false, reason: "NEATLOGS_API_KEY not set" };
+    return Promise.resolve(lastInitState);
   }
   if (truthy(process.env.NEATLOGS_DISABLE_EXPORT)) {
-    return Promise.resolve({ enabled: false, reason: "NEATLOGS_DISABLE_EXPORT is set" });
+    lastInitState = { enabled: false, reason: "NEATLOGS_DISABLE_EXPORT is set" };
+    return Promise.resolve(lastInitState);
   }
 
   const attempt = (async (): Promise<TracingState> => {
@@ -165,12 +177,14 @@ export function initTracing(opts: { runId?: string; serviceName?: string } = {})
         mask: maskSecrets,
       });
       sdk = mod;
-      return { enabled: true };
+      lastInitState = { enabled: true };
+      return lastInitState;
     } catch (err) {
       sdk = null;
       initPromise = null; // allow a retry
       const msg = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
-      return { enabled: false, reason: `neatlogs init failed (${scrub(msg, secretEnvValues())})` };
+      lastInitState = { enabled: false, reason: `neatlogs init failed (${scrub(msg, secretEnvValues())})` };
+      return lastInitState;
     }
   })();
   initPromise = attempt;
@@ -443,11 +457,14 @@ export async function flushTracing(): Promise<void> {
 /** Like flushTracing, but returns the SDK's verdict (false = a pipeline failed to flush). */
 export async function flushTracingDetailed(): Promise<boolean> {
   if (!sdk) return true;
+  let ok: boolean;
   try {
-    return await sdk.flush();
+    ok = await sdk.flush();
   } catch {
-    return false;
+    ok = false;
   }
+  lastFlush = { ok, at: new Date().toISOString() };
+  return ok;
 }
 
 /** Flush and tear down the SDK (e.g. at the end of a CLI run). Safe to call when disabled. */
@@ -455,6 +472,7 @@ export async function shutdownTracing(): Promise<void> {
   const mod = sdk;
   sdk = null;
   initPromise = null;
+  lastInitState = null;
   if (!mod) return;
   try {
     await mod.shutdown();

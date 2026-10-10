@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BundleIndexSchema } from "../../core/src/schema/bundle";
 import type { BundleIndexEntry } from "../../core/src/schema";
-import { loadDataWorld, probeLocalApi, validateBundle } from "../src/data";
+import { validateBundle } from "../src/data";
 import {
   NAV_GROUPS,
   matchAppRoute,
@@ -19,7 +19,7 @@ import {
   resolveDataMode,
   withRun,
 } from "../src/state/data-mode";
-import { chooseScenario, verifyToolFile } from "../src/state/certificates";
+import { chooseScenario, verifyToolFile } from "../src/data";
 import { FixtureIndexSchema } from "../../core/src/schema";
 
 const read = (path: string) =>
@@ -196,13 +196,16 @@ describe("command palette", () => {
 
 describe("certificate world", () => {
   const index = FixtureIndexSchema.parse(read("certificates/fixture/index.json"));
-  it("picks the fixture scenario that lists the run, else the first", () => {
+  it("picks the fixture scenario that lists the run, else its own world's, never another world's", () => {
     expect(chooseScenario(index, "demo-change-api-notarize-dodo")?.scenario.scenario).toBe(
       "change-api",
     );
-    expect(chooseScenario(index, "demo-run-guarded")?.scenario.scenario).toBe(
-      index.scenarios[0].scenario,
-    );
+    // Queue runs are not certificate sources; they share their notarize runs' world.
+    expect(chooseScenario(index, "demo-run-guarded")?.scenario.scenario).toBe("default");
+    expect(chooseScenario(index, "demo-change-api-run-guarded")?.scenario.scenario).toBe("change-api");
+    // A run of no published scenario's world gets no certificates (no stand-in world).
+    expect(chooseScenario(index, "sample-42")).toBeUndefined();
+    expect(chooseScenario(index, undefined)).toBeUndefined();
   });
   it("verifies published files against their report and rejects tampering", () => {
     for (const scenario of index.scenarios) {
@@ -239,79 +242,4 @@ describe("certificate world", () => {
 });
 
 
-describe("data source resolution", () => {
-  afterEach(() => vi.unstubAllGlobals());
-  const sample = read("bundles/sample-42.json");
-  const primary = read("bundles/index.json");
-  const jsonResponse = (body: unknown) =>
-    new Response(JSON.stringify(body), {
-      headers: { "content-type": "application/json" },
-    });
-  const staticFetch = (url: string) => {
-    if (url.endsWith("bundles/index.json")) return jsonResponse(primary);
-    if (url.endsWith("bundles/sample-42.json")) return jsonResponse(sample);
-    if (url.endsWith("bundles/fixture/index.json"))
-      return new Response("", { status: 404 });
-    return undefined;
-  };
-  it("falls back to static files when no local API answers with JSON", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (url: string) =>
-        url.includes("/api/")
-          ? new Response("<!doctype html>", { headers: { "content-type": "text/html" } })
-          : staticFetch(url)!,
-      ),
-    );
-    expect(await probeLocalApi()).toBeNull();
-    const world = await loadDataWorld();
-    expect(world.source).toBe("static");
-    expect(world.bundles.map((b) => b.runId)).toEqual(["sample-42"]);
-  });
-  it("uses the local API first, verifying each bundle it serves", async () => {
-    const fetch = vi.fn(async (url: string) => {
-      if (url.endsWith("/api/bundles")) return jsonResponse(primary);
-      if (url.endsWith("/api/bundles/sample-42")) return jsonResponse(sample);
-      return staticFetch(url)!;
-    });
-    vi.stubGlobal("fetch", fetch);
-    const world = await loadDataWorld();
-    expect(world.source).toBe("api");
-    expect(world.bundles[0].contentHash).toBe(sample.contentHash);
-    expect(fetch.mock.calls.some(([u]) => String(u).endsWith("/api/bundles/sample-42"))).toBe(true);
-  });
-  it("rejects a local API index that fails the shared schema", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse([{ runId: 1 }])));
-    await expect(probeLocalApi()).rejects.toThrow("shared schema");
-  });
-});
-
-describe("local API probe gating", () => {
-  afterEach(() => vi.unstubAllGlobals());
-  it("only probes where a loopback-only `notary serve` could answer", async () => {
-    const { canReachLocalApi } = await import("../src/data");
-    expect(canReachLocalApi("127.0.0.1", "")).toBe(true);
-    expect(canReachLocalApi("localhost", "")).toBe(true);
-    expect(canReachLocalApi("[::1]", "")).toBe(true);
-    expect(canReachLocalApi("notary.localhost", "")).toBe(true);
-    expect(canReachLocalApi("notary.vercel.app", "")).toBe(false);
-    expect(canReachLocalApi("notary.vercel.app", "http://127.0.0.1:8787")).toBe(true);
-    expect(canReachLocalApi(undefined, "")).toBe(true);
-  });
-  it("skips the /api request on a hosted origin and loads static files", async () => {
-    vi.stubGlobal("location", { hostname: "notary.example.com" });
-    const fetch = vi.fn(async (url: string) => {
-      if (url.includes("/api/")) throw new Error("hosted pages must not probe /api");
-      if (url.endsWith("bundles/index.json"))
-        return new Response(JSON.stringify(read("bundles/index.json")), { headers: { "content-type": "application/json" } });
-      if (url.endsWith("bundles/sample-42.json"))
-        return new Response(JSON.stringify(read("bundles/sample-42.json")), { headers: { "content-type": "application/json" } });
-      return new Response("", { status: 404 });
-    });
-    vi.stubGlobal("fetch", fetch);
-    expect(await probeLocalApi()).toBeNull();
-    const world = await loadDataWorld();
-    expect(world.source).toBe("static");
-    expect(fetch.mock.calls.some(([u]) => String(u).includes("/api/"))).toBe(false);
-  });
-});
+// Data-source selection and the replay catalog moved to the data layer: test/data-layer.test.ts.

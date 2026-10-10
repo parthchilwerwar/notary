@@ -7,13 +7,22 @@
 //   GET /api/stream       SSE of bus events (decision, probe.committed, probe.verdict,
 //                         belief.changed, run.finished, timeline) with Last-Event-ID replay
 //
+//   GET /api/health       per-integration status (src/api/health.ts; network checks cached ~60 s)
+//   GET /api/runs         finished real runs + runs this server started still running (src/api/runs.ts)
+//   GET /api/runs/:id     the verified bundle, or 202 {state:"running"}
+//   GET /api/runs/:id/events  SSE of the run's TimelineEvents (file replay, then live), `event: end`
+//   GET /api/certificates[/:id]  certificates from the real runs this server sees (src/api/certificates.ts)
+//
+//   POST /api/runs        start a real queue run / notarize in this process (src/api/runs.ts)
 //   POST /api/ask         Ask Notary (src/api/ask.ts): cited answers from the loaded records
 //                         (NOTARY_ASK_RPM per session, 429 + Retry-After; spans in runs/_ask/spans.jsonl)
-//   GET|POST /api/approvals  approval desk (src/api/approvals.ts)
+//   GET|POST /api/approvals, POST /api/approvals/:id/approve|reject  approval desk (src/api/approvals.ts)
 //
-// The ask and approvals endpoints need the per-session token (Authorization: Bearer) AND a loopback
+// POST /api/runs, ask and approvals need the per-session token (Authorization: Bearer) AND a loopback
 // socket, Host and Origin (src/api/session.ts). Everything else is read-only and unauthenticated as
-// before. CORS is limited to loopback dashboard dev origins.
+// before. CORS is limited to loopback dashboard dev origins. No handler returns canned data: every
+// response is read from run files, the environment, or a real integration check.
+// /api/runs, /api/certificates and /api/approvals never include sample/fixture bundles.
 // Only each bundle directory's own index.json is read; subdirectories of public/bundles are NOT
 // scanned, so the fixture-demo bundles in public/bundles/fixture/ (own index) are never merged
 // into the list. Under runs/, every immediate subdirectory is a bundle dir (runs/<runId>/).
@@ -22,6 +31,7 @@ import { readFile } from "node:fs/promises";
 import { join, relative, resolve, isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Hono } from "hono";
+import type { Context } from "hono";
 import { cors } from "hono/cors";
 import { streamSSE } from "hono/streaming";
 import { verifyBundle } from "../bundle/hash.js";
@@ -31,6 +41,12 @@ import { bus as defaultBus, DEFAULT_EVENT_JOURNAL, tailEventJournal } from "./bu
 import type { EventBus, NotaryEvent } from "./bus.js";
 import { servedTimeline } from "../timeline/serve.js";
 import { mountApprovals } from "./approvals.js";
+import { loadVerifiedBundles } from "./bundle-source.js";
+import { mountCertificates } from "./certificates.js";
+import { createHealth } from "./health.js";
+import type { HealthOptions } from "./health.js";
+import { mountRuns } from "./runs.js";
+import type { RunTracker, RunsOptions } from "./runs.js";
 import type { ApprovalsOptions } from "./approvals.js";
 import { ASK_SPANS_DIR, mountAsk } from "./ask.js";
 import type { AskOptions } from "./ask.js";
@@ -63,6 +79,12 @@ export interface ApiOptions {
   ask?: Omit<AskOptions, "bundleDirs">;
   /** GET/POST /api/approvals options (test seams: env, tools, store, manifest). */
   approvals?: Omit<ApprovalsOptions, "runsDir" | "bus">;
+  /** GET /api/health options (test seams: env, probes, clock). */
+  health?: HealthOptions;
+  /** POST/GET /api/runs options (test seams: env, runners, precheck). */
+  runs?: Pick<RunsOptions, "env" | "now" | "runQueue" | "notarize" | "precheck">;
+  /** Receives this app's run tracker (tests). */
+  onRunTracker?: (tracker: RunTracker) => void;
 }
 
 interface IndexedEntry {
@@ -146,11 +168,8 @@ export function createApp(opts: ApiOptions = {}): Hono {
     return c.json(sortEntries([...index.values()].map((v) => v.entry)));
   });
 
-  app.get("/api/bundles/:id", async (c) => {
-    const id = c.req.param("id");
-    if (!SAFE_RUN_ID.test(id)) return c.json({ error: "invalid bundle id" }, 400);
-    const found = (await loadIndex(opts)).get(id);
-    if (!found) return c.json({ error: `unknown bundle ${id}` }, 404);
+  /** One indexed bundle, re-verified on every read (GET /api/bundles/:id and GET /api/runs/:id). */
+  const bundleResponse = async (c: Context, found: IndexedEntry, id: string): Promise<Response> => {
     const file = join(found.dir, `${id}.json`);
     if (!isInside(found.dir, file)) return c.json({ error: "invalid bundle id" }, 400);
     if (!existsSync(file)) return c.json({ error: `bundle ${id} is indexed but its file is missing` }, 404);
@@ -169,6 +188,14 @@ export function createApp(opts: ApiOptions = {}): Hono {
       return c.json({ ...checked.bundle, error: checked.error });
     }
     return c.json({ error: checked.error }, 500);
+  };
+
+  app.get("/api/bundles/:id", async (c) => {
+    const id = c.req.param("id");
+    if (!SAFE_RUN_ID.test(id)) return c.json({ error: "invalid bundle id" }, 400);
+    const found = (await loadIndex(opts)).get(id);
+    if (!found) return c.json({ error: `unknown bundle ${id}` }, 404);
+    return await bundleResponse(c, found, id);
   });
 
   app.get("/api/bundles/:id/timeline", async (c) => {
@@ -231,9 +258,29 @@ export function createApp(opts: ApiOptions = {}): Hono {
     });
   });
 
-  // The only non-read endpoints: token + localhost (src/api/session.ts). Ask is read-only by construction.
   const session = opts.session ?? createSession();
   const runsDir = opts.runsDir === undefined ? DEFAULT_RUNS_DIR : opts.runsDir;
+  const verifiedBundles = () => loadVerifiedBundles(bundleDirectories(opts));
+
+  const health = createHealth(opts.health ?? {});
+  app.get("/api/health", async (c) => c.json(await health.check()));
+
+  mountCertificates(app, { verifiedBundles });
+
+  // Runs (POST is token + localhost); reads are open like the bundle endpoints.
+  const { tracker } = mountRuns(app, {
+    ...opts.runs,
+    runsDir,
+    bus,
+    session,
+    keepAliveMs,
+    loadIndex: () => loadIndex(opts),
+    verifiedBundles,
+    bundleResponse,
+  });
+  opts.onRunTracker?.(tracker);
+
+  // The other non-read endpoints: token + localhost (src/api/session.ts). Ask is read-only by construction.
   mountAsk(app, {
     runsDir,
     // Ask spans get their own local sink (runs/_ask/spans.jsonl), scoped to each ask's async context,

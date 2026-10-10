@@ -17,6 +17,7 @@ import {
 } from "../ui/sidebar";
 import { NAV_GROUPS, matchAppRoute, routeById, routes, type AppRoute } from "../../routes";
 import { useData } from "../../state/DataProvider";
+import { PUBLISHED_FILES } from "../../data";
 import { MODE_LABEL, heldCount, withRun, type DataMode } from "../../state/data-mode";
 import { ASK_KEYSHORTCUTS, ASK_SHORTCUT_LABEL, useAsk } from "../ask";
 
@@ -161,7 +162,7 @@ export function AppSidebar() {
         ))}
       </SidebarContent>
       <SidebarFooter>
-        <div className="sidebar-status" title={source === "api" ? "Local notary serve reachable at /api/bundles" : "Static published files"}>
+        <div className="sidebar-status" title={source === "api" ? "Live: a local notary serve answered /api/health" : "Replay of published files"}>
           <span className={`mode-dot ${bundle ? `mode-${mode}` : "mode-pending"}`} aria-hidden="true" />
           <span className="sidebar-label">
             <span className="sidebar-status-key">Data</span> {dataStatus}
@@ -170,7 +171,7 @@ export function AppSidebar() {
         </div>
         <div
           className="sidebar-status"
-          title={neatlogs?.notes ?? "Status from public/evidence/evidence.json"}
+          title={neatlogs?.notes ?? `Status from ${PUBLISHED_FILES.evidence}`}
         >
           <span
             className={`mode-dot ${neatlogs?.status === "live" ? "mode-live" : "mode-pending"}`}

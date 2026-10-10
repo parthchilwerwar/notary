@@ -104,3 +104,4 @@ export * from "./approval.js";
 
 // Certificates, revocations and certificate reports (packages/web/public/certificates/**).
 export * from "./certificate.js";
+export * from "./api.js";

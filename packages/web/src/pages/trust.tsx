@@ -20,11 +20,10 @@ import {
 } from "../components/ui";
 import { useData } from "../state/DataProvider";
 import {
-  loadCertificateWorld,
-  type CertificateWorld,
-} from "../state/certificates";
-import { readOptionalJSON } from "../optional-json";
-import { FixtureIndexSchema } from "../../../core/src/schema";
+  loadFixtureCertificateIndex,
+  toCertificateView,
+  type CertificateView as CertificateWorld,
+} from "../data";
 import { RecordNotFound, RunLink, WithCertificates, useBundle, useRunPath } from "./shared";
 import { CertificateTrail } from "../components/trail";
 
@@ -197,7 +196,7 @@ export function BeliefDetailPage() {
 
 /** Fixture-only: the scenario whose certificate export records a revocation. */
 export function RevocationDemoPage() {
-  const { bundles } = useData();
+  const { runs, bundles, dataSource } = useData();
   const [state, setState] = useState<
     | { status: "loading" }
     | { status: "ready"; world: CertificateWorld }
@@ -208,27 +207,22 @@ export function RevocationDemoPage() {
   useEffect(() => {
     const controller = new AbortController();
     (async () => {
-      const raw = await readOptionalJSON(
-        "certificates/fixture/index.json",
-        controller.signal,
-      );
-      if (raw === undefined) return setState({ status: "missing" });
-      const index = FixtureIndexSchema.parse(raw);
-      const scenario = index.scenarios.find((s) => s.overall.revoked > 0);
-      if (!scenario) return setState({ status: "missing" });
-      const world = await loadCertificateWorld(
-        true,
-        scenario.sourceBundles[0],
-        controller.signal,
+      const index = await loadFixtureCertificateIndex(controller.signal);
+      const scenario = index?.scenarios.find((s) => s.overall.revoked > 0);
+      // The scenario's source run must be a published fixture run (never a stand-in).
+      const entry = runs.find((r) => r.sample && r.runId === scenario?.sourceBundles[0]);
+      if (!scenario || !entry) return setState({ status: "missing" });
+      const view = toCertificateView(
+        await dataSource.certificates({ ...entry, state: "finished" }, controller.signal),
       );
       if (!controller.signal.aborted)
-        setState(world ? { status: "ready", world } : { status: "missing" });
+        setState(view ? { status: "ready", world: view } : { status: "missing" });
     })().catch((e: Error) => {
       if (!controller.signal.aborted)
         setState({ status: "error", error: e.message });
     });
     return () => controller.abort();
-  }, []);
+  }, [runs, dataSource]);
   return (
     <>
       <FixtureBanner variant="inline" />

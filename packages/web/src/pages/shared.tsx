@@ -5,7 +5,7 @@ import { Link, useLocation } from "react-router";
 import type { RunBundle } from "../../../core/src/schema";
 import { useData } from "../state/DataProvider";
 import { withRun } from "../state/data-mode";
-import type { CertificateWorld } from "../state/certificates";
+import type { CertificateView as CertificateWorld } from "../data";
 import {
   EmptyState,
   ErrorState,

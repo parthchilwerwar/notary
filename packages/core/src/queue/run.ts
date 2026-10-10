@@ -161,8 +161,11 @@ function blocked(err: unknown): RunQueueResult | null {
   return null;
 }
 
+/** The keys a live `notary run` needs, in the order a missing one is reported (also `POST /api/runs`). */
+export const QUEUE_RUN_KEYS = ["DODO_PAYMENTS_API_KEY", "CRUSTDATA_API_KEY"] as const;
+
 function requireKeys(env: NodeJS.ProcessEnv): void {
-  for (const v of ["DODO_PAYMENTS_API_KEY", "CRUSTDATA_API_KEY"]) if (!env[v]?.trim()) throw new MissingCredentialError(v);
+  for (const v of QUEUE_RUN_KEYS) if (!env[v]?.trim()) throw new MissingCredentialError(v);
 }
 
 // ---------------------------------------------------------------------------------------------

@@ -37,7 +37,6 @@ import {
   usdView,
 } from "../src/pages/mission-control/model";
 import { stageLayout } from "../src/pages/mission-control/StageGraph";
-import { timelineUrls } from "../src/pages/mission-control/hooks";
 
 const read = (path: string) =>
   JSON.parse(readFileSync(new URL(`../public/${path}`, import.meta.url), "utf8"));
@@ -347,11 +346,4 @@ describe("layout and sources", () => {
     expect(desk.position(4).x + desk.nodeW).toBeCloseTo(1100);
   });
 
-  it("reads fixture timelines from bundles/fixture/ and real ones from bundles/ or the local API", () => {
-    expect(timelineUrls(guarded, false)[0]).toMatch(/bundles\/fixture\/demo-run-guarded\.timeline\.json$/);
-    expect(timelineUrls({ runId: "r1", sample: false }, false)).toEqual([
-      expect.stringMatching(/bundles\/r1\.timeline\.json$/),
-    ]);
-    expect(timelineUrls({ runId: "r1", sample: false }, true)).toEqual(["/api/bundles/r1/timeline"]);
-  });
 });
