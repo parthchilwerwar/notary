@@ -28,6 +28,8 @@ import { claimById } from "../src/contracts/index.js";
 import { recordedRunId } from "../src/reflect/notarize.js";
 import { judge } from "../src/reflect/verdict.js";
 import { runReplay } from "../src/replay/index.js";
+import { readTimeline } from "../src/timeline/store.js";
+import { timelineEvents } from "../src/timeline/write.js";
 import { PinMismatchError, loadPinned, pinRef } from "../src/replay/pins.js";
 import type { Belief, Probe } from "../src/schema/index.js";
 import { DEFAULT_CASSETTE_DIR, computeContentHash, listCassettes, loadCassette, saveCassette, setRecorderTransport } from "../src/tools/index.js";
@@ -93,6 +95,23 @@ describe("notary demo --fixture (FIXTURE data, simulated APIs and model doubles)
     expect(first.lines.filter((l) => l.includes("PLANTED FIXTURE QUIRK Q")).length).toBeGreaterThanOrEqual(6);
     expect(first.lines.some((l) => l.includes("live: BLOCKED at Stage 1 — CRUSTDATA_API_KEY not set"))).toBe(true);
     expect(process.env.NOTARY_MODE).toBe(modeBefore); // set in-process for the demo only, then restored
+  });
+
+  it("v2: every run dir it writes holds timeline.jsonl = the events derived from that run's final bundle", () => {
+    const bundles = demoBundleFiles(outDir).map((f) => {
+      const v = verifyBundle(JSON.parse(readFileSync(f, "utf8")));
+      if (!v.ok) throw new Error(v.error);
+      return v.bundle;
+    });
+    expect(bundles.length).toBe(4);
+    for (const b of bundles) {
+      const runDir = join(outDir, b.runId);
+      const onDisk = readTimeline(runDir);
+      expect(onDisk.length).toBeGreaterThan(2);
+      expect(onDisk).toEqual(timelineEvents(b, { context: bundles.filter((x) => x.runId !== b.runId) }));
+      expect(onDisk.map((e) => e.seq)).toEqual(onDisk.map((_, i) => i));
+      expect(onDisk.at(-1)!.type).toBe("run.finished");
+    }
   });
 
   it("labels every bundle it writes: sample, FIXTURE disclosure, demo- runId, under the demo dir only", () => {

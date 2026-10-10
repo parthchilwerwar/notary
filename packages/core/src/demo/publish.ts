@@ -13,11 +13,17 @@
  *     index.json are removed, the other scenario's bundles are kept (re-verified and re-indexed
  *     unchanged; one that no longer verifies is removed), so `--scenario change-api --publish` and the
  *     default `--publish` never delete each other's bundles. Nothing else anywhere is touched.
+ *   - v2: each bundle gets `<runId>.timeline.json` next to it (src/timeline: a TimelineFile with
+ *     sample: true and bundleHash = the bundle's contentHash), derived from that bundle with only its
+ *     own scenario's bundles as certificate-id context. Every `demo-*.timeline.json` is removed and
+ *     rewritten from the bundles that remain (a stale scenario's timelines go with its bundles; the
+ *     kept scenario's timelines are re-derived from its unchanged bundles, so they match them).
  */
 import { existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
 import { FIXTURE_BUNDLES_SUBDIR, verifyBundle, writeBundle } from "../bundle/index.js";
 import type { RunBundle } from "../schema/index.js";
+import { TIMELINE_FILE_SUFFIX, publishTimeline } from "../timeline/write.js";
 import { FIXTURE_DISCLOSURE, demoScenarioOf } from "./index.js";
 
 export interface PublishFixtureOptions {
@@ -29,6 +35,8 @@ export interface PublishFixtureResult {
   dir: string;
   indexPath: string;
   written: string[];
+  /** Published timeline files (one per bundle in the directory after publishing). */
+  timelines: string[];
   removed: string[];
   lines: string[];
 }
@@ -59,6 +67,12 @@ export async function publishFixtureBundles(bundles: readonly RunBundle[], opts:
   const kept: RunBundle[] = [];
   if (existsSync(dir)) {
     for (const name of readdirSync(dir).sort()) {
+      const isTimeline = name.startsWith("demo-") && name.endsWith(TIMELINE_FILE_SUFFIX);
+      if (isTimeline) {
+        // Re-derived below from the bundles that remain.
+        rmSync(join(dir, name), { force: true });
+        continue;
+      }
       const isBundle = name.startsWith("demo-") && name.endsWith(".json");
       if (name !== "index.json" && !isBundle) continue;
       if (isBundle && !scenarios.has(demoScenarioOf(name.slice(0, -".json".length)))) {
@@ -94,13 +108,22 @@ export async function publishFixtureBundles(bundles: readonly RunBundle[], opts:
     written.push(w.bundlePath);
   }
 
+  // Timelines: one per bundle, certificate-id context = that bundle's own scenario only.
+  const timelines: string[] = [];
+  const all = [...kept, ...bundles];
+  for (const b of all) {
+    const context = all.filter((x) => demoScenarioOf(x.runId) === demoScenarioOf(b.runId));
+    timelines.push(await publishTimeline(b, dir, { expectSample: true, context }));
+  }
+
   const shown = (p: string): string => relative(parent, p).split(sep).join("/");
   const lines = [
     `published ${written.length} FIXTURE bundle(s) to ${dir} (own index.json; the real bundles/index.json is untouched)`,
     ...written.map((p) => `  ${shown(p)}`),
     `  ${shown(indexPath)}`,
+    `  ${timelines.length} timeline(s): <runId>${TIMELINE_FILE_SUFFIX}`,
     ...(removed.length ? [`  replaced previous contents: ${removed.join(", ")}`] : []),
     ...(kept.length ? [`  kept the other scenario's bundles (re-indexed unchanged): ${kept.map((b) => `${b.runId}.json`).join(", ")}`] : []),
   ];
-  return { dir, indexPath, written, removed, lines };
+  return { dir, indexPath, written, timelines, removed, lines };
 }

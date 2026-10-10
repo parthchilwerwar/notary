@@ -11,6 +11,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { FIXTURE_BUNDLES_SUBDIR, writeBundle } from "../bundle/index.js";
+import { publishTimeline } from "../timeline/write.js";
 import { BundleIndexSchema } from "../schema/bundle.js";
 import type { RunBundle } from "../schema/index.js";
 import type { ChecksRunner, CheckResult } from "./checks.js";
@@ -116,6 +117,8 @@ export async function runExport(opts: ExportOptions = {}): Promise<ExportResult>
         continue;
       }
       await writeBundle(b, webDir); // re-verifies schema + hash before writing
+      // Its timeline next to it (derived + any approvals in runs/<runId>/timeline.jsonl); real data only.
+      await publishTimeline(b, webDir, { expectSample: false, runDir: join(runsDir, b.runId), context: bundles });
       copied.push(b.runId);
     }
   }

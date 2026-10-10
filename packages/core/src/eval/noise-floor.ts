@@ -16,6 +16,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { finalizeBundle, verifyBundle, writeBundle } from "../bundle/index.js";
+import { publishTimeline, recordRunTimeline } from "../timeline/write.js";
 import { RUNS_DIR, WEB_BUNDLES_DIR, runQueue } from "../queue/run.js";
 import { discoverBundles, replayBundle } from "../replay/index.js";
 import { pinnedPath, readInputs } from "../replay/inputs.js";
@@ -168,7 +169,11 @@ export async function runNoiseFloor(opts: NoiseFloorOptions): Promise<NoiseFloor
     const entry = bundles.find((b) => b.bundle.runId === runId)!;
     const updated = finalizeBundle({ ...entry.bundle, noiseFloor: floor });
     await writeBundle(updated, join(runsDir, runId));
-    if (webDir && existsSync(join(webDir, `${runId}.json`))) await writeBundle(updated, webDir);
+    recordRunTimeline(updated, join(runsDir, runId), { runsDir });
+    if (webDir && existsSync(join(webDir, `${runId}.json`))) {
+      await writeBundle(updated, webDir);
+      await publishTimeline(updated, webDir, { expectSample: false, runDir: join(runsDir, runId), runsDir });
+    }
   }
   const summary = {
     generatedAt: (opts.now ?? (() => new Date()))().toISOString(),

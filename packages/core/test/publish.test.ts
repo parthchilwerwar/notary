@@ -11,7 +11,7 @@ import { createApp } from "../src/api/server.js";
 import { FIXTURE_BUNDLES_SUBDIR, buildSampleBundle, finalizeBundle, verifyBundle, writeBundle } from "../src/bundle/index.js";
 import { FIXTURE_DISCLOSURE } from "../src/demo/index.js";
 import { fixturePublishRefusal, publishFixtureBundles } from "../src/demo/publish.js";
-import { EVIDENCE_PATH, EvidenceSchema, PLACEHOLDER_URL, PRIVATE_REPO_URL, SPONSOR_NAMES, buildEvidence, gatherEvidenceFacts, loadEvidence } from "../src/export/evidence.js";
+import { EVIDENCE_PATH, EvidenceSchema, PLACEHOLDER_URL, PRIVATE_REPO_URL, SPONSOR_NAMES, buildEvidence, exportedRunTraceIds, gatherEvidenceFacts, loadEvidence } from "../src/export/evidence.js";
 import { resolveTraceLinkTemplate, traceLinkFor } from "../src/trace/links.js";
 import { runExport } from "../src/export/index.js";
 import { BundleIndexSchema } from "../src/schema/bundle.js";
@@ -95,7 +95,13 @@ describe("notary demo --fixture --publish", () => {
 
     const fixtureDir = join(web, FIXTURE_BUNDLES_SUBDIR);
     expect(r.dir).toBe(fixtureDir);
-    expect(readdirSync(fixtureDir).sort()).toEqual(["demo-run-guarded.json", "demo-run-naive.json", "index.json"]);
+    expect(readdirSync(fixtureDir).sort()).toEqual([
+      "demo-run-guarded.json",
+      "demo-run-guarded.timeline.json",
+      "demo-run-naive.json",
+      "demo-run-naive.timeline.json",
+      "index.json",
+    ]);
     const index = BundleIndexSchema.parse(JSON.parse(readFileSync(join(fixtureDir, "index.json"), "utf8")));
     expect(index.map((e) => e.runId).sort()).toEqual(["demo-run-guarded", "demo-run-naive"]);
     expect(index.every((e) => e.sample)).toBe(true);
@@ -120,7 +126,7 @@ describe("notary demo --fixture --publish", () => {
     writeFileSync(join(fixtureDir, "README.txt"), "not ours");
     const r = await publishFixtureBundles([fixtureBundle("demo-run-naive", 3)], { webBundlesDir: web });
     expect(r.removed.sort()).toEqual(["demo-old.json", "demo-run-naive.json", "index.json"]);
-    expect(readdirSync(fixtureDir).sort()).toEqual(["README.txt", "demo-run-naive.json", "index.json"]);
+    expect(readdirSync(fixtureDir).sort()).toEqual(["README.txt", "demo-run-naive.json", "demo-run-naive.timeline.json", "index.json"]);
     const index = BundleIndexSchema.parse(JSON.parse(readFileSync(join(fixtureDir, "index.json"), "utf8")));
     expect(index.map((e) => e.runId)).toEqual(["demo-run-naive"]);
   });
@@ -183,7 +189,8 @@ describe("notary demo --fixture --publish", () => {
     const fixtureDir = join(WEB_BUNDLES, FIXTURE_BUNDLES_SUBDIR);
     expect(existsSync(join(fixtureDir, "index.json"))).toBe(true);
     const index = BundleIndexSchema.parse(JSON.parse(readFileSync(join(fixtureDir, "index.json"), "utf8")));
-    const files = readdirSync(fixtureDir).filter((f) => f !== "index.json").sort();
+    // v2 timelines (<runId>.timeline.json) sit next to their bundles; test/timeline.test.ts checks them.
+    const files = readdirSync(fixtureDir).filter((f) => f !== "index.json" && !f.endsWith(".timeline.json")).sort();
     expect(files).toEqual(index.map((e) => `${e.runId}.json`).sort());
     expect(files.length).toBeGreaterThan(0);
     for (const e of index) {
@@ -212,6 +219,29 @@ describe("packages/web/public/evidence/evidence.json", () => {
 
   it("is exactly what `notary export --evidence` generates from facts on disk", () => {
     expect(evidence).toEqual(buildEvidence(gatherEvidenceFacts()));
+  });
+
+  it("exported run traces count only finished real runs (a run in progress or a sample run never moves the facts)", () => {
+    const runsDir = join(tempDir(), "runs");
+    const spans = (runId: string, traceIds: string[]) => {
+      mkdirSync(join(runsDir, runId), { recursive: true });
+      writeFileSync(join(runsDir, runId, "spans.jsonl"), traceIds.map((t) => JSON.stringify({ name: "notary.probe", traceId: t, spanId: "b".repeat(16), exported: true })).join("\n") + "\n");
+    };
+    const put = (b: RunBundle) => writeFileSync(join(runsDir, b.runId, `${b.runId}.json`), JSON.stringify(b, null, 2));
+    // In progress: spans are appended as the run goes, its bundle is written at the end.
+    spans("test-in-progress", ["a".repeat(32)]);
+    expect(exportedRunTraceIds(runsDir).size).toBe(0);
+    expect(gatherEvidenceFacts({ runsDir, env: {} }).exportedRunTraces).toBe(0);
+    // Finished: the hash-verified real bundle makes its exported spans count.
+    put(realBundle("test-in-progress"));
+    expect([...exportedRunTraceIds(runsDir)]).toEqual(["a".repeat(32)]);
+    // A sample run and a tampered bundle never count.
+    spans("demo-sample", ["c".repeat(32)]);
+    put(fixtureBundle("demo-sample"));
+    spans("test-tampered", ["d".repeat(32)]);
+    put({ ...realBundle("test-tampered"), metrics: { unsafe_actions_total: 1 } });
+    expect([...exportedRunTraceIds(runsDir)]).toEqual(["a".repeat(32)]);
+    expect(gatherEvidenceFacts({ runsDir, env: {} }).exportedRunTraces).toBe(1);
   });
 
   it("has no placeholder link, no private-repo link and no invented trace URL", () => {

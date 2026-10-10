@@ -96,3 +96,11 @@ export type UsageByRole = z.infer<typeof UsageByRoleSchema>;
 export type Credits = z.infer<typeof CreditsSchema>;
 export type RunBundle = z.infer<typeof RunBundleSchema>;
 export type BundleIndexEntry = z.infer<typeof BundleIndexEntrySchema>;
+
+// v2 contracts (new files; the bundle schema above stays frozen).
+export * from "./timeline.js";
+export * from "./explain.js";
+export * from "./approval.js";
+
+// Certificates, revocations and certificate reports (packages/web/public/certificates/**).
+export * from "./certificate.js";

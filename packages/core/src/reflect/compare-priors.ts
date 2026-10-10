@@ -27,6 +27,7 @@ import { join } from "node:path";
 import { canonicalJson } from "../bundle/hash.js";
 import { finalizeBundle, writeBundle } from "../bundle/index.js";
 import type { UnhashedBundle } from "../bundle/index.js";
+import { recordRunTimeline } from "../timeline/write.js";
 import { consolidateMetrics, withMetricDisclosures } from "../eval/metrics.js";
 import { pinIfPresent } from "../replay/pins.js";
 import { BeliefStore } from "../beliefs/store.js";
@@ -378,6 +379,7 @@ export async function comparePriors(opts: ComparePriorsOptions): Promise<Compare
     // P8: every TDD metric (src/eval/metrics.ts); probes_to_candidate_with/_without_priors are kept.
     const bundle = finalizeBundle(withMetricDisclosures({ ...draft, metrics: consolidateMetrics(draft, { checkedClaimIds: observedClaimIds(recon.entries, recon.observations) }) }));
     const { bundlePath } = await writeBundle(bundle, join(runsDir, runId));
+    recordRunTimeline(bundle, join(runsDir, runId), { runsDir });
     const lines = [...compare.lines, `bundle: ${bundlePath}`];
     return { exitCode: failed ? 1 : 0, lines, status, runId, bundlePath, compare };
   } catch (err) {

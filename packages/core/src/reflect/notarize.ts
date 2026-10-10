@@ -36,6 +36,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { finalizeBundle, verifyBundle, writeBundle } from "../bundle/index.js";
 import type { UnhashedBundle } from "../bundle/index.js";
+import { recordRunTimeline } from "../timeline/write.js";
 import { consolidateMetrics, withMetricDisclosures } from "../eval/metrics.js";
 import { cassetteNames, pinIfPresent } from "../replay/pins.js";
 import { INPUTS_VERSION, saveInputs, snapshotStore } from "../replay/inputs.js";
@@ -769,6 +770,7 @@ async function writeNotarizeBundle(a: {
   );
   const dir = join(a.opts.runsDir ?? RUNS_DIR, runId);
   const { bundlePath } = await writeBundle(bundle, dir);
+  recordRunTimeline(bundle, dir, { runsDir: a.opts.runsDir ?? RUNS_DIR });
 
   const lines = [
     `notarize: tool=${tool} mode=${a.mode} runId=${runId}`,

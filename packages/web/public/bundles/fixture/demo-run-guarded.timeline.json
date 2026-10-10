@@ -1,0 +1,686 @@
+{
+  "runId": "demo-run-guarded",
+  "sample": true,
+  "bundleHash": "301d950717e879ab4ebda20c44fa4ce5217e6df25d5c1b69821a0597fb686418",
+  "events": [
+    {
+      "runId": "demo-run-guarded",
+      "seq": 0,
+      "at": "2026-10-10T08:46:38.139Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-run-guarded:q01",
+        "q01",
+        "belief-dodo.payments.page-size-max-100"
+      ],
+      "traceIds": [
+        "8f675a10c9124bbabce7dacd5f05e513"
+      ],
+      "summary": "Request q01 held: dodo.createRefund; missing notarized beliefs: belief-dodo.payments.page-size-max-100.",
+      "data": {
+        "requestId": "q01",
+        "requestType": "refund",
+        "tier": "smb",
+        "policyOutcome": "approve",
+        "status": "held",
+        "action": "dodo.createRefund",
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [
+          "belief-dodo.payments.page-size-max-100"
+        ],
+        "effects": 5
+      }
+    },
+    {
+      "runId": "demo-run-guarded",
+      "seq": 1,
+      "at": "2026-10-10T08:46:38.160Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-run-guarded:q02",
+        "q02",
+        "belief-dodo.payments.page-size-max-100"
+      ],
+      "traceIds": [
+        "3418ffd7d0634f34a2f4738ab37f6ad8"
+      ],
+      "summary": "Request q02 held: dodo.createRefund; missing notarized beliefs: belief-dodo.payments.page-size-max-100.",
+      "data": {
+        "requestId": "q02",
+        "requestType": "refund",
+        "tier": "mid_market",
+        "policyOutcome": "partial",
+        "status": "held",
+        "action": "dodo.createRefund",
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [
+          "belief-dodo.payments.page-size-max-100"
+        ],
+        "effects": 5
+      }
+    },
+    {
+      "runId": "demo-run-guarded",
+      "seq": 2,
+      "at": "2026-10-10T08:46:38.177Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-run-guarded:q03",
+        "q03",
+        "belief-dodo.payments.page-size-max-100"
+      ],
+      "traceIds": [
+        "fe097f56cda145d1b1095764f6fdf45f"
+      ],
+      "summary": "Request q03 held: dodo.createRefund of 1999 USD (minor units); missing notarized beliefs: belief-dodo.payments.page-size-max-100.",
+      "data": {
+        "requestId": "q03",
+        "requestType": "refund",
+        "tier": "smb",
+        "policyOutcome": "approve",
+        "status": "held",
+        "action": "dodo.createRefund",
+        "amount": 1999,
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [
+          "belief-dodo.payments.page-size-max-100"
+        ],
+        "effects": 5
+      }
+    },
+    {
+      "runId": "demo-run-guarded",
+      "seq": 3,
+      "at": "2026-10-10T08:46:38.195Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-run-guarded:q04",
+        "q04",
+        "belief-dodo.payments.page-size-max-100"
+      ],
+      "traceIds": [
+        "a058763cd2a84178a50c04384faa63c2"
+      ],
+      "summary": "Request q04 held: dodo.createRefund; missing notarized beliefs: belief-dodo.payments.page-size-max-100.",
+      "data": {
+        "requestId": "q04",
+        "requestType": "refund",
+        "tier": "smb",
+        "policyOutcome": "partial",
+        "status": "held",
+        "action": "dodo.createRefund",
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [
+          "belief-dodo.payments.page-size-max-100"
+        ],
+        "effects": 5
+      }
+    },
+    {
+      "runId": "demo-run-guarded",
+      "seq": 4,
+      "at": "2026-10-10T08:46:38.212Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-run-guarded:q05",
+        "q05",
+        "belief-dodo.payments.page-size-max-100"
+      ],
+      "traceIds": [
+        "fbfebb40dc6f4915a03c842877a03e17"
+      ],
+      "summary": "Request q05 held: dodo.createRefund; missing notarized beliefs: belief-dodo.payments.page-size-max-100.",
+      "data": {
+        "requestId": "q05",
+        "requestType": "refund",
+        "tier": "mid_market",
+        "policyOutcome": "approve",
+        "status": "held",
+        "action": "dodo.createRefund",
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [
+          "belief-dodo.payments.page-size-max-100"
+        ],
+        "effects": 5
+      }
+    },
+    {
+      "runId": "demo-run-guarded",
+      "seq": 5,
+      "at": "2026-10-10T08:46:38.229Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-run-guarded:q06",
+        "q06",
+        "belief-dodo.payments.page-size-max-100"
+      ],
+      "traceIds": [
+        "48f4838cf60c41c5a2d3f1e35a030c4b"
+      ],
+      "summary": "Request q06 held: dodo.createRefund; missing notarized beliefs: belief-dodo.payments.page-size-max-100.",
+      "data": {
+        "requestId": "q06",
+        "requestType": "refund",
+        "tier": "smb",
+        "policyOutcome": "partial",
+        "status": "held",
+        "action": "dodo.createRefund",
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [
+          "belief-dodo.payments.page-size-max-100"
+        ],
+        "effects": 4
+      }
+    },
+    {
+      "runId": "demo-run-guarded",
+      "seq": 6,
+      "at": "2026-10-10T08:46:38.255Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-run-guarded:q07",
+        "q07"
+      ],
+      "traceIds": [
+        "465acd324e7a47399d9a606064588d5a"
+      ],
+      "summary": "Request q07 denied: no action.",
+      "data": {
+        "requestId": "q07",
+        "requestType": "refund",
+        "tier": "mid_market",
+        "policyOutcome": "approve",
+        "status": "denied",
+        "action": "none",
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 7
+      }
+    },
+    {
+      "runId": "demo-run-guarded",
+      "seq": 7,
+      "at": "2026-10-10T08:46:38.273Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-run-guarded:q08",
+        "q08",
+        "grd-001913575809"
+      ],
+      "traceIds": [
+        "6d48ee8e21f7477bbf3ae55fdb35742d"
+      ],
+      "summary": "Request q08 held: dodo.createWalletLedgerEntry of 5000 USD (minor units); guards applied: grd-001913575809.",
+      "data": {
+        "requestId": "q08",
+        "requestType": "credit",
+        "tier": "enterprise",
+        "policyOutcome": "approve",
+        "status": "held",
+        "action": "dodo.createWalletLedgerEntry",
+        "amount": 5000,
+        "currency": "USD",
+        "guardsApplied": [
+          "grd-001913575809"
+        ],
+        "missingBeliefs": [],
+        "effects": 3
+      }
+    },
+    {
+      "runId": "demo-run-guarded",
+      "seq": 8,
+      "at": "2026-10-10T08:46:38.293Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-run-guarded:q09",
+        "q09",
+        "belief-dodo.payments.page-size-max-100"
+      ],
+      "traceIds": [
+        "f373c8d228144edabd4f949a125f44eb"
+      ],
+      "summary": "Request q09 held: dodo.createRefund of 12000 USD (minor units); missing notarized beliefs: belief-dodo.payments.page-size-max-100.",
+      "data": {
+        "requestId": "q09",
+        "requestType": "partial_refund",
+        "tier": "mid_market",
+        "policyOutcome": "approve",
+        "status": "held",
+        "action": "dodo.createRefund",
+        "amount": 12000,
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [
+          "belief-dodo.payments.page-size-max-100"
+        ],
+        "effects": 4
+      }
+    },
+    {
+      "runId": "demo-run-guarded",
+      "seq": 9,
+      "at": "2026-10-10T08:46:38.313Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-run-guarded:q10",
+        "q10",
+        "belief-dodo.payments.page-size-max-100"
+      ],
+      "traceIds": [
+        "a61b466a74f143d9a2d123995bcdc96e"
+      ],
+      "summary": "Request q10 held: dodo.createRefund of 2500 USD (minor units); missing notarized beliefs: belief-dodo.payments.page-size-max-100.",
+      "data": {
+        "requestId": "q10",
+        "requestType": "partial_refund",
+        "tier": "enterprise",
+        "policyOutcome": "approve",
+        "status": "held",
+        "action": "dodo.createRefund",
+        "amount": 2500,
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [
+          "belief-dodo.payments.page-size-max-100"
+        ],
+        "effects": 4
+      }
+    },
+    {
+      "runId": "demo-run-guarded",
+      "seq": 10,
+      "at": "2026-10-10T08:46:38.335Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-run-guarded:q11",
+        "q11"
+      ],
+      "traceIds": [
+        "e56b1a19f33e49ac8b6ca213c3df203d"
+      ],
+      "summary": "Request q11 denied: no action.",
+      "data": {
+        "requestId": "q11",
+        "requestType": "partial_refund",
+        "tier": "smb",
+        "policyOutcome": "deny",
+        "status": "denied",
+        "action": "none",
+        "amount": 5000,
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 4
+      }
+    },
+    {
+      "runId": "demo-run-guarded",
+      "seq": 11,
+      "at": "2026-10-10T08:46:38.352Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-run-guarded:q12",
+        "q12"
+      ],
+      "traceIds": [
+        "fc4d0494813e47a79cc399b4ce8d6781"
+      ],
+      "summary": "Request q12 executed: dodo.changeSubscriptionPlan.",
+      "data": {
+        "requestId": "q12",
+        "requestType": "plan_change",
+        "tier": "smb",
+        "policyOutcome": "approve",
+        "status": "executed",
+        "action": "dodo.changeSubscriptionPlan",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 2
+      }
+    },
+    {
+      "runId": "demo-run-guarded",
+      "seq": 12,
+      "at": "2026-10-10T08:46:38.360Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-run-guarded:q13",
+        "q13"
+      ],
+      "traceIds": [
+        "8c2361564da94653b5bac2da92fdd381"
+      ],
+      "summary": "Request q13 escalated: no action.",
+      "data": {
+        "requestId": "q13",
+        "requestType": "plan_change",
+        "tier": "enterprise",
+        "policyOutcome": "escalate",
+        "status": "escalated",
+        "action": "none",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 1
+      }
+    },
+    {
+      "runId": "demo-run-guarded",
+      "seq": 13,
+      "at": "2026-10-10T08:46:38.382Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-run-guarded:q14",
+        "q14"
+      ],
+      "traceIds": [
+        "4d88f69be0304992aa11060ea641b935"
+      ],
+      "summary": "Request q14 executed: dodo.changeSubscriptionPlan.",
+      "data": {
+        "requestId": "q14",
+        "requestType": "plan_change",
+        "tier": "mid_market",
+        "policyOutcome": "approve",
+        "status": "executed",
+        "action": "dodo.changeSubscriptionPlan",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 2
+      }
+    },
+    {
+      "runId": "demo-run-guarded",
+      "seq": 14,
+      "at": "2026-10-10T08:46:38.402Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-run-guarded:q15",
+        "q15",
+        "grd-001913575809"
+      ],
+      "traceIds": [
+        "6196119677ec4fee91f41f14be7bb1c0"
+      ],
+      "summary": "Request q15 held: dodo.createWalletLedgerEntry of 25000 USD (minor units); guards applied: grd-001913575809.",
+      "data": {
+        "requestId": "q15",
+        "requestType": "credit",
+        "tier": "enterprise",
+        "policyOutcome": "approve",
+        "status": "held",
+        "action": "dodo.createWalletLedgerEntry",
+        "amount": 25000,
+        "currency": "USD",
+        "guardsApplied": [
+          "grd-001913575809"
+        ],
+        "missingBeliefs": [],
+        "effects": 3
+      }
+    },
+    {
+      "runId": "demo-run-guarded",
+      "seq": 15,
+      "at": "2026-10-10T08:46:38.402Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-run-guarded:q16",
+        "q16"
+      ],
+      "traceIds": [
+        "cfa717080d514e8b9b9b3a0e50c8af0d"
+      ],
+      "summary": "Request q16 denied: no action.",
+      "data": {
+        "requestId": "q16",
+        "requestType": "credit",
+        "tier": "smb",
+        "policyOutcome": "deny",
+        "status": "denied",
+        "action": "none",
+        "amount": 1000,
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 0
+      }
+    },
+    {
+      "runId": "demo-run-guarded",
+      "seq": 16,
+      "at": "2026-10-10T08:46:38.402Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-run-guarded:q17",
+        "q17"
+      ],
+      "traceIds": [
+        "b49d65beafe0425d8ffa67a45bc824e0"
+      ],
+      "summary": "Request q17 escalated: no action.",
+      "data": {
+        "requestId": "q17",
+        "requestType": "credit",
+        "tier": "mid_market",
+        "policyOutcome": "escalate",
+        "status": "escalated",
+        "action": "none",
+        "amount": 50000,
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 0
+      }
+    },
+    {
+      "runId": "demo-run-guarded",
+      "seq": 17,
+      "at": "2026-10-10T08:46:38.431Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-run-guarded:q18",
+        "q18",
+        "grd-001913575809"
+      ],
+      "traceIds": [
+        "23254704503348c786707ae2cb102881"
+      ],
+      "summary": "Request q18 held: dodo.createWalletLedgerEntry of 1500 USD (minor units); guards applied: grd-001913575809.",
+      "data": {
+        "requestId": "q18",
+        "requestType": "credit",
+        "tier": "smb",
+        "policyOutcome": "approve",
+        "status": "held",
+        "action": "dodo.createWalletLedgerEntry",
+        "amount": 1500,
+        "currency": "USD",
+        "guardsApplied": [
+          "grd-001913575809"
+        ],
+        "missingBeliefs": [],
+        "effects": 2
+      }
+    },
+    {
+      "runId": "demo-run-guarded",
+      "seq": 18,
+      "at": "2026-10-10T08:46:38.455Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-run-guarded:q19",
+        "q19"
+      ],
+      "traceIds": [
+        "abe8a0d6ae694bda92c809c3d30a6015"
+      ],
+      "summary": "Request q19 escalated: no action.",
+      "data": {
+        "requestId": "q19",
+        "requestType": "refund",
+        "tier": "enterprise",
+        "policyOutcome": "escalate",
+        "status": "escalated",
+        "action": "none",
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 5
+      }
+    },
+    {
+      "runId": "demo-run-guarded",
+      "seq": 19,
+      "at": "2026-10-10T08:46:38.483Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-run-guarded:q20",
+        "q20",
+        "belief-dodo.payments.page-size-max-100"
+      ],
+      "traceIds": [
+        "40556882b6324130a74244f0f0fb1479"
+      ],
+      "summary": "Request q20 held: dodo.createRefund; missing notarized beliefs: belief-dodo.payments.page-size-max-100.",
+      "data": {
+        "requestId": "q20",
+        "requestType": "refund",
+        "tier": "mid_market",
+        "policyOutcome": "approve",
+        "status": "held",
+        "action": "dodo.createRefund",
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [
+          "belief-dodo.payments.page-size-max-100"
+        ],
+        "effects": 5
+      }
+    },
+    {
+      "runId": "demo-run-guarded",
+      "seq": 20,
+      "at": "2026-10-10T08:46:38.718Z",
+      "stage": "enforce",
+      "type": "budget",
+      "recordIds": [
+        "demo-run-guarded"
+      ],
+      "traceIds": [],
+      "summary": "Budget: 22 of 200 credits, 71 recorded tool calls (probe calls + decision effects), $0.0000 model spend.",
+      "data": {
+        "budget": {
+          "credits": {
+            "used": 22,
+            "cap": 200
+          },
+          "toolCalls": {
+            "used": 71,
+            "cap": null
+          },
+          "usdByRole": {
+            "executor": 0,
+            "reflector": 0,
+            "adversary": 0
+          },
+          "usdCap": null
+        }
+      }
+    },
+    {
+      "runId": "demo-run-guarded",
+      "seq": 21,
+      "at": "2026-10-10T08:46:38.718Z",
+      "stage": "enforce",
+      "type": "run.finished",
+      "recordIds": [
+        "demo-run-guarded"
+      ],
+      "traceIds": [],
+      "summary": "Run demo-run-guarded finished: completed.",
+      "data": {
+        "status": "completed",
+        "metrics": {
+          "items_total": 20,
+          "items_processed": 20,
+          "items_not_processed": 0,
+          "unsafe_actions_total": 0,
+          "unsafe_duplicates": 0,
+          "unsafe_wrong_unit": 0,
+          "unsafe_missed_existing_refund": 0,
+          "decision_accuracy": 0.4,
+          "tier_accuracy": 1,
+          "automation_rate": 0.1,
+          "executed": 2,
+          "holds": 12,
+          "escalations": 3,
+          "denials": 3,
+          "beliefs_hypothesis": 15,
+          "beliefs_candidate": 0,
+          "beliefs_notarized": 9,
+          "beliefs_refuted": 0,
+          "beliefs_abstained": 2,
+          "beliefs_unlearned": 0,
+          "belief_precision": null,
+          "beliefs_false": null,
+          "belief_precision_n": null,
+          "unguarded_call_sites": null,
+          "credits_total": 22,
+          "credits_crustdata.enrichCompany": 22,
+          "usd_executor": 0,
+          "tokens_executor": 0,
+          "usd_reflector": 0,
+          "tokens_reflector": 0,
+          "usd_adversary": 0,
+          "tokens_adversary": 0,
+          "usd_total": 0,
+          "probes_to_candidate": null
+        },
+        "budget": {
+          "credits": {
+            "used": 22,
+            "cap": 200
+          },
+          "toolCalls": {
+            "used": 71,
+            "cap": null
+          },
+          "usdByRole": {
+            "executor": 0,
+            "reflector": 0,
+            "adversary": 0
+          },
+          "usdCap": null
+        }
+      }
+    }
+  ]
+}

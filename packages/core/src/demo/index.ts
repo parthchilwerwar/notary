@@ -37,6 +37,7 @@ import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseEnv } from "node:util";
 import { finalizeBundle, verifyBundle, writeBundle } from "../bundle/index.js";
+import { recordRunTimeline } from "../timeline/write.js";
 import { RUNS_DIR } from "../checker/notarize.js";
 import { collectBundles, runExport } from "../export/index.js";
 import { DEFAULT_MANIFEST_PATH } from "../queue/manifest.js";
@@ -277,6 +278,7 @@ async function labelAsFixture(bundlePath: string, scenario: DemoScenario = "defa
     ],
   });
   await writeBundle(labelled, dirname(bundlePath));
+  recordRunTimeline(labelled, dirname(bundlePath), { runsDir: dirname(dirname(bundlePath)) });
   return labelled;
 }
 

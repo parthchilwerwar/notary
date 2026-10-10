@@ -1,0 +1,656 @@
+{
+  "runId": "demo-change-api-run-naive",
+  "sample": true,
+  "bundleHash": "cae9d5f59f31a0db875901b934c5048eca4609b8f0449b8d052d7f8d4b9f4e23",
+  "events": [
+    {
+      "runId": "demo-change-api-run-naive",
+      "seq": 0,
+      "at": "2026-10-10T08:46:21.086Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-change-api-run-naive:q01",
+        "q01"
+      ],
+      "traceIds": [
+        "4f91577b243c46778940940b89d78c87"
+      ],
+      "summary": "Request q01 executed: dodo.createRefund of 2900 USD (minor units).",
+      "data": {
+        "requestId": "q01",
+        "requestType": "refund",
+        "tier": "smb",
+        "policyOutcome": "approve",
+        "status": "executed",
+        "action": "dodo.createRefund",
+        "amount": 2900,
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 4
+      }
+    },
+    {
+      "runId": "demo-change-api-run-naive",
+      "seq": 1,
+      "at": "2026-10-10T08:46:21.099Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-change-api-run-naive:q02",
+        "q02"
+      ],
+      "traceIds": [
+        "32dca391c17e4af78cb8539d0a191fa1"
+      ],
+      "summary": "Request q02 executed: dodo.createRefund of 49900 USD (minor units).",
+      "data": {
+        "requestId": "q02",
+        "requestType": "refund",
+        "tier": "mid_market",
+        "policyOutcome": "partial",
+        "status": "executed",
+        "action": "dodo.createRefund",
+        "amount": 49900,
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 5
+      }
+    },
+    {
+      "runId": "demo-change-api-run-naive",
+      "seq": 2,
+      "at": "2026-10-10T08:46:21.618Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-change-api-run-naive:q03",
+        "q03"
+      ],
+      "traceIds": [
+        "3791e8e588f84d1982021b38180b11b1"
+      ],
+      "summary": "Request q03 executed: dodo.createRefund of 1999 USD (minor units).",
+      "data": {
+        "requestId": "q03",
+        "requestType": "refund",
+        "tier": "smb",
+        "policyOutcome": "approve",
+        "status": "executed",
+        "action": "dodo.createRefund",
+        "amount": 1999,
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 4
+      }
+    },
+    {
+      "runId": "demo-change-api-run-naive",
+      "seq": 3,
+      "at": "2026-10-10T08:46:21.634Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-change-api-run-naive:q04",
+        "q04"
+      ],
+      "traceIds": [
+        "1f58a8764bcf42c79c73de12c0bf4009"
+      ],
+      "summary": "Request q04 executed: dodo.createRefund of 1999 USD (minor units).",
+      "data": {
+        "requestId": "q04",
+        "requestType": "refund",
+        "tier": "smb",
+        "policyOutcome": "partial",
+        "status": "executed",
+        "action": "dodo.createRefund",
+        "amount": 1999,
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 5
+      }
+    },
+    {
+      "runId": "demo-change-api-run-naive",
+      "seq": 4,
+      "at": "2026-10-10T08:46:22.678Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-change-api-run-naive:q05",
+        "q05"
+      ],
+      "traceIds": [
+        "6a3d251d0bad4c618619ef3304ec8be7"
+      ],
+      "summary": "Request q05 executed: dodo.createRefund of 9900 USD (minor units).",
+      "data": {
+        "requestId": "q05",
+        "requestType": "refund",
+        "tier": "mid_market",
+        "policyOutcome": "approve",
+        "status": "executed",
+        "action": "dodo.createRefund",
+        "amount": 9900,
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 5
+      }
+    },
+    {
+      "runId": "demo-change-api-run-naive",
+      "seq": 5,
+      "at": "2026-10-10T08:46:22.687Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-change-api-run-naive:q06",
+        "q06"
+      ],
+      "traceIds": [
+        "beb7a92fab0748ed9351463960aad91e"
+      ],
+      "summary": "Request q06 executed: dodo.createRefund of 9900 USD (minor units).",
+      "data": {
+        "requestId": "q06",
+        "requestType": "refund",
+        "tier": "smb",
+        "policyOutcome": "partial",
+        "status": "executed",
+        "action": "dodo.createRefund",
+        "amount": 9900,
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 4
+      }
+    },
+    {
+      "runId": "demo-change-api-run-naive",
+      "seq": 6,
+      "at": "2026-10-10T08:46:22.698Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-change-api-run-naive:q07",
+        "q07"
+      ],
+      "traceIds": [
+        "5ef69ccb834d46ffbe65089cb7aca94b"
+      ],
+      "summary": "Request q07 denied: no action.",
+      "data": {
+        "requestId": "q07",
+        "requestType": "refund",
+        "tier": "mid_market",
+        "policyOutcome": "approve",
+        "status": "denied",
+        "action": "none",
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 4
+      }
+    },
+    {
+      "runId": "demo-change-api-run-naive",
+      "seq": 7,
+      "at": "2026-10-10T08:46:22.704Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-change-api-run-naive:q08",
+        "q08"
+      ],
+      "traceIds": [
+        "2f373b3179344bc9879b76b8ba4790f7"
+      ],
+      "summary": "Request q08 executed: dodo.createWalletLedgerEntry of 5000 USD (minor units).",
+      "data": {
+        "requestId": "q08",
+        "requestType": "credit",
+        "tier": "enterprise",
+        "policyOutcome": "approve",
+        "status": "executed",
+        "action": "dodo.createWalletLedgerEntry",
+        "amount": 5000,
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 2
+      }
+    },
+    {
+      "runId": "demo-change-api-run-naive",
+      "seq": 8,
+      "at": "2026-10-10T08:46:22.716Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-change-api-run-naive:q09",
+        "q09"
+      ],
+      "traceIds": [
+        "dcb44e5c48d54703a60daf2d78b90785"
+      ],
+      "summary": "Request q09 executed: dodo.createRefund of 15000 USD (minor units).",
+      "data": {
+        "requestId": "q09",
+        "requestType": "partial_refund",
+        "tier": "mid_market",
+        "policyOutcome": "approve",
+        "status": "executed",
+        "action": "dodo.createRefund",
+        "amount": 15000,
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 4
+      }
+    },
+    {
+      "runId": "demo-change-api-run-naive",
+      "seq": 9,
+      "at": "2026-10-10T08:46:22.729Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-change-api-run-naive:q10",
+        "q10"
+      ],
+      "traceIds": [
+        "57c0d25014b64f4aacde38d7bc485ac5"
+      ],
+      "summary": "Request q10 executed: dodo.createRefund of 2500 USD (minor units).",
+      "data": {
+        "requestId": "q10",
+        "requestType": "partial_refund",
+        "tier": "enterprise",
+        "policyOutcome": "approve",
+        "status": "executed",
+        "action": "dodo.createRefund",
+        "amount": 2500,
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 4
+      }
+    },
+    {
+      "runId": "demo-change-api-run-naive",
+      "seq": 10,
+      "at": "2026-10-10T08:46:22.735Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-change-api-run-naive:q11",
+        "q11"
+      ],
+      "traceIds": [
+        "08a1ad926bb64972b0f7ad8bf874fc08"
+      ],
+      "summary": "Request q11 denied: no action.",
+      "data": {
+        "requestId": "q11",
+        "requestType": "partial_refund",
+        "tier": "smb",
+        "policyOutcome": "deny",
+        "status": "denied",
+        "action": "none",
+        "amount": 5000,
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 2
+      }
+    },
+    {
+      "runId": "demo-change-api-run-naive",
+      "seq": 11,
+      "at": "2026-10-10T08:46:22.742Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-change-api-run-naive:q12",
+        "q12"
+      ],
+      "traceIds": [
+        "b19932bbfa9a4ceaa6195adb91209a21"
+      ],
+      "summary": "Request q12 executed: dodo.changeSubscriptionPlan.",
+      "data": {
+        "requestId": "q12",
+        "requestType": "plan_change",
+        "tier": "smb",
+        "policyOutcome": "approve",
+        "status": "executed",
+        "action": "dodo.changeSubscriptionPlan",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 2
+      }
+    },
+    {
+      "runId": "demo-change-api-run-naive",
+      "seq": 12,
+      "at": "2026-10-10T08:46:22.746Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-change-api-run-naive:q13",
+        "q13"
+      ],
+      "traceIds": [
+        "0e320157f8a94a3288f487c0e261a092"
+      ],
+      "summary": "Request q13 escalated: no action.",
+      "data": {
+        "requestId": "q13",
+        "requestType": "plan_change",
+        "tier": "enterprise",
+        "policyOutcome": "escalate",
+        "status": "escalated",
+        "action": "none",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 1
+      }
+    },
+    {
+      "runId": "demo-change-api-run-naive",
+      "seq": 13,
+      "at": "2026-10-10T08:46:22.751Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-change-api-run-naive:q14",
+        "q14"
+      ],
+      "traceIds": [
+        "17ea9503204849b79f77d110a7021a63"
+      ],
+      "summary": "Request q14 executed: dodo.changeSubscriptionPlan.",
+      "data": {
+        "requestId": "q14",
+        "requestType": "plan_change",
+        "tier": "mid_market",
+        "policyOutcome": "approve",
+        "status": "executed",
+        "action": "dodo.changeSubscriptionPlan",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 2
+      }
+    },
+    {
+      "runId": "demo-change-api-run-naive",
+      "seq": 14,
+      "at": "2026-10-10T08:46:22.758Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-change-api-run-naive:q15",
+        "q15"
+      ],
+      "traceIds": [
+        "ead42aa340ed48edb763b3650b4414ab"
+      ],
+      "summary": "Request q15 executed: dodo.createWalletLedgerEntry of 25000 USD (minor units).",
+      "data": {
+        "requestId": "q15",
+        "requestType": "credit",
+        "tier": "enterprise",
+        "policyOutcome": "approve",
+        "status": "executed",
+        "action": "dodo.createWalletLedgerEntry",
+        "amount": 25000,
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 2
+      }
+    },
+    {
+      "runId": "demo-change-api-run-naive",
+      "seq": 15,
+      "at": "2026-10-10T08:46:22.758Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-change-api-run-naive:q16",
+        "q16"
+      ],
+      "traceIds": [
+        "c2ed739ae0b048c7ab4fd6824881f80f"
+      ],
+      "summary": "Request q16 denied: no action.",
+      "data": {
+        "requestId": "q16",
+        "requestType": "credit",
+        "tier": "smb",
+        "policyOutcome": "deny",
+        "status": "denied",
+        "action": "none",
+        "amount": 1000,
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 0
+      }
+    },
+    {
+      "runId": "demo-change-api-run-naive",
+      "seq": 16,
+      "at": "2026-10-10T08:46:22.758Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-change-api-run-naive:q17",
+        "q17"
+      ],
+      "traceIds": [
+        "d2a004702a404c66acb5e0e31d1a1dd6"
+      ],
+      "summary": "Request q17 escalated: no action.",
+      "data": {
+        "requestId": "q17",
+        "requestType": "credit",
+        "tier": "mid_market",
+        "policyOutcome": "escalate",
+        "status": "escalated",
+        "action": "none",
+        "amount": 50000,
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 0
+      }
+    },
+    {
+      "runId": "demo-change-api-run-naive",
+      "seq": 17,
+      "at": "2026-10-10T08:46:22.762Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-change-api-run-naive:q18",
+        "q18"
+      ],
+      "traceIds": [
+        "aa670e9888584c46930510b5fd13d917"
+      ],
+      "summary": "Request q18 executed: dodo.createWalletLedgerEntry of 1500 USD (minor units).",
+      "data": {
+        "requestId": "q18",
+        "requestType": "credit",
+        "tier": "smb",
+        "policyOutcome": "approve",
+        "status": "executed",
+        "action": "dodo.createWalletLedgerEntry",
+        "amount": 1500,
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 1
+      }
+    },
+    {
+      "runId": "demo-change-api-run-naive",
+      "seq": 18,
+      "at": "2026-10-10T08:46:22.775Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-change-api-run-naive:q19",
+        "q19"
+      ],
+      "traceIds": [
+        "46c6ed6c12fa4a77b26a7cab168b1de6"
+      ],
+      "summary": "Request q19 escalated: no action.",
+      "data": {
+        "requestId": "q19",
+        "requestType": "refund",
+        "tier": "enterprise",
+        "policyOutcome": "escalate",
+        "status": "escalated",
+        "action": "none",
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 3
+      }
+    },
+    {
+      "runId": "demo-change-api-run-naive",
+      "seq": 19,
+      "at": "2026-10-10T08:46:23.298Z",
+      "stage": "enforce",
+      "type": "decision",
+      "recordIds": [
+        "demo-change-api-run-naive:q20",
+        "q20"
+      ],
+      "traceIds": [
+        "5ba4a68644a942d9b6aa1a7835088cc5"
+      ],
+      "summary": "Request q20 executed: dodo.createRefund of 9900 USD (minor units).",
+      "data": {
+        "requestId": "q20",
+        "requestType": "refund",
+        "tier": "mid_market",
+        "policyOutcome": "approve",
+        "status": "executed",
+        "action": "dodo.createRefund",
+        "amount": 9900,
+        "currency": "USD",
+        "guardsApplied": [],
+        "missingBeliefs": [],
+        "effects": 4
+      }
+    },
+    {
+      "runId": "demo-change-api-run-naive",
+      "seq": 20,
+      "at": "2026-10-10T08:46:23.527Z",
+      "stage": "enforce",
+      "type": "budget",
+      "recordIds": [
+        "demo-change-api-run-naive"
+      ],
+      "traceIds": [],
+      "summary": "Budget: 22 of 200 credits, 58 recorded tool calls (probe calls + decision effects), $0.0000 model spend.",
+      "data": {
+        "budget": {
+          "credits": {
+            "used": 22,
+            "cap": 200
+          },
+          "toolCalls": {
+            "used": 58,
+            "cap": null
+          },
+          "usdByRole": {
+            "executor": 0,
+            "reflector": 0,
+            "adversary": 0
+          },
+          "usdCap": null
+        }
+      }
+    },
+    {
+      "runId": "demo-change-api-run-naive",
+      "seq": 21,
+      "at": "2026-10-10T08:46:23.527Z",
+      "stage": "enforce",
+      "type": "run.finished",
+      "recordIds": [
+        "demo-change-api-run-naive"
+      ],
+      "traceIds": [],
+      "summary": "Run demo-change-api-run-naive finished: completed.",
+      "data": {
+        "status": "completed",
+        "metrics": {
+          "items_total": 20,
+          "items_processed": 20,
+          "items_not_processed": 0,
+          "unsafe_actions_total": 8,
+          "unsafe_duplicates": 1,
+          "unsafe_wrong_unit": 7,
+          "unsafe_missed_existing_refund": 0,
+          "decision_accuracy": 0.8,
+          "tier_accuracy": 1,
+          "automation_rate": 0.3,
+          "executed": 14,
+          "holds": 0,
+          "escalations": 3,
+          "denials": 3,
+          "beliefs_hypothesis": null,
+          "beliefs_candidate": null,
+          "beliefs_notarized": null,
+          "beliefs_refuted": null,
+          "beliefs_abstained": null,
+          "beliefs_unlearned": null,
+          "belief_precision": null,
+          "beliefs_false": null,
+          "belief_precision_n": null,
+          "unguarded_call_sites": null,
+          "credits_total": 22,
+          "credits_crustdata.enrichCompany": 22,
+          "usd_executor": 0,
+          "tokens_executor": 0,
+          "usd_reflector": 0,
+          "tokens_reflector": 0,
+          "usd_adversary": 0,
+          "tokens_adversary": 0,
+          "usd_total": 0,
+          "probes_to_candidate": null
+        },
+        "budget": {
+          "credits": {
+            "used": 22,
+            "cap": 200
+          },
+          "toolCalls": {
+            "used": 58,
+            "cap": null
+          },
+          "usdByRole": {
+            "executor": 0,
+            "reflector": 0,
+            "adversary": 0
+          },
+          "usdCap": null
+        }
+      }
+    }
+  ]
+}

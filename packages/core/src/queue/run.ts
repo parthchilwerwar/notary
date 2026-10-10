@@ -59,6 +59,7 @@ import type { SeedManifest } from "./manifest.js";
 import { REQUIRED_GAPS } from "./required.js";
 import { RunStateStore } from "./run-state.js";
 import { createSentinel, sentinelModeFromEnv } from "./sentinel.js";
+import { liveDecisionEmitter, publishTimeline, recordRunTimeline } from "../timeline/write.js";
 import type { Sentinel, SentinelMode } from "./sentinel.js";
 import { SimplePaymentPool, probeIoFromTools } from "../reflect/templates/index.js";
 import { probePoolFromManifest, sentinelProbeTools } from "../reflect/notarize.js";
@@ -327,7 +328,10 @@ export async function runQueue(opts: RunQueueOptions): Promise<RunQueueResult> {
         ...(gctx ? { gate: opts.gate ?? gctx.gate } : {}),
         ...(sentinelSetup?.sentinel ? { sentinel: sentinelSetup.sentinel.check } : {}),
         ...(runState ? { runState: runState.hooks(runId) } : {}),
-        onDecision: (d) => emitEvent("decision", { runId, variant: opts.variant, decision: d }),
+        onDecision: ((live) => (d: Decision) => {
+          emitEvent("decision", { runId, variant: opts.variant, decision: d });
+          live(d);
+        })(liveDecisionEmitter(runId, queue, now)),
         ...(opts.policy ? { policy: opts.policy } : {}),
         ...(opts.clientTimeoutMs === undefined ? {} : { clientTimeoutMs: opts.clientTimeoutMs }),
         now,
@@ -525,7 +529,10 @@ async function resumeQueue(opts: RunQueueOptions): Promise<RunQueueResult> {
         ...(sentinelSetup.sentinel ? { sentinel: sentinelSetup.sentinel.check } : {}),
         runState: runState.hooks(meta.runId),
         resume,
-        onDecision: (d) => emitEvent("decision", { runId: meta.runId, variant: "guarded", decision: d }),
+        onDecision: ((live) => (d: Decision) => {
+          emitEvent("decision", { runId: meta.runId, variant: "guarded", decision: d });
+          live(d);
+        })(liveDecisionEmitter(meta.runId, queue, now)),
         ...(opts.policy ? { policy: opts.policy } : {}),
         ...(opts.clientTimeoutMs === undefined ? {} : { clientTimeoutMs: opts.clientTimeoutMs }),
         now,
@@ -687,6 +694,7 @@ async function writeRunBundle(a: {
   const metrics = bundle.metrics;
 
   const { bundlePath } = await writeBundle(bundle, join(opts.runsDir ?? RUNS_DIR, runId));
+  recordRunTimeline(bundle, join(opts.runsDir ?? RUNS_DIR, runId), { runsDir: opts.runsDir ?? RUNS_DIR });
   a.runState?.finishRun(runId);
   emitEvent("run.finished", { runId, variant: opts.variant, status, metrics, bundlePath });
   const webDir = opts.webBundlesDir === undefined ? WEB_BUNDLES_DIR : opts.webBundlesDir;
@@ -701,6 +709,7 @@ async function writeRunBundle(a: {
   ];
   if (webDir !== null) {
     const web = await writeBundle(bundle, webDir);
+    await publishTimeline(bundle, webDir, { expectSample: false, runDir: join(opts.runsDir ?? RUNS_DIR, runId), runsDir: opts.runsDir ?? RUNS_DIR });
     lines.push(`dashboard copy: ${web.bundlePath}`);
   }
   return { exitCode: 0, lines, status, runId, bundlePath, metrics };

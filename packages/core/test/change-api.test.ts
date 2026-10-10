@@ -278,7 +278,15 @@ describe("fixture publish is per scenario", () => {
       const d = await publishFixtureBundles([fixtureBundle("demo-run-guarded", 11)], { webBundlesDir: web });
       expect(d.removed.sort()).toEqual(["demo-notarize-dodo.json", "demo-run-guarded.json", "index.json"]);
       expect(idx()).toEqual(["demo-change-api-run-guarded", "demo-run-guarded"]);
-      expect(readdirSync(dir).sort()).toEqual(["README.txt", "demo-change-api-run-guarded.json", "demo-run-guarded.json", "index.json"]);
+      // v2: one <runId>.timeline.json per remaining bundle; demo-notarize-dodo's timeline went with it.
+      expect(readdirSync(dir).sort()).toEqual([
+        "README.txt",
+        "demo-change-api-run-guarded.json",
+        "demo-change-api-run-guarded.timeline.json",
+        "demo-run-guarded.json",
+        "demo-run-guarded.timeline.json",
+        "index.json",
+      ]);
       for (const f of ["demo-change-api-run-guarded.json", "demo-run-guarded.json"]) expect(verifyBundle(JSON.parse(readFileSync(join(dir, f), "utf8"))).ok).toBe(true);
     } finally {
       rmSync(web, { recursive: true, force: true });

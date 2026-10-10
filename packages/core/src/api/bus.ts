@@ -14,7 +14,8 @@ import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { scrubSecrets } from "../adversary/evidence-packet.js";
 
-export const NOTARY_EVENT_TYPES = ["decision", "probe.committed", "probe.verdict", "belief.changed", "run.finished"] as const;
+// `timeline`: one TimelineEvent (schema/timeline.ts) per event; the run's timeline.jsonl is the source of truth.
+export const NOTARY_EVENT_TYPES = ["decision", "probe.committed", "probe.verdict", "belief.changed", "run.finished", "timeline"] as const;
 export type NotaryEventType = (typeof NOTARY_EVENT_TYPES)[number];
 
 export interface NotaryEvent {
