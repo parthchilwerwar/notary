@@ -5,9 +5,9 @@
     "variant": "notarize",
     "mode": "live",
     "sample": true,
-    "startedAt": "2026-10-10T06:49:44.892Z",
+    "startedAt": "2026-10-10T07:31:40.073Z",
     "status": "completed",
-    "contentHash": "2e6e93df6dcb351db275d86772080ed9c0731a3dbb17b143911af1cc505ea5de"
+    "contentHash": "ba27c701e424750ef379226b82270b72cb0d5de06f0d55027f29902bab5de98d"
   },
   {
     "runId": "demo-notarize-dodo",
@@ -15,9 +15,9 @@
     "variant": "notarize",
     "mode": "live",
     "sample": true,
-    "startedAt": "2026-10-10T06:49:45.476Z",
-    "status": "stopped_budget",
-    "contentHash": "956b6f1941159b5d989fd7a9ebcfb26dccc533c141648f4d941019c5cde81e97"
+    "startedAt": "2026-10-10T07:31:40.569Z",
+    "status": "completed",
+    "contentHash": "cfb3b35293cf9a45e8054a2853c17738144227e2d756719ea5353bffe117867b"
   },
   {
     "runId": "demo-run-naive",
@@ -25,9 +25,9 @@
     "variant": "naive",
     "mode": "live",
     "sample": true,
-    "startedAt": "2026-10-10T06:49:51.259Z",
+    "startedAt": "2026-10-10T07:31:46.456Z",
     "status": "completed",
-    "contentHash": "104e84f35d7fb3239b6086e2fd517f6ad8cc34df9a24977cf6476e536551af19"
+    "contentHash": "a0bfd03777d0a14cd7f2dfe66c4d1ee0c09751c464f67e5e2ef32b0181b6d6e9"
   },
   {
     "runId": "demo-run-guarded",
@@ -35,8 +35,8 @@
     "variant": "guarded",
     "mode": "live",
     "sample": true,
-    "startedAt": "2026-10-10T06:49:54.427Z",
+    "startedAt": "2026-10-10T07:31:49.749Z",
     "status": "completed",
-    "contentHash": "8afecceb38e2caaad36715a35bbc0aea8e57e24194050724cc42d3f46748d47a"
+    "contentHash": "596ee1ad29cf7322d1291637a10eff2613dca73425c5bd5ec716fa95532705e4"
   }
 ]

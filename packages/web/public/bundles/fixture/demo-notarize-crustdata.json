@@ -6,14 +6,15 @@
   "sample": true,
   "disclosure": [
     "FIXTURE DATA — simulated API and model responses produced by `notary demo --fixture`; not a live run",
-    "PLANTED FIXTURE QUIRKS (simulated, not claims about the real APIs): Q1 GET /payments, GET /refunds: page_size > 100 (documented max) is accepted and silently clamped to 100; Q2 POST /customers/{id}/wallets/ledger-entries: `amount` is read in MAJOR units: crediting 1000 adds 100000 minor units; Q3 POST /customers/{id}/wallets/ledger-entries: `idempotency_key` is ignored: each repeat of a keyed credit creates a new entry; Q4 POST /refunds (partial): `items[].amount` is read in MAJOR units and silently capped at the line price: every partial refund refunds the whole item; Q5 POST /refunds (full): no duplicate protection (a retried full refund creates a second refund), and full refunds answer slowly; Q6 POST /company/enrich: notion.so funding.total_investment_usd comes back as the string \"$343M\"",
+    "PLANTED FIXTURE QUIRKS (simulated, not claims about the real APIs): Q1 GET /payments, GET /refunds: page_size > 100 (documented max) is accepted and silently clamped to 100; Q2 POST /customers/{id}/wallets/ledger-entries: `amount` is read in MAJOR units: crediting 1000 adds 100000 minor units; INTERMITTENT: amounts from 3000 to 3999 are read correctly (minor units); Q3 POST /customers/{id}/wallets/ledger-entries: `idempotency_key` is ignored: each repeat of a keyed credit creates a new entry; Q4 POST /refunds (partial): `items[].amount` is read in MAJOR units and silently capped at the line price: every partial refund refunds the whole item; Q5 POST /refunds (full): no duplicate protection (a retried full refund creates a second refund), and full refunds answer slowly; Q6 POST /company/enrich: notion.so funding.total_investment_usd comes back as the string \"$343M\"",
     "Reflector and adversary are deterministic model doubles (fixture model, no cost); token counts are estimates, usd 0.",
+    "Probe caps raised for the fixture demo only: 6 per claim, 40 per run (live defaults 5 and 30).",
     "Notarize run: anomalies from the deterministic checker, rival hypotheses proposed by the reflector model, probes with predictions committed before each call, verdicts by deterministic rules. Beliefs are Beta(α, β) over the doc claim holding (only confirmed probes update), every cited span is checked against runs/<runId>/spans.jsonl, and candidates are reviewed by the adversary.",
     "Verification probes: 1 required claim(s) with no anomaly this run (crustdata.enrich.headcount-total-integer) were probed against a deterministic rival pair {honored, suspected class from src/contracts/priors-map.ts} built by code, not proposed by a model; same commit-then-run loop, caps and budget.",
     "belief_precision is measured against the deterministic checker on the SAME recording (not an independent ground truth); see docs/AUDIT.md A-14"
   ],
-  "startedAt": "2026-10-10T06:49:44.892Z",
-  "finishedAt": "2026-10-10T06:49:45.408Z",
+  "startedAt": "2026-10-10T07:31:40.073Z",
+  "finishedAt": "2026-10-10T07:31:40.520Z",
   "status": "completed",
   "seed": 0,
   "tool": "crustdata",
@@ -326,8 +327,8 @@
         }
       },
       "predictionHash": "70287a7742321489e42b3ecd5343ef9cbc3a93ac0e128fb2f6cd7a3e2b59f9a1",
-      "committedAt": "2026-10-10T06:49:45.156Z",
-      "ranAt": "2026-10-10T06:49:45.165Z",
+      "committedAt": "2026-10-10T07:31:40.288Z",
+      "ranAt": "2026-10-10T07:31:40.297Z",
       "observed": {
         "outcome": "formatted_string",
         "values": [
@@ -340,8 +341,8 @@
       "winningHypothesisId": "hyp-02fcd1baafb7",
       "costCredits": 4,
       "calls": 2,
-      "traceId": "3368736306114b18bd46d01cba8419fd",
-      "spanId": "fe0098b52c64430e"
+      "traceId": "318770a86f954008bb1e4fd79dc6f5b0",
+      "spanId": "60514c3b884b424a"
     },
     {
       "id": "demo-notarize-crustdata-p002",
@@ -425,8 +426,8 @@
         }
       },
       "predictionHash": "70287a7742321489e42b3ecd5343ef9cbc3a93ac0e128fb2f6cd7a3e2b59f9a1",
-      "committedAt": "2026-10-10T06:49:45.185Z",
-      "ranAt": "2026-10-10T06:49:45.192Z",
+      "committedAt": "2026-10-10T07:31:40.320Z",
+      "ranAt": "2026-10-10T07:31:40.326Z",
       "observed": {
         "outcome": "formatted_string",
         "values": [
@@ -439,8 +440,8 @@
       "winningHypothesisId": "hyp-02fcd1baafb7",
       "costCredits": 4,
       "calls": 2,
-      "traceId": "f9c1fbf872a7441c902bcfcb94dcc5d2",
-      "spanId": "8bd38dbd87d94b68"
+      "traceId": "aa9c627f2dd74f6ab5580a31827bfbd0",
+      "spanId": "df5dbac3aa144725"
     },
     {
       "id": "demo-notarize-crustdata-p003",
@@ -524,8 +525,8 @@
         }
       },
       "predictionHash": "70287a7742321489e42b3ecd5343ef9cbc3a93ac0e128fb2f6cd7a3e2b59f9a1",
-      "committedAt": "2026-10-10T06:49:45.206Z",
-      "ranAt": "2026-10-10T06:49:45.214Z",
+      "committedAt": "2026-10-10T07:31:40.340Z",
+      "ranAt": "2026-10-10T07:31:40.346Z",
       "observed": {
         "outcome": "doc_type",
         "values": [
@@ -538,8 +539,8 @@
       "winningHypothesisId": "hyp-84604fbc0645",
       "costCredits": 4,
       "calls": 2,
-      "traceId": "78884a71a90a44ce84a8a5d560d59832",
-      "spanId": "b31253173ea94ab4"
+      "traceId": "18ad0af2879548a1b252842d8b958dee",
+      "spanId": "4e5b96ea58f04ce5"
     },
     {
       "id": "demo-notarize-crustdata-p004",
@@ -623,8 +624,8 @@
         }
       },
       "predictionHash": "70287a7742321489e42b3ecd5343ef9cbc3a93ac0e128fb2f6cd7a3e2b59f9a1",
-      "committedAt": "2026-10-10T06:49:45.228Z",
-      "ranAt": "2026-10-10T06:49:45.233Z",
+      "committedAt": "2026-10-10T07:31:40.360Z",
+      "ranAt": "2026-10-10T07:31:40.367Z",
       "observed": {
         "outcome": "doc_type",
         "values": [
@@ -637,8 +638,8 @@
       "winningHypothesisId": "hyp-84604fbc0645",
       "costCredits": 4,
       "calls": 2,
-      "traceId": "1135f819c52c4f4385238e0a94779cc6",
-      "spanId": "2dab180584c94789"
+      "traceId": "0c28aa0250fc41aaa98d0a47504ffcd6",
+      "spanId": "cb433cf2acff439b"
     },
     {
       "id": "demo-notarize-crustdata-p005",
@@ -722,8 +723,8 @@
         }
       },
       "predictionHash": "70287a7742321489e42b3ecd5343ef9cbc3a93ac0e128fb2f6cd7a3e2b59f9a1",
-      "committedAt": "2026-10-10T06:49:45.248Z",
-      "ranAt": "2026-10-10T06:49:45.255Z",
+      "committedAt": "2026-10-10T07:31:40.383Z",
+      "ranAt": "2026-10-10T07:31:40.389Z",
       "observed": {
         "outcome": "doc_type",
         "values": [
@@ -736,8 +737,8 @@
       "winningHypothesisId": "hyp-84604fbc0645",
       "costCredits": 4,
       "calls": 2,
-      "traceId": "63ea512e3d4346b685c9ff18085524ed",
-      "spanId": "6f7b86a3f9aa4899"
+      "traceId": "3bdc054f13e6469c8a6b66f14ef41d4b",
+      "spanId": "b5d5141734324b33"
     },
     {
       "id": "demo-notarize-crustdata-p006",
@@ -813,8 +814,8 @@
         }
       },
       "predictionHash": "fbae0b3c8bcc4278e8e80b3727573fe42e4d6d4663b00b878618b2f67cdd45fc",
-      "committedAt": "2026-10-10T06:49:45.282Z",
-      "ranAt": "2026-10-10T06:49:45.289Z",
+      "committedAt": "2026-10-10T07:31:40.408Z",
+      "ranAt": "2026-10-10T07:31:40.413Z",
       "observed": {
         "outcome": "doc_type",
         "values": [
@@ -827,8 +828,8 @@
       "winningHypothesisId": "hyp-6c3fd63e8a75",
       "costCredits": 4,
       "calls": 2,
-      "traceId": "3055f4848447453d8c25674269c72e4b",
-      "spanId": "468d126b28774b6f"
+      "traceId": "90c0732617c24009bb1155775b358e4f",
+      "spanId": "1b27a76b459a48aa"
     },
     {
       "id": "demo-notarize-crustdata-p007",
@@ -905,8 +906,8 @@
         }
       },
       "predictionHash": "fbae0b3c8bcc4278e8e80b3727573fe42e4d6d4663b00b878618b2f67cdd45fc",
-      "committedAt": "2026-10-10T06:49:45.304Z",
-      "ranAt": "2026-10-10T06:49:45.311Z",
+      "committedAt": "2026-10-10T07:31:40.426Z",
+      "ranAt": "2026-10-10T07:31:40.433Z",
       "observed": {
         "outcome": "doc_type",
         "values": [
@@ -919,8 +920,8 @@
       "winningHypothesisId": "hyp-6c3fd63e8a75",
       "costCredits": 4,
       "calls": 2,
-      "traceId": "84f32b7616024cbda26c4a9b550376e5",
-      "spanId": "4e2bc7a5d07944ea"
+      "traceId": "06a87b49e2f0401ba157fe947e5aff1e",
+      "spanId": "5dbe0a1fef1c4456"
     },
     {
       "id": "demo-notarize-crustdata-p008",
@@ -997,8 +998,8 @@
         }
       },
       "predictionHash": "fbae0b3c8bcc4278e8e80b3727573fe42e4d6d4663b00b878618b2f67cdd45fc",
-      "committedAt": "2026-10-10T06:49:45.327Z",
-      "ranAt": "2026-10-10T06:49:45.335Z",
+      "committedAt": "2026-10-10T07:31:40.445Z",
+      "ranAt": "2026-10-10T07:31:40.451Z",
       "observed": {
         "outcome": "doc_type",
         "values": [
@@ -1011,8 +1012,8 @@
       "winningHypothesisId": "hyp-6c3fd63e8a75",
       "costCredits": 4,
       "calls": 2,
-      "traceId": "c70f732f29064ad3af0c9d4efebd99e2",
-      "spanId": "311a6c2448bf40bb"
+      "traceId": "dd9b969ab9df4b899ca52bda095d9f52",
+      "spanId": "81f0e1b7e3644275"
     }
   ],
   "beliefs": {
@@ -1027,7 +1028,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T06:49:45.120Z"
+        "updatedAt": "2026-10-10T07:31:40.261Z"
       },
       {
         "id": "belief-crustdata.enrich.confidence-score-number",
@@ -1039,7 +1040,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T06:49:45.103Z"
+        "updatedAt": "2026-10-10T07:31:40.249Z"
       },
       {
         "id": "belief-crustdata.enrich.default-fields-basic-info",
@@ -1051,7 +1052,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T06:49:45.075Z"
+        "updatedAt": "2026-10-10T07:31:40.228Z"
       },
       {
         "id": "belief-crustdata.enrich.employee-count-range-string",
@@ -1063,7 +1064,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T06:49:45.063Z"
+        "updatedAt": "2026-10-10T07:31:40.217Z"
       },
       {
         "id": "belief-crustdata.enrich.funding-total-investment-number",
@@ -1075,7 +1076,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T06:49:45.058Z"
+        "updatedAt": "2026-10-10T07:31:40.211Z"
       },
       {
         "id": "belief-crustdata.enrich.headcount-total-integer",
@@ -1087,7 +1088,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T06:49:45.047Z"
+        "updatedAt": "2026-10-10T07:31:40.203Z"
       },
       {
         "id": "belief-crustdata.enrich.last-fundraise-date-string",
@@ -1099,7 +1100,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T06:49:45.069Z"
+        "updatedAt": "2026-10-10T07:31:40.222Z"
       },
       {
         "id": "belief-crustdata.enrich.no-match-200-empty",
@@ -1111,7 +1112,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T06:49:45.084Z"
+        "updatedAt": "2026-10-10T07:31:40.234Z"
       },
       {
         "id": "belief-crustdata.identify.invalid-fields-400",
@@ -1123,7 +1124,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T06:49:45.098Z"
+        "updatedAt": "2026-10-10T07:31:40.245Z"
       },
       {
         "id": "belief-crustdata.identify.max-25-identifiers",
@@ -1135,7 +1136,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T06:49:45.109Z"
+        "updatedAt": "2026-10-10T07:31:40.255Z"
       },
       {
         "id": "belief-crustdata.identify.no-match-200-empty",
@@ -1147,7 +1148,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T06:49:45.091Z"
+        "updatedAt": "2026-10-10T07:31:40.240Z"
       }
     ],
     "after": [
@@ -1161,7 +1162,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T06:49:45.120Z"
+        "updatedAt": "2026-10-10T07:31:40.261Z"
       },
       {
         "id": "belief-crustdata.enrich.confidence-score-number",
@@ -1173,7 +1174,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T06:49:45.103Z"
+        "updatedAt": "2026-10-10T07:31:40.249Z"
       },
       {
         "id": "belief-crustdata.enrich.default-fields-basic-info",
@@ -1185,7 +1186,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T06:49:45.075Z"
+        "updatedAt": "2026-10-10T07:31:40.228Z"
       },
       {
         "id": "belief-crustdata.enrich.employee-count-range-string",
@@ -1197,7 +1198,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T06:49:45.063Z"
+        "updatedAt": "2026-10-10T07:31:40.217Z"
       },
       {
         "id": "belief-crustdata.enrich.funding-total-investment-number",
@@ -1212,36 +1213,36 @@
         "evidence": [
           {
             "probeId": "demo-notarize-crustdata-p001",
-            "traceId": "3368736306114b18bd46d01cba8419fd",
-            "spanId": "fe0098b52c64430e",
+            "traceId": "318770a86f954008bb1e4fd79dc6f5b0",
+            "spanId": "60514c3b884b424a",
             "valid": true
           },
           {
             "probeId": "demo-notarize-crustdata-p002",
-            "traceId": "f9c1fbf872a7441c902bcfcb94dcc5d2",
-            "spanId": "8bd38dbd87d94b68",
+            "traceId": "aa9c627f2dd74f6ab5580a31827bfbd0",
+            "spanId": "df5dbac3aa144725",
             "valid": true
           },
           {
             "probeId": "demo-notarize-crustdata-p003",
-            "traceId": "78884a71a90a44ce84a8a5d560d59832",
-            "spanId": "b31253173ea94ab4",
+            "traceId": "18ad0af2879548a1b252842d8b958dee",
+            "spanId": "4e5b96ea58f04ce5",
             "valid": true
           },
           {
             "probeId": "demo-notarize-crustdata-p004",
-            "traceId": "1135f819c52c4f4385238e0a94779cc6",
-            "spanId": "2dab180584c94789",
+            "traceId": "0c28aa0250fc41aaa98d0a47504ffcd6",
+            "spanId": "cb433cf2acff439b",
             "valid": true
           },
           {
             "probeId": "demo-notarize-crustdata-p005",
-            "traceId": "63ea512e3d4346b685c9ff18085524ed",
-            "spanId": "6f7b86a3f9aa4899",
+            "traceId": "3bdc054f13e6469c8a6b66f14ef41d4b",
+            "spanId": "b5d5141734324b33",
             "valid": true
           }
         ],
-        "updatedAt": "2026-10-10T06:49:45.269Z"
+        "updatedAt": "2026-10-10T07:31:40.469Z"
       },
       {
         "id": "belief-crustdata.enrich.headcount-total-integer",
@@ -1256,20 +1257,20 @@
         "evidence": [
           {
             "probeId": "demo-notarize-crustdata-p006",
-            "traceId": "3055f4848447453d8c25674269c72e4b",
-            "spanId": "468d126b28774b6f",
+            "traceId": "90c0732617c24009bb1155775b358e4f",
+            "spanId": "1b27a76b459a48aa",
             "valid": true
           },
           {
             "probeId": "demo-notarize-crustdata-p007",
-            "traceId": "84f32b7616024cbda26c4a9b550376e5",
-            "spanId": "4e2bc7a5d07944ea",
+            "traceId": "06a87b49e2f0401ba157fe947e5aff1e",
+            "spanId": "5dbe0a1fef1c4456",
             "valid": true
           },
           {
             "probeId": "demo-notarize-crustdata-p008",
-            "traceId": "c70f732f29064ad3af0c9d4efebd99e2",
-            "spanId": "311a6c2448bf40bb",
+            "traceId": "dd9b969ab9df4b899ca52bda095d9f52",
+            "spanId": "81f0e1b7e3644275",
             "valid": true
           }
         ],
@@ -1278,10 +1279,10 @@
           "reason": "3 cited probes (demo-notarize-crustdata-p006, demo-notarize-crustdata-p007, demo-notarize-crustdata-p008) vary the parameter, their controls read differently, and they agree (Beta(4, 1)).",
           "model": "fixture.adversary-double",
           "backend": "bedrock",
-          "reviewedAt": "2026-10-10T06:49:45.391Z"
+          "reviewedAt": "2026-10-10T07:31:40.506Z"
         },
         "probesToCandidate": 3,
-        "updatedAt": "2026-10-10T06:49:45.396Z"
+        "updatedAt": "2026-10-10T07:31:40.509Z"
       },
       {
         "id": "belief-crustdata.enrich.last-fundraise-date-string",
@@ -1293,7 +1294,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T06:49:45.069Z"
+        "updatedAt": "2026-10-10T07:31:40.222Z"
       },
       {
         "id": "belief-crustdata.enrich.no-match-200-empty",
@@ -1305,7 +1306,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T06:49:45.084Z"
+        "updatedAt": "2026-10-10T07:31:40.234Z"
       },
       {
         "id": "belief-crustdata.identify.invalid-fields-400",
@@ -1317,7 +1318,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T06:49:45.098Z"
+        "updatedAt": "2026-10-10T07:31:40.245Z"
       },
       {
         "id": "belief-crustdata.identify.max-25-identifiers",
@@ -1329,7 +1330,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T06:49:45.109Z"
+        "updatedAt": "2026-10-10T07:31:40.255Z"
       },
       {
         "id": "belief-crustdata.identify.no-match-200-empty",
@@ -1341,14 +1342,14 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T06:49:45.091Z"
+        "updatedAt": "2026-10-10T07:31:40.240Z"
       }
     ]
   },
   "beliefEvents": [
     {
       "beliefId": "belief-crustdata.enrich.headcount-total-integer",
-      "at": "2026-10-10T06:49:45.050Z",
+      "at": "2026-10-10T07:31:40.206Z",
       "from": null,
       "to": "hypothesis",
       "alpha": 1,
@@ -1358,7 +1359,7 @@
     },
     {
       "beliefId": "belief-crustdata.enrich.funding-total-investment-number",
-      "at": "2026-10-10T06:49:45.060Z",
+      "at": "2026-10-10T07:31:40.214Z",
       "from": null,
       "to": "hypothesis",
       "alpha": 1,
@@ -1368,7 +1369,7 @@
     },
     {
       "beliefId": "belief-crustdata.enrich.employee-count-range-string",
-      "at": "2026-10-10T06:49:45.065Z",
+      "at": "2026-10-10T07:31:40.219Z",
       "from": null,
       "to": "hypothesis",
       "alpha": 1,
@@ -1378,7 +1379,7 @@
     },
     {
       "beliefId": "belief-crustdata.enrich.last-fundraise-date-string",
-      "at": "2026-10-10T06:49:45.071Z",
+      "at": "2026-10-10T07:31:40.224Z",
       "from": null,
       "to": "hypothesis",
       "alpha": 1,
@@ -1388,7 +1389,7 @@
     },
     {
       "beliefId": "belief-crustdata.enrich.default-fields-basic-info",
-      "at": "2026-10-10T06:49:45.077Z",
+      "at": "2026-10-10T07:31:40.230Z",
       "from": null,
       "to": "hypothesis",
       "alpha": 1,
@@ -1398,7 +1399,7 @@
     },
     {
       "beliefId": "belief-crustdata.enrich.no-match-200-empty",
-      "at": "2026-10-10T06:49:45.087Z",
+      "at": "2026-10-10T07:31:40.237Z",
       "from": null,
       "to": "hypothesis",
       "alpha": 1,
@@ -1408,7 +1409,7 @@
     },
     {
       "beliefId": "belief-crustdata.identify.no-match-200-empty",
-      "at": "2026-10-10T06:49:45.094Z",
+      "at": "2026-10-10T07:31:40.242Z",
       "from": null,
       "to": "hypothesis",
       "alpha": 1,
@@ -1418,7 +1419,7 @@
     },
     {
       "beliefId": "belief-crustdata.identify.invalid-fields-400",
-      "at": "2026-10-10T06:49:45.100Z",
+      "at": "2026-10-10T07:31:40.247Z",
       "from": null,
       "to": "hypothesis",
       "alpha": 1,
@@ -1428,7 +1429,7 @@
     },
     {
       "beliefId": "belief-crustdata.enrich.confidence-score-number",
-      "at": "2026-10-10T06:49:45.106Z",
+      "at": "2026-10-10T07:31:40.252Z",
       "from": null,
       "to": "hypothesis",
       "alpha": 1,
@@ -1438,7 +1439,7 @@
     },
     {
       "beliefId": "belief-crustdata.identify.max-25-identifiers",
-      "at": "2026-10-10T06:49:45.112Z",
+      "at": "2026-10-10T07:31:40.258Z",
       "from": null,
       "to": "hypothesis",
       "alpha": 1,
@@ -1448,7 +1449,7 @@
     },
     {
       "beliefId": "belief-crustdata.credits.balance-number",
-      "at": "2026-10-10T06:49:45.122Z",
+      "at": "2026-10-10T07:31:40.264Z",
       "from": null,
       "to": "hypothesis",
       "alpha": 1,
@@ -1458,7 +1459,7 @@
     },
     {
       "beliefId": "belief-crustdata.enrich.funding-total-investment-number",
-      "at": "2026-10-10T06:49:45.180Z",
+      "at": "2026-10-10T07:31:40.310Z",
       "from": "hypothesis",
       "to": "hypothesis",
       "alpha": 1,
@@ -1469,7 +1470,7 @@
     },
     {
       "beliefId": "belief-crustdata.enrich.funding-total-investment-number",
-      "at": "2026-10-10T06:49:45.202Z",
+      "at": "2026-10-10T07:31:40.336Z",
       "from": "hypothesis",
       "to": "hypothesis",
       "alpha": 1,
@@ -1480,7 +1481,7 @@
     },
     {
       "beliefId": "belief-crustdata.enrich.funding-total-investment-number",
-      "at": "2026-10-10T06:49:45.224Z",
+      "at": "2026-10-10T07:31:40.356Z",
       "from": "hypothesis",
       "to": "hypothesis",
       "alpha": 2,
@@ -1491,7 +1492,7 @@
     },
     {
       "beliefId": "belief-crustdata.enrich.funding-total-investment-number",
-      "at": "2026-10-10T06:49:45.244Z",
+      "at": "2026-10-10T07:31:40.377Z",
       "from": "hypothesis",
       "to": "hypothesis",
       "alpha": 3,
@@ -1502,7 +1503,7 @@
     },
     {
       "beliefId": "belief-crustdata.enrich.funding-total-investment-number",
-      "at": "2026-10-10T06:49:45.266Z",
+      "at": "2026-10-10T07:31:40.398Z",
       "from": "hypothesis",
       "to": "hypothesis",
       "alpha": 4,
@@ -1512,18 +1513,8 @@
       "probeId": "demo-notarize-crustdata-p005"
     },
     {
-      "beliefId": "belief-crustdata.enrich.funding-total-investment-number",
-      "at": "2026-10-10T06:49:45.271Z",
-      "from": "hypothesis",
-      "to": "abstained",
-      "alpha": 4,
-      "beta": 3,
-      "confidence": 0.6562500000000003,
-      "reason": "abstain: per-claim probe cap reached (5/5) between thresholds; P(holds)=0.6563"
-    },
-    {
       "beliefId": "belief-crustdata.enrich.headcount-total-integer",
-      "at": "2026-10-10T06:49:45.300Z",
+      "at": "2026-10-10T07:31:40.423Z",
       "from": "hypothesis",
       "to": "hypothesis",
       "alpha": 2,
@@ -1534,7 +1525,7 @@
     },
     {
       "beliefId": "belief-crustdata.enrich.headcount-total-integer",
-      "at": "2026-10-10T06:49:45.323Z",
+      "at": "2026-10-10T07:31:40.442Z",
       "from": "hypothesis",
       "to": "hypothesis",
       "alpha": 3,
@@ -1545,7 +1536,7 @@
     },
     {
       "beliefId": "belief-crustdata.enrich.headcount-total-integer",
-      "at": "2026-10-10T06:49:45.349Z",
+      "at": "2026-10-10T07:31:40.465Z",
       "from": "hypothesis",
       "to": "candidate",
       "alpha": 4,
@@ -1555,8 +1546,18 @@
       "probeId": "demo-notarize-crustdata-p008"
     },
     {
+      "beliefId": "belief-crustdata.enrich.funding-total-investment-number",
+      "at": "2026-10-10T07:31:40.471Z",
+      "from": "hypothesis",
+      "to": "abstained",
+      "alpha": 4,
+      "beta": 3,
+      "confidence": 0.6562500000000003,
+      "reason": "abstain: no further independent probe design between thresholds; P(holds)=0.6563"
+    },
+    {
       "beliefId": "belief-crustdata.enrich.headcount-total-integer",
-      "at": "2026-10-10T06:49:45.398Z",
+      "at": "2026-10-10T07:31:40.511Z",
       "from": "candidate",
       "to": "notarized",
       "alpha": 4,
@@ -1665,8 +1666,8 @@
   },
   "traceLinks": {},
   "cassettes": [
-    "recon-crustdata@d964bfc900692c2659d05b73577b5de731a222d1ee0d82b436529a82acb3bbf9",
-    "probes-crustdata@3eb8364adb2d90f893ac5b804c24b3045c55743126efe78333e1242dcdbca0f6"
+    "recon-crustdata@17e2ce1620b560d6f491606450438c75e31ccd1b03da0d2eefe2b8a50fc4feed",
+    "probes-crustdata@44ffac45ebab7ea192d54e73cef4489996e462702166f12eaf4dec7db3194530"
   ],
-  "contentHash": "2e6e93df6dcb351db275d86772080ed9c0731a3dbb17b143911af1cc505ea5de"
+  "contentHash": "ba27c701e424750ef379226b82270b72cb0d5de06f0d55027f29902bab5de98d"
 }
