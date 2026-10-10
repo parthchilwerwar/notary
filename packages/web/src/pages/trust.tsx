@@ -26,6 +26,7 @@ import {
 import { readOptionalJSON } from "../optional-json";
 import { FixtureIndexSchema } from "../../../core/src/schema";
 import { RecordNotFound, RunLink, WithCertificates, useBundle, useRunPath } from "./shared";
+import { CertificateTrail } from "../components/trail";
 
 export function CertificatesPage() {
   const { bundles, bundle, certificates } = useData();
@@ -100,6 +101,7 @@ export function CertificateDetailPage() {
               bundles={bundles}
               runId={bundle?.runId}
             />
+            <CertificateTrail certificateId={cert.id} />
           </>
         );
       }}

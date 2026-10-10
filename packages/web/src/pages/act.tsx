@@ -21,6 +21,7 @@ import {
   type ExplainAnswer,
 } from "../../../core/src/schema";
 import { RecordNotFound, useBundle } from "./shared";
+import { DecisionTrail } from "../components/trail";
 
 export function QueuePage() {
   const bundle = useBundle();
@@ -57,6 +58,11 @@ export function DecisionDetailPage() {
         description={decision.action}
         actions={<StatusPill value={decision.status} />}
       />
+      <DecisionTrail bundle={bundle} decisionId={decision.id} />
+      <div className="section-heading">
+        <h2>Full record</h2>
+        <p>The decision record as stored in the run bundle.</p>
+      </div>
       <Card className="detail-card">
         <RequestDetail
           request={request}
