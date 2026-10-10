@@ -2,8 +2,18 @@ import { useState } from "react";
 import { CaretRightIcon as CaretRight } from "@phosphor-icons/react/dist/csr/CaretRight";
 import { MagnifyingGlassIcon as MagnifyingGlass } from "@phosphor-icons/react/dist/csr/MagnifyingGlass";
 import type { Decision, QueueRequest, RunBundle } from "../../core/src/schema";
-import { Empty, Fields, Json, Status, Trace } from "./components";
+import {
+  Empty,
+  Fields,
+  Json,
+  RecordLinks,
+  Status,
+  Trace,
+} from "./components";
 import { date, label, number } from "./data";
+import { Link } from "react-router";
+import { ArrowUpRightIcon as ArrowUpRight } from "@phosphor-icons/react/dist/csr/ArrowUpRight";
+import { recordPath, withRun } from "./state/data-mode";
 
 function RequestRow({
   request,
@@ -16,9 +26,6 @@ function RequestRow({
 }) {
   const [open, setOpen] = useState(false);
   const id = request?.id ?? decision!.requestId;
-  const guards = bundle.guards.filter((guard) =>
-    decision?.guardsApplied.includes(guard.id),
-  );
   return (
     <article className={`request ${open ? "expanded" : ""}`}>
       <button
@@ -61,137 +68,178 @@ function RequestRow({
         </div>
       </button>
       {open && (
-        <div className="request-detail" id={`detail-${id}`}>
-          <div className="detail-grid">
-            <section>
-              <h3>Customer request</h3>
-              {request ? (
-                <Fields value={{ ...request }} />
-              ) : (
-                <p>Request record not included in this bundle.</p>
-              )}
-            </section>
-            <section>
-              <h3>Policy & execution</h3>
-              {decision ? (
-                <>
-                  <Fields
-                    value={{
-                      id: decision.id,
-                      action: decision.action,
-                      tier: decision.tier,
-                      policyOutcome: decision.policyOutcome,
-                      status: decision.status,
-                      requiredBeliefs: decision.requiredBeliefs,
-                      missingBeliefs: decision.missingBeliefs,
-                      enrichment: decision.enrichment,
-                      grade: decision.grade,
-                      error: decision.error,
-                    }}
-                  />
-                  <Trace bundle={bundle} traceId={decision.traceId} />
-                </>
-              ) : (
-                <p>Decision not recorded.</p>
-              )}
-            </section>
-          </div>
+        <>
+          <RequestDetail
+            request={request}
+            decision={decision}
+            bundle={bundle}
+            id={id}
+          />
           {decision && (
-            <>
-              <section>
-                <h3>Guards applied</h3>
-                {decision.guardsApplied.length ? (
-                  <div className="guard-list">
-                    {decision.guardsApplied.map((id) => {
-                      const guard = guards.find((item) => item.id === id);
-                      return (
-                        <div className="guard" key={id}>
-                          <code>{id}</code>
-                          {guard ? (
-                            <>
-                              <strong>
-                                {label(guard.kind)} · {guard.operation}
-                              </strong>
-                              <p>{guard.reason}</p>
-                              <Fields
-                                value={{
-                                  beliefId: guard.beliefId,
-                                  class: guard.class,
-                                  active: guard.active,
-                                  compiledAt: guard.compiledAt,
-                                  retiredAt: guard.retiredAt,
-                                  rule: guard.rule,
-                                }}
-                              />
-                            </>
-                          ) : (
-                            <p>Guard definition not included.</p>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p>No guards recorded for this decision.</p>
-                )}
-              </section>
-              {decision.evidencePack && (
-                <section className="evidence-pack">
-                  <h3>Evidence pack · Human review</h3>
-                  <p>{decision.evidencePack.reason}</p>
-                  <Fields
-                    value={{
-                      missingBeliefs: decision.evidencePack.missingBeliefs,
-                      relatedProbeIds: decision.evidencePack.relatedProbeIds,
-                    }}
-                  />
-                  {decision.evidencePack.spanIds.map((spanId) => (
-                    <Trace
-                      key={spanId}
-                      bundle={bundle}
-                      traceId={spanId}
-                      spanId={spanId}
-                      links={decision.evidencePack?.traceLinks}
-                    />
-                  ))}
-                  {Object.entries(decision.evidencePack.traceLinks).map(
-                    ([traceId]) => (
-                      <Trace
-                        key={traceId}
-                        bundle={bundle}
-                        traceId={traceId}
-                        links={decision.evidencePack?.traceLinks}
-                      />
-                    ),
-                  )}
-                </section>
-              )}
-              <section>
-                <h3>Recorded API effects</h3>
-                {decision.effects.length ? (
-                  decision.effects.map((effect, index) => (
-                    <details className="effect" key={`${effect.op}-${index}`}>
-                      <summary>
-                        {effect.op}{" "}
-                        <span>
-                          {effect.status === null
-                            ? "Outcome unknown"
-                            : `HTTP ${effect.status}`}{" "}
-                          · {date(effect.at)}
-                        </span>
-                      </summary>
-                      <Json value={effect} />
-                    </details>
-                  ))
-                ) : (
-                  <p>No external effects recorded.</p>
-                )}
-              </section>
-            </>
+            <div className="record-link-row">
+              <Link
+                to={withRun(recordPath.decision(decision.id), bundle.runId)}
+              >
+                Open decision record
+                <ArrowUpRight size={14} aria-hidden="true" />
+              </Link>
+            </div>
           )}
-        </div>
+        </>
       )}
     </article>
+  );
+}
+
+export function RequestDetail({
+  request,
+  decision,
+  bundle,
+  id,
+}: {
+  request?: QueueRequest;
+  decision?: Decision;
+  bundle: RunBundle;
+  id: string;
+}) {
+  const guards = bundle.guards.filter((guard) =>
+    decision?.guardsApplied.includes(guard.id),
+  );
+  return (
+    <div className="request-detail" id={`detail-${id}`}>
+      <div className="detail-grid">
+        <section>
+          <h3>Customer request</h3>
+          {request ? (
+            <Fields value={{ ...request }} />
+          ) : (
+            <p>Request record not included in this bundle.</p>
+          )}
+        </section>
+        <section>
+          <h3>Policy & execution</h3>
+          {decision ? (
+            <>
+              <Fields
+                value={{
+                  id: decision.id,
+                  action: decision.action,
+                  tier: decision.tier,
+                  policyOutcome: decision.policyOutcome,
+                  status: decision.status,
+                  requiredBeliefs: decision.requiredBeliefs,
+                  missingBeliefs: decision.missingBeliefs,
+                  enrichment: decision.enrichment,
+                  grade: decision.grade,
+                  error: decision.error,
+                }}
+              />
+              <Trace bundle={bundle} traceId={decision.traceId} />
+            </>
+          ) : (
+            <p>Decision not recorded.</p>
+          )}
+        </section>
+      </div>
+      {decision && (
+        <>
+          <section>
+            <h3>Guards applied</h3>
+            {decision.guardsApplied.length ? (
+              <div className="guard-list">
+                {decision.guardsApplied.map((id) => {
+                  const guard = guards.find((item) => item.id === id);
+                  return (
+                    <div className="guard" key={id}>
+                      <code>{id}</code>
+                      {guard ? (
+                        <>
+                          <strong>
+                            {label(guard.kind)} · {guard.operation}
+                          </strong>
+                          <p>{guard.reason}</p>
+                          <Fields
+                            value={{
+                              beliefId: guard.beliefId,
+                              class: guard.class,
+                              active: guard.active,
+                              compiledAt: guard.compiledAt,
+                              retiredAt: guard.retiredAt,
+                              rule: guard.rule,
+                            }}
+                          />
+                        </>
+                      ) : (
+                        <p>Guard definition not included.</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p>No guards recorded for this decision.</p>
+            )}
+          </section>
+          {decision.evidencePack && (
+            <section className="evidence-pack">
+              <h3>Evidence pack · Human review</h3>
+              <p>{decision.evidencePack.reason}</p>
+              <RecordLinks
+                bundle={bundle}
+                beliefs={decision.evidencePack.missingBeliefs}
+                probes={decision.evidencePack.relatedProbeIds}
+              />
+              <Fields
+                value={{
+                  missingBeliefs: decision.evidencePack.missingBeliefs,
+                  relatedProbeIds: decision.evidencePack.relatedProbeIds,
+                }}
+              />
+              {decision.evidencePack.spanIds.map((spanId) => (
+                <Trace
+                  key={spanId}
+                  bundle={bundle}
+                  traceId={spanId}
+                  spanId={spanId}
+                  links={decision.evidencePack?.traceLinks}
+                />
+              ))}
+              {Object.entries(decision.evidencePack.traceLinks).map(
+                ([traceId]) => (
+                  <Trace
+                    key={traceId}
+                    bundle={bundle}
+                    traceId={traceId}
+                    links={decision.evidencePack?.traceLinks}
+                  />
+                ),
+              )}
+            </section>
+          )}
+          <section>
+            <h3>Recorded API effects</h3>
+            {decision.effects.length ? (
+              decision.effects.map((effect, index) => (
+                <details className="effect" key={`${effect.op}-${index}`}>
+                  <summary>
+                    {effect.op}{" "}
+                    <span>
+                      {effect.status === null
+                        ? "Outcome unknown"
+                        : `HTTP ${effect.status}`}{" "}
+                      · {date(effect.at)}
+                    </span>
+                  </summary>
+                  <Json value={effect} />
+                </details>
+              ))
+            ) : (
+              <p>No external effects recorded.</p>
+            )}
+          </section>
+        </>
+      )}
+    </div>
   );
 }
 

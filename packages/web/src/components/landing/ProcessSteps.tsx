@@ -2,29 +2,29 @@
 export function ProcessSteps() {
   const steps = [
     {
-      name: "Checker",
+      name: "Read",
       tag: "Docs vs wire",
       copy: "Extract claims from documentation and compare them with observed tool behavior.",
     },
     {
-      name: "Probes",
+      name: "Test",
       tag: "Predict before calling",
       copy: "Commit rival predictions before the API call, then inspect the observation and control.",
     },
     {
-      name: "Adversary",
+      name: "Challenge",
       tag: "Try to refute",
       copy: "A stronger model challenges the evidence. Unproven claims stay unproven.",
     },
     {
-      name: "Guards",
-      tag: "Gate every money call",
-      copy: "Compile proven beliefs into guards. Hold actions when required beliefs are missing.",
+      name: "Certify",
+      tag: "Issue a scoped certificate",
+      copy: "Certify proven API behavior with scope, an adversary verdict and evidence receipts. A certificate can contradict the docs.",
     },
     {
-      name: "Queue run",
-      tag: "Refunds and plans",
-      copy: "Process customer requests with guards, recorded decisions and trace receipts.",
+      name: "Enforce",
+      tag: "No certificate, no money moves",
+      copy: "Gate refunds and plan changes on active certificates. Revoke a certificate when behavior changes, then hold the money call.",
     },
   ];
   return (

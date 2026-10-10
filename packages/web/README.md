@@ -122,3 +122,21 @@ Insight and landing CTA cards use the kit's static blue dither gradient over a
 dark blue surface. The same Phosphor family supplies chevrons and context icons
 for native selects, retaining keyboard/touch behavior. The current visual check
 writes artifacts to ignored screenshots/U6 and verifies the queue hover tooltip.
+
+## V2 — Agent Control Center shell
+
+- Routes: `src/routes.tsx` is the single table (path, title, sidebar group, icon, badge,
+  parent, element). `/` is the landing page; everything else lives under `/app`. Every
+  record has its own URL (`/app/queue/:decisionId`, `/app/probes/:probeId`,
+  `/app/beliefs/:beliefId`, `/app/certificates/:certificateId`, `/app/runs/:runId`,
+  `/app/reports/:tool`); the selected run is always `?run=<runId>`.
+- Data: `src/state/DataProvider.tsx` (`useData()`) loads a local `notary serve`
+  (`/api/bundles`, proxied by the dev server to 127.0.0.1:8787) or else the static
+  indexes, hash-verifies every bundle, and exposes `{mode, source, runs, runGroups,
+  bundles, bundle, baseline, certificates, evidence, loading, error}`. Certificate files are
+  validated with the core schema and every seal is recomputed in the browser.
+- Primitives: `@/components/ui` (`PageHeader`, `Card`, `KpiCard`, `DeltaPill`,
+  `StatusPill`, `FixtureBanner`, `EmptyState`, `LoadingState`, `ErrorState`, `HatchDefs`,
+  `HatchSwatch`, sidebar). Shell: `@/components/shell` (`AppShell`, `RunPicker`,
+  `CommandPalette` on Ctrl/Cmd+K, `notify` toasts). Tokens: `src/styles.css`.
+- `npm run check:visual` iterates every route (`NOTARY_VISUAL=quick` for a short pass).

@@ -116,7 +116,7 @@ Claude Code owns `packages/core` and `packages/web` (Codex out of quota). Phases
   - [x] V1.5 certificates already built (session 6); re-verified exports unchanged; schemas made browser-safe.
   - [ ] BLOCKED: Ask answers need `NOTARY_MODEL_EXECUTOR` + AWS credentials.
   - [ ] BLOCKED: live approve needs `DODO_PAYMENTS_API_KEY`, a seed manifest and a real guarded run with held items (none exist; pending list is empty). Reject works keylessly (tested with doubles).
-- [ ] **V2 · App shell and design system**
+- [x] **V2 · App shell and design system** — shadcn-API sidebar (Monitor/Trust/Act/Business, held + revocation badges, data mode + neatlogs footer), top bar with run picker (`?run=`), ⌘K palette (cmdk), sonner `notify`, route table `packages/web/src/routes.tsx` with a URL per record, DataProvider (local API first, else static; all bundles hash-verified), certificates validated with the core schema + seals recomputed in browser, every page restyled. Verified: typecheck, **42 web tests**, build, visual check 76 route × viewport × theme combos with no page errors/overflow, deep links via `vite preview`. Pinned: @xyflow/react 12.12.0, cmdk 1.1.1, sonner 2.0.8, recharts 3.10.1, @tanstack/react-virtual 3.14.13 (motion kept at 14.1.0, react-router 8.4.0 already present).
 - [ ] **V3 · Mission control**
 - [ ] **V4 · Decision trail, Ask Notary, Approval desk**
 - [ ] **V5 · Polish, evidence, deploy**

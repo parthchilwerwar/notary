@@ -3,15 +3,58 @@ import { ArrowUpRightIcon as ArrowUpRight } from "@phosphor-icons/react/dist/csr
 import { ShieldCheckIcon as ShieldCheck } from "@phosphor-icons/react/dist/csr/ShieldCheck";
 import type { RunBundle } from "../../core/src/schema";
 import { label, safeLink } from "./data";
+import { Link } from "react-router";
+import { StatusPill } from "./components/ui/status-pill";
+import { recordPath, withRun } from "./state/data-mode";
 
 export function Status({ value }: { value: string }) {
-  const tone = ["notarized", "uphold", "completed"].includes(value)
-    ? "accent"
-    : "neutral";
+  return <StatusPill value={value}>{label(value)}</StatusPill>;
+}
+
+/** Links to other records of the same run (beliefs, probes, decisions); unknown ids stay plain text. */
+export function RecordLinks({
+  bundle,
+  beliefs = [],
+  probes = [],
+  decisions = [],
+}: {
+  bundle: RunBundle;
+  beliefs?: string[];
+  probes?: string[];
+  decisions?: string[];
+}) {
+  const known = {
+    belief: new Set(
+      [...bundle.beliefs.before, ...bundle.beliefs.after].map((b) => b.id),
+    ),
+    probe: new Set(bundle.probes.map((p) => p.id)),
+    decision: new Set(bundle.decisions.map((d) => d.id)),
+  };
+  const items = [
+    ...beliefs.map((id) => ["belief", id] as const),
+    ...probes.map((id) => ["probe", id] as const),
+    ...decisions.map((id) => ["decision", id] as const),
+  ];
+  if (!items.length) return null;
   return (
-    <span className={`status ${tone}`}>
-      <span aria-hidden="true" className="status-dot" />
-      {label(value)}
+    <span className="record-links">
+      {items.map(([kind, id]) =>
+        known[kind].has(id) ? (
+          <Link
+            key={kind + id}
+            className="record-chip"
+            to={withRun(recordPath[kind](id), bundle.runId)}
+          >
+            <span>{kind}</span>
+            {id}
+          </Link>
+        ) : (
+          <code key={kind + id} className="record-chip muted">
+            <span>{kind}</span>
+            {id}
+          </code>
+        ),
+      )}
     </span>
   );
 }

@@ -1,43 +1,37 @@
-import { useEffect, useState } from "react";
-import { z } from "zod";
 import type { RunBundle } from "../../core/src/schema";
 import { Panel } from "./Overview";
 import { Comparison } from "./Comparison";
 import { safeLink } from "./data";
+import { FixtureBanner } from "./components/ui/fixture-banner";
+import { StatusPill } from "./components/ui/status-pill";
+import type { EvidenceEntry, Loadable } from "./state/DataProvider";
+import { scenarioKey } from "./state/data-mode";
 
-const evidenceSchema = z.array(
-  z.object({
-    name: z.string(),
-    purpose: z.string(),
-    status: z.enum(["live", "pending"]),
-    links: z.array(z.object({ label: z.string(), url: z.string() })),
-    notes: z.string().optional(),
-  }),
-);
-export function Evidence({ all }: { all: RunBundle[] }) {
-  const [entries, setEntries] = useState<z.infer<typeof evidenceSchema>>([]);
-  const [error, setError] = useState("");
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch(`${import.meta.env.BASE_URL}evidence/evidence.json`, {
-      signal: controller.signal,
-    })
-      .then(async (r) => {
-        if (
-          r.status === 404 ||
-          !r.headers.get("content-type")?.includes("json")
-        )
-          return;
-        if (!r.ok) throw new Error("Evidence file could not be loaded.");
-        setEntries(evidenceSchema.parse(await r.json()));
-      })
-      .catch((e) => {
-        if (!controller.signal.aborted) setError(e.message);
-      });
-    return () => controller.abort();
-  }, []);
-  const guarded = all.find((b) => b.sample && b.variant === "guarded");
-  const naive = all.find((b) => b.sample && b.variant === "naive");
+/** Naive and guarded fixture queue runs from the same simulated world (shared runId prefix). */
+export function fixturePair(all: RunBundle[]) {
+  const runs = all
+    .filter((b) => b.sample && b.kind === "run")
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+  for (const guarded of runs.filter((b) => b.variant === "guarded")) {
+    const naive = runs.find(
+      (b) =>
+        b.variant === "naive" &&
+        scenarioKey(b.runId) === scenarioKey(guarded.runId),
+    );
+    if (naive) return { guarded, naive };
+  }
+  return undefined;
+}
+
+export function Evidence({
+  all,
+  evidence,
+}: {
+  all: RunBundle[];
+  evidence: Loadable<EvidenceEntry[]>;
+}) {
+  const entries = evidence.status === "ready" ? evidence.data : [];
+  const pair = fixturePair(all);
   return (
     <>
       <section className="evidence-section">
@@ -47,7 +41,11 @@ export function Evidence({ all }: { all: RunBundle[] }) {
             Integration receipts. Status comes from the published evidence file.
           </p>
         </div>
-        {error && <p role="alert">{error}</p>}
+        {evidence.status === "error" && (
+          <p role="alert" className="error-copy">
+            {evidence.error}
+          </p>
+        )}
         <div className="tool-grid">
           {["neatlogs", "Entire", "cfo.ai"].map((name) => {
             const entry = entries.find(
@@ -55,11 +53,12 @@ export function Evidence({ all }: { all: RunBundle[] }) {
             );
             return (
               <Panel key={name} title={name}>
-                <span
-                  className={`tool-status ${entry?.status === "live" ? "recorded" : ""}`}
+                <StatusPill
+                  value={entry?.status ?? "pending"}
+                  tone={entry?.status === "live" ? "safe" : "neutral"}
                 >
                   {entry?.status ?? "Pending"}
-                </span>
+                </StatusPill>
                 <p className="tool-purpose">{entry?.purpose ?? "Pending"}</p>
                 {entry?.notes && (
                   <details className="record-details">
@@ -93,13 +92,16 @@ export function Evidence({ all }: { all: RunBundle[] }) {
           <h2>Fixture demo</h2>
           <p>Simulated APIs, kept separate from integration evidence above.</p>
         </div>
-        {guarded && naive ? (
-          <Comparison bundle={guarded} comparison={naive} />
+        {pair ? (
+          <>
+            <FixtureBanner variant="inline" />
+            <Comparison bundle={pair.guarded} comparison={pair.naive} />
+          </>
         ) : (
-          <Panel title="Fixture comparison pending">
+          <Panel title="Fixture comparison unavailable">
             <p>
-              Publish both naive and guarded fixture bundles to compare the
-              demo.
+              No naive and guarded fixture bundles from the same simulated world
+              are published.
             </p>
           </Panel>
         )}

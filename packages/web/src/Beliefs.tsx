@@ -1,9 +1,178 @@
 import { SelectControl } from "./components/SelectControl";
 import { FunnelIcon as Funnel } from "@phosphor-icons/react/dist/csr/Funnel";
 import { useState } from "react";
-import type { RunBundle } from "../../core/src/schema";
-import { Empty, Fields, Json, Status, Trace } from "./components";
+import type { Belief, RunBundle } from "../../core/src/schema";
+import { Empty, Fields, Json, RecordLinks, Status, Trace } from "./components";
+import { Link } from "react-router";
+import { ArrowUpRightIcon as ArrowUpRight } from "@phosphor-icons/react/dist/csr/ArrowUpRight";
+import { recordPath, withRun } from "./state/data-mode";
 import { date, label, number, percent, safeLink } from "./data";
+
+export function BeliefCard({
+  bundle,
+  belief,
+  open = false,
+  link = false,
+}: {
+  bundle: RunBundle;
+  belief: Belief;
+  open?: boolean;
+  link?: boolean;
+}) {
+  const claim = bundle.claims.find(
+    (claim) => claim.id === belief.claimId,
+  );
+  const probes = bundle.probes.filter((probe) =>
+    belief.evidence.some((evidence) => evidence.probeId === probe.id),
+  );
+  const href = safeLink(claim?.docUrl);
+  return (
+    <article className="belief-card">
+      <div className="belief-top">
+        <span className="eyebrow">
+          {belief.tool} / {claim?.operation ?? belief.claimId}
+        </span>
+        <Status value={belief.status} />
+      </div>
+      <h2>{belief.statement}</h2>
+      <blockquote>
+        <span>Documented claim</span>
+        {claim?.docText ?? "Claim record not included."}
+        {href && (
+          <a href={href} target="_blank" rel="noreferrer">
+            Source documentation
+          </a>
+        )}
+      </blockquote>
+      <div className="confidence">
+        <span>P(documentation holds)</span>
+        <strong>{percent(belief.confidence)}</strong>
+      </div>
+      <meter
+        min={0}
+        max={1}
+        value={belief.confidence}
+        aria-label="Probability documentation holds"
+      />
+      <div className="belief-footer">
+        <span>
+          <strong>{number(belief.evidence.length)}</strong> evidence
+          citations
+        </span>
+        {belief.adversary ? (
+          <Status value={belief.adversary.verdict} />
+        ) : (
+          <span className="muted">Adversary review pending</span>
+        )}
+      </div>
+      <div className="record-link-row">
+        <RecordLinks
+          bundle={bundle}
+          probes={[...new Set(belief.evidence.map((e) => e.probeId))]}
+        />
+        {link && (
+          <Link to={withRun(recordPath.belief(belief.id), bundle.runId)}>
+            Open belief record
+            <ArrowUpRight size={14} aria-hidden="true" />
+          </Link>
+        )}
+      </div>
+      <details className="belief-details" open={open}>
+        <summary>Inspect evidence & review</summary>
+        <section>
+          <h3>Adversary review</h3>
+          {belief.adversary ? (
+            <>
+              <p>{belief.adversary.reason}</p>
+              <Fields value={{ ...belief.adversary }} />
+            </>
+          ) : (
+            <p>Not recorded.</p>
+          )}
+        </section>
+        <section>
+          <h3>Claim & belief record</h3>
+          {claim && <Fields value={{ ...claim }} />}
+          <Fields
+            value={{
+              id: belief.id,
+              claimId: belief.claimId,
+              class: belief.class,
+              alpha: belief.alpha,
+              beta: belief.beta,
+              prior: belief.prior,
+              probesToCandidate: belief.probesToCandidate,
+              updatedAt: date(belief.updatedAt),
+            }}
+          />
+        </section>
+        <section>
+          <h3>Evidence citations</h3>
+          {belief.evidence.length ? (
+            belief.evidence.map((evidence, index) => (
+              <div
+                className="citation"
+                key={`${evidence.probeId}-${index}`}
+              >
+                <code>{evidence.probeId}</code>
+                <span>
+                  {evidence.valid === undefined
+                    ? "Validity not checked"
+                    : evidence.valid
+                      ? "Evidence valid"
+                      : "Evidence invalid"}
+                </span>
+                <Trace
+                  bundle={bundle}
+                  traceId={evidence.traceId}
+                  spanId={evidence.spanId}
+                />
+              </div>
+            ))
+          ) : (
+            <p>No evidence cited.</p>
+          )}
+        </section>
+        <section>
+          <h3>Supporting probes</h3>
+          {probes.length ? (
+            probes.map((probe) => (
+              <details className="effect" key={probe.id}>
+                <summary>
+                  {probe.id} · {label(probe.template)}{" "}
+                  <span>{probe.verdict ?? "Awaiting verdict"}</span>
+                </summary>
+                <Json value={probe} />
+                <Trace
+                  bundle={bundle}
+                  traceId={probe.traceId}
+                  spanId={probe.spanId}
+                />
+              </details>
+            ))
+          ) : (
+            <p>No cited probe records included.</p>
+          )}
+        </section>
+        <section>
+          <h3>Belief history</h3>
+          {bundle.beliefEvents
+            .filter((event) => event.beliefId === belief.id)
+            .map((event, index) => (
+              <div className="history" key={`${event.at}-${index}`}>
+                <span>{date(event.at)}</span>
+                <strong>
+                  {event.from ?? "created"} → {event.to}
+                </strong>
+                <p>{event.reason}</p>
+                <Json value={event} />
+              </div>
+            ))}
+        </section>
+      </details>
+    </article>
+  );
+}
 
 export function Beliefs({ bundle }: { bundle: RunBundle }) {
   const [snapshot, setSnapshot] = useState<"before" | "after">("after");
@@ -60,149 +229,9 @@ export function Beliefs({ bundle }: { bundle: RunBundle }) {
         notarized finding may prove the documentation wrong.
       </div>
       <div className="belief-grid">
-        {visible.map((belief) => {
-          const claim = bundle.claims.find(
-            (claim) => claim.id === belief.claimId,
-          );
-          const probes = bundle.probes.filter((probe) =>
-            belief.evidence.some((evidence) => evidence.probeId === probe.id),
-          );
-          const href = safeLink(claim?.docUrl);
-          return (
-            <article className="belief-card" key={belief.id}>
-              <div className="belief-top">
-                <span className="eyebrow">
-                  {belief.tool} / {claim?.operation ?? belief.claimId}
-                </span>
-                <Status value={belief.status} />
-              </div>
-              <h2>{belief.statement}</h2>
-              <blockquote>
-                <span>Documented claim</span>
-                {claim?.docText ?? "Claim record not included."}
-                {href && (
-                  <a href={href} target="_blank" rel="noreferrer">
-                    Source documentation
-                  </a>
-                )}
-              </blockquote>
-              <div className="confidence">
-                <span>P(documentation holds)</span>
-                <strong>{percent(belief.confidence)}</strong>
-              </div>
-              <meter
-                min={0}
-                max={1}
-                value={belief.confidence}
-                aria-label="Probability documentation holds"
-              />
-              <div className="belief-footer">
-                <span>
-                  <strong>{number(belief.evidence.length)}</strong> evidence
-                  citations
-                </span>
-                {belief.adversary ? (
-                  <Status value={belief.adversary.verdict} />
-                ) : (
-                  <span className="muted">Adversary review pending</span>
-                )}
-              </div>
-              <details className="belief-details">
-                <summary>Inspect evidence & review</summary>
-                <section>
-                  <h3>Adversary review</h3>
-                  {belief.adversary ? (
-                    <>
-                      <p>{belief.adversary.reason}</p>
-                      <Fields value={{ ...belief.adversary }} />
-                    </>
-                  ) : (
-                    <p>Not recorded.</p>
-                  )}
-                </section>
-                <section>
-                  <h3>Claim & belief record</h3>
-                  {claim && <Fields value={{ ...claim }} />}
-                  <Fields
-                    value={{
-                      id: belief.id,
-                      claimId: belief.claimId,
-                      class: belief.class,
-                      alpha: belief.alpha,
-                      beta: belief.beta,
-                      prior: belief.prior,
-                      probesToCandidate: belief.probesToCandidate,
-                      updatedAt: date(belief.updatedAt),
-                    }}
-                  />
-                </section>
-                <section>
-                  <h3>Evidence citations</h3>
-                  {belief.evidence.length ? (
-                    belief.evidence.map((evidence, index) => (
-                      <div
-                        className="citation"
-                        key={`${evidence.probeId}-${index}`}
-                      >
-                        <code>{evidence.probeId}</code>
-                        <span>
-                          {evidence.valid === undefined
-                            ? "Validity not checked"
-                            : evidence.valid
-                              ? "Evidence valid"
-                              : "Evidence invalid"}
-                        </span>
-                        <Trace
-                          bundle={bundle}
-                          traceId={evidence.traceId}
-                          spanId={evidence.spanId}
-                        />
-                      </div>
-                    ))
-                  ) : (
-                    <p>No evidence cited.</p>
-                  )}
-                </section>
-                <section>
-                  <h3>Supporting probes</h3>
-                  {probes.length ? (
-                    probes.map((probe) => (
-                      <details className="effect" key={probe.id}>
-                        <summary>
-                          {probe.id} · {label(probe.template)}{" "}
-                          <span>{probe.verdict ?? "Awaiting verdict"}</span>
-                        </summary>
-                        <Json value={probe} />
-                        <Trace
-                          bundle={bundle}
-                          traceId={probe.traceId}
-                          spanId={probe.spanId}
-                        />
-                      </details>
-                    ))
-                  ) : (
-                    <p>No cited probe records included.</p>
-                  )}
-                </section>
-                <section>
-                  <h3>Belief history</h3>
-                  {bundle.beliefEvents
-                    .filter((event) => event.beliefId === belief.id)
-                    .map((event, index) => (
-                      <div className="history" key={`${event.at}-${index}`}>
-                        <span>{date(event.at)}</span>
-                        <strong>
-                          {event.from ?? "created"} → {event.to}
-                        </strong>
-                        <p>{event.reason}</p>
-                        <Json value={event} />
-                      </div>
-                    ))}
-                </section>
-              </details>
-            </article>
-          );
-        })}
+        {visible.map((belief) => (
+          <BeliefCard key={belief.id} bundle={bundle} belief={belief} link />
+        ))}
       </div>
       {!visible.length && (
         <Empty title="No beliefs in this view">

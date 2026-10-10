@@ -18,11 +18,11 @@ export function FinalCTA() {
         <h2>
           Before the next money call,
           <br />
-          ask what the agent has proven.
+          inspect the certificate.
         </h2>
         <p>
-          Explore the decisions, committed predictions and guards in the
-          dashboard.
+          Explore API behavior certificates, challenged evidence and enforced
+          decisions.
         </p>
         <div className="landing-actions">
           <Button size="lg" asChild>

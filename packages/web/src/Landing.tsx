@@ -192,7 +192,7 @@ export default function Landing() {
               <ResultsStrip naive={results.naive} guarded={results.guarded} />
               <Button variant="outline" asChild>
                 <Link
-                  to={`/app/comparison?run=${encodeURIComponent((results.guarded ?? results.naive)!.runId)}${results.naive && results.guarded ? `&baseline=${encodeURIComponent(results.naive.runId)}` : ""}`}
+                  to={`/app/runs?run=${encodeURIComponent((results.guarded ?? results.naive)!.runId)}${results.naive && results.guarded ? `&baseline=${encodeURIComponent(results.naive.runId)}` : ""}`}
                 >
                   Inspect the run comparison
                 </Link>

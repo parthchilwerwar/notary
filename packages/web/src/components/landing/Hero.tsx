@@ -8,8 +8,8 @@ export function Hero() {
       <div className="hero-copy">
         <span className="eyebrow">Notary / evidence before action</span>
         <h1 id="hero-title">
-          An agent that won't touch money until it has proven how its tools
-          actually behave.
+          Notary issues certificates for API behavior. No certificate, no money
+          moves.
         </h1>
         <p className="hero-subline">
           My agent refunded a customer twice, and every API call returned 200.
@@ -31,7 +31,7 @@ export function Hero() {
       </div>
       <Card className="hero-proof">
         <div className="proof-top">
-          <span>From a claim to a guard</span>
+          <span>From a claim to a certificate</span>
           <span className="proof-dot" />
         </div>
         <div className="proof-flow">
@@ -43,12 +43,16 @@ export function Hero() {
             },
             { title: "Wire evidence", note: "What the call actually returned" },
             {
+              title: "Behavior certificate",
+              note: "Scoped, challenged and revocable",
+            },
+            {
               title: "Guarded action",
-              note: "Money calls require proven beliefs",
+              note: "No certificate, no money moves",
             },
           ].map((step, i) => (
             <div
-              className={i === 3 ? "proof-node gate" : "proof-node"}
+              className={i === 4 ? "proof-node gate" : "proof-node"}
               key={step.title}
             >
               <span className="proof-marker" aria-hidden="true" />
