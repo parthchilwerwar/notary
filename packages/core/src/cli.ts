@@ -269,9 +269,13 @@ export function buildProgram(): Command {
     .command("guards")
     .description("Guard registry commands")
     .command("coverage")
-    .description("entire-graph caller check; non-zero exit on any unguarded call site")
-    .option("--json", "machine-readable report (unguarded_call_sites, sites, totals)")
-    .addOption(new Option("--backend <backend>", "caller backend; auto uses entire when on PATH").choices(["auto", "entire", "tsc"]).default("auto"))
+    .description("raw-client caller check (TypeScript checker; entire graph when installed); non-zero exit on any unguarded call site")
+    .option("--json", "machine-readable report (unguarded_call_sites, sites, totals; `unverified` when backend is entire)")
+    .addOption(
+      new Option("--backend <backend>", "caller backend; auto uses entire when on PATH, else tsc (entire is UNVERIFIED: never run against a real install)")
+        .choices(["auto", "entire", "tsc"])
+        .default("auto"),
+    )
     .action(async (opts: { json?: boolean; backend: "auto" | "entire" | "tsc" }) => {
       const { runCoverage, formatCoverage, coverageExitCode } = await import("./guards/coverage.js");
       const report = runCoverage({ backend: opts.backend });
