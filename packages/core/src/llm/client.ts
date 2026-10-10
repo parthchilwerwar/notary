@@ -30,6 +30,12 @@
  * USD cap (src/llm/budget.ts): with NOTARY_MAX_USD set, every call first checks the run's spend plus
  * a high estimate of this call and throws UsdCapExceededError (before any I/O) when it would exceed.
  *
+ * Rate limit (src/llm/limiter.ts): every call to a real provider queues in the process-wide limiter
+ * (NOTARY_LLM_RPM, NOTARY_LLM_CONCURRENCY); a 429 backs off per Retry-After and retries (max 3),
+ * re-checking the USD cap first; usage/USD are recorded once, for the attempt that succeeded. The
+ * wait and the attempt count are attributes on the same `notary.llm` span (llm.waited_ms,
+ * llm.attempts, llm.retry_after_ms) plus a log event per retry — no extra LLM span from Notary.
+ *
  * Every call opens a neatlogs span "notary.llm" (CHAIN) with role, model id, token counts and USD;
  * prompts are never put in its attributes. Under it, the SDK's provider wrapper (wrapBedrock /
  * wrapOpenAI) emits the LLM span, which does carry the (already secret-scrubbed) messages and
@@ -39,7 +45,9 @@
 import type { ConverseCommandInput, ConverseCommandOutput } from "@aws-sdk/client-bedrock-runtime";
 import type { Role, UsageByRole } from "../schema/index.js";
 import { MissingCredentialError } from "../tools/errors.js";
-import { traceBedrockClient, withSpan } from "../trace/index.js";
+import { traceBedrockClient, traceLog, withSpan } from "../trace/index.js";
+import { LLM_MAX_429_RETRIES, LLM_MAX_BACKOFF_MS, LlmRateLimitedError, defaultBackOffMs, llmLimiter, rateLimitInfo } from "./limiter.js";
+import type { LlmLimiter, LlmSlot } from "./limiter.js";
 import { costUsd, priceCall, reportedCostUsd, resolvePrice } from "./pricing.js";
 import type { PriceSource } from "./pricing.js";
 import { UsdCapExceededError, estimateInputTokens, maxUsdFromEnv } from "./budget.js";
@@ -189,6 +197,11 @@ export type LlmClientOptions = {
   /** Override the LiteLLM transport (tests). When omitted, LITELLM_BASE_URL and LITELLM_API_KEY must be set. */
   chatTransport?: ChatTransport;
   meter?: UsageMeter;
+  /**
+   * Rate limiter for this client's calls. Default: the process-wide `llmLimiter()` when the client
+   * talks to a real provider, none when a test/fixture transport is injected. `null` disables it.
+   */
+  limiter?: LlmLimiter | null;
 };
 
 /** One provider reply, normalized. */
@@ -227,6 +240,8 @@ export class LlmClient implements LlmLike {
   private readonly roster: ModelRoster;
   private transport: ConverseTransport | undefined;
   private chatTransport: ChatTransport | undefined;
+  private readonly limiterOpt: LlmLimiter | null | undefined;
+  private readonly injected: boolean;
 
   constructor(opts: LlmClientOptions = {}) {
     this.env = opts.env ?? process.env;
@@ -242,6 +257,14 @@ export class LlmClient implements LlmLike {
     }
     this.transport = opts.transport;
     this.chatTransport = opts.chatTransport;
+    this.limiterOpt = opts.limiter;
+    this.injected = this.provider === "litellm" ? opts.chatTransport !== undefined : opts.transport !== undefined;
+  }
+
+  /** The limiter in front of this client's calls (null: none). */
+  limiter(): LlmLimiter | null {
+    if (this.limiterOpt !== undefined) return this.limiterOpt;
+    return this.injected ? null : llmLimiter(this.env);
   }
 
   /** The configured model id for a role, or the BLOCKED error. */
@@ -352,12 +375,37 @@ export class LlmClient implements LlmLike {
       { "notary.role": req.role, "llm.model_id": modelId, "llm.provider": this.provider },
       async () => {
         if (setAttr && this.maxUsd !== null) setAttr("llm.usd_cap", this.maxUsd);
-        this.checkUsdCap(req.role, modelId, scrubbed);
-        let out: ProviderReply;
-        try {
-          out = await call(modelId, scrubbed);
-        } catch (err) {
-          throw scrubError(err, clean);
+        const limiter = this.limiter();
+        let out: ProviderReply | undefined;
+        let attempt = 0;
+        let waitedMs = 0;
+        while (!out) {
+          attempt += 1;
+          // NOTARY_MAX_USD before every attempt (a retry is a new spend decision).
+          this.checkUsdCap(req.role, modelId, scrubbed);
+          let slot: LlmSlot | null = null;
+          if (limiter) {
+            slot = await limiter.acquire();
+            waitedMs += slot.waitedMs;
+          }
+          try {
+            out = await call(modelId, scrubbed);
+          } catch (err) {
+            const rl = limiter ? rateLimitInfo(err) : null;
+            if (!rl || !limiter) throw scrubError(err, clean);
+            const limits = { rpm: limiter.rpm, concurrency: limiter.concurrency };
+            if (attempt > LLM_MAX_429_RETRIES) throw new LlmRateLimitedError(req.role, modelId, attempt, rl.retryAfterMs, limits);
+            const backOffMs = rl.retryAfterMs ?? defaultBackOffMs(attempt);
+            if (backOffMs > LLM_MAX_BACKOFF_MS) {
+              throw new LlmRateLimitedError(req.role, modelId, attempt, backOffMs, limits, `the provider asked to wait ${Math.ceil(backOffMs / 1000)} s, longer than Notary waits (${LLM_MAX_BACKOFF_MS / 1000} s)`);
+            }
+            limiter.backOff(backOffMs);
+            setAttr?.("llm.retry_after_ms", backOffMs);
+            setAttr?.("llm.attempts", attempt + 1);
+            traceLog("llm retry after 429 for {role}: attempt {attempt}, back-off {retryAfterMs} ms", { role: req.role, attempt: attempt + 1, retryAfterMs: backOffMs });
+          } finally {
+            slot?.release();
+          }
         }
         const { inputTokens, outputTokens, text, stopReason } = out;
         const priced = priceCall(req.role, modelId, { inputTokens, outputTokens }, this.env, out.reportedUsd);
@@ -371,6 +419,8 @@ export class LlmClient implements LlmLike {
           setAttr("llm.usd", usd);
           setAttr("llm.price_source", priced.source);
           setAttr("llm.stop_reason", stopReason);
+          setAttr("llm.attempts", attempt);
+          if (limiter) setAttr("llm.waited_ms", waitedMs);
         }
         return { text, inputTokens, outputTokens, usd, modelId, stopReason, priceSource: priced.source };
       },

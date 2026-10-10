@@ -39,6 +39,7 @@ import type { ChatTransport, ModelLister } from "./litellm.js";
 import { MODEL_ENV, ROLES, baseModelId } from "./roles.js";
 import { MAX_USD_ENV, maxUsdFromEnv } from "./budget.js";
 import { resolvePrice } from "./pricing.js";
+import { LLM_CONCURRENCY_ENV, LLM_MAX_429_RETRIES, LLM_MAX_BACKOFF_MS, LLM_RPM_ENV, llmConcurrencyFromEnv, llmRpmFromEnv } from "./limiter.js";
 
 type Env = Record<string, string | undefined>;
 
@@ -144,6 +145,12 @@ export async function runLlmDoctor(opts: LlmDoctorOptions = {}): Promise<LlmDoct
     out("  AWS credentials: SDK default chain (env keys / profile / SSO); exercised by the test calls only");
   }
   for (const role of ROLES) out(`  ${role.padEnd(9)} ${MODEL_ENV[role]} = ${read(env, MODEL_ENV[role]) || "(not set)"}`);
+
+  // Rate limits (process-wide, every real model call).
+  out(
+    `  limits: ${LLM_RPM_ENV}=${llmRpmFromEnv(env)}/min, ${LLM_CONCURRENCY_ENV}=${llmConcurrencyFromEnv(env)} in flight` +
+      ` (429 → up to ${LLM_MAX_429_RETRIES} retries honoring Retry-After, ≤ ${LLM_MAX_BACKOFF_MS / 1000} s each)`,
+  );
 
   // Cost: the per-run cap and where each role's price will come from.
   try {

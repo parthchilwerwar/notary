@@ -40,6 +40,26 @@ export type {
 export { BEDROCK_PRICING_URL, PRICE_TABLE, REGIONAL_PREMIUM, costUsd, priceCall, reportedCostUsd, resolvePrice } from "./pricing.js";
 export type { ModelPrice, PriceSource, PricedCall, ResolvedPrice } from "./pricing.js";
 export {
+  DEFAULT_LLM_CONCURRENCY,
+  DEFAULT_LLM_RPM,
+  LLM_CONCURRENCY_ENV,
+  LLM_DEFAULT_BACKOFF_MS,
+  LLM_MAX_429_RETRIES,
+  LLM_MAX_BACKOFF_MS,
+  LLM_RATE_WINDOW_MS,
+  LLM_RPM_ENV,
+  LlmLimiter,
+  LlmRateLimitedError,
+  defaultBackOffMs,
+  llmConcurrencyFromEnv,
+  llmLimiter,
+  llmRpmFromEnv,
+  rateLimitInfo,
+  resetLlmLimiter,
+  setLlmLimiter,
+} from "./limiter.js";
+export type { LlmLimiterStats, LlmSlot } from "./limiter.js";
+export {
   ESTIMATE_CHARS_PER_TOKEN,
   MAX_USD_ENV,
   UsdCapExceededError,
