@@ -28,8 +28,8 @@ Machine-readable copy for the dashboard: [packages/web/public/evidence/evidence.
 
 | Sponsor | Status | Evidence |
 | --- | --- | --- |
-| neatlogs | **live** (SDK export) | `notary doctor` flushed a real span on Oct 10: trace `8e4a01d2811652fa2e8c4e4334642137`, span `1518e64a727d8bac`. Every CLI entry point roots a WORKFLOW span; Bedrock calls via `wrapBedrock`. No notarize/run spans yet (no live runs); `neatlogs-cli` not installed, so traces aren't read back |
-| Entire | pending | CLI not installed; no `entire enable`, no checkpoints. Coverage runs on the tsc backend (0 unguarded call sites). The `entire` backend's flags differ from the docs page (DECISIONS #99) |
+| neatlogs | **live** (SDK export) — trace links pending one real URL from the neatlogs UI (`notary trace-link`) | `notary doctor` flushed a real span on Oct 10: trace `8e4a01d2811652fa2e8c4e4334642137`, span `1518e64a727d8bac`. Every CLI entry point roots a WORKFLOW span; Bedrock calls via `wrapBedrock`. No notarize/run spans yet (no live runs); `neatlogs-cli` not installed, so traces aren't read back |
+| Entire | pending | CLI not installed; no `entire enable`, no checkpoints. Coverage runs on the tsc backend (0 unguarded call sites). The `entire` backend now uses the documented `neighbors --relation CALLS` flags but is UNVERIFIED until Entire runs locally (DECISIONS #102) |
 | cfo.ai | pending | Business plan is P10 (manual): `docs/BUSINESS.md`, `packages/web/public/economics.json` not created yet |
 | Crustdata | blocked (no key) | Client, 26-claim contracts, 15 req/min throttle, credit budget built; no live calls recorded |
 | Dodo Payments | blocked (no key) | Test-mode-locked client built; seeding needs 12 hosted test-card checkouts |
@@ -37,9 +37,15 @@ Machine-readable copy for the dashboard: [packages/web/public/evidence/evidence.
 
 ## What exists now (keyless)
 
-- `pnpm test`: 591 tests pass; typecheck clean; `pnpm check:secrets` clean; `notary guards coverage`: 0 unguarded call sites.
-- `notary demo --fixture`: the whole pipeline on a simulated, clearly labelled fixture world — naive run 9 unsafe actions, guarded run 0 (executes credits and plan changes, holds refunds with evidence packs). Published for the dashboard under `packages/web/public/bundles/fixture/` (sample: true, never mixed with real bundles).
+- `pnpm test`: 648 tests pass; typecheck clean; `pnpm check:secrets` clean; `notary guards coverage`: 0 unguarded call sites.
+- `notary demo --fixture`: the whole pipeline on a simulated, clearly labelled fixture world — naive run 9 unsafe actions, guarded run 0 (executes 2 plan changes, holds 12 with evidence packs); Stage 11 shows a drift replay un-learning a mixed-evidence belief and retiring its guard. Published for the dashboard under `packages/web/public/bundles/fixture/` (sample: true, never mixed with real bundles).
 - `docs/EVALUATION.md` is generated from real bundles only: **0 real bundles today**, so every PRD headline metric is "not measured yet".
+
+## Dashboard data (JSON only; UI is Codex's)
+
+- `packages/web/public/bundles/fixture/` — FIXTURE bundles from `notary demo --fixture --publish` (never mixed with real bundles)
+- `packages/web/public/content/glossary.json` — plain-language glossary from `notary export --content`
+- `packages/web/public/evidence/evidence.json` — sponsor evidence from `notary export --evidence`
 
 ## Submission checklist (BUILD_PLAN)
 

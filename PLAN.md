@@ -89,3 +89,10 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 - [x] Step 6: A-11 resolved against the official start (Luma + Oct 9 email: 12:00 AM IST Oct 10); first commit 02:49:08 IST; website's 12:30 PM disclosed (#72, AUDIT, hackathon.md).
 - [x] Step 7: `demo --fixture --publish` → `packages/web/public/bundles/fixture/`; `packages/web/public/evidence/evidence.json` (#98). Entire docs vs adapter flag mismatch noted (#99).
 - [x] Codex committed U1 (dashboard shell with Queue and Beliefs) as `cb98891`; Claude Code did not touch `packages/web` UI code.
+
+## Session 5 (Oct 10)
+- [x] Step 1: `notary export --content` → `packages/web/public/content/glossary.json` generated from code (#104); `test/content.test.ts`.
+- [x] Step 2: honest fixture drift beat — mixed-evidence wallet unit belief Beta(2,6), Stage 11 un-learns on 5 of 6 distinct designs and retires the guard (#100). Compiler now blocks (not transforms) when unit evidence is inconsistent (#101); fixture guarded run now executes 2 and holds 12 (supersedes "executes 5" above), 0 unsafe.
+- [x] Step 3: Entire backend uses documented `--relation CALLS` flags; UNVERIFIED until a local install (#102).
+- [ ] Step 4: trace-link machinery built and inactive (#103) — BLOCKED on the user pasting one neatlogs trace URL; then `pnpm notary trace-link --example "<url>" --trace-id <id> && pnpm notary export --evidence`.
+- [x] Step 5: fixture bundles republished; evidence.json regenerated (unchanged).
