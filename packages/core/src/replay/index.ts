@@ -374,6 +374,13 @@ async function driftReplay(opts: ReplayOptions, bundles: RunBundle[], lines: str
       for (const s of t.steps) lines.push(`  pass ${s.pass} ${s.verdict.padEnd(13)} alpha=${s.alpha} beta=${s.beta} P(holds)=${s.pHolds.toFixed(4)} status=${s.status}`);
     }
     lines.push(`retired guards: ${result.retiredGuards.length ? result.retiredGuards.map((g) => `${g.id} (${g.kind} on ${g.operation})`).join(", ") : "none"}`);
+    // P9 (AUDIT-05): a drift replay that un-learned nothing has not shown FR-16; never report it as a pass.
+    const unlearned = result.trajectories.filter((t) => t.steps.some((s) => s.status === "unlearned"));
+    if (unlearned.length === 0) {
+      failures.push(
+        `FAIL: the drift fixture un-learned no belief (${result.trajectories.length} affected belief(s), none reached unlearned): FR-16 not demonstrated`,
+      );
+    }
     return { exitCode: failures.length ? 1 : 0, lines: [...lines, ...failures], replays: [r] };
   } catch (err) {
     const msg = err instanceof CassetteMissError ? describeMiss(err) : err instanceof Error ? err.message : String(err);

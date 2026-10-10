@@ -480,4 +480,19 @@ describe("notary replay --drift", () => {
     expect(res.exitCode).toBe(1);
     expect(res.lines.at(-1)).toMatch(/no recorded notarize bundle pins the drift fixture's source cassette/);
   }, 60_000);
+
+  it("P9 AUDIT-05: a drift fixture that changes nothing un-learns nothing and fails (exit 1), never a pass", async () => {
+    const d = dirsFor();
+    const driftDir = tempDir("notary-replay-drift-");
+    const original = await liveNotarize(d);
+    const probes = loadCassette(`${original.runId}-probes`, { dir: d.cassettes });
+    const target = probes.exchanges.find((e) => (e.requestBody as { name?: string }).name?.includes("-p1-t "))!;
+    // Alter a field no probe reads (the product name): the behavior under test is unchanged.
+    expect(typeof (target.responseBody as { name?: unknown }).name).toBe("string");
+    makeDriftFixture({ from: `${original.runId}-probes`, exchange: `${target.requestHash}:${target.occurrence}`, path: "$.name", value: "renamed by drift", out: "test-nodrift", cassetteDir: d.cassettes, driftDir });
+    vi.stubGlobal("fetch", refuseFetch);
+    const res = await runReplay({ drift: "test-nodrift", driftDir, runsDir: d.runs, webBundlesDir: null, cassetteDir: d.cassettes, unguardedCallSites: async () => 0 });
+    expect(res.exitCode, res.lines.join("\n")).toBe(1);
+    expect(res.lines.at(-1)).toMatch(/un-learned no belief/);
+  }, 60_000);
 });

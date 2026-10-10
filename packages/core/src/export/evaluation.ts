@@ -260,7 +260,7 @@ function blockedRows(bundles: readonly RunBundle[], driftFixtures: readonly stri
   if (!has((b) => classify(b) === "notarize-compare-priors" && b.tool === "dodo")) {
     rows.push(["Probes to candidate with vs without priors", "no compare-priors bundle for dodo", code(PRODUCE.comparePriors), "a crustdata notarize bundle and a recorded probes-dodo cassette"]);
   }
-  if (!has((b) => b.noiseFloor !== undefined)) rows.push(["Noise floor (three identical guarded runs)", "no bundle carries a noiseFloor", `${code(PRODUCE.noiseFloor)} three times; the floor goes into bundle.noiseFloor`, BOTH_TOOLS]);
+  if (!has((b) => b.noiseFloor !== undefined)) rows.push(["Noise floor (three identical guarded runs)", "no bundle carries a noiseFloor", `${code(PRODUCE.noiseFloor)} (re-seed Dodo between runs); the floor goes into bundle.noiseFloor`, BOTH_TOOLS]);
   if (!has(isReproduction)) rows.push(["Reproducibility (replay)", "no replay bundle", code(PRODUCE.replay), "recorded cassettes from the live runs above (no keys needed once recorded)"]);
   if (!has((b) => b.disclosure.some((d) => d.includes("DRIFT FIXTURE")))) {
     const fx = driftFixtures.length ? `drift fixtures on disk: ${driftFixtures.map(code).join(", ")}` : "no drift fixture exists";

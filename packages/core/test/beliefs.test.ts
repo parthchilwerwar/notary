@@ -150,6 +150,12 @@ function toHonoredCandidate(store: BeliefStore): void {
   apply(store, honored(200));
 }
 
+/** The FR-10 evidence check passed for every cited probe (P9: required before an uphold/narrow). */
+function passEvidence(store: BeliefStore): void {
+  const id = beliefIdFor(CLAIM.id);
+  store.applyEvidenceCheck(id, store.get(id)!.evidence.map((e) => ({ probeId: e.probeId, valid: true, reason: "ok" })));
+}
+
 // ------------------------------------------------------------------ store
 
 describe("BeliefStore: ensure", () => {
@@ -288,6 +294,7 @@ describe("BeliefStore: adversary", () => {
   it("uphold → notarized", () => {
     const store = new BeliefStore(freshDb());
     toHonoredCandidate(store);
+    passEvidence(store);
     const b = store.applyAdversary(beliefIdFor(CLAIM.id), review("uphold"));
     expect(b).toMatchObject({ status: "notarized", adversary: { verdict: "uphold", model: "adv-model" } });
     expect(store.events(b.id).at(-1)).toMatchObject({ from: "candidate", to: "notarized" });
@@ -296,6 +303,7 @@ describe("BeliefStore: adversary", () => {
   it("narrow → notarized with the narrowed scope in the statement", () => {
     const store = new BeliefStore(freshDb());
     toHonoredCandidate(store);
+    passEvidence(store);
     const b = store.applyAdversary(beliefIdFor(CLAIM.id), review("narrow", { scope: "test-mode refunds list only" }));
     expect(b.status).toBe("notarized");
     expect(b.statement).toBe(`${statementFor(CLAIM, "honored")} [narrowed scope: test-mode refunds list only]`);
@@ -332,6 +340,7 @@ describe("BeliefStore: unlearn", () => {
     const store = new BeliefStore(freshDb(), { onUnlearn: (b, e) => calls.push([b, e]), onLeaveNotarized: (b) => left.push(b.id) });
     toHonoredCandidate(store);
     const id = beliefIdFor(CLAIM.id);
+    passEvidence(store);
     store.applyAdversary(id, review("uphold"));
 
     const seen: Array<[number, number, string]> = [];
@@ -377,6 +386,7 @@ describe("BeliefStore: abstain and evidence revert", () => {
     const store = new BeliefStore(freshDb(), { onLeaveNotarized: (b) => left.push(b.status) });
     toHonoredCandidate(store);
     const id = beliefIdFor(CLAIM.id);
+    passEvidence(store);
     store.applyAdversary(id, review("uphold"));
     const [e1, e2, e3] = store.get(id)!.evidence;
     const b = store.applyEvidenceCheck(id, [

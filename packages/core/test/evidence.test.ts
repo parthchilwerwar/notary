@@ -395,7 +395,8 @@ describe("runBeliefsPhase: probes -> beliefs -> evidence check -> adversary", ()
       review: async () => ((reviewed += 1), { review: null }),
     });
     expect(reviewed).toBe(0);
-    expect(res.after[0]).toMatchObject({ status: "hypothesis", beta: 4 });
+    // P9 (AUDIT-01): the invalid probe's β+1 is taken back, Beta(1,4) -> Beta(1,3).
+    expect(res.after[0]).toMatchObject({ status: "hypothesis", beta: 3 });
     expect(res.after[0]!.evidence.map((e) => e.valid)).toEqual([true, true, false]);
     expect(res.evidence.invalid).toBe(1);
     expect(res.lines.some((l) => /invalid evidence .* parameter not varied/.test(l))).toBe(true);

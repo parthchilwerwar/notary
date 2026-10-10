@@ -26,7 +26,11 @@
  *   candidate → candidate    adversary review missing/malformed (fail safe), with an event
  *   notarized → unlearned    P(holds) crosses back over 0.5 against the side it was notarized on
  *                            (strictly: < 0.5 for honored, > 0.5 for violated); fires onUnlearn
- *   any (≠ hypothesis) → hypothesis   a cited span fails the evidence-validity check (FR-10)
+ *   any (≠ hypothesis) → hypothesis   a cited span fails the evidence-validity check (FR-10); the
+ *                            failed probe's +1 is taken back off α/β (P9), so it never moves P(holds)
+ *   candidate → notarized    additionally needs ≥ 2 independent cited probes whose evidence PASSED the
+ *                            FR-10 check (valid = 1); unchecked evidence cannot be notarized (P9)
+ *   applyProbe refuses a verdict / winner that differs from the one recorded on the probe (P9)
  *   hypothesis | unlearned → abstained   `abstain()` when the budget ends between thresholds
  *
  * Independence rule: two cited probes are independent iff they have distinct probe ids AND
@@ -321,6 +325,17 @@ export class BeliefStore {
     return Number(r?.n ?? 0);
   }
 
+  /** Independent cited probes supporting `side` whose evidence PASSED the FR-10 check (valid = 1). */
+  verifiedIndependentProbes(beliefId: string, side: Side): number {
+    const r = this.db
+      .prepare(
+        `SELECT COUNT(DISTINCT fingerprint) AS n FROM belief_probes
+         WHERE belief_id = ? AND cited = 1 AND side = ? AND valid = 1`,
+      )
+      .get(beliefId, side) as Row | undefined;
+    return Number(r?.n ?? 0);
+  }
+
   // ------------------------------------------------------------------ writes
 
   private appendEvent(e: Omit<BeliefEvent, "at">): BeliefEvent {
@@ -379,6 +394,13 @@ export class BeliefStore {
   ): ApplyProbeResult {
     const r = this.row(beliefId);
     if (str(r.claim_id) !== probe.claimId) throw new Error(`probe ${probe.id} is for claim ${probe.claimId}, belief ${beliefId} is for ${str(r.claim_id)}`);
+    // P9 (AUDIT-03): the verdict applied must be the one recorded on the probe, never a caller's override.
+    if (probe.verdict !== undefined && probe.verdict !== verdict.verdict) {
+      throw new Error(`probe ${probe.id}: verdict ${verdict.verdict} differs from its recorded verdict ${probe.verdict}`);
+    }
+    if (verdict.verdict === "confirmed" && probe.winningHypothesisId !== undefined && probe.winningHypothesisId !== verdict.winningHypothesisId) {
+      throw new Error(`probe ${probe.id}: winner ${verdict.winningHypothesisId ?? "(none)"} differs from its recorded winner ${probe.winningHypothesisId}`);
+    }
     const seen = this.db.prepare("SELECT 1 AS x FROM belief_probes WHERE belief_id = ? AND probe_id = ?").get(beliefId, probe.id);
     if (seen) return { belief: this.toBelief(r), updated: false, applied: false };
 
@@ -517,6 +539,16 @@ export class BeliefStore {
       return this.toBelief(r);
     }
     const rev = AdversaryReviewSchema.parse(review);
+    if (rev.verdict !== "downgrade") {
+      // P9 (AUDIT-02): only evidence that PASSED the FR-10 check (valid = 1, not merely unchecked) can be notarized.
+      const side = r.side == null ? null : (str(r.side) as Side);
+      const verified = side ? this.verifiedIndependentProbes(beliefId, side) : 0;
+      if (verified < MIN_INDEPENDENT_PROBES) {
+        throw new Error(
+          `applyAdversary: belief ${beliefId} has ${verified} independent probe(s) whose evidence passed the FR-10 check (need ${MIN_INDEPENDENT_PROBES}); run the evidence check before the adversary`,
+        );
+      }
+    }
     const by = `adversary ${rev.verdict} (${rev.backend ?? "bedrock"}, ${rev.model})`;
     if (rev.verdict === "downgrade") {
       this.save(beliefId, { status: "hypothesis", side: null, scope: null, adversary_json: JSON.stringify(rev) });
@@ -534,9 +566,28 @@ export class BeliefStore {
    * if any is invalid the belief reverts to hypothesis (from any other status) with an event.
    */
   applyEvidenceCheck(beliefId: string, results: readonly EvidenceVerdict[]): Belief {
-    const r = this.row(beliefId);
+    const before = this.row(beliefId);
     const stmt = this.db.prepare("UPDATE belief_probes SET valid = ? WHERE belief_id = ? AND probe_id = ? AND cited = 1");
-    for (const res of results) stmt.run(res.valid ? 1 : 0, beliefId, res.probeId);
+    const prevStmt = this.db.prepare("SELECT side, valid FROM belief_probes WHERE belief_id = ? AND probe_id = ? AND cited = 1");
+    // P9 (AUDIT-01): an observation that fails the check gives back the α/β it added (and gets it
+    // back if a later check passes it), so invalid evidence never moves P(holds).
+    let alpha = Number(before.alpha);
+    let beta = Number(before.beta);
+    for (const res of results) {
+      const prev = prevStmt.get(beliefId, res.probeId) as Row | undefined;
+      if (!prev) continue;
+      const counted = prev.valid == null || Number(prev.valid) === 1;
+      if (counted !== res.valid) {
+        const d = res.valid ? 1 : -1;
+        if (str(prev.side) === "honored") alpha += d;
+        else if (str(prev.side) === "violated") beta += d;
+      }
+      stmt.run(res.valid ? 1 : 0, beliefId, res.probeId);
+    }
+    if (alpha !== Number(before.alpha) || beta !== Number(before.beta)) {
+      this.save(beliefId, { alpha, beta, confidence: pHolds(alpha, beta) });
+    }
+    const r = this.row(beliefId);
     const bad = results.filter((x) => !x.valid);
     const from = str(r.status) as BeliefStatus;
     if (bad.length === 0 || from === "hypothesis") {

@@ -266,6 +266,11 @@ export function fakeProbe(id: string, claimId: string, over: Partial<Probe> = {}
 
 const hyp = (id: string, cls: DefectClass): Hypothesis => ({ id, anomalyId: "an-1", class: cls, statement: "test hypothesis", distinguishingTest: "boundary_sweep" });
 
+/** Mark every cited piece of a belief's evidence as having passed the FR-10 check (tests only). */
+export function passEvidence(store: BeliefStore, beliefId: string): void {
+  store.applyEvidenceCheck(beliefId, store.get(beliefId)!.evidence.map((e) => ({ probeId: e.probeId, valid: true, reason: "test: evidence check passed" })));
+}
+
 /**
  * Drive the REAL BeliefStore to `notarized` for a claim: three confirmed probes with distinct design
  * fingerprints (variant 0/1/2) on one side, then an adversary uphold.
@@ -281,6 +286,7 @@ export function notarize(store: BeliefStore, claimId: string, cls: DefectClass, 
   for (const p of ps) store.applyProbe(id, p, { verdict: "confirmed", winningHypothesisId: winner.id, reason: "test" }, hyps);
   const b = store.get(id)!;
   if (b.status !== "candidate") throw new Error(`expected candidate, got ${b.status}`);
+  passEvidence(store, id);
   return store.applyAdversary(id, { verdict: "uphold", reason: "test uphold", model: "test-model" });
 }
 

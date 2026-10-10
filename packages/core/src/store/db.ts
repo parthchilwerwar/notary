@@ -11,7 +11,8 @@
  *      recomputes sha256(canonicalJson(prediction_json)); it refuses if that no longer equals the
  *      stored prediction_hash or the hash the caller committed (so a prediction edited behind the
  *      trigger's back, e.g. with the trigger dropped, can never receive a verdict).
- * A probe's result can be recorded once; a second recordResult is refused.
+ * A probe's result can be recorded once; a second recordResult is refused, and a trigger
+ * (probes_result_immutable, P9) aborts any later UPDATE of the result columns or trace id.
  */
 import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -98,6 +99,24 @@ WHEN NEW.prediction_json IS NOT OLD.prediction_json
   OR NEW.claim_id IS NOT OLD.claim_id
 BEGIN
   SELECT RAISE(ABORT, 'probe prediction is immutable after commit');
+END;
+
+-- P9 (AUDIT-04): once a result is recorded it is as immutable as the prediction.
+CREATE TRIGGER IF NOT EXISTS probes_result_immutable
+BEFORE UPDATE ON probes
+WHEN OLD.verdict IS NOT NULL AND (
+     NEW.verdict IS NOT OLD.verdict
+  OR NEW.observed_json IS NOT OLD.observed_json
+  OR NEW.control_observed_json IS NOT OLD.control_observed_json
+  OR NEW.winning_hypothesis_id IS NOT OLD.winning_hypothesis_id
+  OR NEW.ran_at IS NOT OLD.ran_at
+  OR NEW.cost_credits IS NOT OLD.cost_credits
+  OR NEW.calls IS NOT OLD.calls
+  OR NEW.trace_id IS NOT OLD.trace_id
+  OR NEW.run_id IS NOT OLD.run_id
+  OR NEW.tool IS NOT OLD.tool)
+BEGIN
+  SELECT RAISE(ABORT, 'probe result is immutable after it is recorded');
 END;
 
 CREATE TRIGGER IF NOT EXISTS probes_no_delete

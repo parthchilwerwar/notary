@@ -62,6 +62,21 @@ export function isAwsCredentialError(err: unknown): boolean {
   return CREDENTIAL_ERROR_NAMES.has(err.name) || /Could not load credentials from any providers/i.test(err.message);
 }
 
+const SECRET_ENV_RE = /(KEY|TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIAL)/i;
+
+/** Replaces the value of every secret-looking env var (length ≥ 8, longest first) with [REDACTED]. */
+export function scrubber(env: Env): (text: string) => string {
+  const secrets = Object.entries(env)
+    .filter(([name, v]) => SECRET_ENV_RE.test(name) && (v?.trim().length ?? 0) >= 8)
+    .map(([, v]) => v!.trim())
+    .sort((a, b) => b.length - a.length);
+  return (text) => {
+    let out = text;
+    for (const s of secrets) if (out.includes(s)) out = out.split(s).join("[REDACTED]");
+    return out;
+  };
+}
+
 /** Per-role token and USD accounting. */
 export class UsageMeter {
   private readonly usage: UsageByRole = {
@@ -142,11 +157,13 @@ export class LlmClient implements LlmLike {
   async complete(req: CompleteRequest): Promise<CompleteResult> {
     const modelId = this.modelFor(req.role);
     const transport = this.getTransport();
+    // P9 (AUDIT-08): backstop — no secret env value is ever sent to a model, whatever built the prompt.
+    const clean = scrubber(this.env);
     const input: ConverseCommandInput = {
       modelId,
-      messages: req.messages.map((m) => ({ role: m.role, content: [{ text: m.content }] })),
+      messages: req.messages.map((m) => ({ role: m.role, content: [{ text: clean(m.content) }] })),
       inferenceConfig: { maxTokens: req.maxTokens ?? 2048, temperature: 0 },
-      ...(req.system ? { system: [{ text: req.system }] } : {}),
+      ...(req.system ? { system: [{ text: clean(req.system) }] } : {}),
     };
 
     let setAttr: ((k: string, v: string | number | boolean) => void) | undefined;

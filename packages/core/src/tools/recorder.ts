@@ -18,7 +18,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { CassetteMissError, ToolNetworkError } from "./errors.js";
+import { CassetteMissError, TestModeLockError, ToolNetworkError } from "./errors.js";
 
 export type RecorderMode = "live" | "replay";
 
@@ -256,6 +256,31 @@ export function saveCassette(cassette: Cassette, dir: string = DEFAULT_CASSETTE_
 }
 
 // ---------------------------------------------------------------------------------------------
+// Dodo test-mode lock at the network chokepoint (P9)
+
+/** The only Dodo host a live request may reach (docs: test-mode-vs-live-mode). */
+export const DODO_TEST_HOST = "test.dodopayments.com";
+
+/**
+ * Throws TestModeLockError for a request to any dodopayments.com host other than the test host
+ * over https. DodoClient already refuses a non-test base URL; this backstop covers any other code
+ * path that reaches the recorder (it is the only place a live request is sent).
+ */
+export function assertDodoTestHost(rawUrl: string): void {
+  let u: URL;
+  try {
+    u = new URL(rawUrl);
+  } catch {
+    return; // not a URL fetch could send either
+  }
+  const host = u.hostname.toLowerCase().replace(/\.$/, "");
+  if (host !== "dodopayments.com" && !host.endsWith(".dodopayments.com")) return;
+  if (host !== DODO_TEST_HOST || u.protocol !== "https:") {
+    throw new TestModeLockError(`live request to ${u.protocol}//${host} refused; only https://${DODO_TEST_HOST} is allowed`);
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
 // Recorder
 
 export class Recorder {
@@ -326,6 +351,8 @@ export class Recorder {
       this.occurrences.set(requestHash, occurrence + 1);
       exchange = hit;
     } else {
+      // P9 (AUDIT-06): the network chokepoint enforces the Dodo test-mode lock too, whatever built the request.
+      assertDodoTestHost(spec.url);
       // Credentials are resolved here, before any I/O: a missing key throws without a request.
       const headers = spec.headers?.() ?? {};
       this.occurrences.set(requestHash, occurrence + 1);

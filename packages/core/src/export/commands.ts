@@ -56,5 +56,5 @@ export const PRODUCE = {
   replay: "pnpm notary replay",
   drift:
     "pnpm --filter @notary/core make:drift --from <recorded cassette> --exchange <requestHash> --set '<jsonPath>=<value>' --out <name>",
-  noiseFloor: `pnpm notary run --queue ${DEFAULT_QUEUE}`,
+  noiseFloor: `pnpm notary eval noise-floor --queue ${DEFAULT_QUEUE} --runs 3`,
 } as const;

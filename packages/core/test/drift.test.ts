@@ -28,6 +28,7 @@ import type { DriftFixture } from "../src/tools/drift-fixture.js";
 import { CassetteMissError, CreditLedger } from "../src/tools/index.js";
 import { canonicalJson, computeContentHash, loadCassette, saveCassette, sha256 } from "../src/tools/recorder.js";
 import type { Cassette, Exchange } from "../src/tools/recorder.js";
+import { passEvidence } from "./fakes.js";
 
 const T0 = "2026-10-10T12:00:00.000Z";
 const CLAIM_ID = "dodo.product.price-minor-units";
@@ -134,6 +135,7 @@ async function learn(): Promise<{ db: NotaryDb; cassetteDir: string; driftDir: s
   const runId = "learn-test";
   const loop = await runProbeLoop({ tool: "dodo", anomalies: [anomaly], claims: [claim], tools: io, llm: new FakeLlm(), db, runId, ledger: new CreditLedger({ budget: 10 }), beliefs: store });
   expect(loop.probes.map((p) => p.verdict)).toEqual(["confirmed", "confirmed", "confirmed"]);
+  passEvidence(store, beliefIdFor(claim.id));
   store.applyAdversary(beliefIdFor(claim.id), { verdict: "uphold", reason: "test-only uphold", model: "test-adversary" });
   registry.sync(compileGuards({ beliefs: store.list(), claimFor: (id) => claimById(id), probes: db.loadProbes(runId) }));
   unwire();

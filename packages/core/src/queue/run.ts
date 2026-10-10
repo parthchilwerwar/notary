@@ -224,6 +224,9 @@ export async function runQueue(opts: RunQueueOptions): Promise<RunQueueResult> {
       gctx = loadGuardedContext(db, now);
     }
     const wrap = gctx?.wrap ?? identityWrap;
+    // P9 (AUDIT-10): the coverage check allow-lists this file's identity wrap for the naive baseline
+    // only; this runtime invariant is what proves a guarded run never gets the identity wrap.
+    if (guardedRun && (!gctx || wrap === identityWrap)) throw new Error("guarded run without the guarded wrap (refusing to run unguarded)");
     if (opts.mode === "replay") {
       cassetteName = opts.cassette!;
       if (opts.tools) {

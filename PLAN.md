@@ -13,7 +13,7 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 - [x] **P6 · Guards, gated queue, recovery** — guard compiler, `guarded()` clients, required-beliefs gating, evidence packs, `--resume`, local API + SSE
 - [x] **P7 · Transfer, drift, coverage** — `--priors-from`, drift fixture, `notary guards coverage`
 - [x] **P8 · Replay and evaluation** — `notary replay`, noise floor, metrics, `docs/EVALUATION.md`, `export/TOOLS.md`
-- [ ] **P9 · Self-audit and README** — `docs/AUDIT.md`, `README.md`, `docs/ARCHITECTURE.md`
+- [x] **P9 · Self-audit and README** — `docs/AUDIT.md`, `README.md`, `docs/ARCHITECTURE.md`
 - [ ] **P10 · Business plan, final runs, recording** — `docs/BUSINESS.md`, final bundles, demo footage
 
 ## Codex — `packages/web`
@@ -60,3 +60,13 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 
 **P8 (Oct 10).** `notary replay` (keyless, loud on miss/tamper, exact metric comparison; reproduces probes/verdicts/beliefs/metrics on test cassettes), consolidated metrics (null when not computable), `eval noise-floor`, `notary export` → `export/TOOLS.md`, `export/guards.json`, generated `docs/EVALUATION.md`. Today export finds 0 real bundles; its only numbers are keyless checks it ran: 468 tests passed, 0 unguarded call sites. `replay` today: `BLOCKED: no recorded live runs to replay`, exit 3. 468 tests pass.
 - [ ] BLOCKED: headline numbers, noise floor and fresh-clone replay match — no recorded live runs (needs all API keys). Fresh-clone install + tests: see `scripts/fresh-clone-check.mjs`.
+
+**P9 (Oct 10).** Hostile audit → `docs/AUDIT.md` (26 findings; 9 fixed with tests), `README.md` (results table links only to generated EVALUATION.md rows), `docs/ARCHITECTURE.md` (as built). Verified: 481+ tests, typecheck, check:secrets, guards coverage 0 unguarded, replay BLOCKED exit 3, export regenerated.
+- [ ] OPEN (critical, user decision): commits predate the 12:30 IST start — see AUDIT.md / DECISIONS #72.
+- [ ] Tell Codex: `sample-42.json` was regenerated (metric keys now match real bundles).
+
+## Resume here (next session)
+1. Fill `.env` (Crustdata, Dodo test key, neatlogs key + service token, AWS creds/SSO + 3 model ids); install Entire CLI and `entire enable`.
+2. `pnpm notary doctor` → real span in neatlogs.
+3. Follow README "Recording real runs" in order (seed with 11 hosted checkouts → notarize crustdata → notarize dodo --priors-from crustdata → run --naive → run → eval noise-floor → make:drift + replay --drift → export).
+4. Re-check every BLOCKED line above; update EVALUATION via `pnpm notary export`.

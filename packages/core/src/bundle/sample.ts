@@ -1125,7 +1125,6 @@ export function buildSampleBundle(seed = 42): RunBundle {
   // Metrics are computed from the sample records above, so they stay consistent with them.
   const count = (s: DecisionStatus): number => decisions.filter((d) => d.status === s).length;
   const graded = decisions.filter((d) => d.grade);
-  const notarized = after.filter((b) => b.status === "notarized").length;
   const mean = (xs: number[]): number | null =>
     xs.length ? Math.round((xs.reduce((s, x) => s + x, 0) / xs.length) * 100) / 100 : null;
   const ptc = (tool: Tool, withPrior: boolean | null): number | null =>
@@ -1134,31 +1133,50 @@ export function buildSampleBundle(seed = 42): RunBundle {
         .filter((b) => b.tool === tool && (withPrior === null || Boolean(b.prior) === withPrior))
         .flatMap((b) => (b.probesToCandidate !== undefined ? [b.probesToCandidate] : [])),
     );
+  // P9 (AUDIT-09): the SAME metric keys real bundles carry (src/eval/metrics.ts HEADLINE_KEYS plus
+  // the grader's own keys), so a dashboard built on the sample reads real bundles unchanged.
+  // Derived values (guards active, cost per notarized belief, ...) are computed from the bundle's
+  // records by the dashboard, as they would be for a real bundle.
+  const unsafeOf = (u: "duplicate" | "wrong_unit" | "missed_existing_refund"): number =>
+    graded.filter((d) => d.grade!.unsafe.includes(u)).length;
+  const dup = unsafeOf("duplicate");
+  const unit = unsafeOf("wrong_unit");
+  const missed = unsafeOf("missed_existing_refund");
+  const ptcAll = mean(after.flatMap((b) => (b.probesToCandidate !== undefined ? [b.probesToCandidate] : [])));
   const metrics: Record<string, number | null> = {
-    "queue.total": queue.length,
-    "decisions.executed": count("executed"),
-    "decisions.held": count("held"),
-    "decisions.escalated": count("escalated"),
-    "decisions.denied": count("denied"),
-    automationRate: Math.round((count("executed") / decisions.length) * 10000) / 10000,
-    decisionAccuracy: Math.round((graded.filter((d) => d.grade!.correct).length / graded.length) * 10000) / 10000,
-    unsafeMoneyActions: graded.reduce((s, d) => s + d.grade!.unsafe.length, 0),
+    items_total: queue.length,
+    executed: count("executed"),
+    holds: count("held"),
+    escalations: count("escalated"),
+    denials: count("denied"),
+    unsafe_actions_total: dup + unit + missed,
+    unsafe_duplicates: dup,
+    unsafe_wrong_unit: unit,
+    unsafe_missed_existing_refund: missed,
+    decision_accuracy: Math.round((graded.filter((d) => d.grade!.correct).length / graded.length) * 10000) / 10000,
+    automation_rate: Math.round((count("executed") / decisions.length) * 10000) / 10000,
     ...Object.fromEntries(
       (["hypothesis", "candidate", "notarized", "refuted", "abstained", "unlearned"] as const).map((s) => [
-        `beliefs.${s}`,
+        `beliefs_${s}`,
         after.filter((b) => b.status === s).length,
       ]),
     ),
-    beliefPrecision: null, // not computable for sample data: no audited ground truth
-    unguardedCallSites: null, // not computed for sample data
-    "guards.active": guards.filter((g) => g.active).length,
-    "probes.total": probes.length,
-    "credits.total": creditsTotal,
-    "usd.total": usdTotal,
-    "usd.perNotarizedBelief": notarized ? Math.round((usdTotal / notarized) * 1e6) / 1e6 : null,
-    "probesToCandidate.crustdata": ptc("crustdata", null),
-    "probesToCandidate.dodo.withPriors": ptc("dodo", true),
-    "probesToCandidate.dodo.withoutPriors": ptc("dodo", false),
+    belief_precision: null, // not computable for sample data: no audited ground truth
+    beliefs_false: null,
+    belief_precision_n: null,
+    unguarded_call_sites: null, // not computed for sample data
+    credits_total: creditsTotal,
+    ...Object.fromEntries(Object.entries(creditsByEndpoint).sort(([a], [b]) => (a < b ? -1 : 1)).map(([e, c]) => [`credits_${e}`, c])),
+    ...Object.fromEntries(
+      (["executor", "reflector", "adversary"] as const).flatMap((r) => [
+        [`usd_${r}`, usageByRole[r].usd],
+        [`tokens_${r}`, usageByRole[r].inputTokens + usageByRole[r].outputTokens],
+      ]),
+    ),
+    usd_total: usdTotal,
+    probes_to_candidate: ptcAll,
+    probes_to_candidate_with_priors: ptc("dodo", true),
+    probes_to_candidate_without_priors: ptc("dodo", false),
   };
 
   return finalizeBundle({
@@ -1192,10 +1210,10 @@ export function buildSampleBundle(seed = 42): RunBundle {
     credits: { byEndpoint: creditsByEndpoint, total: creditsTotal, budget: 500 },
     metrics,
     noiseFloor: {
-      decisionAccuracy: rng.round(0.02, 0.06, 4),
-      automationRate: rng.round(0.02, 0.08, 4),
-      "credits.total": rng.int(2, 6),
-      "usd.total": rng.round(0.005, 0.02, 4),
+      decision_accuracy: rng.round(0.02, 0.06, 4),
+      automation_rate: rng.round(0.02, 0.08, 4),
+      credits_total: rng.int(2, 6),
+      usd_total: rng.round(0.005, 0.02, 4),
     },
     traceLinks,
     cassettes: [
