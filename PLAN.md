@@ -78,3 +78,7 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 - [x] Step 3 fixes from Steps 1–2: doctor BLOCKED/3, cross-process SSE (#73–74); demo-found pipeline bugs (#79–80); guards/grader (#87–90); notarization coverage — verification probes for documented behavior, probe-only seed customer, 3–5 designs per claim, one re-examination round after a downgrade, no re-promotion on uninformative evidence (#81–86). Fixture demo now: naive 9 unsafe (1 duplicate, 8 wrong unit); guarded 0 unsafe, executes 5 (credits + plan changes), holds 9 refunds on `dodo.payments.page-size-max-100` (genuinely mixed fixture evidence, abstained). 537 tests pass.
 - [ ] Not committed by this session: neatlogs workflow/wrapBedrock changes in `src/cli.ts`, `src/trace/*`, `src/llm/client.ts`, `test/trace.test.ts` belong to the separate "Neatlogs tracing setup" session.
 - [x] Fixture-demo determinism flake fixed (token estimate normalized ids/timestamps). Final keyless state: 537 tests pass, typecheck clean, check:secrets clean, coverage 0 unguarded, replay BLOCKED exit 3, export 0 real bundles (demo bundles excluded).
+
+## Session 4 (Oct 10)
+- [x] Step 1: committed the separate session's neatlogs tracing work on its own (withWorkflow roots, wrapBedrock LLM spans; DECISIONS #91).
+- [x] Step 8: schema + bundle hash confirmed browser-safe; guard test `test/browser-safe.test.ts` (#92).
