@@ -18,8 +18,8 @@
     "Required-beliefs gap (partial_refund): No doc claim on rounding (DECISIONS #22); covered by exact-echo unit probes on partial refunds plus integer-typed refund amounts, and amounts are floored client-side.",
     "Required-beliefs gap (plan_change): No doc claim on immediate vs next-billing-date semantics (DECISIONS #22); the guarded executor sends effective_at=immediately explicitly."
   ],
-  "startedAt": "2026-10-10T07:31:49.749Z",
-  "finishedAt": "2026-10-10T07:31:50.632Z",
+  "startedAt": "2026-10-10T08:46:37.963Z",
+  "finishedAt": "2026-10-10T08:46:38.718Z",
   "status": "completed",
   "seed": 0,
   "queue": [
@@ -271,7 +271,7 @@
             ]
           },
           "status": 200,
-          "at": "2026-10-10T07:31:49.923Z"
+          "at": "2026-10-10T08:46:38.129Z"
         },
         {
           "op": "dodo.getPayment",
@@ -279,7 +279,7 @@
             "payment_id": "pay_fx_smb-plausible-starter"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:49.926Z"
+          "at": "2026-10-10T08:46:38.132Z"
         },
         {
           "op": "dodo.listRefunds",
@@ -289,7 +289,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:49.928Z"
+          "at": "2026-10-10T08:46:38.134Z"
         },
         {
           "op": "dodo.listPayments",
@@ -299,7 +299,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:49.930Z"
+          "at": "2026-10-10T08:46:38.136Z"
         },
         {
           "op": "dodo.listPayments",
@@ -309,7 +309,7 @@
             "page_number": 1
           },
           "status": 200,
-          "at": "2026-10-10T07:31:49.933Z"
+          "at": "2026-10-10T08:46:38.139Z"
         }
       ],
       "evidencePack": {
@@ -326,21 +326,21 @@
           "demo-notarize-dodo-p034"
         ],
         "spanIds": [
-          "40bfa2b9fb92458a",
-          "ac0700cec7b84cee",
-          "5056e9a1939b4514",
-          "43e3a00a4f4b4966",
-          "5e09c8a5c01d4a46",
-          "2c2333f2e0e748c3",
-          "c85d7cf093794de0"
+          "b8277e08aa9f4ca3",
+          "0c98ee838fe74ed8",
+          "c48d1a11f39944b8",
+          "df425c374ba54775",
+          "8d3699fbbac54ebc",
+          "10280e28d623435d",
+          "7edc97a51d3e4872"
         ],
         "traceLinks": {
-          "b92ac9bee3c1402fa5b83258820147e9": "runs/demo-notarize-dodo/spans.jsonl#trace=b92ac9bee3c1402fa5b83258820147e9",
-          "b617f55291444d9b9c30c25aa74b0ca0": "runs/demo-notarize-dodo/spans.jsonl#trace=b617f55291444d9b9c30c25aa74b0ca0",
-          "4f80b0cd5a784bab876e549d19d2c4b8": "runs/demo-notarize-dodo/spans.jsonl#trace=4f80b0cd5a784bab876e549d19d2c4b8",
-          "eedc2dbdb6694724bd9c455ac6d56f7a": "runs/demo-notarize-dodo/spans.jsonl#trace=eedc2dbdb6694724bd9c455ac6d56f7a",
-          "055128447df34e9698bd53f1db9b2d81": "runs/demo-notarize-dodo/spans.jsonl#trace=055128447df34e9698bd53f1db9b2d81",
-          "342e5b6955c04b4f8bc3ef1fd4cb68d6": "runs/demo-notarize-dodo/spans.jsonl#trace=342e5b6955c04b4f8bc3ef1fd4cb68d6"
+          "3eefd94d45514e5181a4ff93ac8a6f10": "runs/demo-notarize-dodo/spans.jsonl#trace=3eefd94d45514e5181a4ff93ac8a6f10",
+          "8d64972d2a1146f5b6bc3d78538b96e3": "runs/demo-notarize-dodo/spans.jsonl#trace=8d64972d2a1146f5b6bc3d78538b96e3",
+          "baf3adeadbe84ba8a8c5030e4bba93d5": "runs/demo-notarize-dodo/spans.jsonl#trace=baf3adeadbe84ba8a8c5030e4bba93d5",
+          "2d8bf8a8f9714c2f8432c24570dfe2c7": "runs/demo-notarize-dodo/spans.jsonl#trace=2d8bf8a8f9714c2f8432c24570dfe2c7",
+          "08c8dd9b89bd42d09d3f649a4ba837a9": "runs/demo-notarize-dodo/spans.jsonl#trace=08c8dd9b89bd42d09d3f649a4ba837a9",
+          "3a0dcea0bc3044ffa6977740d4919a44": "runs/demo-notarize-dodo/spans.jsonl#trace=3a0dcea0bc3044ffa6977740d4919a44"
         }
       },
       "grade": {
@@ -365,7 +365,7 @@
         "tierBasis": "headcount.total=14"
       },
       "error": "full refund needs 6 notarized belief(s); 1 missing: dodo.payments.page-size-max-100 (abstained); 6 related probe(s)",
-      "traceId": "441937b06d3e4fac9f1802d8e8fbeff9"
+      "traceId": "8f675a10c9124bbabce7dacd5f05e513"
     },
     {
       "id": "demo-run-guarded:q02",
@@ -403,7 +403,7 @@
             ]
           },
           "status": 200,
-          "at": "2026-10-10T07:31:49.944Z"
+          "at": "2026-10-10T08:46:38.149Z"
         },
         {
           "op": "dodo.getPayment",
@@ -411,7 +411,7 @@
             "payment_id": "pay_fx_mid-sentry-scale"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:49.946Z"
+          "at": "2026-10-10T08:46:38.151Z"
         },
         {
           "op": "dodo.listRefunds",
@@ -421,7 +421,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:49.950Z"
+          "at": "2026-10-10T08:46:38.155Z"
         },
         {
           "op": "dodo.listPayments",
@@ -431,7 +431,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:49.952Z"
+          "at": "2026-10-10T08:46:38.157Z"
         },
         {
           "op": "dodo.listPayments",
@@ -441,7 +441,7 @@
             "page_number": 1
           },
           "status": 200,
-          "at": "2026-10-10T07:31:49.955Z"
+          "at": "2026-10-10T08:46:38.160Z"
         }
       ],
       "evidencePack": {
@@ -458,21 +458,21 @@
           "demo-notarize-dodo-p034"
         ],
         "spanIds": [
-          "363aad6413e74bf5",
-          "ac0700cec7b84cee",
-          "5056e9a1939b4514",
-          "43e3a00a4f4b4966",
-          "5e09c8a5c01d4a46",
-          "2c2333f2e0e748c3",
-          "c85d7cf093794de0"
+          "61a663e65c364c20",
+          "0c98ee838fe74ed8",
+          "c48d1a11f39944b8",
+          "df425c374ba54775",
+          "8d3699fbbac54ebc",
+          "10280e28d623435d",
+          "7edc97a51d3e4872"
         ],
         "traceLinks": {
-          "b92ac9bee3c1402fa5b83258820147e9": "runs/demo-notarize-dodo/spans.jsonl#trace=b92ac9bee3c1402fa5b83258820147e9",
-          "b617f55291444d9b9c30c25aa74b0ca0": "runs/demo-notarize-dodo/spans.jsonl#trace=b617f55291444d9b9c30c25aa74b0ca0",
-          "4f80b0cd5a784bab876e549d19d2c4b8": "runs/demo-notarize-dodo/spans.jsonl#trace=4f80b0cd5a784bab876e549d19d2c4b8",
-          "eedc2dbdb6694724bd9c455ac6d56f7a": "runs/demo-notarize-dodo/spans.jsonl#trace=eedc2dbdb6694724bd9c455ac6d56f7a",
-          "055128447df34e9698bd53f1db9b2d81": "runs/demo-notarize-dodo/spans.jsonl#trace=055128447df34e9698bd53f1db9b2d81",
-          "342e5b6955c04b4f8bc3ef1fd4cb68d6": "runs/demo-notarize-dodo/spans.jsonl#trace=342e5b6955c04b4f8bc3ef1fd4cb68d6"
+          "3eefd94d45514e5181a4ff93ac8a6f10": "runs/demo-notarize-dodo/spans.jsonl#trace=3eefd94d45514e5181a4ff93ac8a6f10",
+          "8d64972d2a1146f5b6bc3d78538b96e3": "runs/demo-notarize-dodo/spans.jsonl#trace=8d64972d2a1146f5b6bc3d78538b96e3",
+          "baf3adeadbe84ba8a8c5030e4bba93d5": "runs/demo-notarize-dodo/spans.jsonl#trace=baf3adeadbe84ba8a8c5030e4bba93d5",
+          "2d8bf8a8f9714c2f8432c24570dfe2c7": "runs/demo-notarize-dodo/spans.jsonl#trace=2d8bf8a8f9714c2f8432c24570dfe2c7",
+          "08c8dd9b89bd42d09d3f649a4ba837a9": "runs/demo-notarize-dodo/spans.jsonl#trace=08c8dd9b89bd42d09d3f649a4ba837a9",
+          "3a0dcea0bc3044ffa6977740d4919a44": "runs/demo-notarize-dodo/spans.jsonl#trace=3a0dcea0bc3044ffa6977740d4919a44"
         }
       },
       "grade": {
@@ -497,7 +497,7 @@
         "tierBasis": "headcount.total=380"
       },
       "error": "partial refund needs 7 notarized belief(s); 1 missing: dodo.payments.page-size-max-100 (abstained); 6 related probe(s). Gap: No doc claim on rounding (DECISIONS #22); covered by exact-echo unit probes on partial refunds plus integer-typed refund amounts, and amounts are floored client-side.",
-      "traceId": "65e77b2ad2d044c295c060c3a9102b66"
+      "traceId": "3418ffd7d0634f34a2f4738ab37f6ad8"
     },
     {
       "id": "demo-run-guarded:q03",
@@ -534,7 +534,7 @@
             ]
           },
           "status": 200,
-          "at": "2026-10-10T07:31:49.967Z"
+          "at": "2026-10-10T08:46:38.170Z"
         },
         {
           "op": "dodo.getPayment",
@@ -542,7 +542,7 @@
             "payment_id": "pay_fx_smb-buttondown-addon"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:49.969Z"
+          "at": "2026-10-10T08:46:38.172Z"
         },
         {
           "op": "dodo.listRefunds",
@@ -552,7 +552,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:49.971Z"
+          "at": "2026-10-10T08:46:38.174Z"
         },
         {
           "op": "dodo.listPayments",
@@ -562,7 +562,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:49.973Z"
+          "at": "2026-10-10T08:46:38.176Z"
         },
         {
           "op": "dodo.listPayments",
@@ -572,7 +572,7 @@
             "page_number": 1
           },
           "status": 200,
-          "at": "2026-10-10T07:31:49.975Z"
+          "at": "2026-10-10T08:46:38.177Z"
         }
       ],
       "evidencePack": {
@@ -589,21 +589,21 @@
           "demo-notarize-dodo-p034"
         ],
         "spanIds": [
-          "324f1cd2312f4e49",
-          "ac0700cec7b84cee",
-          "5056e9a1939b4514",
-          "43e3a00a4f4b4966",
-          "5e09c8a5c01d4a46",
-          "2c2333f2e0e748c3",
-          "c85d7cf093794de0"
+          "3ecc57b3ada74ab7",
+          "0c98ee838fe74ed8",
+          "c48d1a11f39944b8",
+          "df425c374ba54775",
+          "8d3699fbbac54ebc",
+          "10280e28d623435d",
+          "7edc97a51d3e4872"
         ],
         "traceLinks": {
-          "b92ac9bee3c1402fa5b83258820147e9": "runs/demo-notarize-dodo/spans.jsonl#trace=b92ac9bee3c1402fa5b83258820147e9",
-          "b617f55291444d9b9c30c25aa74b0ca0": "runs/demo-notarize-dodo/spans.jsonl#trace=b617f55291444d9b9c30c25aa74b0ca0",
-          "4f80b0cd5a784bab876e549d19d2c4b8": "runs/demo-notarize-dodo/spans.jsonl#trace=4f80b0cd5a784bab876e549d19d2c4b8",
-          "eedc2dbdb6694724bd9c455ac6d56f7a": "runs/demo-notarize-dodo/spans.jsonl#trace=eedc2dbdb6694724bd9c455ac6d56f7a",
-          "055128447df34e9698bd53f1db9b2d81": "runs/demo-notarize-dodo/spans.jsonl#trace=055128447df34e9698bd53f1db9b2d81",
-          "342e5b6955c04b4f8bc3ef1fd4cb68d6": "runs/demo-notarize-dodo/spans.jsonl#trace=342e5b6955c04b4f8bc3ef1fd4cb68d6"
+          "3eefd94d45514e5181a4ff93ac8a6f10": "runs/demo-notarize-dodo/spans.jsonl#trace=3eefd94d45514e5181a4ff93ac8a6f10",
+          "8d64972d2a1146f5b6bc3d78538b96e3": "runs/demo-notarize-dodo/spans.jsonl#trace=8d64972d2a1146f5b6bc3d78538b96e3",
+          "baf3adeadbe84ba8a8c5030e4bba93d5": "runs/demo-notarize-dodo/spans.jsonl#trace=baf3adeadbe84ba8a8c5030e4bba93d5",
+          "2d8bf8a8f9714c2f8432c24570dfe2c7": "runs/demo-notarize-dodo/spans.jsonl#trace=2d8bf8a8f9714c2f8432c24570dfe2c7",
+          "08c8dd9b89bd42d09d3f649a4ba837a9": "runs/demo-notarize-dodo/spans.jsonl#trace=08c8dd9b89bd42d09d3f649a4ba837a9",
+          "3a0dcea0bc3044ffa6977740d4919a44": "runs/demo-notarize-dodo/spans.jsonl#trace=3a0dcea0bc3044ffa6977740d4919a44"
         }
       },
       "grade": {
@@ -628,7 +628,7 @@
         "tierBasis": "headcount.total=6"
       },
       "error": "full refund needs 6 notarized belief(s); 1 missing: dodo.payments.page-size-max-100 (abstained); 6 related probe(s)",
-      "traceId": "193b813ea6994642ad48a2f8d32b9a33"
+      "traceId": "fe097f56cda145d1b1095764f6fdf45f"
     },
     {
       "id": "demo-run-guarded:q04",
@@ -666,7 +666,7 @@
             ]
           },
           "status": 200,
-          "at": "2026-10-10T07:31:49.985Z"
+          "at": "2026-10-10T08:46:38.187Z"
         },
         {
           "op": "dodo.getPayment",
@@ -674,7 +674,7 @@
             "payment_id": "pay_fx_smb-fathom-addon"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:49.987Z"
+          "at": "2026-10-10T08:46:38.189Z"
         },
         {
           "op": "dodo.listRefunds",
@@ -684,7 +684,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:49.988Z"
+          "at": "2026-10-10T08:46:38.191Z"
         },
         {
           "op": "dodo.listPayments",
@@ -694,7 +694,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:49.991Z"
+          "at": "2026-10-10T08:46:38.193Z"
         },
         {
           "op": "dodo.listPayments",
@@ -704,7 +704,7 @@
             "page_number": 1
           },
           "status": 200,
-          "at": "2026-10-10T07:31:49.993Z"
+          "at": "2026-10-10T08:46:38.195Z"
         }
       ],
       "evidencePack": {
@@ -721,21 +721,21 @@
           "demo-notarize-dodo-p034"
         ],
         "spanIds": [
-          "13844d69c5814dfc",
-          "ac0700cec7b84cee",
-          "5056e9a1939b4514",
-          "43e3a00a4f4b4966",
-          "5e09c8a5c01d4a46",
-          "2c2333f2e0e748c3",
-          "c85d7cf093794de0"
+          "ba04315e5bf34f0a",
+          "0c98ee838fe74ed8",
+          "c48d1a11f39944b8",
+          "df425c374ba54775",
+          "8d3699fbbac54ebc",
+          "10280e28d623435d",
+          "7edc97a51d3e4872"
         ],
         "traceLinks": {
-          "b92ac9bee3c1402fa5b83258820147e9": "runs/demo-notarize-dodo/spans.jsonl#trace=b92ac9bee3c1402fa5b83258820147e9",
-          "b617f55291444d9b9c30c25aa74b0ca0": "runs/demo-notarize-dodo/spans.jsonl#trace=b617f55291444d9b9c30c25aa74b0ca0",
-          "4f80b0cd5a784bab876e549d19d2c4b8": "runs/demo-notarize-dodo/spans.jsonl#trace=4f80b0cd5a784bab876e549d19d2c4b8",
-          "eedc2dbdb6694724bd9c455ac6d56f7a": "runs/demo-notarize-dodo/spans.jsonl#trace=eedc2dbdb6694724bd9c455ac6d56f7a",
-          "055128447df34e9698bd53f1db9b2d81": "runs/demo-notarize-dodo/spans.jsonl#trace=055128447df34e9698bd53f1db9b2d81",
-          "342e5b6955c04b4f8bc3ef1fd4cb68d6": "runs/demo-notarize-dodo/spans.jsonl#trace=342e5b6955c04b4f8bc3ef1fd4cb68d6"
+          "3eefd94d45514e5181a4ff93ac8a6f10": "runs/demo-notarize-dodo/spans.jsonl#trace=3eefd94d45514e5181a4ff93ac8a6f10",
+          "8d64972d2a1146f5b6bc3d78538b96e3": "runs/demo-notarize-dodo/spans.jsonl#trace=8d64972d2a1146f5b6bc3d78538b96e3",
+          "baf3adeadbe84ba8a8c5030e4bba93d5": "runs/demo-notarize-dodo/spans.jsonl#trace=baf3adeadbe84ba8a8c5030e4bba93d5",
+          "2d8bf8a8f9714c2f8432c24570dfe2c7": "runs/demo-notarize-dodo/spans.jsonl#trace=2d8bf8a8f9714c2f8432c24570dfe2c7",
+          "08c8dd9b89bd42d09d3f649a4ba837a9": "runs/demo-notarize-dodo/spans.jsonl#trace=08c8dd9b89bd42d09d3f649a4ba837a9",
+          "3a0dcea0bc3044ffa6977740d4919a44": "runs/demo-notarize-dodo/spans.jsonl#trace=3a0dcea0bc3044ffa6977740d4919a44"
         }
       },
       "grade": {
@@ -760,7 +760,7 @@
         "tierBasis": "headcount.total=12"
       },
       "error": "partial refund needs 7 notarized belief(s); 1 missing: dodo.payments.page-size-max-100 (abstained); 6 related probe(s). Gap: No doc claim on rounding (DECISIONS #22); covered by exact-echo unit probes on partial refunds plus integer-typed refund amounts, and amounts are floored client-side.",
-      "traceId": "5d8b7ed6c71442a3841b642fd749c1f8"
+      "traceId": "a058763cd2a84178a50c04384faa63c2"
     },
     {
       "id": "demo-run-guarded:q05",
@@ -797,7 +797,7 @@
             ]
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.003Z"
+          "at": "2026-10-10T08:46:38.205Z"
         },
         {
           "op": "dodo.getPayment",
@@ -805,7 +805,7 @@
             "payment_id": "pay_fx_mid-supabase-growth"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.005Z"
+          "at": "2026-10-10T08:46:38.207Z"
         },
         {
           "op": "dodo.listRefunds",
@@ -815,7 +815,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.007Z"
+          "at": "2026-10-10T08:46:38.209Z"
         },
         {
           "op": "dodo.listPayments",
@@ -825,7 +825,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.009Z"
+          "at": "2026-10-10T08:46:38.210Z"
         },
         {
           "op": "dodo.listPayments",
@@ -835,7 +835,7 @@
             "page_number": 1
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.012Z"
+          "at": "2026-10-10T08:46:38.212Z"
         }
       ],
       "evidencePack": {
@@ -852,21 +852,21 @@
           "demo-notarize-dodo-p034"
         ],
         "spanIds": [
-          "71909b8e491042e0",
-          "ac0700cec7b84cee",
-          "5056e9a1939b4514",
-          "43e3a00a4f4b4966",
-          "5e09c8a5c01d4a46",
-          "2c2333f2e0e748c3",
-          "c85d7cf093794de0"
+          "a5b93ca0c2a2447f",
+          "0c98ee838fe74ed8",
+          "c48d1a11f39944b8",
+          "df425c374ba54775",
+          "8d3699fbbac54ebc",
+          "10280e28d623435d",
+          "7edc97a51d3e4872"
         ],
         "traceLinks": {
-          "b92ac9bee3c1402fa5b83258820147e9": "runs/demo-notarize-dodo/spans.jsonl#trace=b92ac9bee3c1402fa5b83258820147e9",
-          "b617f55291444d9b9c30c25aa74b0ca0": "runs/demo-notarize-dodo/spans.jsonl#trace=b617f55291444d9b9c30c25aa74b0ca0",
-          "4f80b0cd5a784bab876e549d19d2c4b8": "runs/demo-notarize-dodo/spans.jsonl#trace=4f80b0cd5a784bab876e549d19d2c4b8",
-          "eedc2dbdb6694724bd9c455ac6d56f7a": "runs/demo-notarize-dodo/spans.jsonl#trace=eedc2dbdb6694724bd9c455ac6d56f7a",
-          "055128447df34e9698bd53f1db9b2d81": "runs/demo-notarize-dodo/spans.jsonl#trace=055128447df34e9698bd53f1db9b2d81",
-          "342e5b6955c04b4f8bc3ef1fd4cb68d6": "runs/demo-notarize-dodo/spans.jsonl#trace=342e5b6955c04b4f8bc3ef1fd4cb68d6"
+          "3eefd94d45514e5181a4ff93ac8a6f10": "runs/demo-notarize-dodo/spans.jsonl#trace=3eefd94d45514e5181a4ff93ac8a6f10",
+          "8d64972d2a1146f5b6bc3d78538b96e3": "runs/demo-notarize-dodo/spans.jsonl#trace=8d64972d2a1146f5b6bc3d78538b96e3",
+          "baf3adeadbe84ba8a8c5030e4bba93d5": "runs/demo-notarize-dodo/spans.jsonl#trace=baf3adeadbe84ba8a8c5030e4bba93d5",
+          "2d8bf8a8f9714c2f8432c24570dfe2c7": "runs/demo-notarize-dodo/spans.jsonl#trace=2d8bf8a8f9714c2f8432c24570dfe2c7",
+          "08c8dd9b89bd42d09d3f649a4ba837a9": "runs/demo-notarize-dodo/spans.jsonl#trace=08c8dd9b89bd42d09d3f649a4ba837a9",
+          "3a0dcea0bc3044ffa6977740d4919a44": "runs/demo-notarize-dodo/spans.jsonl#trace=3a0dcea0bc3044ffa6977740d4919a44"
         }
       },
       "grade": {
@@ -891,7 +891,7 @@
         "tierBasis": "headcount.total=210"
       },
       "error": "full refund needs 6 notarized belief(s); 1 missing: dodo.payments.page-size-max-100 (abstained); 6 related probe(s)",
-      "traceId": "850d3e5d2bc64d158dfebf22a2fc5e1d"
+      "traceId": "fbfebb40dc6f4915a03c842877a03e17"
     },
     {
       "id": "demo-run-guarded:q06",
@@ -922,7 +922,7 @@
             "payment_id": "pay_fx_smb-fathom-growth"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.029Z"
+          "at": "2026-10-10T08:46:38.223Z"
         },
         {
           "op": "dodo.listRefunds",
@@ -932,7 +932,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.031Z"
+          "at": "2026-10-10T08:46:38.225Z"
         },
         {
           "op": "dodo.listPayments",
@@ -942,7 +942,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.033Z"
+          "at": "2026-10-10T08:46:38.227Z"
         },
         {
           "op": "dodo.listPayments",
@@ -952,7 +952,7 @@
             "page_number": 1
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.035Z"
+          "at": "2026-10-10T08:46:38.229Z"
         }
       ],
       "evidencePack": {
@@ -969,21 +969,21 @@
           "demo-notarize-dodo-p034"
         ],
         "spanIds": [
-          "79cd0261fcb54743",
-          "ac0700cec7b84cee",
-          "5056e9a1939b4514",
-          "43e3a00a4f4b4966",
-          "5e09c8a5c01d4a46",
-          "2c2333f2e0e748c3",
-          "c85d7cf093794de0"
+          "5833d5ad11d04404",
+          "0c98ee838fe74ed8",
+          "c48d1a11f39944b8",
+          "df425c374ba54775",
+          "8d3699fbbac54ebc",
+          "10280e28d623435d",
+          "7edc97a51d3e4872"
         ],
         "traceLinks": {
-          "b92ac9bee3c1402fa5b83258820147e9": "runs/demo-notarize-dodo/spans.jsonl#trace=b92ac9bee3c1402fa5b83258820147e9",
-          "b617f55291444d9b9c30c25aa74b0ca0": "runs/demo-notarize-dodo/spans.jsonl#trace=b617f55291444d9b9c30c25aa74b0ca0",
-          "4f80b0cd5a784bab876e549d19d2c4b8": "runs/demo-notarize-dodo/spans.jsonl#trace=4f80b0cd5a784bab876e549d19d2c4b8",
-          "eedc2dbdb6694724bd9c455ac6d56f7a": "runs/demo-notarize-dodo/spans.jsonl#trace=eedc2dbdb6694724bd9c455ac6d56f7a",
-          "055128447df34e9698bd53f1db9b2d81": "runs/demo-notarize-dodo/spans.jsonl#trace=055128447df34e9698bd53f1db9b2d81",
-          "342e5b6955c04b4f8bc3ef1fd4cb68d6": "runs/demo-notarize-dodo/spans.jsonl#trace=342e5b6955c04b4f8bc3ef1fd4cb68d6"
+          "3eefd94d45514e5181a4ff93ac8a6f10": "runs/demo-notarize-dodo/spans.jsonl#trace=3eefd94d45514e5181a4ff93ac8a6f10",
+          "8d64972d2a1146f5b6bc3d78538b96e3": "runs/demo-notarize-dodo/spans.jsonl#trace=8d64972d2a1146f5b6bc3d78538b96e3",
+          "baf3adeadbe84ba8a8c5030e4bba93d5": "runs/demo-notarize-dodo/spans.jsonl#trace=baf3adeadbe84ba8a8c5030e4bba93d5",
+          "2d8bf8a8f9714c2f8432c24570dfe2c7": "runs/demo-notarize-dodo/spans.jsonl#trace=2d8bf8a8f9714c2f8432c24570dfe2c7",
+          "08c8dd9b89bd42d09d3f649a4ba837a9": "runs/demo-notarize-dodo/spans.jsonl#trace=08c8dd9b89bd42d09d3f649a4ba837a9",
+          "3a0dcea0bc3044ffa6977740d4919a44": "runs/demo-notarize-dodo/spans.jsonl#trace=3a0dcea0bc3044ffa6977740d4919a44"
         }
       },
       "grade": {
@@ -1008,7 +1008,7 @@
         "tierBasis": "headcount.total=12"
       },
       "error": "partial refund needs 7 notarized belief(s); 1 missing: dodo.payments.page-size-max-100 (abstained); 6 related probe(s). Gap: No doc claim on rounding (DECISIONS #22); covered by exact-echo unit probes on partial refunds plus integer-typed refund amounts, and amounts are floored client-side.",
-      "traceId": "0379a711b24b489ba975065b51c1e291"
+      "traceId": "48f4838cf60c41c5a2d3f1e35a030c4b"
     },
     {
       "id": "demo-run-guarded:q07",
@@ -1036,7 +1036,7 @@
             ]
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.045Z"
+          "at": "2026-10-10T08:46:38.239Z"
         },
         {
           "op": "dodo.getPayment",
@@ -1044,7 +1044,7 @@
             "payment_id": "pay_fx_mid-retool-topup-001"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.049Z"
+          "at": "2026-10-10T08:46:38.241Z"
         },
         {
           "op": "dodo.listRefunds",
@@ -1054,7 +1054,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.052Z"
+          "at": "2026-10-10T08:46:38.243Z"
         },
         {
           "op": "dodo.listRefunds",
@@ -1064,7 +1064,7 @@
             "page_number": 1
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.055Z"
+          "at": "2026-10-10T08:46:38.245Z"
         },
         {
           "op": "dodo.listPayments",
@@ -1074,7 +1074,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.058Z"
+          "at": "2026-10-10T08:46:38.248Z"
         },
         {
           "op": "dodo.listPayments",
@@ -1084,7 +1084,7 @@
             "page_number": 1
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.061Z"
+          "at": "2026-10-10T08:46:38.252Z"
         },
         {
           "op": "dodo.listPayments",
@@ -1094,7 +1094,7 @@
             "page_number": 2
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.064Z"
+          "at": "2026-10-10T08:46:38.255Z"
         }
       ],
       "grade": {
@@ -1120,7 +1120,7 @@
         "tierBasis": "headcount.total=420"
       },
       "error": "existing refund found: payment lists refund rfd_fx_0001 (succeeded)",
-      "traceId": "ae57eb443e1147808b49df940573c929"
+      "traceId": "465acd324e7a47399d9a606064588d5a"
     },
     {
       "id": "demo-run-guarded:q08",
@@ -1153,7 +1153,7 @@
             ]
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.075Z"
+          "at": "2026-10-10T08:46:38.264Z"
         },
         {
           "op": "dodo.listWalletLedgerEntries",
@@ -1164,7 +1164,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.080Z"
+          "at": "2026-10-10T08:46:38.270Z"
         },
         {
           "op": "dodo.listWalletLedgerEntries",
@@ -1175,7 +1175,7 @@
             "page_number": 1
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.084Z"
+          "at": "2026-10-10T08:46:38.273Z"
         }
       ],
       "evidencePack": {
@@ -1183,7 +1183,7 @@
         "missingBeliefs": [],
         "relatedProbeIds": [],
         "spanIds": [
-          "79b552b06bf04a56"
+          "8e53a53ae8514539"
         ],
         "traceLinks": {}
       },
@@ -1209,7 +1209,7 @@
         "tierBasis": "headcount.total=8300"
       },
       "error": "guard grd-001913575809 refused dodo.createWalletLedgerEntry: dodo.wallet.credit-amount-minor-units violated (unit_mismatch) but the cited probes disagree: demo-notarize-dodo-p008 echoed the amount unchanged, demo-notarize-dodo-p007, demo-notarize-dodo-p009, demo-notarize-dodo-p010, demo-notarize-dodo-p011, demo-notarize-dodo-p012 echoed 100x: no safe transform",
-      "traceId": "84d25e6944d54d4e8855b23313367032"
+      "traceId": "6d48ee8e21f7477bbf3ae55fdb35742d"
     },
     {
       "id": "demo-run-guarded:q09",
@@ -1240,7 +1240,7 @@
             "payment_id": "pay_fx_mid-sentry-onboarding"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.106Z"
+          "at": "2026-10-10T08:46:38.284Z"
         },
         {
           "op": "dodo.listRefunds",
@@ -1250,7 +1250,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.111Z"
+          "at": "2026-10-10T08:46:38.286Z"
         },
         {
           "op": "dodo.listPayments",
@@ -1260,7 +1260,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.120Z"
+          "at": "2026-10-10T08:46:38.290Z"
         },
         {
           "op": "dodo.listPayments",
@@ -1270,7 +1270,7 @@
             "page_number": 1
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.124Z"
+          "at": "2026-10-10T08:46:38.293Z"
         }
       ],
       "evidencePack": {
@@ -1287,21 +1287,21 @@
           "demo-notarize-dodo-p034"
         ],
         "spanIds": [
-          "4ef5566ce9064fc0",
-          "ac0700cec7b84cee",
-          "5056e9a1939b4514",
-          "43e3a00a4f4b4966",
-          "5e09c8a5c01d4a46",
-          "2c2333f2e0e748c3",
-          "c85d7cf093794de0"
+          "3aa62a3918f34c17",
+          "0c98ee838fe74ed8",
+          "c48d1a11f39944b8",
+          "df425c374ba54775",
+          "8d3699fbbac54ebc",
+          "10280e28d623435d",
+          "7edc97a51d3e4872"
         ],
         "traceLinks": {
-          "b92ac9bee3c1402fa5b83258820147e9": "runs/demo-notarize-dodo/spans.jsonl#trace=b92ac9bee3c1402fa5b83258820147e9",
-          "b617f55291444d9b9c30c25aa74b0ca0": "runs/demo-notarize-dodo/spans.jsonl#trace=b617f55291444d9b9c30c25aa74b0ca0",
-          "4f80b0cd5a784bab876e549d19d2c4b8": "runs/demo-notarize-dodo/spans.jsonl#trace=4f80b0cd5a784bab876e549d19d2c4b8",
-          "eedc2dbdb6694724bd9c455ac6d56f7a": "runs/demo-notarize-dodo/spans.jsonl#trace=eedc2dbdb6694724bd9c455ac6d56f7a",
-          "055128447df34e9698bd53f1db9b2d81": "runs/demo-notarize-dodo/spans.jsonl#trace=055128447df34e9698bd53f1db9b2d81",
-          "342e5b6955c04b4f8bc3ef1fd4cb68d6": "runs/demo-notarize-dodo/spans.jsonl#trace=342e5b6955c04b4f8bc3ef1fd4cb68d6"
+          "3eefd94d45514e5181a4ff93ac8a6f10": "runs/demo-notarize-dodo/spans.jsonl#trace=3eefd94d45514e5181a4ff93ac8a6f10",
+          "8d64972d2a1146f5b6bc3d78538b96e3": "runs/demo-notarize-dodo/spans.jsonl#trace=8d64972d2a1146f5b6bc3d78538b96e3",
+          "baf3adeadbe84ba8a8c5030e4bba93d5": "runs/demo-notarize-dodo/spans.jsonl#trace=baf3adeadbe84ba8a8c5030e4bba93d5",
+          "2d8bf8a8f9714c2f8432c24570dfe2c7": "runs/demo-notarize-dodo/spans.jsonl#trace=2d8bf8a8f9714c2f8432c24570dfe2c7",
+          "08c8dd9b89bd42d09d3f649a4ba837a9": "runs/demo-notarize-dodo/spans.jsonl#trace=08c8dd9b89bd42d09d3f649a4ba837a9",
+          "3a0dcea0bc3044ffa6977740d4919a44": "runs/demo-notarize-dodo/spans.jsonl#trace=3a0dcea0bc3044ffa6977740d4919a44"
         }
       },
       "grade": {
@@ -1326,7 +1326,7 @@
         "tierBasis": "headcount.total=380"
       },
       "error": "partial refund needs 7 notarized belief(s); 1 missing: dodo.payments.page-size-max-100 (abstained); 6 related probe(s). Gap: No doc claim on rounding (DECISIONS #22); covered by exact-echo unit probes on partial refunds plus integer-typed refund amounts, and amounts are floored client-side.",
-      "traceId": "3c0536c8863f4342817946d5a08188d4"
+      "traceId": "f373c8d228144edabd4f949a125f44eb"
     },
     {
       "id": "demo-run-guarded:q10",
@@ -1357,7 +1357,7 @@
             "payment_id": "pay_fx_ent-shopify-growth"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.137Z"
+          "at": "2026-10-10T08:46:38.303Z"
         },
         {
           "op": "dodo.listRefunds",
@@ -1367,7 +1367,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.141Z"
+          "at": "2026-10-10T08:46:38.306Z"
         },
         {
           "op": "dodo.listPayments",
@@ -1377,7 +1377,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.144Z"
+          "at": "2026-10-10T08:46:38.310Z"
         },
         {
           "op": "dodo.listPayments",
@@ -1387,7 +1387,7 @@
             "page_number": 1
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.148Z"
+          "at": "2026-10-10T08:46:38.313Z"
         }
       ],
       "evidencePack": {
@@ -1404,21 +1404,21 @@
           "demo-notarize-dodo-p034"
         ],
         "spanIds": [
-          "2500c97c6d6c4b68",
-          "ac0700cec7b84cee",
-          "5056e9a1939b4514",
-          "43e3a00a4f4b4966",
-          "5e09c8a5c01d4a46",
-          "2c2333f2e0e748c3",
-          "c85d7cf093794de0"
+          "b55c9b05c9d548cc",
+          "0c98ee838fe74ed8",
+          "c48d1a11f39944b8",
+          "df425c374ba54775",
+          "8d3699fbbac54ebc",
+          "10280e28d623435d",
+          "7edc97a51d3e4872"
         ],
         "traceLinks": {
-          "b92ac9bee3c1402fa5b83258820147e9": "runs/demo-notarize-dodo/spans.jsonl#trace=b92ac9bee3c1402fa5b83258820147e9",
-          "b617f55291444d9b9c30c25aa74b0ca0": "runs/demo-notarize-dodo/spans.jsonl#trace=b617f55291444d9b9c30c25aa74b0ca0",
-          "4f80b0cd5a784bab876e549d19d2c4b8": "runs/demo-notarize-dodo/spans.jsonl#trace=4f80b0cd5a784bab876e549d19d2c4b8",
-          "eedc2dbdb6694724bd9c455ac6d56f7a": "runs/demo-notarize-dodo/spans.jsonl#trace=eedc2dbdb6694724bd9c455ac6d56f7a",
-          "055128447df34e9698bd53f1db9b2d81": "runs/demo-notarize-dodo/spans.jsonl#trace=055128447df34e9698bd53f1db9b2d81",
-          "342e5b6955c04b4f8bc3ef1fd4cb68d6": "runs/demo-notarize-dodo/spans.jsonl#trace=342e5b6955c04b4f8bc3ef1fd4cb68d6"
+          "3eefd94d45514e5181a4ff93ac8a6f10": "runs/demo-notarize-dodo/spans.jsonl#trace=3eefd94d45514e5181a4ff93ac8a6f10",
+          "8d64972d2a1146f5b6bc3d78538b96e3": "runs/demo-notarize-dodo/spans.jsonl#trace=8d64972d2a1146f5b6bc3d78538b96e3",
+          "baf3adeadbe84ba8a8c5030e4bba93d5": "runs/demo-notarize-dodo/spans.jsonl#trace=baf3adeadbe84ba8a8c5030e4bba93d5",
+          "2d8bf8a8f9714c2f8432c24570dfe2c7": "runs/demo-notarize-dodo/spans.jsonl#trace=2d8bf8a8f9714c2f8432c24570dfe2c7",
+          "08c8dd9b89bd42d09d3f649a4ba837a9": "runs/demo-notarize-dodo/spans.jsonl#trace=08c8dd9b89bd42d09d3f649a4ba837a9",
+          "3a0dcea0bc3044ffa6977740d4919a44": "runs/demo-notarize-dodo/spans.jsonl#trace=3a0dcea0bc3044ffa6977740d4919a44"
         }
       },
       "grade": {
@@ -1443,7 +1443,7 @@
         "tierBasis": "headcount.total=8300"
       },
       "error": "partial refund needs 7 notarized belief(s); 1 missing: dodo.payments.page-size-max-100 (abstained); 6 related probe(s). Gap: No doc claim on rounding (DECISIONS #22); covered by exact-echo unit probes on partial refunds plus integer-typed refund amounts, and amounts are floored client-side.",
-      "traceId": "ad3a5c3080734bb1b27b0ef85877a442"
+      "traceId": "a61b466a74f143d9a2d123995bcdc96e"
     },
     {
       "id": "demo-run-guarded:q11",
@@ -1464,7 +1464,7 @@
             "payment_id": "pay_fx_smb-buttondown-starter"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.162Z"
+          "at": "2026-10-10T08:46:38.325Z"
         },
         {
           "op": "dodo.listRefunds",
@@ -1474,7 +1474,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.166Z"
+          "at": "2026-10-10T08:46:38.328Z"
         },
         {
           "op": "dodo.listPayments",
@@ -1484,7 +1484,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.170Z"
+          "at": "2026-10-10T08:46:38.332Z"
         },
         {
           "op": "dodo.listPayments",
@@ -1494,7 +1494,7 @@
             "page_number": 1
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.174Z"
+          "at": "2026-10-10T08:46:38.335Z"
         }
       ],
       "grade": {
@@ -1518,7 +1518,7 @@
         "lastFundraiseDate": null,
         "tierBasis": "headcount.total=6"
       },
-      "traceId": "8a8641717f9444e6be6aa24659def765"
+      "traceId": "e56b1a19f33e49ac8b6ca213c3df203d"
     },
     {
       "id": "demo-run-guarded:q12",
@@ -1541,7 +1541,7 @@
             "subscription_id": "sub_fx_smb-plausible"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.187Z"
+          "at": "2026-10-10T08:46:38.347Z"
         },
         {
           "op": "dodo.changeSubscriptionPlan",
@@ -1553,7 +1553,7 @@
             "effective_at": "immediately"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.194Z"
+          "at": "2026-10-10T08:46:38.352Z"
         }
       ],
       "grade": {
@@ -1577,7 +1577,7 @@
         "lastFundraiseDate": null,
         "tierBasis": "headcount.total=14"
       },
-      "traceId": "de1672ec7300432f9e7847e2b255f897"
+      "traceId": "fc4d0494813e47a79cc399b4ce8d6781"
     },
     {
       "id": "demo-run-guarded:q13",
@@ -1605,7 +1605,7 @@
             ]
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.203Z"
+          "at": "2026-10-10T08:46:38.360Z"
         }
       ],
       "evidencePack": {
@@ -1613,7 +1613,7 @@
         "missingBeliefs": [],
         "relatedProbeIds": [],
         "spanIds": [
-          "714d4d071ef74ca9"
+          "e4f48178da674457"
         ],
         "traceLinks": {}
       },
@@ -1638,7 +1638,7 @@
         "lastFundraiseDate": "2004-06-23",
         "tierBasis": "headcount.total=72682"
       },
-      "traceId": "a69c0d8d420241c296f344fd759e3ab0"
+      "traceId": "8c2361564da94653b5bac2da92fdd381"
     },
     {
       "id": "demo-run-guarded:q14",
@@ -1661,7 +1661,7 @@
             "subscription_id": "sub_fx_mid-retool"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.215Z"
+          "at": "2026-10-10T08:46:38.372Z"
         },
         {
           "op": "dodo.changeSubscriptionPlan",
@@ -1673,7 +1673,7 @@
             "effective_at": "immediately"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.228Z"
+          "at": "2026-10-10T08:46:38.382Z"
         }
       ],
       "grade": {
@@ -1697,7 +1697,7 @@
         "lastFundraiseDate": "2022-07-26",
         "tierBasis": "headcount.total=420"
       },
-      "traceId": "77c5a4151c0047df9815778782855c31"
+      "traceId": "4d88f69be0304992aa11060ea641b935"
     },
     {
       "id": "demo-run-guarded:q15",
@@ -1730,7 +1730,7 @@
             ]
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.238Z"
+          "at": "2026-10-10T08:46:38.392Z"
         },
         {
           "op": "dodo.listWalletLedgerEntries",
@@ -1741,7 +1741,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.243Z"
+          "at": "2026-10-10T08:46:38.398Z"
         },
         {
           "op": "dodo.listWalletLedgerEntries",
@@ -1752,7 +1752,7 @@
             "page_number": 1
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.247Z"
+          "at": "2026-10-10T08:46:38.402Z"
         }
       ],
       "evidencePack": {
@@ -1760,7 +1760,7 @@
         "missingBeliefs": [],
         "relatedProbeIds": [],
         "spanIds": [
-          "a3ad1363d795464f"
+          "5d4dd78452264e86"
         ],
         "traceLinks": {}
       },
@@ -1786,7 +1786,7 @@
         "tierBasis": "headcount.total=221000"
       },
       "error": "guard grd-001913575809 refused dodo.createWalletLedgerEntry: dodo.wallet.credit-amount-minor-units violated (unit_mismatch) but the cited probes disagree: demo-notarize-dodo-p008 echoed the amount unchanged, demo-notarize-dodo-p007, demo-notarize-dodo-p009, demo-notarize-dodo-p010, demo-notarize-dodo-p011, demo-notarize-dodo-p012 echoed 100x: no safe transform",
-      "traceId": "22ab671408ec4e0bb7709266d9ff8336"
+      "traceId": "6196119677ec4fee91f41f14be7bb1c0"
     },
     {
       "id": "demo-run-guarded:q16",
@@ -1822,7 +1822,7 @@
         "lastFundraiseDate": null,
         "tierBasis": "headcount.total=6"
       },
-      "traceId": "0d7f643c7b404744a7b8c7dd3e769c57"
+      "traceId": "cfa717080d514e8b9b9b3a0e50c8af0d"
     },
     {
       "id": "demo-run-guarded:q17",
@@ -1842,7 +1842,7 @@
         "missingBeliefs": [],
         "relatedProbeIds": [],
         "spanIds": [
-          "57914d45e98c4b2e"
+          "bb7900984e6a4dc7"
         ],
         "traceLinks": {}
       },
@@ -1867,7 +1867,7 @@
         "lastFundraiseDate": "2025-04-22",
         "tierBasis": "headcount.total=210"
       },
-      "traceId": "71486399f721489aa84b535e2b85ff5c"
+      "traceId": "b49d65beafe0425d8ffa67a45bc824e0"
     },
     {
       "id": "demo-run-guarded:q18",
@@ -1896,7 +1896,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.277Z"
+          "at": "2026-10-10T08:46:38.427Z"
         },
         {
           "op": "dodo.listWalletLedgerEntries",
@@ -1907,7 +1907,7 @@
             "page_number": 1
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.281Z"
+          "at": "2026-10-10T08:46:38.431Z"
         }
       ],
       "evidencePack": {
@@ -1915,7 +1915,7 @@
         "missingBeliefs": [],
         "relatedProbeIds": [],
         "spanIds": [
-          "1448a5ffed12487b"
+          "8a7e7c7ceb234f5e"
         ],
         "traceLinks": {}
       },
@@ -1941,7 +1941,7 @@
         "tierBasis": "headcount.total=12"
       },
       "error": "guard grd-001913575809 refused dodo.createWalletLedgerEntry: dodo.wallet.credit-amount-minor-units violated (unit_mismatch) but the cited probes disagree: demo-notarize-dodo-p008 echoed the amount unchanged, demo-notarize-dodo-p007, demo-notarize-dodo-p009, demo-notarize-dodo-p010, demo-notarize-dodo-p011, demo-notarize-dodo-p012 echoed 100x: no safe transform",
-      "traceId": "050a75f8d82142c39a6e0c785208bc6b"
+      "traceId": "23254704503348c786707ae2cb102881"
     },
     {
       "id": "demo-run-guarded:q19",
@@ -1969,7 +1969,7 @@
             ]
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.297Z"
+          "at": "2026-10-10T08:46:38.442Z"
         },
         {
           "op": "dodo.getPayment",
@@ -1977,7 +1977,7 @@
             "payment_id": "pay_fx_ent-atlassian-growth"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.301Z"
+          "at": "2026-10-10T08:46:38.445Z"
         },
         {
           "op": "dodo.listRefunds",
@@ -1987,7 +1987,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.305Z"
+          "at": "2026-10-10T08:46:38.448Z"
         },
         {
           "op": "dodo.listPayments",
@@ -1997,7 +1997,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.309Z"
+          "at": "2026-10-10T08:46:38.452Z"
         },
         {
           "op": "dodo.listPayments",
@@ -2007,7 +2007,7 @@
             "page_number": 1
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.312Z"
+          "at": "2026-10-10T08:46:38.455Z"
         }
       ],
       "evidencePack": {
@@ -2024,21 +2024,21 @@
           "demo-notarize-dodo-p034"
         ],
         "spanIds": [
-          "55cafadbe4c24f91",
-          "ac0700cec7b84cee",
-          "5056e9a1939b4514",
-          "43e3a00a4f4b4966",
-          "5e09c8a5c01d4a46",
-          "2c2333f2e0e748c3",
-          "c85d7cf093794de0"
+          "fafdc8d1ff1d44c1",
+          "0c98ee838fe74ed8",
+          "c48d1a11f39944b8",
+          "df425c374ba54775",
+          "8d3699fbbac54ebc",
+          "10280e28d623435d",
+          "7edc97a51d3e4872"
         ],
         "traceLinks": {
-          "b92ac9bee3c1402fa5b83258820147e9": "runs/demo-notarize-dodo/spans.jsonl#trace=b92ac9bee3c1402fa5b83258820147e9",
-          "b617f55291444d9b9c30c25aa74b0ca0": "runs/demo-notarize-dodo/spans.jsonl#trace=b617f55291444d9b9c30c25aa74b0ca0",
-          "4f80b0cd5a784bab876e549d19d2c4b8": "runs/demo-notarize-dodo/spans.jsonl#trace=4f80b0cd5a784bab876e549d19d2c4b8",
-          "eedc2dbdb6694724bd9c455ac6d56f7a": "runs/demo-notarize-dodo/spans.jsonl#trace=eedc2dbdb6694724bd9c455ac6d56f7a",
-          "055128447df34e9698bd53f1db9b2d81": "runs/demo-notarize-dodo/spans.jsonl#trace=055128447df34e9698bd53f1db9b2d81",
-          "342e5b6955c04b4f8bc3ef1fd4cb68d6": "runs/demo-notarize-dodo/spans.jsonl#trace=342e5b6955c04b4f8bc3ef1fd4cb68d6"
+          "3eefd94d45514e5181a4ff93ac8a6f10": "runs/demo-notarize-dodo/spans.jsonl#trace=3eefd94d45514e5181a4ff93ac8a6f10",
+          "8d64972d2a1146f5b6bc3d78538b96e3": "runs/demo-notarize-dodo/spans.jsonl#trace=8d64972d2a1146f5b6bc3d78538b96e3",
+          "baf3adeadbe84ba8a8c5030e4bba93d5": "runs/demo-notarize-dodo/spans.jsonl#trace=baf3adeadbe84ba8a8c5030e4bba93d5",
+          "2d8bf8a8f9714c2f8432c24570dfe2c7": "runs/demo-notarize-dodo/spans.jsonl#trace=2d8bf8a8f9714c2f8432c24570dfe2c7",
+          "08c8dd9b89bd42d09d3f649a4ba837a9": "runs/demo-notarize-dodo/spans.jsonl#trace=08c8dd9b89bd42d09d3f649a4ba837a9",
+          "3a0dcea0bc3044ffa6977740d4919a44": "runs/demo-notarize-dodo/spans.jsonl#trace=3a0dcea0bc3044ffa6977740d4919a44"
         }
       },
       "grade": {
@@ -2062,7 +2062,7 @@
         "lastFundraiseDate": "2015-12-10",
         "tierBasis": "headcount.total=12157"
       },
-      "traceId": "f1da224e07744082af0246e941103f20"
+      "traceId": "abe8a0d6ae694bda92c809c3d30a6015"
     },
     {
       "id": "demo-run-guarded:q20",
@@ -2099,7 +2099,7 @@
             ]
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.327Z"
+          "at": "2026-10-10T08:46:38.465Z"
         },
         {
           "op": "dodo.getPayment",
@@ -2107,7 +2107,7 @@
             "payment_id": "pay_fx_mid-zapier-growth"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.331Z"
+          "at": "2026-10-10T08:46:38.469Z"
         },
         {
           "op": "dodo.listRefunds",
@@ -2117,7 +2117,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.338Z"
+          "at": "2026-10-10T08:46:38.475Z"
         },
         {
           "op": "dodo.listPayments",
@@ -2127,7 +2127,7 @@
             "page_number": 0
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.342Z"
+          "at": "2026-10-10T08:46:38.480Z"
         },
         {
           "op": "dodo.listPayments",
@@ -2137,7 +2137,7 @@
             "page_number": 1
           },
           "status": 200,
-          "at": "2026-10-10T07:31:50.346Z"
+          "at": "2026-10-10T08:46:38.483Z"
         }
       ],
       "evidencePack": {
@@ -2154,21 +2154,21 @@
           "demo-notarize-dodo-p034"
         ],
         "spanIds": [
-          "71c94b5b0409476c",
-          "ac0700cec7b84cee",
-          "5056e9a1939b4514",
-          "43e3a00a4f4b4966",
-          "5e09c8a5c01d4a46",
-          "2c2333f2e0e748c3",
-          "c85d7cf093794de0"
+          "f58d2616cebb49fa",
+          "0c98ee838fe74ed8",
+          "c48d1a11f39944b8",
+          "df425c374ba54775",
+          "8d3699fbbac54ebc",
+          "10280e28d623435d",
+          "7edc97a51d3e4872"
         ],
         "traceLinks": {
-          "b92ac9bee3c1402fa5b83258820147e9": "runs/demo-notarize-dodo/spans.jsonl#trace=b92ac9bee3c1402fa5b83258820147e9",
-          "b617f55291444d9b9c30c25aa74b0ca0": "runs/demo-notarize-dodo/spans.jsonl#trace=b617f55291444d9b9c30c25aa74b0ca0",
-          "4f80b0cd5a784bab876e549d19d2c4b8": "runs/demo-notarize-dodo/spans.jsonl#trace=4f80b0cd5a784bab876e549d19d2c4b8",
-          "eedc2dbdb6694724bd9c455ac6d56f7a": "runs/demo-notarize-dodo/spans.jsonl#trace=eedc2dbdb6694724bd9c455ac6d56f7a",
-          "055128447df34e9698bd53f1db9b2d81": "runs/demo-notarize-dodo/spans.jsonl#trace=055128447df34e9698bd53f1db9b2d81",
-          "342e5b6955c04b4f8bc3ef1fd4cb68d6": "runs/demo-notarize-dodo/spans.jsonl#trace=342e5b6955c04b4f8bc3ef1fd4cb68d6"
+          "3eefd94d45514e5181a4ff93ac8a6f10": "runs/demo-notarize-dodo/spans.jsonl#trace=3eefd94d45514e5181a4ff93ac8a6f10",
+          "8d64972d2a1146f5b6bc3d78538b96e3": "runs/demo-notarize-dodo/spans.jsonl#trace=8d64972d2a1146f5b6bc3d78538b96e3",
+          "baf3adeadbe84ba8a8c5030e4bba93d5": "runs/demo-notarize-dodo/spans.jsonl#trace=baf3adeadbe84ba8a8c5030e4bba93d5",
+          "2d8bf8a8f9714c2f8432c24570dfe2c7": "runs/demo-notarize-dodo/spans.jsonl#trace=2d8bf8a8f9714c2f8432c24570dfe2c7",
+          "08c8dd9b89bd42d09d3f649a4ba837a9": "runs/demo-notarize-dodo/spans.jsonl#trace=08c8dd9b89bd42d09d3f649a4ba837a9",
+          "3a0dcea0bc3044ffa6977740d4919a44": "runs/demo-notarize-dodo/spans.jsonl#trace=3a0dcea0bc3044ffa6977740d4919a44"
         }
       },
       "grade": {
@@ -2193,7 +2193,7 @@
         "tierBasis": "headcount.total=812"
       },
       "error": "full refund needs 6 notarized belief(s); 1 missing: dodo.payments.page-size-max-100 (abstained); 6 related probe(s)",
-      "traceId": "36da53217a15423eb096ea3002f47de6"
+      "traceId": "40556882b6324130a74244f0f0fb1479"
     }
   ],
   "claims": [],
@@ -2212,7 +2212,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.261Z"
+        "updatedAt": "2026-10-10T08:46:28.745Z"
       },
       {
         "id": "belief-crustdata.enrich.confidence-score-number",
@@ -2224,7 +2224,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.249Z"
+        "updatedAt": "2026-10-10T08:46:28.732Z"
       },
       {
         "id": "belief-crustdata.enrich.default-fields-basic-info",
@@ -2236,7 +2236,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.228Z"
+        "updatedAt": "2026-10-10T08:46:28.710Z"
       },
       {
         "id": "belief-crustdata.enrich.employee-count-range-string",
@@ -2248,7 +2248,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.217Z"
+        "updatedAt": "2026-10-10T08:46:28.699Z"
       },
       {
         "id": "belief-crustdata.enrich.funding-total-investment-number",
@@ -2263,36 +2263,36 @@
         "evidence": [
           {
             "probeId": "demo-notarize-crustdata-p001",
-            "traceId": "318770a86f954008bb1e4fd79dc6f5b0",
-            "spanId": "60514c3b884b424a",
+            "traceId": "4c6cc52bcdb84bd9adfc29bc14b1906f",
+            "spanId": "2092b6126bbb4afd",
             "valid": true
           },
           {
             "probeId": "demo-notarize-crustdata-p002",
-            "traceId": "aa9c627f2dd74f6ab5580a31827bfbd0",
-            "spanId": "df5dbac3aa144725",
+            "traceId": "c04f9412fa6e4582a5f4e524a2f4fc70",
+            "spanId": "9b971817495d45f1",
             "valid": true
           },
           {
             "probeId": "demo-notarize-crustdata-p003",
-            "traceId": "18ad0af2879548a1b252842d8b958dee",
-            "spanId": "4e5b96ea58f04ce5",
+            "traceId": "c075f8c09560478fb2ad42ed792ca154",
+            "spanId": "c0b04b66e1ae4a92",
             "valid": true
           },
           {
             "probeId": "demo-notarize-crustdata-p004",
-            "traceId": "0c28aa0250fc41aaa98d0a47504ffcd6",
-            "spanId": "cb433cf2acff439b",
+            "traceId": "18696a25a4e84de0867df9402e669c78",
+            "spanId": "fb5a18d659074e69",
             "valid": true
           },
           {
             "probeId": "demo-notarize-crustdata-p005",
-            "traceId": "3bdc054f13e6469c8a6b66f14ef41d4b",
-            "spanId": "b5d5141734324b33",
+            "traceId": "cd7bcfa4320c4593ba197fc989a8dab9",
+            "spanId": "c2fa6b40cdbb40ab",
             "valid": true
           }
         ],
-        "updatedAt": "2026-10-10T07:31:40.469Z"
+        "updatedAt": "2026-10-10T08:46:28.937Z"
       },
       {
         "id": "belief-crustdata.enrich.headcount-total-integer",
@@ -2307,20 +2307,20 @@
         "evidence": [
           {
             "probeId": "demo-notarize-crustdata-p006",
-            "traceId": "90c0732617c24009bb1155775b358e4f",
-            "spanId": "1b27a76b459a48aa",
+            "traceId": "d1938250b5d141179eb38c9a5523e2eb",
+            "spanId": "7d01a0e1595d4250",
             "valid": true
           },
           {
             "probeId": "demo-notarize-crustdata-p007",
-            "traceId": "06a87b49e2f0401ba157fe947e5aff1e",
-            "spanId": "5dbe0a1fef1c4456",
+            "traceId": "d572aa7e976149cfbd64da435db2d73f",
+            "spanId": "2cb3cc1627ea4d87",
             "valid": true
           },
           {
             "probeId": "demo-notarize-crustdata-p008",
-            "traceId": "dd9b969ab9df4b899ca52bda095d9f52",
-            "spanId": "81f0e1b7e3644275",
+            "traceId": "56a947c1064a4637be940bace3e11ef3",
+            "spanId": "17204b5c09b247bc",
             "valid": true
           }
         ],
@@ -2329,10 +2329,10 @@
           "reason": "3 cited probes (demo-notarize-crustdata-p006, demo-notarize-crustdata-p007, demo-notarize-crustdata-p008) vary the parameter, their controls read differently, and they agree (Beta(4, 1)).",
           "model": "fixture.adversary-double",
           "backend": "bedrock",
-          "reviewedAt": "2026-10-10T07:31:40.506Z"
+          "reviewedAt": "2026-10-10T08:46:28.976Z"
         },
         "probesToCandidate": 3,
-        "updatedAt": "2026-10-10T07:31:40.509Z"
+        "updatedAt": "2026-10-10T08:46:28.978Z"
       },
       {
         "id": "belief-crustdata.enrich.last-fundraise-date-string",
@@ -2344,7 +2344,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.222Z"
+        "updatedAt": "2026-10-10T08:46:28.705Z"
       },
       {
         "id": "belief-crustdata.enrich.no-match-200-empty",
@@ -2356,7 +2356,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.234Z"
+        "updatedAt": "2026-10-10T08:46:28.716Z"
       },
       {
         "id": "belief-crustdata.identify.invalid-fields-400",
@@ -2368,7 +2368,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.245Z"
+        "updatedAt": "2026-10-10T08:46:28.726Z"
       },
       {
         "id": "belief-crustdata.identify.max-25-identifiers",
@@ -2380,7 +2380,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.255Z"
+        "updatedAt": "2026-10-10T08:46:28.739Z"
       },
       {
         "id": "belief-crustdata.identify.no-match-200-empty",
@@ -2392,7 +2392,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.240Z"
+        "updatedAt": "2026-10-10T08:46:28.721Z"
       },
       {
         "id": "belief-dodo.customer.missing-email-422",
@@ -2404,7 +2404,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.688Z"
+        "updatedAt": "2026-10-10T08:46:29.219Z"
       },
       {
         "id": "belief-dodo.payment.refunds-array-present",
@@ -2416,7 +2416,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.674Z"
+        "updatedAt": "2026-10-10T08:46:29.203Z"
       },
       {
         "id": "belief-dodo.payment.refunds-lists-issued-refund",
@@ -2431,20 +2431,20 @@
         "evidence": [
           {
             "probeId": "demo-notarize-dodo-p017",
-            "traceId": "942ed8810cf4490d8425fe0c942587e3",
-            "spanId": "4daa9306cc5a47a0",
+            "traceId": "83c9b9b8fd4e4869b2fc4fb4f3f3ed4c",
+            "spanId": "044452f2b1d049d3",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p018",
-            "traceId": "506e402690f44edfbae8918c5787c4b4",
-            "spanId": "18d4d28874e2475b",
+            "traceId": "91819bf9ae5743148a44a4350e5b233a",
+            "spanId": "8c564c3c40e24394",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p019",
-            "traceId": "801cb012fbb944168919d47af8ec01b4",
-            "spanId": "1f91817208614939",
+            "traceId": "b675d96221fc4da49a7f39279a4feac4",
+            "spanId": "18f3153f7d144d56",
             "valid": true
           }
         ],
@@ -2453,10 +2453,10 @@
           "reason": "3 cited probes (demo-notarize-dodo-p017, demo-notarize-dodo-p018, demo-notarize-dodo-p019) vary the parameter, their controls read differently, and they agree (Beta(4, 1)).",
           "model": "fixture.adversary-double",
           "backend": "bedrock",
-          "reviewedAt": "2026-10-10T07:31:46.090Z"
+          "reviewedAt": "2026-10-10T08:46:34.563Z"
         },
         "probesToCandidate": 3,
-        "updatedAt": "2026-10-10T07:31:46.091Z"
+        "updatedAt": "2026-10-10T08:46:34.565Z"
       },
       {
         "id": "belief-dodo.payments.page-size-max-100",
@@ -2471,38 +2471,38 @@
         "evidence": [
           {
             "probeId": "demo-notarize-dodo-p004",
-            "traceId": "b92ac9bee3c1402fa5b83258820147e9",
-            "spanId": "ac0700cec7b84cee",
+            "traceId": "3eefd94d45514e5181a4ff93ac8a6f10",
+            "spanId": "0c98ee838fe74ed8",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p005",
-            "traceId": "b617f55291444d9b9c30c25aa74b0ca0",
-            "spanId": "5056e9a1939b4514",
+            "traceId": "8d64972d2a1146f5b6bc3d78538b96e3",
+            "spanId": "c48d1a11f39944b8",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p006",
-            "traceId": "4f80b0cd5a784bab876e549d19d2c4b8",
-            "spanId": "43e3a00a4f4b4966",
+            "traceId": "baf3adeadbe84ba8a8c5030e4bba93d5",
+            "spanId": "df425c374ba54775",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p032",
-            "traceId": "eedc2dbdb6694724bd9c455ac6d56f7a",
-            "spanId": "5e09c8a5c01d4a46",
+            "traceId": "2d8bf8a8f9714c2f8432c24570dfe2c7",
+            "spanId": "8d3699fbbac54ebc",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p033",
-            "traceId": "055128447df34e9698bd53f1db9b2d81",
-            "spanId": "2c2333f2e0e748c3",
+            "traceId": "08c8dd9b89bd42d09d3f649a4ba837a9",
+            "spanId": "10280e28d623435d",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p034",
-            "traceId": "342e5b6955c04b4f8bc3ef1fd4cb68d6",
-            "spanId": "c85d7cf093794de0",
+            "traceId": "3a0dcea0bc3044ffa6977740d4919a44",
+            "spanId": "7edc97a51d3e4872",
             "valid": true
           }
         ],
@@ -2511,10 +2511,10 @@
           "reason": "Every cited probe (demo-notarize-dodo-p004, demo-notarize-dodo-p005, demo-notarize-dodo-p006) is a boundary_sweep that saw the over-limit request clamped to exactly 100 items. Clamping enforces \"max is 100\"; no cited probe checked whether any items were lost. Untested alternative: The limit is enforced by clamping rather than rejecting, and listings stay complete (the documented max holds); a pagination_completeness probe would tell them apart.",
           "model": "fixture.adversary-double",
           "backend": "bedrock",
-          "reviewedAt": "2026-10-10T07:31:46.105Z"
+          "reviewedAt": "2026-10-10T08:46:34.575Z"
         },
         "probesToCandidate": 3,
-        "updatedAt": "2026-10-10T07:31:46.343Z"
+        "updatedAt": "2026-10-10T08:46:34.796Z"
       },
       {
         "id": "belief-dodo.product.price-minor-units",
@@ -2526,7 +2526,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.683Z"
+        "updatedAt": "2026-10-10T08:46:29.213Z"
       },
       {
         "id": "belief-dodo.refund.amount-minor-units",
@@ -2541,20 +2541,20 @@
         "evidence": [
           {
             "probeId": "demo-notarize-dodo-p020",
-            "traceId": "a0ad1a662e674c03b3ee2f457142f2fe",
-            "spanId": "e2e25f5cd07b4610",
+            "traceId": "012977a7096e443a8c7aed7cb431f34b",
+            "spanId": "4709053c842d489e",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p021",
-            "traceId": "16f364b314c548299a4428206ec155f9",
-            "spanId": "c114c72e91bc4a3c",
+            "traceId": "832086d09f1b4a7b9e45f3ac626bfe08",
+            "spanId": "97cf5a133fe7489f",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p022",
-            "traceId": "07a393643c9f4e64aee57637c07aa5a1",
-            "spanId": "55fa1d3cbea84139",
+            "traceId": "c93b4a6b7ed24f23934f4d0b14f66468",
+            "spanId": "5f698bf7caaa4785",
             "valid": true
           }
         ],
@@ -2563,10 +2563,10 @@
           "reason": "3 cited probes (demo-notarize-dodo-p020, demo-notarize-dodo-p021, demo-notarize-dodo-p022) vary the parameter, their controls read differently, and they agree (Beta(1, 4)).",
           "model": "fixture.adversary-double",
           "backend": "bedrock",
-          "reviewedAt": "2026-10-10T07:31:46.116Z"
+          "reviewedAt": "2026-10-10T08:46:34.585Z"
         },
         "probesToCandidate": 3,
-        "updatedAt": "2026-10-10T07:31:46.118Z"
+        "updatedAt": "2026-10-10T08:46:34.587Z"
       },
       {
         "id": "belief-dodo.refund.full-retry-no-duplicate",
@@ -2581,20 +2581,20 @@
         "evidence": [
           {
             "probeId": "demo-notarize-dodo-p023",
-            "traceId": "8e54f250a9be42c8b97f0ef25270dcd2",
-            "spanId": "b21b061d27284898",
+            "traceId": "65279468ff014e45931df39ff5e4d478",
+            "spanId": "d47e3dad3c8d4e22",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p024",
-            "traceId": "9a75899924b34edf9618b0db2fabb717",
-            "spanId": "73336ce32e4e4681",
+            "traceId": "7a1eb980759746e98a6728ec1000c264",
+            "spanId": "d533637a3f174b33",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p025",
-            "traceId": "a34a2f3ad6154c63a3d2706894cac431",
-            "spanId": "3bf47f2a25854d72",
+            "traceId": "a8969725141d4d29888280e75c7f25e3",
+            "spanId": "c2f964ddf41c46d3",
             "valid": true
           }
         ],
@@ -2603,10 +2603,10 @@
           "reason": "3 cited probes (demo-notarize-dodo-p023, demo-notarize-dodo-p024, demo-notarize-dodo-p025) vary the parameter, their controls read differently, and they agree (Beta(1, 4)).",
           "model": "fixture.adversary-double",
           "backend": "bedrock",
-          "reviewedAt": "2026-10-10T07:31:46.131Z"
+          "reviewedAt": "2026-10-10T08:46:34.597Z"
         },
         "probesToCandidate": 3,
-        "updatedAt": "2026-10-10T07:31:46.132Z"
+        "updatedAt": "2026-10-10T08:46:34.598Z"
       },
       {
         "id": "belief-dodo.refunds.amount-integer",
@@ -2621,20 +2621,20 @@
         "evidence": [
           {
             "probeId": "demo-notarize-dodo-p026",
-            "traceId": "db92ccdc42f6413fa7196ec76db1218e",
-            "spanId": "fc174f173ea34b10",
+            "traceId": "b69d9f6ee3e248b9967724b87c89e303",
+            "spanId": "7b999459baff4ea7",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p027",
-            "traceId": "375ac7674e5943168fc14e091bf143c0",
-            "spanId": "9fead816d5204a7e",
+            "traceId": "2f27b14399c8461888f708233f2af9c5",
+            "spanId": "5befbef8ade44b81",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p028",
-            "traceId": "4bbd5dcafec04434b06be3c4a2e5dbea",
-            "spanId": "5b45c4ee4d964023",
+            "traceId": "969a34b1acbe48a1af4b8bfeb2b85a1f",
+            "spanId": "345dd51a92d7492a",
             "valid": true
           }
         ],
@@ -2643,10 +2643,10 @@
           "reason": "3 cited probes (demo-notarize-dodo-p026, demo-notarize-dodo-p027, demo-notarize-dodo-p028) vary the parameter, their controls read differently, and they agree (Beta(4, 1)).",
           "model": "fixture.adversary-double",
           "backend": "bedrock",
-          "reviewedAt": "2026-10-10T07:31:46.145Z"
+          "reviewedAt": "2026-10-10T08:46:34.610Z"
         },
         "probesToCandidate": 3,
-        "updatedAt": "2026-10-10T07:31:46.147Z"
+        "updatedAt": "2026-10-10T08:46:34.612Z"
       },
       {
         "id": "belief-dodo.refunds.page-size-max-100",
@@ -2661,20 +2661,20 @@
         "evidence": [
           {
             "probeId": "demo-notarize-dodo-p014",
-            "traceId": "ae95331fa8af4914a2b487bb64c4410d",
-            "spanId": "ac6a092365d54e82",
+            "traceId": "5f624c87302647e4acdbbbafe77563ec",
+            "spanId": "a02abf332e6843dd",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p015",
-            "traceId": "6952f97f186f43e08589a38e2e11f2dc",
-            "spanId": "329ce3a59b4e4be4",
+            "traceId": "b705d1b99ef644468f25f79e17cdf71c",
+            "spanId": "81648b0b47964eff",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p016",
-            "traceId": "0d6510f5abec4fd08410b849037bf0aa",
-            "spanId": "88a3eb24188941ca",
+            "traceId": "1fcb619f95ef46d8be68cc96f9009abc",
+            "spanId": "21e351564b5c42a1",
             "valid": true
           }
         ],
@@ -2683,10 +2683,10 @@
           "reason": "3 cited probes (demo-notarize-dodo-p014, demo-notarize-dodo-p015, demo-notarize-dodo-p016) vary the parameter, their controls read differently, and they agree (Beta(4, 1)).",
           "model": "fixture.adversary-double",
           "backend": "bedrock",
-          "reviewedAt": "2026-10-10T07:31:46.160Z"
+          "reviewedAt": "2026-10-10T08:46:34.621Z"
         },
         "probesToCandidate": 4,
-        "updatedAt": "2026-10-10T07:31:46.162Z"
+        "updatedAt": "2026-10-10T08:46:34.623Z"
       },
       {
         "id": "belief-dodo.subscription.change-plan-pending-409",
@@ -2701,20 +2701,20 @@
         "evidence": [
           {
             "probeId": "demo-notarize-dodo-p029",
-            "traceId": "4da416f23cd24c27b368812ed947d3f7",
-            "spanId": "0f39f8dfbf80407d",
+            "traceId": "d5dff4db3e4a4d61868e2d0565a2cb7f",
+            "spanId": "2bcf0782c936474f",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p030",
-            "traceId": "22c410d563a14290ba90a1897a47b885",
-            "spanId": "c2ea1895330b40f0",
+            "traceId": "8693acde53d643c89e3b0b37f987e40e",
+            "spanId": "ee55da5ad361431d",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p031",
-            "traceId": "cbcb6f0d8567443e97aa0faa8646a822",
-            "spanId": "423ab8a40e59499a",
+            "traceId": "92dc4a2b284a4b87a150eb7f597f9ce5",
+            "spanId": "7355899c86494fa3",
             "valid": true
           }
         ],
@@ -2723,10 +2723,10 @@
           "reason": "3 cited probes (demo-notarize-dodo-p029, demo-notarize-dodo-p030, demo-notarize-dodo-p031) vary the parameter, their controls read differently, and they agree (Beta(4, 1)).",
           "model": "fixture.adversary-double",
           "backend": "bedrock",
-          "reviewedAt": "2026-10-10T07:31:46.172Z"
+          "reviewedAt": "2026-10-10T08:46:34.634Z"
         },
         "probesToCandidate": 3,
-        "updatedAt": "2026-10-10T07:31:46.174Z"
+        "updatedAt": "2026-10-10T08:46:34.635Z"
       },
       {
         "id": "belief-dodo.wallet.credit-amount-minor-units",
@@ -2741,38 +2741,38 @@
         "evidence": [
           {
             "probeId": "demo-notarize-dodo-p007",
-            "traceId": "d3d18d74ad05472cb09b1f2ad77a6ac9",
-            "spanId": "0712cf2a5c80414f",
+            "traceId": "ecc2f18e4a984650a963988c504fa980",
+            "spanId": "9601303e763e4a66",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p008",
-            "traceId": "2c32e9fd40c44eda8dd9a6b599fb7cef",
-            "spanId": "2288e779a7dd4b4f",
+            "traceId": "fb8f7cad486d493da9230d6be422829f",
+            "spanId": "977e37ad256d4c78",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p009",
-            "traceId": "b193e41bc6754fb7bb69434ecd137d1b",
-            "spanId": "105f0b3ebf1a497c",
+            "traceId": "4e37bb490f9f41ff96d2c878afa2e663",
+            "spanId": "cc5bfe4bcaf24b39",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p010",
-            "traceId": "59ac994428164729b6d40a915256bf7c",
-            "spanId": "eccaa2f35bb047c9",
+            "traceId": "113199d6c87243a1899693d90718cd95",
+            "spanId": "9b28ef550c914a1e",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p011",
-            "traceId": "1686d33945684e4c97573f307f82be7c",
-            "spanId": "23c7c8ffd2764e5a",
+            "traceId": "313fc5b437024f57b3bd3d5b67530d3c",
+            "spanId": "6806a6bff1df49d6",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p012",
-            "traceId": "6aa2e41a528f4db9b9323a606b6ffd63",
-            "spanId": "8d6f173272f4471e",
+            "traceId": "c6fa207ae95b4742a0a897bd03b13705",
+            "spanId": "d5459cb0741a4bb9",
             "valid": true
           }
         ],
@@ -2782,10 +2782,10 @@
           "model": "fixture.adversary-double",
           "backend": "bedrock",
           "scope": "USD only: dodo.createWalletLedgerEntry was probed with USD amounts; other currencies are untested",
-          "reviewedAt": "2026-10-10T07:31:46.187Z"
+          "reviewedAt": "2026-10-10T08:46:34.646Z"
         },
         "probesToCandidate": 6,
-        "updatedAt": "2026-10-10T07:31:46.189Z"
+        "updatedAt": "2026-10-10T08:46:34.648Z"
       },
       {
         "id": "belief-dodo.wallet.debit-insufficient-400",
@@ -2797,7 +2797,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.708Z"
+        "updatedAt": "2026-10-10T08:46:29.238Z"
       },
       {
         "id": "belief-dodo.wallet.idempotency-key-no-duplicate",
@@ -2812,20 +2812,20 @@
         "evidence": [
           {
             "probeId": "demo-notarize-dodo-p001",
-            "traceId": "a79b210f1c0b4a848d89406068e6e8a1",
-            "spanId": "cc4a93e7ac3942ad",
+            "traceId": "fbed0816119a4d4db32de527db4e398a",
+            "spanId": "9ecc9a9dd3c3445c",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p002",
-            "traceId": "156b9c93ee7446e6be7cee1ab283c8fd",
-            "spanId": "7edc70f758104610",
+            "traceId": "91acf18d7b534e8f91a5edd895c34ef1",
+            "spanId": "939ff39c999146f8",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p003",
-            "traceId": "f79da103531e441fade811928e067458",
-            "spanId": "cd9f28a1cd9b40a2",
+            "traceId": "943896e6829847feafc50e606099e41a",
+            "spanId": "2a2b35f0c1b74ca0",
             "valid": true
           }
         ],
@@ -2835,10 +2835,10 @@
           "model": "fixture.adversary-double",
           "backend": "bedrock",
           "scope": "USD only: dodo.createWalletLedgerEntry was probed with USD amounts; other currencies are untested",
-          "reviewedAt": "2026-10-10T07:31:46.200Z"
+          "reviewedAt": "2026-10-10T08:46:34.657Z"
         },
         "probesToCandidate": 3,
-        "updatedAt": "2026-10-10T07:31:46.202Z"
+        "updatedAt": "2026-10-10T08:46:34.659Z"
       },
       {
         "id": "belief-dodo.wallet.ledger-response-balance-integer",
@@ -2850,7 +2850,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.718Z"
+        "updatedAt": "2026-10-10T08:46:29.248Z"
       },
       {
         "id": "belief-dodo.wallets.total-balance-usd-integer",
@@ -2862,7 +2862,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.713Z"
+        "updatedAt": "2026-10-10T08:46:29.243Z"
       }
     ],
     "after": [
@@ -2876,7 +2876,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.261Z"
+        "updatedAt": "2026-10-10T08:46:28.745Z"
       },
       {
         "id": "belief-crustdata.enrich.confidence-score-number",
@@ -2888,7 +2888,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.249Z"
+        "updatedAt": "2026-10-10T08:46:28.732Z"
       },
       {
         "id": "belief-crustdata.enrich.default-fields-basic-info",
@@ -2900,7 +2900,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.228Z"
+        "updatedAt": "2026-10-10T08:46:28.710Z"
       },
       {
         "id": "belief-crustdata.enrich.employee-count-range-string",
@@ -2912,7 +2912,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.217Z"
+        "updatedAt": "2026-10-10T08:46:28.699Z"
       },
       {
         "id": "belief-crustdata.enrich.funding-total-investment-number",
@@ -2927,36 +2927,36 @@
         "evidence": [
           {
             "probeId": "demo-notarize-crustdata-p001",
-            "traceId": "318770a86f954008bb1e4fd79dc6f5b0",
-            "spanId": "60514c3b884b424a",
+            "traceId": "4c6cc52bcdb84bd9adfc29bc14b1906f",
+            "spanId": "2092b6126bbb4afd",
             "valid": true
           },
           {
             "probeId": "demo-notarize-crustdata-p002",
-            "traceId": "aa9c627f2dd74f6ab5580a31827bfbd0",
-            "spanId": "df5dbac3aa144725",
+            "traceId": "c04f9412fa6e4582a5f4e524a2f4fc70",
+            "spanId": "9b971817495d45f1",
             "valid": true
           },
           {
             "probeId": "demo-notarize-crustdata-p003",
-            "traceId": "18ad0af2879548a1b252842d8b958dee",
-            "spanId": "4e5b96ea58f04ce5",
+            "traceId": "c075f8c09560478fb2ad42ed792ca154",
+            "spanId": "c0b04b66e1ae4a92",
             "valid": true
           },
           {
             "probeId": "demo-notarize-crustdata-p004",
-            "traceId": "0c28aa0250fc41aaa98d0a47504ffcd6",
-            "spanId": "cb433cf2acff439b",
+            "traceId": "18696a25a4e84de0867df9402e669c78",
+            "spanId": "fb5a18d659074e69",
             "valid": true
           },
           {
             "probeId": "demo-notarize-crustdata-p005",
-            "traceId": "3bdc054f13e6469c8a6b66f14ef41d4b",
-            "spanId": "b5d5141734324b33",
+            "traceId": "cd7bcfa4320c4593ba197fc989a8dab9",
+            "spanId": "c2fa6b40cdbb40ab",
             "valid": true
           }
         ],
-        "updatedAt": "2026-10-10T07:31:40.469Z"
+        "updatedAt": "2026-10-10T08:46:28.937Z"
       },
       {
         "id": "belief-crustdata.enrich.headcount-total-integer",
@@ -2971,20 +2971,20 @@
         "evidence": [
           {
             "probeId": "demo-notarize-crustdata-p006",
-            "traceId": "90c0732617c24009bb1155775b358e4f",
-            "spanId": "1b27a76b459a48aa",
+            "traceId": "d1938250b5d141179eb38c9a5523e2eb",
+            "spanId": "7d01a0e1595d4250",
             "valid": true
           },
           {
             "probeId": "demo-notarize-crustdata-p007",
-            "traceId": "06a87b49e2f0401ba157fe947e5aff1e",
-            "spanId": "5dbe0a1fef1c4456",
+            "traceId": "d572aa7e976149cfbd64da435db2d73f",
+            "spanId": "2cb3cc1627ea4d87",
             "valid": true
           },
           {
             "probeId": "demo-notarize-crustdata-p008",
-            "traceId": "dd9b969ab9df4b899ca52bda095d9f52",
-            "spanId": "81f0e1b7e3644275",
+            "traceId": "56a947c1064a4637be940bace3e11ef3",
+            "spanId": "17204b5c09b247bc",
             "valid": true
           }
         ],
@@ -2993,10 +2993,10 @@
           "reason": "3 cited probes (demo-notarize-crustdata-p006, demo-notarize-crustdata-p007, demo-notarize-crustdata-p008) vary the parameter, their controls read differently, and they agree (Beta(4, 1)).",
           "model": "fixture.adversary-double",
           "backend": "bedrock",
-          "reviewedAt": "2026-10-10T07:31:40.506Z"
+          "reviewedAt": "2026-10-10T08:46:28.976Z"
         },
         "probesToCandidate": 3,
-        "updatedAt": "2026-10-10T07:31:40.509Z"
+        "updatedAt": "2026-10-10T08:46:28.978Z"
       },
       {
         "id": "belief-crustdata.enrich.last-fundraise-date-string",
@@ -3008,7 +3008,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.222Z"
+        "updatedAt": "2026-10-10T08:46:28.705Z"
       },
       {
         "id": "belief-crustdata.enrich.no-match-200-empty",
@@ -3020,7 +3020,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.234Z"
+        "updatedAt": "2026-10-10T08:46:28.716Z"
       },
       {
         "id": "belief-crustdata.identify.invalid-fields-400",
@@ -3032,7 +3032,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.245Z"
+        "updatedAt": "2026-10-10T08:46:28.726Z"
       },
       {
         "id": "belief-crustdata.identify.max-25-identifiers",
@@ -3044,7 +3044,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.255Z"
+        "updatedAt": "2026-10-10T08:46:28.739Z"
       },
       {
         "id": "belief-crustdata.identify.no-match-200-empty",
@@ -3056,7 +3056,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.240Z"
+        "updatedAt": "2026-10-10T08:46:28.721Z"
       },
       {
         "id": "belief-dodo.customer.missing-email-422",
@@ -3068,7 +3068,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.688Z"
+        "updatedAt": "2026-10-10T08:46:29.219Z"
       },
       {
         "id": "belief-dodo.payment.refunds-array-present",
@@ -3080,7 +3080,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.674Z"
+        "updatedAt": "2026-10-10T08:46:29.203Z"
       },
       {
         "id": "belief-dodo.payment.refunds-lists-issued-refund",
@@ -3095,20 +3095,20 @@
         "evidence": [
           {
             "probeId": "demo-notarize-dodo-p017",
-            "traceId": "942ed8810cf4490d8425fe0c942587e3",
-            "spanId": "4daa9306cc5a47a0",
+            "traceId": "83c9b9b8fd4e4869b2fc4fb4f3f3ed4c",
+            "spanId": "044452f2b1d049d3",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p018",
-            "traceId": "506e402690f44edfbae8918c5787c4b4",
-            "spanId": "18d4d28874e2475b",
+            "traceId": "91819bf9ae5743148a44a4350e5b233a",
+            "spanId": "8c564c3c40e24394",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p019",
-            "traceId": "801cb012fbb944168919d47af8ec01b4",
-            "spanId": "1f91817208614939",
+            "traceId": "b675d96221fc4da49a7f39279a4feac4",
+            "spanId": "18f3153f7d144d56",
             "valid": true
           }
         ],
@@ -3117,10 +3117,10 @@
           "reason": "3 cited probes (demo-notarize-dodo-p017, demo-notarize-dodo-p018, demo-notarize-dodo-p019) vary the parameter, their controls read differently, and they agree (Beta(4, 1)).",
           "model": "fixture.adversary-double",
           "backend": "bedrock",
-          "reviewedAt": "2026-10-10T07:31:46.090Z"
+          "reviewedAt": "2026-10-10T08:46:34.563Z"
         },
         "probesToCandidate": 3,
-        "updatedAt": "2026-10-10T07:31:46.091Z"
+        "updatedAt": "2026-10-10T08:46:34.565Z"
       },
       {
         "id": "belief-dodo.payments.page-size-max-100",
@@ -3135,38 +3135,38 @@
         "evidence": [
           {
             "probeId": "demo-notarize-dodo-p004",
-            "traceId": "b92ac9bee3c1402fa5b83258820147e9",
-            "spanId": "ac0700cec7b84cee",
+            "traceId": "3eefd94d45514e5181a4ff93ac8a6f10",
+            "spanId": "0c98ee838fe74ed8",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p005",
-            "traceId": "b617f55291444d9b9c30c25aa74b0ca0",
-            "spanId": "5056e9a1939b4514",
+            "traceId": "8d64972d2a1146f5b6bc3d78538b96e3",
+            "spanId": "c48d1a11f39944b8",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p006",
-            "traceId": "4f80b0cd5a784bab876e549d19d2c4b8",
-            "spanId": "43e3a00a4f4b4966",
+            "traceId": "baf3adeadbe84ba8a8c5030e4bba93d5",
+            "spanId": "df425c374ba54775",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p032",
-            "traceId": "eedc2dbdb6694724bd9c455ac6d56f7a",
-            "spanId": "5e09c8a5c01d4a46",
+            "traceId": "2d8bf8a8f9714c2f8432c24570dfe2c7",
+            "spanId": "8d3699fbbac54ebc",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p033",
-            "traceId": "055128447df34e9698bd53f1db9b2d81",
-            "spanId": "2c2333f2e0e748c3",
+            "traceId": "08c8dd9b89bd42d09d3f649a4ba837a9",
+            "spanId": "10280e28d623435d",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p034",
-            "traceId": "342e5b6955c04b4f8bc3ef1fd4cb68d6",
-            "spanId": "c85d7cf093794de0",
+            "traceId": "3a0dcea0bc3044ffa6977740d4919a44",
+            "spanId": "7edc97a51d3e4872",
             "valid": true
           }
         ],
@@ -3175,10 +3175,10 @@
           "reason": "Every cited probe (demo-notarize-dodo-p004, demo-notarize-dodo-p005, demo-notarize-dodo-p006) is a boundary_sweep that saw the over-limit request clamped to exactly 100 items. Clamping enforces \"max is 100\"; no cited probe checked whether any items were lost. Untested alternative: The limit is enforced by clamping rather than rejecting, and listings stay complete (the documented max holds); a pagination_completeness probe would tell them apart.",
           "model": "fixture.adversary-double",
           "backend": "bedrock",
-          "reviewedAt": "2026-10-10T07:31:46.105Z"
+          "reviewedAt": "2026-10-10T08:46:34.575Z"
         },
         "probesToCandidate": 3,
-        "updatedAt": "2026-10-10T07:31:46.343Z"
+        "updatedAt": "2026-10-10T08:46:34.796Z"
       },
       {
         "id": "belief-dodo.product.price-minor-units",
@@ -3190,7 +3190,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.683Z"
+        "updatedAt": "2026-10-10T08:46:29.213Z"
       },
       {
         "id": "belief-dodo.refund.amount-minor-units",
@@ -3205,20 +3205,20 @@
         "evidence": [
           {
             "probeId": "demo-notarize-dodo-p020",
-            "traceId": "a0ad1a662e674c03b3ee2f457142f2fe",
-            "spanId": "e2e25f5cd07b4610",
+            "traceId": "012977a7096e443a8c7aed7cb431f34b",
+            "spanId": "4709053c842d489e",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p021",
-            "traceId": "16f364b314c548299a4428206ec155f9",
-            "spanId": "c114c72e91bc4a3c",
+            "traceId": "832086d09f1b4a7b9e45f3ac626bfe08",
+            "spanId": "97cf5a133fe7489f",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p022",
-            "traceId": "07a393643c9f4e64aee57637c07aa5a1",
-            "spanId": "55fa1d3cbea84139",
+            "traceId": "c93b4a6b7ed24f23934f4d0b14f66468",
+            "spanId": "5f698bf7caaa4785",
             "valid": true
           }
         ],
@@ -3227,10 +3227,10 @@
           "reason": "3 cited probes (demo-notarize-dodo-p020, demo-notarize-dodo-p021, demo-notarize-dodo-p022) vary the parameter, their controls read differently, and they agree (Beta(1, 4)).",
           "model": "fixture.adversary-double",
           "backend": "bedrock",
-          "reviewedAt": "2026-10-10T07:31:46.116Z"
+          "reviewedAt": "2026-10-10T08:46:34.585Z"
         },
         "probesToCandidate": 3,
-        "updatedAt": "2026-10-10T07:31:46.118Z"
+        "updatedAt": "2026-10-10T08:46:34.587Z"
       },
       {
         "id": "belief-dodo.refund.full-retry-no-duplicate",
@@ -3245,20 +3245,20 @@
         "evidence": [
           {
             "probeId": "demo-notarize-dodo-p023",
-            "traceId": "8e54f250a9be42c8b97f0ef25270dcd2",
-            "spanId": "b21b061d27284898",
+            "traceId": "65279468ff014e45931df39ff5e4d478",
+            "spanId": "d47e3dad3c8d4e22",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p024",
-            "traceId": "9a75899924b34edf9618b0db2fabb717",
-            "spanId": "73336ce32e4e4681",
+            "traceId": "7a1eb980759746e98a6728ec1000c264",
+            "spanId": "d533637a3f174b33",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p025",
-            "traceId": "a34a2f3ad6154c63a3d2706894cac431",
-            "spanId": "3bf47f2a25854d72",
+            "traceId": "a8969725141d4d29888280e75c7f25e3",
+            "spanId": "c2f964ddf41c46d3",
             "valid": true
           }
         ],
@@ -3267,10 +3267,10 @@
           "reason": "3 cited probes (demo-notarize-dodo-p023, demo-notarize-dodo-p024, demo-notarize-dodo-p025) vary the parameter, their controls read differently, and they agree (Beta(1, 4)).",
           "model": "fixture.adversary-double",
           "backend": "bedrock",
-          "reviewedAt": "2026-10-10T07:31:46.131Z"
+          "reviewedAt": "2026-10-10T08:46:34.597Z"
         },
         "probesToCandidate": 3,
-        "updatedAt": "2026-10-10T07:31:46.132Z"
+        "updatedAt": "2026-10-10T08:46:34.598Z"
       },
       {
         "id": "belief-dodo.refunds.amount-integer",
@@ -3285,20 +3285,20 @@
         "evidence": [
           {
             "probeId": "demo-notarize-dodo-p026",
-            "traceId": "db92ccdc42f6413fa7196ec76db1218e",
-            "spanId": "fc174f173ea34b10",
+            "traceId": "b69d9f6ee3e248b9967724b87c89e303",
+            "spanId": "7b999459baff4ea7",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p027",
-            "traceId": "375ac7674e5943168fc14e091bf143c0",
-            "spanId": "9fead816d5204a7e",
+            "traceId": "2f27b14399c8461888f708233f2af9c5",
+            "spanId": "5befbef8ade44b81",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p028",
-            "traceId": "4bbd5dcafec04434b06be3c4a2e5dbea",
-            "spanId": "5b45c4ee4d964023",
+            "traceId": "969a34b1acbe48a1af4b8bfeb2b85a1f",
+            "spanId": "345dd51a92d7492a",
             "valid": true
           }
         ],
@@ -3307,10 +3307,10 @@
           "reason": "3 cited probes (demo-notarize-dodo-p026, demo-notarize-dodo-p027, demo-notarize-dodo-p028) vary the parameter, their controls read differently, and they agree (Beta(4, 1)).",
           "model": "fixture.adversary-double",
           "backend": "bedrock",
-          "reviewedAt": "2026-10-10T07:31:46.145Z"
+          "reviewedAt": "2026-10-10T08:46:34.610Z"
         },
         "probesToCandidate": 3,
-        "updatedAt": "2026-10-10T07:31:46.147Z"
+        "updatedAt": "2026-10-10T08:46:34.612Z"
       },
       {
         "id": "belief-dodo.refunds.page-size-max-100",
@@ -3325,20 +3325,20 @@
         "evidence": [
           {
             "probeId": "demo-notarize-dodo-p014",
-            "traceId": "ae95331fa8af4914a2b487bb64c4410d",
-            "spanId": "ac6a092365d54e82",
+            "traceId": "5f624c87302647e4acdbbbafe77563ec",
+            "spanId": "a02abf332e6843dd",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p015",
-            "traceId": "6952f97f186f43e08589a38e2e11f2dc",
-            "spanId": "329ce3a59b4e4be4",
+            "traceId": "b705d1b99ef644468f25f79e17cdf71c",
+            "spanId": "81648b0b47964eff",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p016",
-            "traceId": "0d6510f5abec4fd08410b849037bf0aa",
-            "spanId": "88a3eb24188941ca",
+            "traceId": "1fcb619f95ef46d8be68cc96f9009abc",
+            "spanId": "21e351564b5c42a1",
             "valid": true
           }
         ],
@@ -3347,10 +3347,10 @@
           "reason": "3 cited probes (demo-notarize-dodo-p014, demo-notarize-dodo-p015, demo-notarize-dodo-p016) vary the parameter, their controls read differently, and they agree (Beta(4, 1)).",
           "model": "fixture.adversary-double",
           "backend": "bedrock",
-          "reviewedAt": "2026-10-10T07:31:46.160Z"
+          "reviewedAt": "2026-10-10T08:46:34.621Z"
         },
         "probesToCandidate": 4,
-        "updatedAt": "2026-10-10T07:31:46.162Z"
+        "updatedAt": "2026-10-10T08:46:34.623Z"
       },
       {
         "id": "belief-dodo.subscription.change-plan-pending-409",
@@ -3365,20 +3365,20 @@
         "evidence": [
           {
             "probeId": "demo-notarize-dodo-p029",
-            "traceId": "4da416f23cd24c27b368812ed947d3f7",
-            "spanId": "0f39f8dfbf80407d",
+            "traceId": "d5dff4db3e4a4d61868e2d0565a2cb7f",
+            "spanId": "2bcf0782c936474f",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p030",
-            "traceId": "22c410d563a14290ba90a1897a47b885",
-            "spanId": "c2ea1895330b40f0",
+            "traceId": "8693acde53d643c89e3b0b37f987e40e",
+            "spanId": "ee55da5ad361431d",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p031",
-            "traceId": "cbcb6f0d8567443e97aa0faa8646a822",
-            "spanId": "423ab8a40e59499a",
+            "traceId": "92dc4a2b284a4b87a150eb7f597f9ce5",
+            "spanId": "7355899c86494fa3",
             "valid": true
           }
         ],
@@ -3387,10 +3387,10 @@
           "reason": "3 cited probes (demo-notarize-dodo-p029, demo-notarize-dodo-p030, demo-notarize-dodo-p031) vary the parameter, their controls read differently, and they agree (Beta(4, 1)).",
           "model": "fixture.adversary-double",
           "backend": "bedrock",
-          "reviewedAt": "2026-10-10T07:31:46.172Z"
+          "reviewedAt": "2026-10-10T08:46:34.634Z"
         },
         "probesToCandidate": 3,
-        "updatedAt": "2026-10-10T07:31:46.174Z"
+        "updatedAt": "2026-10-10T08:46:34.635Z"
       },
       {
         "id": "belief-dodo.wallet.credit-amount-minor-units",
@@ -3405,38 +3405,38 @@
         "evidence": [
           {
             "probeId": "demo-notarize-dodo-p007",
-            "traceId": "d3d18d74ad05472cb09b1f2ad77a6ac9",
-            "spanId": "0712cf2a5c80414f",
+            "traceId": "ecc2f18e4a984650a963988c504fa980",
+            "spanId": "9601303e763e4a66",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p008",
-            "traceId": "2c32e9fd40c44eda8dd9a6b599fb7cef",
-            "spanId": "2288e779a7dd4b4f",
+            "traceId": "fb8f7cad486d493da9230d6be422829f",
+            "spanId": "977e37ad256d4c78",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p009",
-            "traceId": "b193e41bc6754fb7bb69434ecd137d1b",
-            "spanId": "105f0b3ebf1a497c",
+            "traceId": "4e37bb490f9f41ff96d2c878afa2e663",
+            "spanId": "cc5bfe4bcaf24b39",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p010",
-            "traceId": "59ac994428164729b6d40a915256bf7c",
-            "spanId": "eccaa2f35bb047c9",
+            "traceId": "113199d6c87243a1899693d90718cd95",
+            "spanId": "9b28ef550c914a1e",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p011",
-            "traceId": "1686d33945684e4c97573f307f82be7c",
-            "spanId": "23c7c8ffd2764e5a",
+            "traceId": "313fc5b437024f57b3bd3d5b67530d3c",
+            "spanId": "6806a6bff1df49d6",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p012",
-            "traceId": "6aa2e41a528f4db9b9323a606b6ffd63",
-            "spanId": "8d6f173272f4471e",
+            "traceId": "c6fa207ae95b4742a0a897bd03b13705",
+            "spanId": "d5459cb0741a4bb9",
             "valid": true
           }
         ],
@@ -3446,10 +3446,10 @@
           "model": "fixture.adversary-double",
           "backend": "bedrock",
           "scope": "USD only: dodo.createWalletLedgerEntry was probed with USD amounts; other currencies are untested",
-          "reviewedAt": "2026-10-10T07:31:46.187Z"
+          "reviewedAt": "2026-10-10T08:46:34.646Z"
         },
         "probesToCandidate": 6,
-        "updatedAt": "2026-10-10T07:31:46.189Z"
+        "updatedAt": "2026-10-10T08:46:34.648Z"
       },
       {
         "id": "belief-dodo.wallet.debit-insufficient-400",
@@ -3461,7 +3461,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.708Z"
+        "updatedAt": "2026-10-10T08:46:29.238Z"
       },
       {
         "id": "belief-dodo.wallet.idempotency-key-no-duplicate",
@@ -3476,20 +3476,20 @@
         "evidence": [
           {
             "probeId": "demo-notarize-dodo-p001",
-            "traceId": "a79b210f1c0b4a848d89406068e6e8a1",
-            "spanId": "cc4a93e7ac3942ad",
+            "traceId": "fbed0816119a4d4db32de527db4e398a",
+            "spanId": "9ecc9a9dd3c3445c",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p002",
-            "traceId": "156b9c93ee7446e6be7cee1ab283c8fd",
-            "spanId": "7edc70f758104610",
+            "traceId": "91acf18d7b534e8f91a5edd895c34ef1",
+            "spanId": "939ff39c999146f8",
             "valid": true
           },
           {
             "probeId": "demo-notarize-dodo-p003",
-            "traceId": "f79da103531e441fade811928e067458",
-            "spanId": "cd9f28a1cd9b40a2",
+            "traceId": "943896e6829847feafc50e606099e41a",
+            "spanId": "2a2b35f0c1b74ca0",
             "valid": true
           }
         ],
@@ -3499,10 +3499,10 @@
           "model": "fixture.adversary-double",
           "backend": "bedrock",
           "scope": "USD only: dodo.createWalletLedgerEntry was probed with USD amounts; other currencies are untested",
-          "reviewedAt": "2026-10-10T07:31:46.200Z"
+          "reviewedAt": "2026-10-10T08:46:34.657Z"
         },
         "probesToCandidate": 3,
-        "updatedAt": "2026-10-10T07:31:46.202Z"
+        "updatedAt": "2026-10-10T08:46:34.659Z"
       },
       {
         "id": "belief-dodo.wallet.ledger-response-balance-integer",
@@ -3514,7 +3514,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.718Z"
+        "updatedAt": "2026-10-10T08:46:29.248Z"
       },
       {
         "id": "belief-dodo.wallets.total-balance-usd-integer",
@@ -3526,7 +3526,7 @@
         "confidence": 0.5,
         "status": "hypothesis",
         "evidence": [],
-        "updatedAt": "2026-10-10T07:31:40.713Z"
+        "updatedAt": "2026-10-10T08:46:29.243Z"
       }
     ]
   },
@@ -3543,7 +3543,7 @@
       },
       "reason": "dodo.wallet.credit-amount-minor-units violated (unit_mismatch) but the cited probes disagree: demo-notarize-dodo-p008 echoed the amount unchanged, demo-notarize-dodo-p007, demo-notarize-dodo-p009, demo-notarize-dodo-p010, demo-notarize-dodo-p011, demo-notarize-dodo-p012 echoed 100x: no safe transform",
       "active": true,
-      "compiledAt": "2026-10-10T07:31:46.366Z"
+      "compiledAt": "2026-10-10T08:46:34.818Z"
     },
     {
       "id": "grd-0a7a2cbf59f3",
@@ -3564,7 +3564,7 @@
       },
       "reason": "dodo.refund.amount-minor-units violated (unit_mismatch): the API echoed 100x what was sent; scale items[].amount by 1/100 (refuse if not an integer)",
       "active": true,
-      "compiledAt": "2026-10-10T07:31:46.366Z"
+      "compiledAt": "2026-10-10T08:46:34.818Z"
     },
     {
       "id": "grd-20de13827cc6",
@@ -3580,7 +3580,7 @@
       },
       "reason": "dodo.refund.full-retry-no-duplicate violated (idempotency_hazard): never retry dodo.createRefund blindly; on timeout/5xx read back, retry only if it provably did not land",
       "active": true,
-      "compiledAt": "2026-10-10T07:31:46.366Z"
+      "compiledAt": "2026-10-10T08:46:34.818Z"
     },
     {
       "id": "grd-3b37d65e6dca",
@@ -3596,7 +3596,7 @@
       },
       "reason": "idempotency_hazard: list the customer's refunds completely (and read the payment) before refunding; refuse if one exists",
       "active": true,
-      "compiledAt": "2026-10-10T07:31:46.366Z"
+      "compiledAt": "2026-10-10T08:46:34.818Z"
     },
     {
       "id": "grd-6b98c720d1cb",
@@ -3617,7 +3617,7 @@
       },
       "reason": "dodo.wallet.idempotency-key-no-duplicate violated (idempotency_hazard): never retry dodo.createWalletLedgerEntry blindly; on timeout/5xx read back, retry only if it provably did not land [narrowed scope: currency USD; outside it the behavior is unverified, so refuse]",
       "active": true,
-      "compiledAt": "2026-10-10T07:31:46.366Z"
+      "compiledAt": "2026-10-10T08:46:34.818Z"
     }
   ],
   "usageByRole": {
@@ -3684,16 +3684,16 @@
     "probes_to_candidate": null
   },
   "traceLinks": {
-    "b92ac9bee3c1402fa5b83258820147e9": "runs/demo-notarize-dodo/spans.jsonl#trace=b92ac9bee3c1402fa5b83258820147e9",
-    "b617f55291444d9b9c30c25aa74b0ca0": "runs/demo-notarize-dodo/spans.jsonl#trace=b617f55291444d9b9c30c25aa74b0ca0",
-    "4f80b0cd5a784bab876e549d19d2c4b8": "runs/demo-notarize-dodo/spans.jsonl#trace=4f80b0cd5a784bab876e549d19d2c4b8",
-    "eedc2dbdb6694724bd9c455ac6d56f7a": "runs/demo-notarize-dodo/spans.jsonl#trace=eedc2dbdb6694724bd9c455ac6d56f7a",
-    "055128447df34e9698bd53f1db9b2d81": "runs/demo-notarize-dodo/spans.jsonl#trace=055128447df34e9698bd53f1db9b2d81",
-    "342e5b6955c04b4f8bc3ef1fd4cb68d6": "runs/demo-notarize-dodo/spans.jsonl#trace=342e5b6955c04b4f8bc3ef1fd4cb68d6"
+    "3eefd94d45514e5181a4ff93ac8a6f10": "runs/demo-notarize-dodo/spans.jsonl#trace=3eefd94d45514e5181a4ff93ac8a6f10",
+    "8d64972d2a1146f5b6bc3d78538b96e3": "runs/demo-notarize-dodo/spans.jsonl#trace=8d64972d2a1146f5b6bc3d78538b96e3",
+    "baf3adeadbe84ba8a8c5030e4bba93d5": "runs/demo-notarize-dodo/spans.jsonl#trace=baf3adeadbe84ba8a8c5030e4bba93d5",
+    "2d8bf8a8f9714c2f8432c24570dfe2c7": "runs/demo-notarize-dodo/spans.jsonl#trace=2d8bf8a8f9714c2f8432c24570dfe2c7",
+    "08c8dd9b89bd42d09d3f649a4ba837a9": "runs/demo-notarize-dodo/spans.jsonl#trace=08c8dd9b89bd42d09d3f649a4ba837a9",
+    "3a0dcea0bc3044ffa6977740d4919a44": "runs/demo-notarize-dodo/spans.jsonl#trace=3a0dcea0bc3044ffa6977740d4919a44"
   },
   "cassettes": [
-    "demo-run-guarded@f0042246b23b415547e474fe839ffb8361adffb884071ab33e8e28a50bad93e2",
+    "demo-run-guarded@177ffaeb0f669fc37dd04b38ccb50db968deffdf0b303bfeb749f9f4915f959f",
     "demo-fixture-seed"
   ],
-  "contentHash": "596ee1ad29cf7322d1291637a10eff2613dca73425c5bd5ec716fa95532705e4"
+  "contentHash": "301d950717e879ab4ebda20c44fa4ce5217e6df25d5c1b69821a0597fb686418"
 }

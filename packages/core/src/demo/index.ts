@@ -22,6 +22,15 @@
  * separate store runs/demo/notary.sqlite. Nothing is written to fixtures/cassettes or packages/web.
  * Only `--publish` (src/demo/publish.ts, after the demo finishes cleanly) copies the bundles,
  * unchanged, into packages/web/public/bundles/fixture/ with their own index.json.
+ *
+ * Scenario "change-api" (`--scenario change-api`, DECISIONS #105): the same pipeline in a world where
+ * GET /payments enforces its documented max (so refunds pass the gate), and the simulated Dodo
+ * changes the refund amount unit MID-RUN: once queue item CHANGE_API_SWITCH_AFTER is decided, POST
+ * /refunds reads items[].amount in minor units for every later request (fixture-api.ts
+ * `changeRefundUnit`). The guarded run's re-verification sentinel (src/queue/sentinel.ts) notices it
+ * through its own probes before the next transformed refund; the notarized refund-unit belief
+ * un-learns by BeliefStore's rules, its guard retires, and that refund is held with an evidence pack.
+ * Its bundles are `demo-change-api-*` in runs/demo-change-api/ (Stage 11 tells the story).
  */
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
@@ -33,6 +42,7 @@ import { collectBundles, runExport } from "../export/index.js";
 import { DEFAULT_MANIFEST_PATH } from "../queue/manifest.js";
 import { seedSteps } from "../queue/seed-plan.js";
 import { runQueue } from "../queue/run.js";
+import type { SentinelMode } from "../queue/sentinel.js";
 import { replayDrift } from "../beliefs/drift.js";
 import type { ReplayDriftResult } from "../beliefs/drift.js";
 import { GuardRegistry } from "../guards/registry.js";
@@ -46,12 +56,18 @@ import { PinMismatchError, loadPinned } from "../replay/pins.js";
 import type { Belief, RunBundle, Tool } from "../schema/index.js";
 import { DEFAULT_CASSETTE_DIR, loadCassette, setRecorderTransport } from "../tools/index.js";
 import type { Cassette } from "../tools/index.js";
-import { FIXTURE_CONTROLS, FIXTURE_QUIRKS, FixtureApi, FixtureWorld } from "./fixture-api.js";
+import { FIXTURE_CONTROLS, FIXTURE_QUIRKS, FixtureApi, FixtureWorld, REFUND_UNIT_CHANGE } from "./fixture-api.js";
+import type { FixtureApiChange, FixtureQuirk, FixtureRefundBooking, FixtureWorldOptions } from "./fixture-api.js";
+import { bus } from "../api/bus.js";
+import { SEED_PLAN } from "../queue/seed-plan.js";
+import { canonicalJson } from "../bundle/hash.js";
+import { claimById } from "../contracts/index.js";
 import { FIXTURE_MODEL_LABEL, createFixtureLlm } from "./fixture-llm.js";
 import {
   adversaryLines,
   anomalyLines,
   beliefLines,
+  changeApiLines,
   guardLines,
   heading,
   hypothesisLines,
@@ -90,8 +106,49 @@ export const DEMO_RUN_IDS = {
   guarded: "demo-run-guarded",
 } as const;
 
+export type DemoScenario = "default" | "change-api";
+export const DEMO_SCENARIOS: readonly DemoScenario[] = ["default", "change-api"];
+
+/** Bundle runIds of the change-api scenario (all `demo-change-api-*`). */
+export const CHANGE_API_RUN_IDS = {
+  notarizeCrustdata: "demo-change-api-notarize-crustdata",
+  notarizeDodo: "demo-change-api-notarize-dodo",
+  naive: "demo-change-api-run-naive",
+  guarded: "demo-change-api-run-guarded",
+} as const;
+export const CHANGE_API_RUN_PREFIX = "demo-change-api-";
+export const CHANGE_API_RUNS_DIR = fileURLToPath(new URL("../../runs/demo-change-api/", import.meta.url));
+/** The simulated API change happens right after this queue item is decided (each queue run, deterministic). */
+export const CHANGE_API_SWITCH_AFTER = "q09";
+/** The belief whose certificate the change revokes. */
+export const CHANGE_API_CLAIM_ID = "dodo.refund.amount-minor-units";
+export const CHANGE_API_DISCLOSURE = `SIMULATED MID-RUN API CHANGE (fixture scenario change-api): right after queue item ${CHANGE_API_SWITCH_AFTER} is decided in each queue run, ${REFUND_UNIT_CHANGE}. In this scenario GET /payments enforces the documented page_size max (PLANTED QUIRK Q1 on GET /refunds only), so refunds can pass the gate.`;
+
+/** The scenario a demo runId belongs to (publish replaces one scenario's files at a time). */
+export function demoScenarioOf(runId: string): DemoScenario {
+  return runId.startsWith(CHANGE_API_RUN_PREFIX) ? "change-api" : "default";
+}
+
+function scenarioWorld(scenario: DemoScenario): FixtureWorldOptions {
+  return scenario === "change-api" ? { paymentsPageClamp: false } : {};
+}
+
+/** The planted quirks as they apply in a scenario (change-api: Q1 on GET /refunds only). */
+export function scenarioQuirks(scenario: DemoScenario): readonly FixtureQuirk[] {
+  if (scenario === "default") return FIXTURE_QUIRKS;
+  return FIXTURE_QUIRKS.map((q) =>
+    q.id === "Q1"
+      ? { ...q, where: "GET /refunds", behaviour: `${q.behaviour} (GET /payments enforces the documented max in this scenario)`, claims: ["dodo.refunds.page-size-max-100"] }
+      : q,
+  );
+}
+
 export interface FixtureDemoOptions {
-  /** Default packages/core/runs/demo. */
+  /** "default" (the walkthrough) or "change-api" (mid-run API change). */
+  scenario?: DemoScenario;
+  /** Test seam (counterfactual): the guarded run's sentinel mode; default the runQueue default ("transform"). */
+  guardedSentinel?: SentinelMode;
+  /** Default packages/core/runs/demo (change-api: runs/demo-change-api). */
   outDir?: string;
   /** Clock for bundles, probes and beliefs; default a strictly increasing wall clock. */
   now?: () => Date;
@@ -110,6 +167,9 @@ export interface FixtureDemoResult {
   stats: { globalFetchCalls: number; served: number; refused: string[]; unknownRoutes: string[] };
   /** Stage 11: the replayDrift result (on the store copy) and the drift fixture path. */
   drift?: { result?: ReplayDriftResult; fixturePath?: string; storePath: string };
+  scenario: DemoScenario;
+  /** change-api: per queue run, the simulated API change and every partial refund the world booked. */
+  apiChange?: Partial<Record<"naive" | "guarded", { change?: FixtureApiChange; bookings: FixtureRefundBooking[] }>>;
 }
 
 /** A wall clock that never returns the same instant twice (committedAt is always before ranAt). */
@@ -196,18 +256,25 @@ function liveStops(env: NodeJS.ProcessEnv): LiveStops {
 // ---------------------------------------------------------------------------------------------
 
 /** Re-label a bundle the real pipeline wrote: sample: true + the FIXTURE disclosure, re-hashed, same path. */
-async function labelAsFixture(bundlePath: string): Promise<RunBundle> {
+async function labelAsFixture(bundlePath: string, scenario: DemoScenario = "default"): Promise<RunBundle> {
   const v = verifyBundle(JSON.parse(readFileSync(bundlePath, "utf8")));
   if (!v.ok) throw new Error(`demo: bundle ${bundlePath} failed verification: ${v.error}`);
   const b = v.bundle;
   if (!b.runId.startsWith("demo-")) throw new Error(`demo: refusing to label non-demo bundle ${b.runId}`);
-  const quirks = `PLANTED FIXTURE QUIRKS (simulated, not claims about the real APIs): ${FIXTURE_QUIRKS.map((q) => `${q.id} ${q.where}: ${q.behaviour}`).join("; ")}`;
+  const quirks = `PLANTED FIXTURE QUIRKS (simulated, not claims about the real APIs): ${scenarioQuirks(scenario).map((q) => `${q.id} ${q.where}: ${q.behaviour}`).join("; ")}`;
   const models = `Reflector and adversary are deterministic model doubles (${FIXTURE_MODEL_LABEL}); token counts are estimates, usd 0.`;
   const caps = `Probe caps raised for the fixture demo only: ${DEMO_MAX_PROBES_PER_CLAIM} per claim, ${DEMO_MAX_PROBES_PER_RUN} per run (live defaults ${DEFAULT_MAX_PROBES_PER_CLAIM} and ${MAX_PROBES_PER_RUN}).`;
   const labelled = finalizeBundle({
     ...b,
     sample: true,
-    disclosure: [FIXTURE_DISCLOSURE, quirks, models, caps, ...b.disclosure.filter((d) => d !== FIXTURE_DISCLOSURE)],
+    disclosure: [
+      FIXTURE_DISCLOSURE,
+      ...(scenario === "change-api" ? [CHANGE_API_DISCLOSURE] : []),
+      quirks,
+      models,
+      caps,
+      ...b.disclosure.filter((d) => d !== FIXTURE_DISCLOSURE && d !== CHANGE_API_DISCLOSURE),
+    ],
   });
   await writeBundle(labelled, dirname(bundlePath));
   return labelled;
@@ -225,7 +292,7 @@ function readCassette(dir: string, name: string): Cassette | null {
 function rel(outDir: string, p: string): string {
   const r = relative(outDir, p).split(sep).join("/");
   if (r.startsWith("..")) return relative(CORE_DIR, p).split(sep).join("/");
-  const base = resolve(outDir) === resolve(DEMO_RUNS_DIR) ? "runs/demo" : "<outDir>";
+  const base = resolve(outDir) === resolve(DEMO_RUNS_DIR) ? "runs/demo" : resolve(outDir) === resolve(CHANGE_API_RUNS_DIR) ? "runs/demo-change-api" : "<outDir>";
   return r ? `${base}/${r}` : base;
 }
 
@@ -322,7 +389,11 @@ async function driftStage(o: DriftStageInput): Promise<{ lines: string[]; proble
 }
 
 export async function runFixtureDemo(opts: FixtureDemoOptions = {}): Promise<FixtureDemoResult> {
-  const outDir = resolve(opts.outDir ?? DEMO_RUNS_DIR);
+  const scenario: DemoScenario = opts.scenario ?? "default";
+  if (!DEMO_SCENARIOS.includes(scenario)) throw new Error(`notary demo: unknown scenario ${JSON.stringify(scenario)} (known: ${DEMO_SCENARIOS.join(", ")})`);
+  const changeApi = scenario === "change-api";
+  const ids = changeApi ? CHANGE_API_RUN_IDS : DEMO_RUN_IDS;
+  const outDir = resolve(opts.outDir ?? (changeApi ? CHANGE_API_RUNS_DIR : DEMO_RUNS_DIR));
   assertSafeOutDir(outDir);
   cleanPrevious(outDir);
   mkdirSync(outDir, { recursive: true });
@@ -332,8 +403,9 @@ export async function runFixtureDemo(opts: FixtureDemoOptions = {}): Promise<Fix
   const now = opts.now ?? monotonicClock();
   const stops = liveStops(opts.readinessEnv ?? readinessEnvDefault());
 
-  let world = new FixtureWorld();
+  let world = new FixtureWorld(SEED_PLAN, scenarioWorld(scenario));
   const api = new FixtureApi(() => world, opts.slowFullRefundMs === undefined ? {} : { slowFullRefundMs: opts.slowFullRefundMs });
+  const apiChange: NonNullable<FixtureDemoResult["apiChange"]> = {};
   mkdirSync(dirname(manifestPath), { recursive: true });
   writeFileSync(manifestPath, `${JSON.stringify(world.seedManifest(), null, 2)}\n`, "utf8");
 
@@ -363,8 +435,9 @@ export async function runFixtureDemo(opts: FixtureDemoOptions = {}): Promise<Fix
   const noSleep = async (): Promise<void> => {};
 
   try {
-    lines.push("notary demo --fixture");
+    lines.push(changeApi ? "notary demo --fixture --scenario change-api" : "notary demo --fixture");
     lines.push(FIXTURE_DISCLOSURE);
+    if (changeApi) lines.push(CHANGE_API_DISCLOSURE);
     lines.push(`output: ${rel(outDir, outDir)} (bundles <runId>/, cassettes cassettes/ marked fixture: true, store notary.sqlite); nothing under fixtures/cassettes or packages/web`);
     lines.push("network: global fetch is trapped for the whole demo; every HTTP call goes to the in-process fixture API (api.crustdata.com, test.dodopayments.com), any other host is refused");
     lines.push(`models: reflector and adversary are deterministic doubles behind the real LlmClient (${FIXTURE_MODEL_LABEL})`);
@@ -376,13 +449,13 @@ export async function runFixtureDemo(opts: FixtureDemoOptions = {}): Promise<Fix
     );
     lines.push("");
     lines.push("PLANTED FIXTURE QUIRKS (simulated behaviour; not claims about the real Crustdata or Dodo APIs):");
-    for (const q of FIXTURE_QUIRKS) lines.push(`  PLANTED FIXTURE QUIRK ${q.id} [${q.tool}] ${q.where}: ${q.behaviour}`);
+    for (const q of scenarioQuirks(scenario)) lines.push(`  PLANTED FIXTURE QUIRK ${q.id} [${q.tool}] ${q.where}: ${q.behaviour}`);
     lines.push(`CONTROLS (fixture honors the doc): ${FIXTURE_CONTROLS.join("; ")}`);
 
     // ---- Stages 1–7: notarize both tools through the real loop --------------------------------
     const notarized: Partial<Record<Tool, { result: NotarizeResult; bundle?: RunBundle }>> = {};
     for (const tool of ["crustdata", "dodo"] as const) {
-      const runId = tool === "crustdata" ? DEMO_RUN_IDS.notarizeCrustdata : DEMO_RUN_IDS.notarizeDodo;
+      const runId = tool === "crustdata" ? ids.notarizeCrustdata : ids.notarizeDodo;
       const result = await notarize({
         tool,
         env,
@@ -401,7 +474,7 @@ export async function runFixtureDemo(opts: FixtureDemoOptions = {}): Promise<Fix
       });
       const entry: { result: NotarizeResult; bundle?: RunBundle } = { result };
       if (result.bundlePath) {
-        entry.bundle = await labelAsFixture(result.bundlePath);
+        entry.bundle = await labelAsFixture(result.bundlePath, scenario);
         bundlePaths.push(result.bundlePath);
         bundles.push(entry.bundle);
       } else {
@@ -460,24 +533,39 @@ export async function runFixtureDemo(opts: FixtureDemoOptions = {}): Promise<Fix
     // ---- Stages 8–9: the seeded queue, naive then guarded, each on a freshly seeded world --------
     const runs: Partial<Record<"naive" | "guarded", RunBundle>> = {};
     for (const variant of ["naive", "guarded"] as const) {
-      world = new FixtureWorld();
-      const runId = variant === "naive" ? DEMO_RUN_IDS.naive : DEMO_RUN_IDS.guarded;
-      const r = await runQueue({
-        queueFile: SEEDED_QUEUE_PATH,
-        variant,
-        mode: "live",
-        runId,
-        runsDir: outDir,
-        webBundlesDir: null,
-        cassetteDir,
-        ...(variant === "guarded" ? { dbPath } : {}),
-        env,
-        now,
-        manifest: world.seedManifest(),
-        recordReplay: false,
-      });
+      world = new FixtureWorld(SEED_PLAN, scenarioWorld(scenario));
+      const runWorld = world;
+      const runId = variant === "naive" ? ids.naive : ids.guarded;
+      // change-api: the simulated Dodo changes the refund unit the moment the switch item is decided.
+      const unsubscribe = changeApi
+        ? bus.subscribe((ev) => {
+            const p = ev.payload as { runId?: unknown; decision?: { requestId?: unknown } } | null;
+            if (ev.type === "decision" && p?.runId === runId && p.decision?.requestId === CHANGE_API_SWITCH_AFTER) runWorld.changeRefundUnit();
+          })
+        : () => {};
+      let r: Awaited<ReturnType<typeof runQueue>>;
+      try {
+        r = await runQueue({
+          queueFile: SEEDED_QUEUE_PATH,
+          variant,
+          mode: "live",
+          runId,
+          runsDir: outDir,
+          webBundlesDir: null,
+          cassetteDir,
+          ...(variant === "guarded" ? { dbPath } : {}),
+          ...(variant === "guarded" && opts.guardedSentinel ? { sentinel: opts.guardedSentinel } : {}),
+          env,
+          now,
+          manifest: world.seedManifest(),
+          recordReplay: false,
+        });
+      } finally {
+        unsubscribe();
+      }
+      if (changeApi) apiChange[variant] = { ...(runWorld.apiChanges[0] ? { change: runWorld.apiChanges[0] } : {}), bookings: [...runWorld.refundBookings] };
       if (r.bundlePath) {
-        runs[variant] = await labelAsFixture(r.bundlePath);
+        runs[variant] = await labelAsFixture(r.bundlePath, scenario);
         bundlePaths.push(r.bundlePath);
         bundles.push(runs[variant]!);
       } else {
@@ -492,10 +580,14 @@ export async function runFixtureDemo(opts: FixtureDemoOptions = {}): Promise<Fix
     lines.push(heading(9, "Guarded run (gate on required beliefs + compiled guards) over fixtures/queue/seeded.json"));
     if (runs.guarded) {
       const fired = [...new Set(runs.guarded.decisions.flatMap((d) => d.guardsApplied))];
-      lines.push(...runLines(runs.guarded, { guarded: true, beliefs: runs.guarded.beliefs.before }));
+      lines.push(...runLines(runs.guarded, { guarded: true, beliefs: runs.guarded.beliefs.after }));
       lines.push(`  guards fired during the run: ${fired.length ? fired.join(", ") : "none"}`);
       lines.push("  required beliefs per action (src/queue/required.ts) vs the store:");
       lines.push(...requiredBeliefLines(runs.guarded.beliefs.before));
+      if (canonicalJson(runs.guarded.beliefs.after.map((b) => [b.id, b.status])) !== canonicalJson(runs.guarded.beliefs.before.map((b) => [b.id, b.status]))) {
+        lines.push("  required beliefs per action after the run (beliefs changed during it):");
+        lines.push(...requiredBeliefLines(runs.guarded.beliefs.after));
+      }
     }
     lines.push(`  ${stops.line(9)}`);
 
@@ -549,6 +641,27 @@ export async function runFixtureDemo(opts: FixtureDemoOptions = {}): Promise<Fix
     }
     lines.push(`  ${stops.line(10)}`);
 
+    if (changeApi) {
+      // ---- Stage 11 (change-api): what the sentinel saw, from the guarded bundle --------------------
+      lines.push(heading(11, `Change the API (FIXTURE: Dodo switches the refund amount unit right after ${CHANGE_API_SWITCH_AFTER}; the guarded run notices only by probing)`));
+      if (runs.guarded && notarized.dodo?.bundle) {
+        const story = changeApiLines({
+          guarded: runs.guarded,
+          notarize: notarized.dodo.bundle,
+          claimId: CHANGE_API_CLAIM_ID,
+          switchAfter: CHANGE_API_SWITCH_AFTER,
+          change: apiChange.guarded?.change,
+          bookings: apiChange.guarded?.bookings ?? [],
+          claim: claimById(CHANGE_API_CLAIM_ID)!,
+        });
+        lines.push(...story.lines);
+        problems.push(...story.problems);
+      } else {
+        lines.push("  skipped: no guarded run or dodo notarize bundle");
+        problems.push("stage 11: change-api needs the guarded run and the dodo notarize bundle");
+      }
+      lines.push("  live: the sentinel is on by default in guarded runs (NOTARY_SENTINEL=transform|off); the API change here is simulated");
+    } else {
     // ---- Stage 11: drift replay on the demo's own FIXTURE cassette ------------------------------
     lines.push(heading(11, "Drift replay (FIXTURE: simulated \"Dodo fixed the ledger unit bug\", replayed through replayDrift)"));
     if (notarized.dodo?.bundle) {
@@ -560,6 +673,7 @@ export async function runFixtureDemo(opts: FixtureDemoOptions = {}): Promise<Fix
       lines.push("  skipped: no dodo notarize bundle");
     }
     lines.push(`  ${stops.line(11)}`);
+    }
   } finally {
     restoreTransport();
     globalThis.fetch = realFetch;
@@ -585,5 +699,7 @@ export async function runFixtureDemo(opts: FixtureDemoOptions = {}): Promise<Fix
     bundles,
     stats: { globalFetchCalls, served: api.stats.served, refused: [...api.stats.refused], unknownRoutes: [...api.stats.unknownRoutes] },
     ...(driftOut ? { drift: driftOut } : {}),
+    scenario,
+    ...(changeApi ? { apiChange } : {}),
   };
 }

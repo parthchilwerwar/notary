@@ -31,6 +31,10 @@
  * - never retries a write blindly: on timeout/5xx it reads back (src/guards/readback.ts) and retries
  *   once only when the read-back proves the write did not land; a guard refusal holds the item;
  * - sends plan changes with an explicit `effective_at: "immediately"` (no reliance on defaults);
+ * - before a write an active transform guard would rewrite, asks the re-verification `sentinel`
+ *   (src/queue/sentinel.ts, DECISIONS #105) to re-run that belief's experiment on probe-only
+ *   resources; a belief that un-learns (or is contradicted, or can't be re-verified) holds the item,
+ *   with the gate re-asked so the evidence pack names the revoked belief;
  * - on `resume`, keeps done items, reads back an item left in flight with a recorded write before
  *   doing anything else, and processes the rest normally.
  */
@@ -54,6 +58,7 @@ import { isRef, resolveRef } from "./manifest.js";
 import type { SeedManifest } from "./manifest.js";
 import { decidePolicy, tierFromCompany } from "./policy.js";
 import type { PolicyAction, PolicyDecision, PolicyInput } from "./policy.js";
+import type { SentinelHook } from "./sentinel.js";
 
 // ---------------------------------------------------------------------------------------------
 // Types
@@ -137,6 +142,8 @@ export interface ExecuteQueueOptions {
   runState?: RunStateHooks;
   /** Guarded: state of the run being resumed, by request id. */
   resume?: ReadonlyMap<string, ResumeEntry>;
+  /** Guarded: re-verification sentinel asked before each write (src/queue/sentinel.ts). */
+  sentinel?: SentinelHook;
 }
 
 export interface ExecuteQueueResult {
@@ -611,6 +618,8 @@ export async function executeQueue(opts: ExecuteQueueOptions): Promise<ExecuteQu
           ? { payment_id: pid, reason: req.reason }
           : { payment_id: pid, reason: req.reason, items: [{ item_id: lineItem!, amount: amount! }] };
         const sent = full ? paymentAmount : amount;
+        const reheld = await reverify("dodo.createRefund", params);
+        if (reheld) return reheld;
         const pending: PendingWrite = {
           op: "dodo.createRefund",
           paymentId: pid,
@@ -641,6 +650,8 @@ export async function executeQueue(opts: ExecuteQueueOptions): Promise<ExecuteQu
           proration_billing_mode: "prorated_immediately" as const,
           ...(guardedMode ? { effective_at: "immediately" as const } : {}),
         };
+        const reheldPlan = await reverify("dodo.changeSubscriptionPlan", { subscription_id: subId, ...params });
+        if (reheldPlan) return reheldPlan;
         const pending: PendingWrite = {
           op: "dodo.changeSubscriptionPlan",
           subscriptionId: subId,
@@ -667,6 +678,8 @@ export async function executeQueue(opts: ExecuteQueueOptions): Promise<ExecuteQu
           idempotency_key: `notary-${runKey}-${req.id}`,
           reason: req.reason,
         };
+        const reheldCredit = await reverify("dodo.createWalletLedgerEntry", { customer_id: customerId, ...params });
+        if (reheldCredit) return reheldCredit;
         let pending: PendingWrite | undefined;
         if (guardedMode) {
           const entries = await ledgerEntries(readFns, customerId, params.currency, onRead);
@@ -716,6 +729,34 @@ export async function executeQueue(opts: ExecuteQueueOptions): Promise<ExecuteQu
     return finish("held", decided.action, {
       error: outcome.unknown ? `write outcome unknown: ${outcome.error}` : `write failed: ${outcome.error}`,
     });
+
+    /**
+     * Guarded: the re-verification sentinel, asked right before a write with its final params. null =
+     * proceed; otherwise the held decision. When a belief left notarized, the gate is asked again so
+     * the evidence pack names the revoked belief and every probe on its claim (sentinel probes included).
+     */
+    async function reverify(op: string, params: Record<string, unknown>): Promise<Decision | null> {
+      if (!guardedMode || !opts.sentinel) return null;
+      const s = await opts.sentinel({ requestId: req.id, op, params });
+      if (!s.ran) return null;
+      notes.push(`${req.id}: ${s.reason ?? "re-verification sentinel ran"}${s.hold ? "; HELD" : "; proceeding"}`);
+      if (!s.hold) return null;
+      const v = await opts.gate!({ request: req, tier, policy: decided, ...(paymentAmount === undefined ? {} : { paymentAmount }) });
+      const missing = [...new Set([...v.missingBeliefs, ...s.leftNotarized])];
+      base.requiredBeliefs = v.requiredBeliefs;
+      base.missingBeliefs = missing;
+      const reason = `${s.reason ?? "re-verification sentinel hold"}${v.allow ? "" : `. Gate re-checked: ${v.reason ?? "required beliefs not notarized"}`}`;
+      return finish("held", decided.action, {
+        error: reason,
+        evidencePack: {
+          reason,
+          missingBeliefs: missing,
+          relatedProbeIds: [...new Set([...s.probeIds, ...(v.evidence?.relatedProbeIds ?? [])])],
+          spanIds: v.evidence?.spanIds ?? [],
+          traceLinks: v.evidence?.traceLinks ?? {},
+        },
+      });
+    }
 
     function held(error: string, outcome: PolicyOutcome, action: string): Decision {
       return {

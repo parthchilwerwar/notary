@@ -128,6 +128,13 @@ export const RAW_BY_DESIGN: readonly AllowEntry[] = [
     reason: "probing (replay of recorded probes, incl. drift): probes must see the raw response (DECISIONS #56)",
   },
   {
+    file: "src/reflect/notarize.ts",
+    kind: "no-wrap",
+    fn: "sentinelProbeTools",
+    sites: 1,
+    reason: "probing: re-verification sentinel probes must see the raw response, never the guards they re-verify (DECISIONS #56, #105)",
+  },
+  {
     file: "scripts/seed-dodo.ts",
     kind: "no-wrap",
     fn: "seed",

@@ -12,6 +12,11 @@
  * action, a belief that un-learns retires its guards immediately, and per-item run state is persisted
  * (src/queue/run-state.ts) so a crashed run continues with `--resume`. Each decision is emitted on the
  * event bus (`decision`), and the end of the run as `run.finished`.
+ *
+ * Re-verification sentinel (guarded, DECISIONS #105; `NOTARY_SENTINEL=transform|off`, default
+ * transform): before a write an active transform guard would rewrite, the belief's own experiment is
+ * re-run on probe-only resources with RAW tools recording into cassette `<runId>-sentinel`; its
+ * probes, rivals and the belief events of the run land in the bundle like any other probes.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve as resolvePath } from "node:path";
@@ -53,6 +58,10 @@ import { DEFAULT_MANIFEST_PATH, loadManifest } from "./manifest.js";
 import type { SeedManifest } from "./manifest.js";
 import { REQUIRED_GAPS } from "./required.js";
 import { RunStateStore } from "./run-state.js";
+import { createSentinel, sentinelModeFromEnv } from "./sentinel.js";
+import type { Sentinel, SentinelMode } from "./sentinel.js";
+import { SimplePaymentPool, probeIoFromTools } from "../reflect/templates/index.js";
+import { probePoolFromManifest, sentinelProbeTools } from "../reflect/notarize.js";
 
 export const RUNS_DIR = fileURLToPath(new URL("../../runs/", import.meta.url));
 export const WEB_BUNDLES_DIR = fileURLToPath(new URL("../../../web/public/bundles/", import.meta.url));
@@ -101,6 +110,13 @@ export interface RunQueueOptions {
   extraCassettes?: string[];
   /** unguarded_call_sites for bundle.metrics (the CLI runs the coverage check); default null. */
   unguardedCallSites?: () => Promise<number | null>;
+  /** Guarded: re-verification sentinel mode (default: NOTARY_SENTINEL in env, else "transform"). */
+  sentinel?: SentinelMode;
+  /** Guarded test seam: RAW tools for sentinel probes when `tools`/`makeTools` are injected (else the sentinel is off). */
+  sentinelProbeTools?: Tools;
+  /** Guarded: sentinel caps (defaults in sentinel.ts). */
+  sentinelMaxProbesPerCheck?: number;
+  sentinelMaxProbesPerRun?: number;
 }
 
 export interface RunQueueResult {
@@ -273,6 +289,16 @@ export async function runQueue(opts: RunQueueOptions): Promise<RunQueueResult> {
   }
 
   const runState = guardedRun && db ? new RunStateStore(db, { now }) : undefined;
+  let sentinelSetup: SentinelSetup | undefined;
+  try {
+    sentinelSetup = gctx && db ? setupSentinel({ opts, env, now, db, gctx, tools, manifest, queuePath, identity: opts.mode === "replay" ? cassetteName : runId, cassetteDir: cassetteDirOrDefault }) : undefined;
+  } catch (err) {
+    gctx?.unwire();
+    if (ownDb) db?.close();
+    const b = blocked(err);
+    if (b) return b;
+    throw err;
+  }
   try {
     let before: GroundTruthSnapshot;
     let after: GroundTruthSnapshot;
@@ -299,6 +325,7 @@ export async function runQueue(opts: RunQueueOptions): Promise<RunQueueResult> {
         variant: opts.variant,
         runId,
         ...(gctx ? { gate: opts.gate ?? gctx.gate } : {}),
+        ...(sentinelSetup?.sentinel ? { sentinel: sentinelSetup.sentinel.check } : {}),
         ...(runState ? { runState: runState.hooks(runId) } : {}),
         onDecision: (d) => emitEvent("decision", { runId, variant: opts.variant, decision: d }),
         ...(opts.policy ? { policy: opts.policy } : {}),
@@ -359,11 +386,73 @@ export async function runQueue(opts: RunQueueOptions): Promise<RunQueueResult> {
       ...(opts.mode === "replay" ? { replayOf: cassetteName } : {}),
       ...(gctx ? { gctx } : {}),
       ...(runState ? { runState } : {}),
+      ...(sentinelSetup ? { sentinel: sentinelSetup } : {}),
     });
   } finally {
     gctx?.unwire();
     if (ownDb) db?.close();
   }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Re-verification sentinel setup
+
+interface SentinelSetup {
+  mode: SentinelMode;
+  sentinel?: Sentinel;
+  /** The sentinel's cassette (pinned in the bundle when it recorded anything). */
+  cassette?: string;
+  /** Why the sentinel is not running, when it is not. */
+  off?: string;
+  /** Belief events before the run (the bundle carries the run's own events). */
+  eventsSince: number;
+}
+
+function setupSentinel(a: {
+  opts: RunQueueOptions;
+  env: NodeJS.ProcessEnv;
+  now: () => Date;
+  db: NotaryDb;
+  gctx: GuardedContext;
+  tools: RunTools;
+  manifest: SeedManifest;
+  queuePath: string;
+  identity: string;
+  cassetteDir: string;
+}): SentinelSetup {
+  const { opts } = a;
+  const eventsSince = a.gctx.store.lastEventSeq();
+  const mode = opts.sentinel ?? sentinelModeFromEnv(opts.mode === "replay" ? {} : a.env);
+  if (mode === "off") return { mode, off: `off (${opts.sentinel ? "option" : "NOTARY_SENTINEL=off"})`, eventsSince };
+  const cassette = `${a.identity}-sentinel`;
+  let probeTools: Tools | undefined;
+  if (opts.tools || opts.makeTools) {
+    probeTools = opts.sentinelProbeTools;
+    if (!probeTools) return { mode, off: "off (test seam: injected tools and no raw sentinel probe tools)", eventsSince };
+  } else if (opts.mode === "replay") {
+    if (!listCassettes(a.cassetteDir).includes(cassette)) return { mode, off: `off in replay (no recorded ${cassette} cassette: the recorded run ran no sentinel probe)`, eventsSince };
+    probeTools = sentinelProbeTools({ mode: "replay", cassette, cassetteDir: a.cassetteDir, ledger: a.tools.ledger, env: {} });
+  } else {
+    probeTools = sentinelProbeTools({ mode: "live", cassette, cassetteDir: a.cassetteDir, ledger: a.tools.ledger, env: a.env });
+  }
+  const queueText = existsSync(a.queuePath) ? readFileSync(a.queuePath, "utf8") : "";
+  const pool = probePoolFromManifest(a.manifest, queueText);
+  const sentinel = createSentinel({
+    db: a.db,
+    store: a.gctx.store,
+    registry: a.gctx.registry,
+    io: probeIoFromTools(probeTools),
+    ledger: a.tools.ledger,
+    identity: a.identity,
+    payments: new SimplePaymentPool(pool.ids),
+    subscriptions: new SimplePaymentPool(pool.subscriptionIds),
+    ...(opts.sentinelMaxProbesPerCheck === undefined ? {} : { maxProbesPerCheck: opts.sentinelMaxProbesPerCheck }),
+    ...(opts.sentinelMaxProbesPerRun === undefined ? {} : { maxProbesPerRun: opts.sentinelMaxProbesPerRun }),
+    // Replay never writes into the recorded run's directory.
+    spansPath: opts.mode === "live" ? join(opts.runsDir ?? RUNS_DIR, a.identity, "spans.jsonl") : null,
+    now: a.now,
+  });
+  return { mode, sentinel, cassette, eventsSince };
 }
 
 /** `notary run --resume [--run <runId>]`: continue an interrupted guarded run. */
@@ -413,6 +502,8 @@ async function resumeQueue(opts: RunQueueOptions): Promise<RunQueueResult> {
       throw err;
     }
     runState.addCassette(meta.runId, cassetteName);
+    // The resumed half gets its own sentinel identity (probe ids <runId>-resume-<stamp>-sNNN never collide).
+    const sentinelSetup = setupSentinel({ opts: { ...opts, mode: "live" }, env, now, db, gctx, tools, manifest, queuePath: meta.queueFile, identity: cassetteName, cassetteDir: opts.cassetteDir ?? DEFAULT_CASSETTE_DIR });
 
     const resume = new Map<string, ResumeEntry>(
       items.map((i) => [
@@ -431,6 +522,7 @@ async function resumeQueue(opts: RunQueueOptions): Promise<RunQueueResult> {
         variant: "guarded",
         runId: meta.runId,
         gate: opts.gate ?? gctx.gate,
+        ...(sentinelSetup.sentinel ? { sentinel: sentinelSetup.sentinel.check } : {}),
         runState: runState.hooks(meta.runId),
         resume,
         onDecision: (d) => emitEvent("decision", { runId: meta.runId, variant: "guarded", decision: d }),
@@ -469,6 +561,7 @@ async function resumeQueue(opts: RunQueueOptions): Promise<RunQueueResult> {
       extraDisclosure: resumeNotes,
       gctx,
       runState,
+      sentinel: sentinelSetup,
     });
   } finally {
     gctx?.unwire();
@@ -499,6 +592,7 @@ async function writeRunBundle(a: {
   extraDisclosure?: string[];
   gctx?: GuardedContext;
   runState?: RunStateStore;
+  sentinel?: SentinelSetup;
 }): Promise<RunQueueResult> {
   const { opts, exec, before, after, runId } = a;
   const graded = gradeRun({
@@ -525,6 +619,15 @@ async function writeRunBundle(a: {
     disclosure.push(`Guards: ${active} active, compiled from ${notarized} notarized belief(s) in the Notary store.`);
     for (const [action, gap] of Object.entries(REQUIRED_GAPS)) disclosure.push(`Required-beliefs gap (${action}): ${gap}`);
     if (a.gctx.retired.length) disclosure.push(`Guards retired during the run (belief left notarized): ${a.gctx.retired.map((g) => g.id).join(", ")}`);
+  }
+  const sentinelProbes = a.sentinel?.sentinel?.probes ?? [];
+  const sentinelChecks = a.sentinel?.sentinel?.checks ?? [];
+  if (a.sentinel?.off && opts.sentinel === "off") disclosure.push(`Re-verification sentinel: ${a.sentinel.off}.`);
+  if (sentinelChecks.length) {
+    const left = [...new Set(sentinelChecks.filter((c) => c.outcome === "left_notarized").map((c) => c.beliefId))];
+    disclosure.push(
+      `Re-verification sentinel (DECISIONS #105, mode ${a.sentinel!.mode}): ${sentinelChecks.length} check(s) before transform-rewritten writes, ${sentinelProbes.length} probe(s) committed then run on probe-only resources with raw tools (cassette ${a.sentinel!.cassette}); belief updates by BeliefStore's rules only${left.length ? `; left notarized: ${left.join(", ")}` : ""}.`,
+    );
   }
   if (!before || !after.complete || !before.complete) {
     const problems = [...(before?.problems ?? ["no ground truth from before the run"]), ...after.problems];
@@ -563,10 +666,10 @@ async function writeRunBundle(a: {
     decisions: graded.decisions,
     claims: [],
     anomalies: [],
-    hypotheses: [],
-    probes: [],
+    hypotheses: a.sentinel?.sentinel?.hypotheses ?? [],
+    probes: sentinelProbes,
     beliefs: { before: a.gctx?.beliefsBefore ?? [], after: beliefsAfter },
-    beliefEvents: [],
+    beliefEvents: a.gctx && a.sentinel ? a.gctx.store.events(undefined, a.sentinel.eventsSince) : [],
     guards: a.gctx ? a.gctx.registry.all() : [],
     usageByRole: { executor: ZERO_USAGE, reflector: ZERO_USAGE, adversary: ZERO_USAGE },
     credits: { byEndpoint: snap.byEndpoint, total: snap.total, budget: snap.budget },
@@ -575,6 +678,7 @@ async function writeRunBundle(a: {
     // P8: every cassette pinned to its content hash, then the replay record.
     cassettes: [
       ...[...a.cassettes, ...(typeof manifestCassette === "string" && manifestCassette ? [manifestCassette] : [])].map((c) => pinIfPresent(c, cassetteDir)),
+      ...(a.sentinel?.cassette && sentinelProbes.length && existsSync(join(cassetteDir, `${a.sentinel.cassette}.json`)) ? [pinIfPresent(a.sentinel.cassette, cassetteDir)] : []),
       ...(a.extraCassettes ?? []),
     ],
   };

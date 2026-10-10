@@ -57,6 +57,7 @@ import { claimById } from "../contracts/index.js";
 import { GuardRegistry, compileGuards, wireRetirement } from "../guards/index.js";
 import type { BeliefsPhaseResult } from "../beliefs/phase.js";
 import { DEFAULT_MANIFEST_PATH, loadManifest } from "../queue/manifest.js";
+import type { SeedManifest } from "../queue/manifest.js";
 import { SEED_PLAN, probeHandles, refundedPaymentHandles } from "../queue/seed-plan.js";
 import type { SeedPlan } from "../queue/seed-plan.js";
 import type { Belief, Guard, Probe, RoleUsage, RunBundle, Tool, UsageByRole } from "../schema/index.js";
@@ -75,7 +76,7 @@ import {
   loadCassette,
   saveCassette,
 } from "../tools/index.js";
-import type { Cassette } from "../tools/index.js";
+import type { Cassette, Tools } from "../tools/index.js";
 import { MAX_PROBES_PER_RUN, REEXAMINED_AFTER_DOWNGRADE, maxProbesPerClaimFromEnv, runProbeLoop, templateNamedIn } from "./loop.js";
 import { lambdaFromEnv } from "./score.js";
 import type { ProbeLoopResult } from "./loop.js";
@@ -211,6 +212,27 @@ export function rawReplayProbeIo(opts: {
 }
 
 /**
+ * The raw (unguarded) probe tools of the guarded run's re-verification sentinel (src/queue/sentinel.ts,
+ * DECISIONS #105): a sentinel probe must see the raw response, never the guards it re-verifies (#56).
+ * Live: records into `cassette`; replay: serves from it. Shares the run's credit ledger.
+ */
+export function sentinelProbeTools(o: {
+  mode: "live" | "replay";
+  cassette: string;
+  cassetteDir?: string;
+  ledger: CreditLedger;
+  env: NodeJS.ProcessEnv;
+}): Tools {
+  return createTools({
+    mode: o.mode,
+    cassette: o.cassette,
+    ledger: o.ledger,
+    env: o.env,
+    ...(o.cassetteDir === undefined ? {} : { cassetteDir: o.cassetteDir }),
+  });
+}
+
+/**
  * Probe-reserved Dodo resources (DECISIONS #42, #81): never anything the seeded queue references.
  *
  * Payments: when the manifest holds the plan's PROBE-ONLY customer (seed-plan.ts `probe`; a customer
@@ -226,8 +248,12 @@ export function probePaymentPool(
   plan: SeedPlan = SEED_PLAN,
 ): { ids: string[]; subscriptionIds: string[]; note?: string } {
   if (!existsSync(manifestPath)) return { ids: [], subscriptionIds: [], note: "no seed manifest: refund and change-plan probes are skipped" };
-  const manifest = loadManifest(manifestPath);
   const queueText = existsSync(queuePath) ? readFileSync(queuePath, "utf8") : "";
+  return probePoolFromManifest(loadManifest(manifestPath), queueText, plan);
+}
+
+/** probePaymentPool over an already loaded manifest and the queue file's text (same rules). */
+export function probePoolFromManifest(manifest: SeedManifest, queueText: string, plan: SeedPlan = SEED_PLAN): { ids: string[]; subscriptionIds: string[] } {
   const refs = (kind: string) => new Set([...queueText.matchAll(new RegExp(`"${kind}:([A-Za-z0-9._-]+)"`, "g"))].map((m) => m[1]!));
   const usedPay = refs("pay");
   const usedCust = refs("cust");

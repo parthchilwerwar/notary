@@ -16,8 +16,8 @@
     "Graded deterministically from Dodo state read back by full pagination before and after the run; no LLM grades anything.",
     "Client timeout: q05: first dodo.createRefund still in flight at the 200 ms client timeout; treated as timed out and retried (the abandoned request later completed with HTTP 200)"
   ],
-  "startedAt": "2026-10-10T07:31:46.456Z",
-  "finishedAt": "2026-10-10T07:31:49.721Z",
+  "startedAt": "2026-10-10T08:46:34.892Z",
+  "finishedAt": "2026-10-10T08:46:37.939Z",
   "status": "completed",
   "seed": 0,
   "queue": [
@@ -260,7 +260,7 @@
             ]
           },
           "status": 200,
-          "at": "2026-10-10T07:31:46.567Z"
+          "at": "2026-10-10T08:46:34.979Z"
         },
         {
           "op": "dodo.listRefunds",
@@ -269,7 +269,7 @@
             "page_size": 100
           },
           "status": 200,
-          "at": "2026-10-10T07:31:46.570Z"
+          "at": "2026-10-10T08:46:34.981Z"
         },
         {
           "op": "dodo.listPayments",
@@ -278,7 +278,7 @@
             "page_size": 100
           },
           "status": 200,
-          "at": "2026-10-10T07:31:46.572Z"
+          "at": "2026-10-10T08:46:34.983Z"
         },
         {
           "op": "dodo.createRefund",
@@ -290,7 +290,7 @@
           "resultId": "rfd_fx_0032",
           "amount": 2900,
           "currency": "USD",
-          "at": "2026-10-10T07:31:47.090Z"
+          "at": "2026-10-10T08:46:35.500Z"
         }
       ],
       "grade": {
@@ -314,7 +314,7 @@
         "lastFundraiseDate": null,
         "tierBasis": "headcount.total=14"
       },
-      "traceId": "2cdcf5943a0247f9a07573979f4759a6"
+      "traceId": "cf04ba80f8c34ed5a359b6dc80ed7b5a"
     },
     {
       "id": "demo-run-naive:q02",
@@ -342,7 +342,7 @@
             ]
           },
           "status": 200,
-          "at": "2026-10-10T07:31:47.093Z"
+          "at": "2026-10-10T08:46:35.503Z"
         },
         {
           "op": "dodo.listRefunds",
@@ -351,7 +351,7 @@
             "page_size": 100
           },
           "status": 200,
-          "at": "2026-10-10T07:31:47.096Z"
+          "at": "2026-10-10T08:46:35.505Z"
         },
         {
           "op": "dodo.listPayments",
@@ -360,7 +360,7 @@
             "page_size": 100
           },
           "status": 200,
-          "at": "2026-10-10T07:31:47.098Z"
+          "at": "2026-10-10T08:46:35.507Z"
         },
         {
           "op": "dodo.getPayment",
@@ -368,7 +368,7 @@
             "payment_id": "pay_fx_mid-sentry-scale"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:47.100Z"
+          "at": "2026-10-10T08:46:35.509Z"
         },
         {
           "op": "dodo.createRefund",
@@ -386,7 +386,7 @@
           "resultId": "rfd_fx_0033",
           "amount": 49900,
           "currency": "USD",
-          "at": "2026-10-10T07:31:47.103Z"
+          "at": "2026-10-10T08:46:35.511Z"
         }
       ],
       "grade": {
@@ -412,7 +412,7 @@
         "lastFundraiseDate": "2022-05-24",
         "tierBasis": "headcount.total=380"
       },
-      "traceId": "0a1c10821fc94903b43e6cfe094eb48b"
+      "traceId": "208f331199364d259dbfccf3ac557c81"
     },
     {
       "id": "demo-run-naive:q03",
@@ -440,7 +440,7 @@
             ]
           },
           "status": 200,
-          "at": "2026-10-10T07:31:47.107Z"
+          "at": "2026-10-10T08:46:35.514Z"
         },
         {
           "op": "dodo.listRefunds",
@@ -449,7 +449,7 @@
             "page_size": 100
           },
           "status": 200,
-          "at": "2026-10-10T07:31:47.110Z"
+          "at": "2026-10-10T08:46:35.516Z"
         },
         {
           "op": "dodo.listPayments",
@@ -458,7 +458,7 @@
             "page_size": 100
           },
           "status": 200,
-          "at": "2026-10-10T07:31:47.113Z"
+          "at": "2026-10-10T08:46:35.518Z"
         },
         {
           "op": "dodo.createRefund",
@@ -470,7 +470,7 @@
           "resultId": "rfd_fx_0034",
           "amount": 1999,
           "currency": "USD",
-          "at": "2026-10-10T07:31:47.619Z"
+          "at": "2026-10-10T08:46:36.032Z"
         }
       ],
       "grade": {
@@ -494,7 +494,7 @@
         "lastFundraiseDate": null,
         "tierBasis": "headcount.total=6"
       },
-      "traceId": "d9d2fe3a050744b3a7d7af48c445f3ab"
+      "traceId": "805aef35357f48dc8fc656e8166a0c09"
     },
     {
       "id": "demo-run-naive:q04",
@@ -522,7 +522,7 @@
             ]
           },
           "status": 200,
-          "at": "2026-10-10T07:31:47.623Z"
+          "at": "2026-10-10T08:46:36.035Z"
         },
         {
           "op": "dodo.listRefunds",
@@ -531,7 +531,7 @@
             "page_size": 100
           },
           "status": 200,
-          "at": "2026-10-10T07:31:47.626Z"
+          "at": "2026-10-10T08:46:36.038Z"
         },
         {
           "op": "dodo.listPayments",
@@ -540,7 +540,7 @@
             "page_size": 100
           },
           "status": 200,
-          "at": "2026-10-10T07:31:47.628Z"
+          "at": "2026-10-10T08:46:36.041Z"
         },
         {
           "op": "dodo.getPayment",
@@ -548,7 +548,7 @@
             "payment_id": "pay_fx_smb-fathom-addon"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:47.632Z"
+          "at": "2026-10-10T08:46:36.045Z"
         },
         {
           "op": "dodo.createRefund",
@@ -566,7 +566,7 @@
           "resultId": "rfd_fx_0035",
           "amount": 1999,
           "currency": "USD",
-          "at": "2026-10-10T07:31:47.635Z"
+          "at": "2026-10-10T08:46:36.048Z"
         }
       ],
       "grade": {
@@ -592,7 +592,7 @@
         "lastFundraiseDate": null,
         "tierBasis": "headcount.total=12"
       },
-      "traceId": "b39ad90cdb564cee8f8b3cf5e9b37aa6"
+      "traceId": "eac8bc231ce342929b1e24f98960c385"
     },
     {
       "id": "demo-run-naive:q05",
@@ -620,7 +620,7 @@
             ]
           },
           "status": 200,
-          "at": "2026-10-10T07:31:47.638Z"
+          "at": "2026-10-10T08:46:36.051Z"
         },
         {
           "op": "dodo.listRefunds",
@@ -629,7 +629,7 @@
             "page_size": 100
           },
           "status": 200,
-          "at": "2026-10-10T07:31:47.641Z"
+          "at": "2026-10-10T08:46:36.053Z"
         },
         {
           "op": "dodo.listPayments",
@@ -638,7 +638,7 @@
             "page_size": 100
           },
           "status": 200,
-          "at": "2026-10-10T07:31:47.643Z"
+          "at": "2026-10-10T08:46:36.056Z"
         },
         {
           "op": "dodo.createRefund",
@@ -648,7 +648,7 @@
           },
           "status": null,
           "amount": 9900,
-          "at": "2026-10-10T07:31:47.850Z"
+          "at": "2026-10-10T08:46:36.263Z"
         },
         {
           "op": "dodo.createRefund",
@@ -660,7 +660,7 @@
           "resultId": "rfd_fx_0037",
           "amount": 9900,
           "currency": "USD",
-          "at": "2026-10-10T07:31:48.665Z"
+          "at": "2026-10-10T08:46:37.078Z"
         }
       ],
       "grade": {
@@ -686,7 +686,7 @@
         "lastFundraiseDate": "2025-04-22",
         "tierBasis": "headcount.total=210"
       },
-      "traceId": "19903f556fe443aa9c0b88b0354e5037"
+      "traceId": "6ea0e35c5d934e73a0b328e82c9b0ea1"
     },
     {
       "id": "demo-run-naive:q06",
@@ -708,7 +708,7 @@
             "page_size": 100
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.673Z"
+          "at": "2026-10-10T08:46:37.083Z"
         },
         {
           "op": "dodo.listPayments",
@@ -717,7 +717,7 @@
             "page_size": 100
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.677Z"
+          "at": "2026-10-10T08:46:37.087Z"
         },
         {
           "op": "dodo.getPayment",
@@ -725,7 +725,7 @@
             "payment_id": "pay_fx_smb-fathom-growth"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.685Z"
+          "at": "2026-10-10T08:46:37.090Z"
         },
         {
           "op": "dodo.createRefund",
@@ -743,7 +743,7 @@
           "resultId": "rfd_fx_0038",
           "amount": 9900,
           "currency": "USD",
-          "at": "2026-10-10T07:31:48.690Z"
+          "at": "2026-10-10T08:46:37.094Z"
         }
       ],
       "grade": {
@@ -769,7 +769,7 @@
         "lastFundraiseDate": null,
         "tierBasis": "headcount.total=12"
       },
-      "traceId": "f0ed7c283e2d4565889edff643587b3a"
+      "traceId": "82a590e8a19442f1b3750171d1e205e9"
     },
     {
       "id": "demo-run-naive:q07",
@@ -797,7 +797,7 @@
             ]
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.703Z"
+          "at": "2026-10-10T08:46:37.098Z"
         },
         {
           "op": "dodo.listRefunds",
@@ -806,7 +806,7 @@
             "page_size": 100
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.718Z"
+          "at": "2026-10-10T08:46:37.101Z"
         },
         {
           "op": "dodo.listPayments",
@@ -815,7 +815,7 @@
             "page_size": 100
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.732Z"
+          "at": "2026-10-10T08:46:37.106Z"
         },
         {
           "op": "dodo.getPayment",
@@ -823,7 +823,7 @@
             "payment_id": "pay_fx_mid-retool-topup-001"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.753Z"
+          "at": "2026-10-10T08:46:37.109Z"
         }
       ],
       "grade": {
@@ -849,7 +849,7 @@
         "tierBasis": "headcount.total=420"
       },
       "error": "existing refund found: refund rfd_fx_0001 (succeeded) on the first page of refunds",
-      "traceId": "a441ccf5539241e589673009b9d4e310"
+      "traceId": "4dbc74566e1b4c369311b45ef51c6197"
     },
     {
       "id": "demo-run-naive:q08",
@@ -877,7 +877,7 @@
             ]
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.772Z"
+          "at": "2026-10-10T08:46:37.114Z"
         },
         {
           "op": "dodo.createWalletLedgerEntry",
@@ -892,7 +892,7 @@
           "status": 200,
           "amount": 5000,
           "currency": "USD",
-          "at": "2026-10-10T07:31:48.787Z"
+          "at": "2026-10-10T08:46:37.117Z"
         }
       ],
       "grade": {
@@ -918,7 +918,7 @@
         "lastFundraiseDate": "2015-05-21",
         "tierBasis": "headcount.total=8300"
       },
-      "traceId": "283481794de94135b37ddab2351d03a4"
+      "traceId": "3c9bf8115ed348e997c79b5358a0b259"
     },
     {
       "id": "demo-run-naive:q09",
@@ -940,7 +940,7 @@
             "page_size": 100
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.807Z"
+          "at": "2026-10-10T08:46:37.123Z"
         },
         {
           "op": "dodo.listPayments",
@@ -949,7 +949,7 @@
             "page_size": 100
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.829Z"
+          "at": "2026-10-10T08:46:37.128Z"
         },
         {
           "op": "dodo.getPayment",
@@ -957,7 +957,7 @@
             "payment_id": "pay_fx_mid-sentry-onboarding"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.840Z"
+          "at": "2026-10-10T08:46:37.131Z"
         },
         {
           "op": "dodo.createRefund",
@@ -975,7 +975,7 @@
           "resultId": "rfd_fx_0039",
           "amount": 15000,
           "currency": "USD",
-          "at": "2026-10-10T07:31:48.848Z"
+          "at": "2026-10-10T08:46:37.134Z"
         }
       ],
       "grade": {
@@ -1001,7 +1001,7 @@
         "lastFundraiseDate": "2022-05-24",
         "tierBasis": "headcount.total=380"
       },
-      "traceId": "34d64db63c0141aab898a2245a3b0f0d"
+      "traceId": "3bf88a03aa034e72bb915a7cc98c3373"
     },
     {
       "id": "demo-run-naive:q10",
@@ -1023,7 +1023,7 @@
             "page_size": 100
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.853Z"
+          "at": "2026-10-10T08:46:37.138Z"
         },
         {
           "op": "dodo.listPayments",
@@ -1032,7 +1032,7 @@
             "page_size": 100
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.858Z"
+          "at": "2026-10-10T08:46:37.142Z"
         },
         {
           "op": "dodo.getPayment",
@@ -1040,7 +1040,7 @@
             "payment_id": "pay_fx_ent-shopify-growth"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.862Z"
+          "at": "2026-10-10T08:46:37.145Z"
         },
         {
           "op": "dodo.createRefund",
@@ -1058,7 +1058,7 @@
           "resultId": "rfd_fx_0040",
           "amount": 9900,
           "currency": "USD",
-          "at": "2026-10-10T07:31:48.865Z"
+          "at": "2026-10-10T08:46:37.149Z"
         }
       ],
       "grade": {
@@ -1084,7 +1084,7 @@
         "lastFundraiseDate": "2015-05-21",
         "tierBasis": "headcount.total=8300"
       },
-      "traceId": "46dfc5a8527f457dbcff07b6b46d816b"
+      "traceId": "a275facc909144b9ab25535f8e456718"
     },
     {
       "id": "demo-run-naive:q11",
@@ -1106,7 +1106,7 @@
             "page_size": 100
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.870Z"
+          "at": "2026-10-10T08:46:37.153Z"
         },
         {
           "op": "dodo.listPayments",
@@ -1115,7 +1115,7 @@
             "page_size": 100
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.873Z"
+          "at": "2026-10-10T08:46:37.156Z"
         }
       ],
       "grade": {
@@ -1139,7 +1139,7 @@
         "lastFundraiseDate": null,
         "tierBasis": "headcount.total=6"
       },
-      "traceId": "4e75b5aeb3a545f58e6695f7679b0b0d"
+      "traceId": "a479ca1fbe67475a9c6b8333dbc2932a"
     },
     {
       "id": "demo-run-naive:q12",
@@ -1160,7 +1160,7 @@
             "subscription_id": "sub_fx_smb-plausible"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.878Z"
+          "at": "2026-10-10T08:46:37.160Z"
         },
         {
           "op": "dodo.changeSubscriptionPlan",
@@ -1171,7 +1171,7 @@
             "proration_billing_mode": "prorated_immediately"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.882Z"
+          "at": "2026-10-10T08:46:37.163Z"
         }
       ],
       "grade": {
@@ -1195,7 +1195,7 @@
         "lastFundraiseDate": null,
         "tierBasis": "headcount.total=14"
       },
-      "traceId": "b3321a0eed90431da818f41911522831"
+      "traceId": "68f463b93c384f158ed24060bffcd9bb"
     },
     {
       "id": "demo-run-naive:q13",
@@ -1223,7 +1223,7 @@
             ]
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.887Z"
+          "at": "2026-10-10T08:46:37.167Z"
         }
       ],
       "evidencePack": {
@@ -1231,7 +1231,7 @@
         "missingBeliefs": [],
         "relatedProbeIds": [],
         "spanIds": [
-          "65062342837b40f6"
+          "967dbefc5a114023"
         ],
         "traceLinks": {}
       },
@@ -1256,7 +1256,7 @@
         "lastFundraiseDate": "2004-06-23",
         "tierBasis": "headcount.total=72682"
       },
-      "traceId": "5509c272d05d4e3bb3d8e964321fa8c5"
+      "traceId": "21c7d3830b35427cae95800dfa73f4c0"
     },
     {
       "id": "demo-run-naive:q14",
@@ -1277,7 +1277,7 @@
             "subscription_id": "sub_fx_mid-retool"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.892Z"
+          "at": "2026-10-10T08:46:37.171Z"
         },
         {
           "op": "dodo.changeSubscriptionPlan",
@@ -1288,7 +1288,7 @@
             "proration_billing_mode": "prorated_immediately"
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.895Z"
+          "at": "2026-10-10T08:46:37.175Z"
         }
       ],
       "grade": {
@@ -1312,7 +1312,7 @@
         "lastFundraiseDate": "2022-07-26",
         "tierBasis": "headcount.total=420"
       },
-      "traceId": "8f2024ea57304c42848b1b166849612c"
+      "traceId": "7c2cab43cf75402892106549ccf7c3f1"
     },
     {
       "id": "demo-run-naive:q15",
@@ -1340,7 +1340,7 @@
             ]
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.900Z"
+          "at": "2026-10-10T08:46:37.179Z"
         },
         {
           "op": "dodo.createWalletLedgerEntry",
@@ -1355,7 +1355,7 @@
           "status": 200,
           "amount": 25000,
           "currency": "USD",
-          "at": "2026-10-10T07:31:48.906Z"
+          "at": "2026-10-10T08:46:37.183Z"
         }
       ],
       "grade": {
@@ -1381,7 +1381,7 @@
         "lastFundraiseDate": "1986-03-13",
         "tierBasis": "headcount.total=221000"
       },
-      "traceId": "f6c6452f0ba344c8bfdfe909ed0582dc"
+      "traceId": "dee8a005a47b414faf911e7a9131192a"
     },
     {
       "id": "demo-run-naive:q16",
@@ -1417,7 +1417,7 @@
         "lastFundraiseDate": null,
         "tierBasis": "headcount.total=6"
       },
-      "traceId": "638843b1dbdc469bbc50b4568528861d"
+      "traceId": "bb8d51a18532422e80282395ca429412"
     },
     {
       "id": "demo-run-naive:q17",
@@ -1437,7 +1437,7 @@
         "missingBeliefs": [],
         "relatedProbeIds": [],
         "spanIds": [
-          "46c643eb9e5948b9"
+          "e6c7ab1a86cd4204"
         ],
         "traceLinks": {}
       },
@@ -1462,7 +1462,7 @@
         "lastFundraiseDate": "2025-04-22",
         "tierBasis": "headcount.total=210"
       },
-      "traceId": "9b800d6c91b7493095e179843cfef175"
+      "traceId": "26573a6d797a426fab760289841058bf"
     },
     {
       "id": "demo-run-naive:q18",
@@ -1490,7 +1490,7 @@
           "status": 200,
           "amount": 1500,
           "currency": "USD",
-          "at": "2026-10-10T07:31:48.912Z"
+          "at": "2026-10-10T08:46:37.189Z"
         }
       ],
       "grade": {
@@ -1516,7 +1516,7 @@
         "lastFundraiseDate": null,
         "tierBasis": "headcount.total=12"
       },
-      "traceId": "cbb29a8dba584a7facc13dc2bcac833a"
+      "traceId": "a44acf3214d748c3bb4518a4399b4fa3"
     },
     {
       "id": "demo-run-naive:q19",
@@ -1544,7 +1544,7 @@
             ]
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.917Z"
+          "at": "2026-10-10T08:46:37.192Z"
         },
         {
           "op": "dodo.listRefunds",
@@ -1553,7 +1553,7 @@
             "page_size": 100
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.921Z"
+          "at": "2026-10-10T08:46:37.195Z"
         },
         {
           "op": "dodo.listPayments",
@@ -1562,7 +1562,7 @@
             "page_size": 100
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.925Z"
+          "at": "2026-10-10T08:46:37.198Z"
         }
       ],
       "evidencePack": {
@@ -1570,7 +1570,7 @@
         "missingBeliefs": [],
         "relatedProbeIds": [],
         "spanIds": [
-          "abe9cd22561a43f8"
+          "72f5c3b577824b7f"
         ],
         "traceLinks": {}
       },
@@ -1595,7 +1595,7 @@
         "lastFundraiseDate": "2015-12-10",
         "tierBasis": "headcount.total=12157"
       },
-      "traceId": "4b2949a7a34e423f866bbb3b3da8f7ca"
+      "traceId": "17d5514fd1814faaad675c17ea2b6dc8"
     },
     {
       "id": "demo-run-naive:q20",
@@ -1623,7 +1623,7 @@
             ]
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.930Z"
+          "at": "2026-10-10T08:46:37.203Z"
         },
         {
           "op": "dodo.listRefunds",
@@ -1632,7 +1632,7 @@
             "page_size": 100
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.934Z"
+          "at": "2026-10-10T08:46:37.207Z"
         },
         {
           "op": "dodo.listPayments",
@@ -1641,7 +1641,7 @@
             "page_size": 100
           },
           "status": 200,
-          "at": "2026-10-10T07:31:48.938Z"
+          "at": "2026-10-10T08:46:37.211Z"
         },
         {
           "op": "dodo.createRefund",
@@ -1653,7 +1653,7 @@
           "resultId": "rfd_fx_0041",
           "amount": 9900,
           "currency": "USD",
-          "at": "2026-10-10T07:31:49.454Z"
+          "at": "2026-10-10T08:46:37.717Z"
         }
       ],
       "grade": {
@@ -1677,7 +1677,7 @@
         "lastFundraiseDate": "2014-01-01",
         "tierBasis": "headcount.total=812"
       },
-      "traceId": "268e136062244f63857ddbd27a1823b8"
+      "traceId": "90a6640516244985b77d2497230e4e48"
     }
   ],
   "claims": [],
@@ -1755,8 +1755,8 @@
   },
   "traceLinks": {},
   "cassettes": [
-    "demo-run-naive@609bc55c4ca66c2351939bea2e7abfcdb2d376656f5d91693bbd819a40559930",
+    "demo-run-naive@307f887e9f19e61ee9d1d6746b2d7d4f6bc93e1030a05fda08830cfd70f00013",
     "demo-fixture-seed"
   ],
-  "contentHash": "a0bfd03777d0a14cd7f2dfe66c4d1ee0c09751c464f67e5e2ef32b0181b6d6e9"
+  "contentHash": "540c585d619ce478ed7d65ed8bc0a500bc68a97063ac2aadfc946a4eeb34e40a"
 }

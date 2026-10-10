@@ -311,10 +311,13 @@ export function buildProgram(): Command {
     .description("Run the whole pipeline end to end on FIXTURE data (simulated APIs and model doubles; no keys, no network)")
     .option("--fixture", "required: use the in-process fixture API and model doubles (the only demo mode)")
     .option("--publish", "also copy the fixture bundles to packages/web/public/bundles/fixture/ (own index.json; never the real index)")
-    .action(async (opts: { fixture?: boolean; publish?: boolean }) => {
+    .option("--scenario <name>", "default | change-api (the simulated Dodo changes the refund amount unit mid-run)", "default")
+    .action(async (opts: { fixture?: boolean; publish?: boolean; scenario: string }) => {
       if (!opts.fixture) throw new Error("notary demo needs --fixture (there is no live demo: live runs are `notarize` and `run`)");
-      const { runFixtureDemo } = await import("./demo/index.js");
-      const result = await runFixtureDemo();
+      const { runFixtureDemo, DEMO_SCENARIOS } = await import("./demo/index.js");
+      const scenario = DEMO_SCENARIOS.find((s) => s === opts.scenario);
+      if (!scenario) throw new Error(`notary demo: unknown --scenario ${opts.scenario} (known: ${DEMO_SCENARIOS.join(", ")})`);
+      const result = await runFixtureDemo({ scenario });
       for (const line of result.lines) console.log(line);
       process.exitCode = result.exitCode;
       if (!opts.publish) return;

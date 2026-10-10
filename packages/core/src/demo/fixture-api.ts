@@ -34,6 +34,12 @@
  *      (`slowFullRefundMs`, default 500 ms), so a client with a 200 ms timeout gives up and retries.
  *   Q6 Crustdata enrich returns notion.so's `funding.total_investment_usd` as a formatted string
  *      ("$343M") instead of a number.
+ * SCENARIO "change-api" (`notary demo --fixture --scenario change-api`, FixtureWorldOptions):
+ *   - Q1 is planted on GET /refunds only: GET /payments enforces the documented max (page_size > 100
+ *     -> 422), so the refund gate can pass and the guarded run actually executes refunds;
+ *   - a MID-RUN API CHANGE: `changeRefundUnit()` switches POST /refunds to read a partial refund's
+ *     `items[].amount` in MINOR units (the documented unit; Q4 stops), for EVERY partial refund from
+ *     that moment on, like a real API release. Every partial refund is logged with the unit applied.
  * CONTROLS (the fixture honors the documented claim): customer without email -> 422; overdraft debit
  * -> 400; product price echoes in minor units; payment.refunds[] always present; wallet balances and
  * total_balance_usd are integers; change-plan with a pending change -> 409; identify with an
@@ -45,6 +51,10 @@ import type { FetchLike } from "../tools/recorder.js";
 import { SEED_PLAN, plannedPayments, probeHandles, refundedPaymentHandles, seedEmail } from "../queue/seed-plan.js";
 import type { SeedPlan } from "../queue/seed-plan.js";
 import type { SeedManifest } from "../queue/manifest.js";
+
+/** What the change-api scenario's mid-run API change does (printed and disclosed). */
+export const REFUND_UNIT_CHANGE =
+  "POST /refunds now reads a partial refund's items[].amount in MINOR units (the documented unit): PLANTED QUIRK Q4 stops for every partial refund from this moment on";
 
 export const FIXTURE_HOSTS = { crustdata: "api.crustdata.com", dodo: DODO_TEST_HOST } as const;
 
@@ -252,6 +262,34 @@ class HttpAnswer {
   ) {}
 }
 
+/** Options for one fixture world (a demo scenario). Defaults reproduce the default demo exactly. */
+export interface FixtureWorldOptions {
+  /** PLANTED QUIRK Q1 on GET /payments (default true). The change-api scenario turns it off. */
+  paymentsPageClamp?: boolean;
+}
+
+/** One partial refund as the fixture booked it (the unit it read `items[].amount` in). */
+export interface FixtureRefundBooking {
+  /** Order among this world's partial refunds (1-based). */
+  seq: number;
+  paymentId: string;
+  refundId: string | null;
+  sent: number;
+  booked: number | null;
+  linePrice: number;
+  unit: "major" | "minor";
+  status: number;
+}
+
+/** A simulated API change applied to the fixture world mid-run. */
+export interface FixtureApiChange {
+  what: string;
+  /** Partial refunds booked before the change (it applies from booking afterSeq + 1 on). */
+  afterSeq: number;
+  /** Simulated world time of the change. */
+  at: string;
+}
+
 const answer = (status: number, body: unknown, headers: Record<string, string> = {}) => new HttpAnswer(status, body, headers);
 const fail = (status: number, code: string, message: string) => answer(status, { code, message });
 
@@ -268,6 +306,14 @@ export class FixtureWorld {
   wallets: FxWallet[] = [];
   ledger: FxLedgerEntry[] = [];
   crustdataCreditsUsed = 0;
+  /** PLANTED QUIRK Q1 on GET /payments (scenario option). */
+  readonly paymentsPageClamp: boolean;
+  /** Unit POST /refunds reads a partial refund's items[].amount in: "major" = PLANTED QUIRK Q4 (default). */
+  refundAmountUnit: "major" | "minor" = "major";
+  /** Every partial refund this world booked, in order. */
+  readonly refundBookings: FixtureRefundBooking[] = [];
+  /** API changes applied to this world (change-api scenario). */
+  readonly apiChanges: FixtureApiChange[] = [];
   /** Handle -> id maps for the seed manifest. */
   readonly handles = {
     customers: new Map<string, string>(),
@@ -276,9 +322,23 @@ export class FixtureWorld {
     subscriptions: new Map<string, string>(),
   };
 
-  constructor(plan: SeedPlan = SEED_PLAN) {
+  constructor(plan: SeedPlan = SEED_PLAN, opts: FixtureWorldOptions = {}) {
     this.plan = plan;
+    this.paymentsPageClamp = opts.paymentsPageClamp ?? true;
     this.seed();
+  }
+
+  /**
+   * SIMULATED API CHANGE (change-api scenario): from now on POST /refunds reads a partial refund's
+   * `items[].amount` in MINOR units (Q4 stops) for every request, consistently. Idempotent.
+   */
+  changeRefundUnit(): FixtureApiChange {
+    const prev = this.apiChanges.find((c) => c.what === REFUND_UNIT_CHANGE);
+    if (prev) return prev;
+    this.refundAmountUnit = "minor";
+    const change: FixtureApiChange = { what: REFUND_UNIT_CHANGE, afterSeq: this.refundBookings.length, at: this.tick() };
+    this.apiChanges.push(change);
+    return change;
   }
 
   /** Deterministic, strictly increasing timestamps (one simulated second per created object). */
@@ -656,7 +716,7 @@ export class FixtureApi {
       return answer(200, { session_id: w.nextId("cks_fx"), checkout_url: "https://checkout.fixture.invalid/session", payment_id: null });
     }
     if (path === "/payments" && method === "GET") {
-      const p = paging(q, true);
+      const p = paging(q, w.paymentsPageClamp);
       if (p instanceof HttpAnswer) return p;
       const cid = q.get("customer_id");
       const status = q.get("status");
@@ -841,8 +901,21 @@ export class FixtureApi {
       let amount = linePrice;
       if (item.amount !== undefined && item.amount !== null) {
         if (!isPositiveInt(item.amount)) return fail(422, "INVALID_REQUEST", "items[].amount must be a positive integer");
-        // PLANTED FIXTURE QUIRK Q4: read in MAJOR units, silently capped at the line price.
-        amount = Math.min(item.amount * 100, linePrice);
+        const booking = { seq: w.refundBookings.length + 1, paymentId: pay.payment_id, sent: item.amount, linePrice, unit: w.refundAmountUnit };
+        if (w.refundAmountUnit === "minor") {
+          // After the simulated API change: the documented unit; an amount above the line price is refused.
+          if (item.amount > linePrice) {
+            w.refundBookings.push({ ...booking, refundId: null, booked: null, status: 422 });
+            return fail(422, "INVALID_REQUEST", "items[].amount exceeds the line item's price");
+          }
+          amount = item.amount;
+        } else {
+          // PLANTED FIXTURE QUIRK Q4: read in MAJOR units, silently capped at the line price.
+          amount = Math.min(item.amount * 100, linePrice);
+        }
+        const r = w.addRefund(pay, amount, reason);
+        w.refundBookings.push({ ...booking, refundId: r.refund_id, booked: amount, status: 200 });
+        return answer(200, this.refundOut(w, r));
       }
       const r = w.addRefund(pay, amount, reason);
       return answer(200, this.refundOut(w, r));
