@@ -34,7 +34,7 @@ Machine-readable copy for the dashboard: [packages/web/public/evidence/evidence.
 | Crustdata | blocked (no key) | Client, 26-claim contracts, 15 req/min throttle, credit budget built; no live calls recorded |
 | Dodo Payments | blocked (no key) | Test-mode-locked client built; seeding needs 12 hosted test-card checkouts |
 | AWS Bedrock | not used (models go through LiteLLM) | Converse client kept working; `NOTARY_LLM_PROVIDER=bedrock` |
-| LiteLLM | configured, key pending | OpenAI-compatible provider (`openai@6.34.0` + neatlogs `wrapOpenAI`), `notary doctor --llm`, USD cap, rate limits; `LITELLM_API_KEY` not yet in `.env`, so no live call yet |
+| LiteLLM | configured (executor/reflector claude-haiku, adversary claude-sonnet-4.6), key pending | OpenAI-compatible provider (`openai@6.34.0` + neatlogs `wrapOpenAI`), `notary doctor --llm`, USD cap, rate limits; `LITELLM_API_KEY` not yet in `.env`, so no live call yet |
 
 ## What exists now (keyless)
 
