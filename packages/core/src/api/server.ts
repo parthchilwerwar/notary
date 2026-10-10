@@ -2,10 +2,17 @@
 //
 //   GET /api/bundles      index entries merged from every bundle directory (deduped by runId)
 //   GET /api/bundles/:id  one bundle, re-verified with verifyBundle on every read
+//   GET /api/bundles/:id/timeline  the run's TimelineFile (runs/<id>/timeline.jsonl, else the
+//                         published <id>.timeline.json next to the bundle); 404 when absent
 //   GET /api/stream       SSE of bus events (decision, probe.committed, probe.verdict,
-//                         belief.changed, run.finished) with Last-Event-ID replay
+//                         belief.changed, run.finished, timeline) with Last-Event-ID replay
 //
-// Read-only: there are no write endpoints. CORS is limited to loopback dashboard dev origins.
+//   POST /api/ask         Ask Notary (src/api/ask.ts): cited answers from the loaded records
+//   GET|POST /api/approvals  approval desk (src/api/approvals.ts)
+//
+// The ask and approvals endpoints need the per-session token (Authorization: Bearer) AND a loopback
+// socket, Host and Origin (src/api/session.ts). Everything else is read-only and unauthenticated as
+// before. CORS is limited to loopback dashboard dev origins.
 // Only each bundle directory's own index.json is read; subdirectories of public/bundles are NOT
 // scanned, so the fixture-demo bundles in public/bundles/fixture/ (own index) are never merged
 // into the list. Under runs/, every immediate subdirectory is a bundle dir (runs/<runId>/).
@@ -21,6 +28,13 @@ import { BundleIndexSchema } from "../schema/bundle.js";
 import type { BundleIndexEntry } from "../schema/index.js";
 import { bus as defaultBus, DEFAULT_EVENT_JOURNAL, tailEventJournal } from "./bus.js";
 import type { EventBus, NotaryEvent } from "./bus.js";
+import { servedTimeline } from "../timeline/serve.js";
+import { mountApprovals } from "./approvals.js";
+import type { ApprovalsOptions } from "./approvals.js";
+import { mountAsk } from "./ask.js";
+import type { AskOptions } from "./ask.js";
+import { createSession } from "./session.js";
+import type { ApiSession, CreatedSession } from "./session.js";
 
 export const DEFAULT_WEB_BUNDLES_DIR = fileURLToPath(new URL("../../../web/public/bundles/", import.meta.url));
 export const DEFAULT_RUNS_DIR = fileURLToPath(new URL("../../runs/", import.meta.url));
@@ -39,6 +53,15 @@ export interface ApiOptions {
   runsDir?: string | null;
   bus?: EventBus;
   keepAliveMs?: number;
+  /**
+   * Per-session token check for POST /api/ask and GET/POST /api/approvals (src/api/session.ts).
+   * Absent: a fresh random session nobody knows the token of, so those endpoints answer 401.
+   */
+  session?: ApiSession;
+  /** POST /api/ask options (test seams: model double, env). */
+  ask?: Omit<AskOptions, "bundleDirs">;
+  /** GET/POST /api/approvals options (test seams: env, tools, store, manifest). */
+  approvals?: Omit<ApprovalsOptions, "runsDir" | "bus">;
 }
 
 interface IndexedEntry {
@@ -109,8 +132,9 @@ export function createApp(opts: ApiOptions = {}): Hono {
     "/api/*",
     cors({
       origin: (origin) => (LOOPBACK_ORIGIN.test(origin) ? origin : null),
-      allowMethods: ["GET", "HEAD", "OPTIONS"],
-      allowHeaders: ["Last-Event-ID", "Cache-Control"],
+      // POST + Authorization + Content-Type for the token-protected ask/approvals endpoints; loopback origins only.
+      allowMethods: ["GET", "HEAD", "POST", "OPTIONS"],
+      allowHeaders: ["Last-Event-ID", "Cache-Control", "Authorization", "Content-Type"],
       exposeHeaders: [HASH_MISMATCH_HEADER],
     }),
   );
@@ -143,6 +167,15 @@ export function createApp(opts: ApiOptions = {}): Hono {
       return c.json({ ...checked.bundle, error: checked.error });
     }
     return c.json({ error: checked.error }, 500);
+  });
+
+  app.get("/api/bundles/:id/timeline", async (c) => {
+    const id = c.req.param("id");
+    if (!SAFE_RUN_ID.test(id)) return c.json({ error: "invalid bundle id" }, 400);
+    const found = (await loadIndex(opts)).get(id);
+    if (!found) return c.json({ error: `unknown bundle ${id}` }, 404);
+    const served = servedTimeline({ id, entry: found.entry, dir: found.dir, runsDir: opts.runsDir === undefined ? DEFAULT_RUNS_DIR : opts.runsDir });
+    return served.ok ? c.json(served.file) : c.json({ error: served.error }, served.status);
   });
 
   app.get("/api/stream", (c) => {
@@ -196,7 +229,22 @@ export function createApp(opts: ApiOptions = {}): Hono {
     });
   });
 
-  // Read-only API: anything that is not a read is refused explicitly.
+  // The only non-read endpoints: token + localhost (src/api/session.ts). Ask is read-only by construction.
+  const session = opts.session ?? createSession();
+  mountAsk(app, {
+    runsDir: opts.runsDir === undefined ? DEFAULT_RUNS_DIR : opts.runsDir,
+    ...opts.ask,
+    session,
+    bundleDirs: () => bundleDirectories(opts),
+  });
+  mountApprovals(app, {
+    ...opts.approvals,
+    session,
+    runsDir: opts.runsDir === undefined ? DEFAULT_RUNS_DIR : opts.runsDir,
+    bus,
+  });
+
+  // Everything else is read-only: any other write is refused explicitly.
   app.on(["POST", "PUT", "PATCH", "DELETE"], "/api/*", (c) => c.json({ error: "the Notary API is read-only" }, 405));
 
   return app;
@@ -205,14 +253,17 @@ export function createApp(opts: ApiOptions = {}): Hono {
 export interface StartedServer {
   url: string;
   close: () => Promise<void>;
+  /** This server's session (its token is shown once at startup by `notary serve`, never stored). */
+  session: CreatedSession;
 }
 
 /** Bind the API with @hono/node-server. Loopback by default. */
 export async function startServer(
-  opts: ApiOptions & { port?: number; host?: string; eventJournal?: string | null } = {},
+  opts: Omit<ApiOptions, "session"> & { port?: number; host?: string; eventJournal?: string | null; session?: CreatedSession } = {},
 ): Promise<StartedServer> {
   const { serve } = await import("@hono/node-server");
-  const app = createApp(opts);
+  const session = opts.session ?? createSession();
+  const app = createApp({ ...opts, session });
   // Pick up events from `notary run` / `notary notarize` running in other processes.
   const tail = opts.eventJournal === null ? null : tailEventJournal(opts.eventJournal ?? DEFAULT_EVENT_JOURNAL, opts.bus ?? defaultBus);
   const host = opts.host ?? "127.0.0.1";
@@ -222,6 +273,7 @@ export async function startServer(
       const shownHost = info.address.includes(":") ? `[${info.address}]` : info.address;
       res({
         url: `http://${shownHost}:${info.port}`,
+        session,
         close: () =>
           new Promise<void>((done) => {
             tail?.stop();

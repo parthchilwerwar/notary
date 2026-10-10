@@ -66,7 +66,7 @@ export type {
   IdentifyCompanyParams,
   IdentifyFieldGroup,
 } from "./crustdata.js";
-export { DODO_TEST_BASE_URL, DODO_LIVE_BASE_URL } from "./dodo.js";
+export { DODO_TEST_BASE_URL, DODO_LIVE_BASE_URL, assertTestMode } from "./dodo.js";
 export type {
   BillingAddress,
   CartItem,

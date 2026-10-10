@@ -144,6 +144,14 @@ export interface ExecuteQueueOptions {
   resume?: ReadonlyMap<string, ResumeEntry>;
   /** Guarded: re-verification sentinel asked before each write (src/queue/sentinel.ts). */
   sentinel?: SentinelHook;
+  /**
+   * Guarded only (the approval desk, src/api/approvals.ts): a human approved this held action, so a
+   * gate verdict of "not allowed" (required beliefs not notarized / no certificate) does not hold the
+   * write. Only the gate is bypassed: the guarded clients, every guard, the pre-write reads and the
+   * read-back-before-retry rule all still apply. The gate's required/missing beliefs stay on the
+   * decision as a record of what was overridden.
+   */
+  humanOverride?: boolean;
 }
 
 export interface ExecuteQueueResult {
@@ -254,6 +262,7 @@ class StopRun extends Error {
 export async function executeQueue(opts: ExecuteQueueOptions): Promise<ExecuteQueueResult> {
   const guardedMode = opts.variant === "guarded";
   if (guardedMode && !opts.gate) throw new Error("executeQueue: the guarded variant needs a gate");
+  if (opts.humanOverride && !guardedMode) throw new Error("executeQueue: humanOverride applies to the guarded variant only");
 
   const now = opts.now ?? (() => new Date());
   const policy: PolicyFns = opts.policy ?? { tierFromCompany, decidePolicy };
@@ -589,7 +598,7 @@ export async function executeQueue(opts: ExecuteQueueOptions): Promise<ExecuteQu
       const v = await opts.gate!({ request: req, tier, policy: decided, ...(paymentAmount === undefined ? {} : { paymentAmount }) });
       base.requiredBeliefs = v.requiredBeliefs;
       base.missingBeliefs = v.missingBeliefs;
-      if (!v.allow) {
+      if (!v.allow && !opts.humanOverride) {
         return finish("held", decided.action, {
           error: v.reason ?? "required beliefs not notarized",
           evidencePack: {
