@@ -123,3 +123,10 @@ Where the docs and reality disagree, or a choice the docs leave open. Newest pha
 | 70 | Noise floor "three identical runs" | Nothing re-seeds Dodo between runs, so later runs start with earlier runs' refunds in place; re-seeding needs 11 more hosted checkouts. EVALUATION's command is now `notary eval noise-floor` with a re-seed note | Honest about the measurement |
 | 71 | Audit (docs/AUDIT.md) | 26 findings (1 Critical, 4 High, 10 Medium, 9 Low, 2 Info); 9 fixed with tests, incl. invalidated evidence still weighing on confidence (A-01) and the adversary notarizing unchecked evidence (A-02). Belief precision and the drift demo are downgraded in how they may be reported | See AUDIT.md |
 | 72 | Hackathon start 12:30 IST | All commits P0–P9 are timestamped Oct 10 before 12:30 IST. Not rewritten; for the user to raise with the organizers | AUDIT critical finding; history left intact |
+
+## Keyless hardening (session 3)
+
+| # | Docs say | Reality / decision | Why |
+| --- | --- | --- | --- |
+| 73 | Every keyed command fails BLOCKED / exit 3 without keys | `notary doctor` exited 1 with a JSON report; now prints `BLOCKED: NEATLOGS_API_KEY not set` and exits 3 (a set-but-failing key still exits 1) | Found by the keyless health check |
+| 74 | SSE live mode (TDD Local API) | The bus was in-memory, so events from `notary run`/`notarize`/`eval` in another process never reached `notary serve`. Producers now append events to `runs/events.jsonl` (gitignored); `serve` tails it from the current end, skipping its own pid and tolerating partial lines / recreated files. Verified live: an event emitted by a separate process arrived on `/api/stream` | Dashboard live mode would have been silent |

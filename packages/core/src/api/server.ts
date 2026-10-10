@@ -16,7 +16,7 @@ import { streamSSE } from "hono/streaming";
 import { verifyBundle } from "../bundle/hash.js";
 import { BundleIndexSchema } from "../schema/bundle.js";
 import type { BundleIndexEntry } from "../schema/index.js";
-import { bus as defaultBus } from "./bus.js";
+import { bus as defaultBus, DEFAULT_EVENT_JOURNAL, tailEventJournal } from "./bus.js";
 import type { EventBus, NotaryEvent } from "./bus.js";
 
 export const DEFAULT_WEB_BUNDLES_DIR = fileURLToPath(new URL("../../../web/public/bundles/", import.meta.url));
@@ -205,9 +205,13 @@ export interface StartedServer {
 }
 
 /** Bind the API with @hono/node-server. Loopback by default. */
-export async function startServer(opts: ApiOptions & { port?: number; host?: string } = {}): Promise<StartedServer> {
+export async function startServer(
+  opts: ApiOptions & { port?: number; host?: string; eventJournal?: string | null } = {},
+): Promise<StartedServer> {
   const { serve } = await import("@hono/node-server");
   const app = createApp(opts);
+  // Pick up events from `notary run` / `notary notarize` running in other processes.
+  const tail = opts.eventJournal === null ? null : tailEventJournal(opts.eventJournal ?? DEFAULT_EVENT_JOURNAL, opts.bus ?? defaultBus);
   const host = opts.host ?? "127.0.0.1";
   const port = opts.port ?? 8787;
   return await new Promise<StartedServer>((res, rej) => {
@@ -217,6 +221,7 @@ export async function startServer(opts: ApiOptions & { port?: number; host?: str
         url: `http://${shownHost}:${info.port}`,
         close: () =>
           new Promise<void>((done) => {
+            tail?.stop();
             if ("closeAllConnections" in server) server.closeAllConnections();
             server.close(() => done());
           }),

@@ -272,7 +272,15 @@ export function buildProgram(): Command {
       const { runDoctor } = await import("./trace/doctor.js");
       const report = await runDoctor();
       console.log(JSON.stringify(report, null, 2));
-      if (!report.spanEmitted) process.exitCode = 1;
+      if (report.spanEmitted) return;
+      // A missing key is a BLOCKED precondition (exit 3), like every other keyed command; a key that
+      // is set but fails to export is a real failure (exit 1).
+      if (!report.tracing.enabled && /not set/.test(report.tracing.reason ?? "")) {
+        console.error(`BLOCKED: ${report.tracing.reason}`);
+        process.exitCode = 3;
+      } else {
+        process.exitCode = 1;
+      }
     });
 
   return program;
@@ -286,8 +294,16 @@ export function isKeylessInvocation(argv: readonly string[]): boolean {
   return cmd === "eval" && args.includes("--replay");
 }
 
+/** Commands that emit live events; they journal them so a separate `notary serve` can stream them. */
+const EVENT_PRODUCING_COMMANDS = new Set(["run", "notarize", "eval"]);
+
 async function main(): Promise<void> {
   if (!isKeylessInvocation(process.argv)) loadEnv();
+  const cmd = process.argv.slice(2).find((a) => !a.startsWith("-"));
+  if (cmd && EVENT_PRODUCING_COMMANDS.has(cmd)) {
+    const { setEventJournal, DEFAULT_EVENT_JOURNAL } = await import("./api/bus.js");
+    setEventJournal(DEFAULT_EVENT_JOURNAL);
+  }
   try {
     await buildProgram().parseAsync(process.argv);
   } catch (err) {

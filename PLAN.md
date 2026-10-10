@@ -70,3 +70,8 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 2. `pnpm notary doctor` → real span in neatlogs.
 3. Follow README "Recording real runs" in order (seed with 11 hosted checkouts → notarize crustdata → notarize dodo --priors-from crustdata → run --naive → run → eval noise-floor → make:drift + replay --drift → export).
 4. Re-check every BLOCKED line above; update EVALUATION via `pnpm notary export`.
+
+## Session 3 — keyless hardening (Oct 10)
+- [x] Step 1 keyless health check run for real (fresh-clone install, typecheck, 481 tests, check:secrets, coverage 0 unguarded; every CLI command with --help and with no keys; `serve` curl incl. tampered bundle → `x-notary-hash-mismatch: 1`). Two failures found: `doctor` exit 1 not BLOCKED/3 (DECISIONS #73), SSE not cross-process (#74) — both fixed with tests (`test/health-fixes.test.ts`).
+- [ ] Step 2 `notary demo --fixture` walkthrough
+- [ ] Step 4 open audit findings
