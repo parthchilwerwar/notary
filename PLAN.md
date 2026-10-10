@@ -82,3 +82,10 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 ## Session 4 (Oct 10)
 - [x] Step 1: committed the separate session's neatlogs tracing work on its own (withWorkflow roots, wrapBedrock LLM spans; DECISIONS #91).
 - [x] Step 8: schema + bundle hash confirmed browser-safe; guard test `test/browser-safe.test.ts` (#92).
+- [x] Step 2: missing field path → uninformative, never honored (#94); `test/missing-path.test.ts`.
+- [x] Step 3: Crustdata throttled to 15/min across recon, probes, queue (#95); `test/throttle.test.ts`.
+- [x] Step 4: A-16 drift — consistent op-level rewrite, distinct designs counted once; a fresh Beta(1,4) belief no longer un-learns from its own 3 designs (#96).
+- [x] Step 5: A-14 belief_precision disclosure (#97).
+- [x] Step 6: A-11 resolved against the official start (Luma + Oct 9 email: 12:00 AM IST Oct 10); first commit 02:49:08 IST; website's 12:30 PM disclosed (#72, AUDIT, hackathon.md).
+- [x] Step 7: `demo --fixture --publish` → `packages/web/public/bundles/fixture/`; `packages/web/public/evidence/evidence.json` (#98). Entire docs vs adapter flag mismatch noted (#99).
+- [ ] Codex's in-progress dashboard (`packages/web/src`, tests, Vite config, root `AGENTS.md`, root `pnpm-lock.yaml`) is uncommitted and owned by Codex — not touched.
