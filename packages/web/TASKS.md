@@ -1,0 +1,40 @@
+# Dashboard phases
+
+One phase per Codex session, per the root AGENTS.md. U1 is the current phase; U2 and U3 are retained here for subsequent sessions.
+
+## U1 — Shell, Queue and Beliefs
+
+- [x] React, Vite and Tailwind shell with responsive navigation and theme toggle.
+- [x] Load the static bundle index and selected bundle using the shared schema and browser hash function; visible errors with data withheld.
+- [x] Persistent fixture disclosure; provenance and trace receipts.
+- [x] Queue status filters, request details, guards, evidence packs and API effects.
+- [x] Beliefs snapshots, documented claims, confidence, citations, supporting probes and adversary reviews.
+- [x] Build, fixture checks, browser inspection and `U1: <summary>` commit.
+
+Validation: production build and TypeScript pass; eight integrity tests pass,
+including the sample and available published fixture bundles. Chrome checks
+covered Queue filters and evidence expansion, Beliefs filtering and review
+expansion, light/dark themes, and phone/tablet/desktop widths. No horizontal
+overflow was observed at phone or tablet widths. Later screens are placeholders;
+no live subscription or deployment has been implemented in U1.
+
+## U2 — Probe log, comparison and live mode
+
+- [ ] Hero timeline: committed predictions by hypothesis, observed treatment, control, winner, verdict and credits; prediction before call obvious.
+- [ ] Select any two fixture bundles or any two live bundles; never mix them.
+- [ ] Recharts bars for unsafe actions, accuracy, automation, credits and USD by role.
+- [ ] Trace links from the bundle, span ids when absent.
+- [ ] VITE_NOTARY_API bundle loading and /api/stream subscription: decision, probe.committed, probe.verdict, belief.changed and run.finished.
+- [ ] Honor x-notary-hash-mismatch; verify new bundle snapshots before display.
+- [ ] Build, fixture checks and `U2: <summary>` commit.
+
+## U3 — Economics, Evidence and deployment
+
+- [ ] Economics: cost per run, cost per notarized belief, endpoint credits, role USD and unsafe actions prevented.
+- [ ] cfo.ai summary from public/economics.json; missing file shows "cfo.ai plan pending".
+- [ ] Resolve numeric plan provenance against the root rule restricting on-screen numbers to bundles or public/evidence/evidence.json before displaying plan figures.
+- [ ] Required tools cards: neatlogs, Entire and cfo.ai, purpose/status/links from public/evidence/evidence.json; missing entries are Pending.
+- [ ] Separate fixture demo: naive versus guarded comparison with persistent fixture banner.
+- [ ] Demo polish, consistent status colors, phone layout and empty/error states.
+- [ ] Static Vercel configuration serving public/bundles and public/evidence.
+- [ ] Build, deployment verification and `U3: <summary>` commit.
