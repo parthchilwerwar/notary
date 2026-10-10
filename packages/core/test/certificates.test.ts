@@ -10,6 +10,7 @@ import {
   FIXTURE_CERT_DISCLOSURE,
   ToolCertificatesSchema,
   CertificateReportSchema,
+  FixtureIndexSchema,
   buildCertificates,
   buildReport,
   buildToolCertificates,
@@ -439,6 +440,82 @@ describe("revocations: notarized → unlearned in a later bundle", () => {
   });
 });
 
+describe("revocations from a queue run (guarded run's re-verification sentinel)", () => {
+  /** A guarded queue run (kind "run", no tool, no claims) whose sentinel un-learned the unit belief mid-run. */
+  function sentinelRun(base: RunBundle): RunBundle {
+    const bU = beliefIdFor(UNIT.id);
+    const prev = base.beliefs.after.find((b) => b.id === bU)!;
+    const s = [1, 2, 3, 4].map((k) => unitProbe(`run-s00${k}`, UNIT, 300 + k, k === 1 ? 100 : 1, { variant: 20 + k }));
+    const t = (sec: number) => `2026-10-12T11:00:${String(sec).padStart(2, "0")}.000Z`;
+    const ev2 = (sec: number, to: BeliefEvent["to"], a: number, reason: string, probeId: string): BeliefEvent => ({
+      beliefId: bU,
+      at: t(sec),
+      from: "notarized",
+      to,
+      alpha: a,
+      beta: 5,
+      confidence: 0.3,
+      reason,
+      probeId,
+    });
+    return testBundle("guarded-run-1", {
+      kind: "run",
+      variant: "guarded",
+      tool: undefined,
+      startedAt: "2026-10-12T11:00:00.000Z",
+      finishedAt: "2026-10-12T11:01:00.000Z",
+      hypotheses: H,
+      probes: s,
+      guards: [
+        { id: "grd-unit-run", beliefId: bU, operation: UNIT.operation, kind: "transform", class: "unit_mismatch", rule: {}, reason: "t", active: false, compiledAt: at(5), retiredAt: t(40) },
+        { id: "grd-other", beliefId: beliefIdFor(WALLET.id), operation: WALLET.operation, kind: "block", class: "unit_mismatch", rule: {}, reason: "t", active: true, compiledAt: at(7) },
+      ],
+      beliefs: {
+        before: base.beliefs.after,
+        after: base.beliefs.after.map((b) => (b.id === bU ? { ...prev, alpha: 4, beta: 5, status: "unlearned" as const, confidence: 0.36 } : b)),
+      },
+      beliefEvents: [
+        ev2(10, "notarized", 1, "confirmed unit_mismatch (h-unit): β+1", "run-s001"),
+        ev2(20, "notarized", 2, "confirmed honored (h-ok): α+1", "run-s002"),
+        ev2(30, "notarized", 3, "confirmed honored (h-ok): α+1", "run-s003"),
+        ev2(40, "unlearned", 4, "confirmed honored (h-ok): α+1; P(holds)=0.6 crossed back over 0.5 against the notarized side (violated): unlearned", "run-s004"),
+      ],
+    });
+  }
+
+  it("a run bundle with notarized → unlearned is a source: revocation with trigger probes and retired guards; certificate revoked", () => {
+    const base = mainBundle();
+    const run = sentinelRun(base);
+    const t = buildToolCertificates([base, run], "dodo", { claims: CLAIMS });
+    expect(t.sourceBundles.map((s) => s.runId)).toEqual(["notarize-dodo-1", "guarded-run-1"]);
+    const c = t.certificates.find((x) => x.claimId === UNIT.id)!;
+    expect(t.revocations).toHaveLength(1);
+    const r = t.revocations[0]!;
+    expect(r).toMatchObject({
+      certificateId: c.id,
+      to: "unlearned",
+      revokedAt: "2026-10-12T11:00:40.000Z",
+      triggerProbeIds: ["run-s004", "run-s002", "run-s003"],
+      triggerTraceIds: ["trace-run-s004", "trace-run-s002", "trace-run-s003"],
+      guardsRetired: [{ id: "grd-unit-run", kind: "transform", operation: UNIT.operation, retiredAt: "2026-10-12T11:00:40.000Z" }],
+      sourceBundle: { runId: "guarded-run-1" },
+    });
+    expect(c).toMatchObject({ status: "revoked", revocation: { id: r.id }, sourceBundle: { runId: "notarize-dodo-1" } });
+    expect(t.certificates.filter((x) => x.status === "active").map((x) => x.claimId).sort()).toEqual([PAGE.id, WALLET.id].sort());
+    // A run with no belief events about crustdata is not a crustdata source.
+    expect(buildToolCertificates([base, run], "crustdata", { claims: CLAIMS }).sourceBundles).toEqual([]);
+  });
+
+  it("a run bundle without belief events is not a source (snapshots only)", () => {
+    const base = mainBundle();
+    const quiet = finalizeBundle({ ...sentinelRun(base), runId: "guarded-run-quiet", beliefEvents: [] } as RunBundle);
+    const t = buildToolCertificates([base, quiet], "dodo", { claims: CLAIMS });
+    expect(t.sourceBundles.map((s) => s.runId)).toEqual(["notarize-dodo-1"]);
+    expect(t.revocations).toEqual([]);
+    expect(t.certificates.find((x) => x.claimId === UNIT.id)!.status).toBe("active");
+  });
+});
+
 describe("report", () => {
   it("counts per tool and overall from the certificates (no hand-typed numbers)", () => {
     const base = mainBundle();
@@ -458,11 +535,20 @@ describe("report", () => {
   });
 });
 
+
 describe("writeCertificates (notary export --certificates)", () => {
-  function layout(): { runs: string; demo: string; web: string; exp: string } {
+  interface Layout {
+    runs: string;
+    demo: string;
+    changeApi: string;
+    web: string;
+    exp: string;
+  }
+  function layout(): Layout {
     const root = tempDir();
     const runs = join(root, "runs");
     const demo = join(runs, "demo");
+    const changeApi = join(runs, "demo-change-api");
     const real = mainBundle();
     mkdirSync(join(runs, real.runId), { recursive: true });
     writeFileSync(join(runs, real.runId, `${real.runId}.json`), JSON.stringify(real));
@@ -470,42 +556,91 @@ describe("writeCertificates (notary export --certificates)", () => {
     const sample = finalizeBundle({ ...mainBundle(), runId: "sample-x", sample: true } as RunBundle);
     mkdirSync(join(runs, "sample-x"), { recursive: true });
     writeFileSync(join(runs, "sample-x", "sample-x.json"), JSON.stringify(sample));
-    const fx = finalizeBundle({ ...mainBundle(), runId: "demo-notarize-dodo", sample: true, disclosure: [FIXTURE_DISCLOSURE] } as RunBundle);
-    mkdirSync(join(demo, fx.runId), { recursive: true });
-    writeFileSync(join(demo, fx.runId, `${fx.runId}.json`), JSON.stringify(fx));
-    writeFileSync(join(demo, fx.runId, "index.json"), "[]");
-    return { runs, demo, web: join(root, "web", "certificates"), exp: join(root, "export") };
+    const put = (dir: string, b: RunBundle): void => {
+      mkdirSync(join(dir, b.runId), { recursive: true });
+      writeFileSync(join(dir, b.runId, `${b.runId}.json`), JSON.stringify(b));
+      writeFileSync(join(dir, b.runId, "index.json"), "[]");
+    };
+    const fx = (runId: string, b: RunBundle = mainBundle()): RunBundle =>
+      finalizeBundle({ ...b, runId, sample: true, disclosure: [FIXTURE_DISCLOSURE] } as RunBundle);
+    put(demo, fx("demo-notarize-dodo"));
+    // change-api world: the same notarization, then a later bundle that un-learns the unit belief.
+    const caBase = fx("demo-change-api-notarize-dodo");
+    put(changeApi, caBase);
+    put(changeApi, fx("demo-change-api-drift", driftBundle(caBase)));
+    return { runs, demo, changeApi, web: join(root, "web", "certificates"), exp: join(root, "export") };
   }
+  const readJson = (p: string): unknown => JSON.parse(readFileSync(p, "utf8"));
 
   it("real and fixture outputs never mix; REPORT.md is written only from real data", async () => {
     const p = layout();
     const real = await writeCertificates({ runsDir: p.runs, webDir: p.web, exportDir: p.exp });
-    expect(real.bundles.map((b) => b.runId)).toEqual(["notarize-dodo-1"]);
-    const dodo = ToolCertificatesSchema.parse(JSON.parse(readFileSync(join(p.web, "dodo.json"), "utf8")));
+    expect(real.outputs.map((o) => o.bundles.map((b) => b.runId))).toEqual([["notarize-dodo-1"]]);
+    const dodo = ToolCertificatesSchema.parse(readJson(join(p.web, "dodo.json")));
     expect(dodo.sample).toBe(false);
+    expect(dodo.scenario).toBeUndefined();
     expect(dodo.certificates.every((c) => !c.sample)).toBe(true);
     expect(existsSync(join(p.web, "crustdata.json"))).toBe(true);
-    const report = CertificateReportSchema.parse(JSON.parse(readFileSync(join(p.web, "report.json"), "utf8")));
+    const report = CertificateReportSchema.parse(readJson(join(p.web, "report.json")));
     expect(report.sample).toBe(false);
     expect(existsSync(join(p.exp, "REPORT.md"))).toBe(true);
     expect(existsSync(join(p.exp, "REPORT.fixture.md"))).toBe(false);
     const realMd = readFileSync(join(p.exp, "REPORT.md"), "utf8");
 
-    const fx = await writeCertificates({ fixture: true, runsDir: p.demo, webDir: p.web, exportDir: p.exp });
-    expect(fx.bundles.map((b) => b.runId)).toEqual(["demo-notarize-dodo"]);
-    const f = ToolCertificatesSchema.parse(JSON.parse(readFileSync(join(p.web, "fixture", "dodo.json"), "utf8")));
-    expect(f).toMatchObject({ sample: true, disclosure: [FIXTURE_CERT_DISCLOSURE], generatedBy: "pnpm notary export --certificates --fixture" });
+    await writeCertificates({ fixture: true, fixtureDirs: [p.demo, p.changeApi], webDir: p.web, exportDir: p.exp });
+    const f = ToolCertificatesSchema.parse(readJson(join(p.web, "fixture", "default", "dodo.json")));
+    expect(f).toMatchObject({ sample: true, scenario: "default", disclosure: [FIXTURE_CERT_DISCLOSURE], generatedBy: "pnpm notary export --certificates --fixture" });
     expect(f.certificates.length).toBeGreaterThan(0);
-    for (const c of f.certificates) expect(c).toMatchObject({ sample: true, disclosure: [FIXTURE_CERT_DISCLOSURE], sourceBundle: { runId: "demo-notarize-dodo" } });
-    const fr = CertificateReportSchema.parse(JSON.parse(readFileSync(join(p.web, "fixture", "report.json"), "utf8")));
-    expect(fr.sample).toBe(true);
-    expect(fr.header).toMatch(/^FIXTURE — simulated APIs and models, not a live run\./);
+    for (const c of f.certificates) expect(c).toMatchObject({ sample: true, disclosure: [FIXTURE_CERT_DISCLOSURE] });
+    const fr = CertificateReportSchema.parse(readJson(join(p.web, "fixture", "default", "report.json")));
+    expect(fr).toMatchObject({ sample: true, scenario: "default" });
+    expect(fr.header).toMatch(/^FIXTURE — simulated APIs and models, not a live run\. Scenario default\./);
     // The fixture export touched neither the real JSON nor REPORT.md.
     expect(readFileSync(join(p.exp, "REPORT.md"), "utf8")).toBe(realMd);
-    expect(JSON.parse(readFileSync(join(p.web, "dodo.json"), "utf8"))).toEqual(dodo);
-    expect(readFileSync(join(p.exp, "REPORT.fixture.md"), "utf8")).toMatch(/^# Notary certificates — FIXTURE/);
+    expect(readJson(join(p.web, "dodo.json"))).toEqual(dodo);
 
     await expect(writeCertificates({ runsDir: p.runs, webDir: join(p.web, "fixture"), exportDir: p.exp })).rejects.toThrow(/fixture directory/);
+  });
+
+  it("fixture scenarios are separate worlds: per-scenario files, an index, no merged files, one REPORT section each", async () => {
+    const p = layout();
+    // Stale merged files from the old layout must be removed.
+    mkdirSync(join(p.web, "fixture"), { recursive: true });
+    writeFileSync(join(p.web, "fixture", "dodo.json"), "{}");
+    writeFileSync(join(p.web, "fixture", "report.json"), "{}");
+    const res = await writeCertificates({ fixture: true, fixtureDirs: [p.demo, p.changeApi], webDir: p.web, exportDir: p.exp });
+    expect(res.outputs.map((o) => [o.scenario, o.bundles.map((b) => b.runId)])).toEqual([
+      ["default", ["demo-notarize-dodo"]],
+      ["change-api", ["demo-change-api-notarize-dodo", "demo-change-api-drift"]],
+    ]);
+    expect(existsSync(join(p.web, "fixture", "dodo.json"))).toBe(false);
+    expect(existsSync(join(p.web, "fixture", "report.json"))).toBe(false);
+
+    const def = ToolCertificatesSchema.parse(readJson(join(p.web, "fixture", "default", "dodo.json")));
+    const ca = ToolCertificatesSchema.parse(readJson(join(p.web, "fixture", "change-api", "dodo.json")));
+    expect(def.sourceBundles.map((s) => s.runId)).toEqual(["demo-notarize-dodo"]);
+    expect(ca.sourceBundles.map((s) => s.runId)).toEqual(["demo-change-api-notarize-dodo", "demo-change-api-drift"]);
+    for (const c of def.certificates) expect(c.sourceBundle.runId.startsWith("demo-change-api-")).toBe(false);
+    for (const c of ca.certificates) expect(c.sourceBundle.runId.startsWith("demo-change-api-")).toBe(true);
+    // Only the change-api world un-learned anything.
+    expect(def.revocations).toEqual([]);
+    expect(ca.revocations.map((r) => [r.claimId, r.sourceBundle.runId])).toEqual([[UNIT.id, "demo-change-api-drift"]]);
+    const caReport = CertificateReportSchema.parse(readJson(join(p.web, "fixture", "change-api", "report.json")));
+    expect(caReport.overall.revoked).toBe(1);
+    expect(CertificateReportSchema.parse(readJson(join(p.web, "fixture", "default", "report.json"))).overall.revoked).toBe(0);
+
+    const index = FixtureIndexSchema.parse(readJson(join(p.web, "fixture", "index.json")));
+    expect(index.scenarios.map((s) => [s.scenario, s.report, s.sourceBundles])).toEqual([
+      ["default", "default/report.json", ["demo-notarize-dodo"]],
+      ["change-api", "change-api/report.json", ["demo-change-api-notarize-dodo", "demo-change-api-drift"]],
+    ]);
+    expect(index.scenarios[1]!.overall).toEqual(caReport.overall);
+
+    const md = readFileSync(join(p.exp, "REPORT.fixture.md"), "utf8");
+    expect(md).toMatch(/^# Notary certificates — FIXTURE/);
+    expect(md).toContain("## Notary certificates — FIXTURE scenario default");
+    expect(md).toContain("## Notary certificates — FIXTURE scenario change-api");
+    expect(existsSync(join(p.exp, "REPORT.md"))).toBe(false);
   });
 
   it("0 real bundles: honest files, every claim not tested, counts zero, 'no real runs yet'", async () => {
@@ -514,10 +649,11 @@ describe("writeCertificates (notary export --certificates)", () => {
     const exp = join(root, "export");
     const res = await writeCertificates({ runsDir: join(root, "no-runs"), webDir: web, exportDir: exp });
     const total = allContracts.length;
-    expect(res.report.overall).toEqual({ claimsTotal: total, certified: 0, matchesDocs: 0, contradictsDocs: 0, unproven: total, revoked: 0 });
-    expect(res.report.header).toMatch(/^No real runs yet/);
+    const report = res.outputs[0]!.report;
+    expect(report.overall).toEqual({ claimsTotal: total, certified: 0, matchesDocs: 0, contradictsDocs: 0, unproven: total, revoked: 0 });
+    expect(report.header).toMatch(/^No real runs yet/);
     for (const tool of ["crustdata", "dodo"] as const) {
-      const t = ToolCertificatesSchema.parse(JSON.parse(readFileSync(join(web, `${tool}.json`), "utf8")));
+      const t = ToolCertificatesSchema.parse(readJson(join(web, `${tool}.json`)));
       expect(t.header).toMatch(/^no real runs yet/);
       expect(t.certificates).toEqual([]);
       expect(t.revocations).toEqual([]);

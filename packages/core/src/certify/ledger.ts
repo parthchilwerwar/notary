@@ -3,8 +3,9 @@
  *
  * Merges the bundles that speak about one tool into a single chronological view:
  *   sources     the bundles used, oldest first (startedAt, then runId). `run` bundles (queue runs)
- *               are not sources: they carry belief snapshots but no belief events. A `replay` bundle
- *               whose `replayOf` run is also in the input is skipped (it reproduces that run).
+ *               are sources only when they carry belief events (the guarded run's sentinel can
+ *               un-learn a belief mid-run); without events they hold snapshots only and are skipped.
+ *               A `replay` bundle whose `replayOf` run is also in the input is skipped (it reproduces that run).
  *   latest      each belief's newest snapshot (beliefs.after of the newest source that carries it)
  *   events      every BeliefEvent from every source, de-duplicated (a later bundle may repeat an
  *               event) and ordered by `at`, then source order, then position in the bundle
@@ -42,6 +43,11 @@ export function bundleOrder(x: RunBundle, y: RunBundle): number {
 }
 
 function speaksAbout(b: RunBundle, tool: Tool): boolean {
+  if (b.kind === "run") {
+    // A queue run snapshots every belief; it speaks about a tool only through events on that tool's beliefs.
+    const ids = new Set([...b.beliefs.before, ...b.beliefs.after].filter((x) => x.tool === tool).map((x) => x.id));
+    return b.beliefEvents.some((e) => ids.has(e.beliefId));
+  }
   return b.tool === tool || b.beliefs.after.some((x) => x.tool === tool) || b.beliefEvents.length > 0 && b.beliefs.before.some((x) => x.tool === tool);
 }
 
@@ -52,8 +58,11 @@ export function selectSources(bundles: readonly RunBundle[], tool: Tool): { sour
   const ignored: IgnoredSource[] = [];
   for (const b of [...bundles].sort(bundleOrder)) {
     if (!speaksAbout(b, tool)) continue;
-    if (b.kind === "run") {
-      ignored.push({ runId: b.runId, reason: "queue run bundle: carries belief snapshots but no belief events" });
+    // A queue run is a source only when it carries belief events: the guarded run's re-verification
+    // sentinel (queue/sentinel.ts) can un-learn beliefs mid-run, and those events, its sentinel probes
+    // and the guards it retired are what a revocation is derived from.
+    if (b.kind === "run" && b.beliefEvents.length === 0) {
+      ignored.push({ runId: b.runId, reason: "queue run bundle without belief events: belief snapshots only" });
       continue;
     }
     if (b.mode === "replay" && b.replayOf && ids.has(b.replayOf)) {

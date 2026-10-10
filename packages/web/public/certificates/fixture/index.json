@@ -1,0 +1,51 @@
+{
+  "generatedBy": "pnpm notary export --certificates --fixture",
+  "sample": true,
+  "disclosure": [
+    "FIXTURE — simulated APIs and models, not a live run"
+  ],
+  "note": "Each scenario is a separate simulated world; its certificates come only from that scenario's fixture bundles and are never merged with another scenario or with real data.",
+  "scenarios": [
+    {
+      "scenario": "default",
+      "report": "default/report.json",
+      "files": [
+        "default/crustdata.json",
+        "default/dodo.json"
+      ],
+      "sourceBundles": [
+        "demo-notarize-crustdata",
+        "demo-notarize-dodo"
+      ],
+      "overall": {
+        "claimsTotal": 26,
+        "certified": 9,
+        "matchesDocs": 5,
+        "contradictsDocs": 4,
+        "unproven": 17,
+        "revoked": 0
+      }
+    },
+    {
+      "scenario": "change-api",
+      "report": "change-api/report.json",
+      "files": [
+        "change-api/crustdata.json",
+        "change-api/dodo.json"
+      ],
+      "sourceBundles": [
+        "demo-change-api-notarize-crustdata",
+        "demo-change-api-notarize-dodo",
+        "demo-change-api-run-guarded"
+      ],
+      "overall": {
+        "claimsTotal": 26,
+        "certified": 9,
+        "matchesDocs": 6,
+        "contradictsDocs": 3,
+        "unproven": 17,
+        "revoked": 1
+      }
+    }
+  ]
+}
