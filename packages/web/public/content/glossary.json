@@ -1,0 +1,551 @@
+{
+  "generatedBy": "pnpm notary export --content",
+  "note": "Generated from code (contracts and schema enums in packages/core); do not edit by hand. Rerun `pnpm notary export --content` after changing a claim or an enum.",
+  "contentHash": "15ca5c1576028bbb6632b0dfff907d7626f92e8fe8e9d80c055c1fb972649eaf",
+  "counts": {
+    "claims": 26,
+    "defectClasses": 10,
+    "guardKinds": 6,
+    "beliefStatuses": 6,
+    "decisionStatuses": 4,
+    "probeVerdicts": 5,
+    "policyOutcomes": 4,
+    "probeTemplates": 8
+  },
+  "sections": {
+    "claims": [
+      {
+        "id": "crustdata.enrich.headcount-total-integer",
+        "name": "Crustdata enrich company: headcount total type",
+        "explanation": "Crustdata says the headcount total field in an enrich company response always holds a whole number (or empty).",
+        "example": "If the headcount total field comes back as 12.5 or \"1250\" (text) instead of a whole number (or empty), Crustdata broke this promise.",
+        "tool": "crustdata",
+        "operation": "crustdata.enrichCompany",
+        "docText": "headcount.total: integer, nullable (enrich response schema)",
+        "docUrl": "https://docs.crustdata.com/api-reference/company-apis/get-full-company-enrichment.md"
+      },
+      {
+        "id": "crustdata.enrich.funding-total-investment-number",
+        "name": "Crustdata enrich company: total investment USD type",
+        "explanation": "Crustdata says the total investment USD field in an enrich company response always holds a number (or empty).",
+        "example": "If the total investment USD field comes back as \"1250\" (text) instead of a number (or empty), Crustdata broke this promise.",
+        "tool": "crustdata",
+        "operation": "crustdata.enrichCompany",
+        "docText": "funding.total_investment_usd: number, nullable (enrich response schema)",
+        "docUrl": "https://docs.crustdata.com/api-reference/company-apis/get-full-company-enrichment.md"
+      },
+      {
+        "id": "crustdata.enrich.employee-count-range-string",
+        "name": "Crustdata enrich company: employee count range type",
+        "explanation": "Crustdata says the employee count range field in an enrich company response always holds text (or empty).",
+        "example": "If the employee count range field comes back as a bare number instead of text (or empty), Crustdata broke this promise.",
+        "tool": "crustdata",
+        "operation": "crustdata.enrichCompany",
+        "docText": "employee_count_range: string, nullable (example: 51-200)",
+        "docUrl": "https://docs.crustdata.com/api-reference/company-apis/get-full-company-enrichment.md"
+      },
+      {
+        "id": "crustdata.enrich.last-fundraise-date-string",
+        "name": "Crustdata enrich company: last fundraise date type",
+        "explanation": "Crustdata says the last fundraise date field in an enrich company response always holds text (or empty).",
+        "example": "If the last fundraise date field comes back as a bare number instead of text (or empty), Crustdata broke this promise.",
+        "tool": "crustdata",
+        "operation": "crustdata.enrichCompany",
+        "docText": "last_fundraise_date: string, format date, nullable (example: '2025-10-10')",
+        "docUrl": "https://docs.crustdata.com/api-reference/company-apis/get-full-company-enrichment.md"
+      },
+      {
+        "id": "crustdata.enrich.default-fields-basic-info",
+        "name": "Crustdata enrich company: includes basic info",
+        "explanation": "Crustdata says every enrich company response includes basic info.",
+        "example": "An enrich company reply with no basic info field would break this promise.",
+        "tool": "crustdata",
+        "operation": "crustdata.enrichCompany",
+        "docText": "When `fields` is omitted, only `crustdata_company_id` and `basic_info` are returned",
+        "docUrl": "https://docs.crustdata.com/api-reference/company-apis/get-full-company-enrichment.md"
+      },
+      {
+        "id": "crustdata.enrich.no-match-200-empty",
+        "name": "Crustdata enrich company: status 200 (domains)",
+        "explanation": "Crustdata says an enrich company request whose domains match nothing still gets a normal 200 reply, not an error.",
+        "example": "Try it: enrich an unmatchable domain, and the reply should be status 200.",
+        "tool": "crustdata",
+        "operation": "crustdata.enrichCompany",
+        "docText": "No-match responses currently return `200` with an empty `matches` array.",
+        "docUrl": "https://docs.crustdata.com/api-reference/company-apis/get-full-company-enrichment.md"
+      },
+      {
+        "id": "crustdata.identify.no-match-200-empty",
+        "name": "Crustdata identify company: status 200 (domains)",
+        "explanation": "Crustdata says an identify company request whose domains match nothing still gets a normal 200 reply, not an error.",
+        "example": "Try it: identify an unmatchable domain, and the reply should be status 200.",
+        "tool": "crustdata",
+        "operation": "crustdata.identifyCompany",
+        "docText": "[implied] no_match_found example returns 200 with matches: []; 404 is also documented as \"No data found\"",
+        "docUrl": "https://docs.crustdata.com/api-reference/company-apis/identify-a-company-from-name-domain-id-or-profile-url.md"
+      },
+      {
+        "id": "crustdata.identify.invalid-fields-400",
+        "name": "Crustdata identify company: status 400 (fields)",
+        "explanation": "Crustdata says an identify company request it cannot accept is refused with a 400 (bad request) error.",
+        "example": "Try it: ask identify for an enrich-only field group, and the reply should be status 400.",
+        "tool": "crustdata",
+        "operation": "crustdata.identifyCompany",
+        "docText": "requesting any other group returns `400 Invalid fields`",
+        "docUrl": "https://docs.crustdata.com/api-reference/company-apis/identify-a-company-from-name-domain-id-or-profile-url.md"
+      },
+      {
+        "id": "crustdata.enrich.confidence-score-number",
+        "name": "Crustdata enrich company: confidence score type",
+        "explanation": "Crustdata says the confidence score field in an enrich company response always holds a number.",
+        "example": "If the confidence score field comes back as \"1250\" (text) instead of a number, Crustdata broke this promise.",
+        "tool": "crustdata",
+        "operation": "crustdata.enrichCompany",
+        "docText": "Each item in `matches` has `confidence_score` (number) and `company_data`.",
+        "docUrl": "https://docs.crustdata.com/api-reference/company-apis/get-full-company-enrichment.md"
+      },
+      {
+        "id": "crustdata.identify.max-25-identifiers",
+        "name": "Crustdata identify company: domains max 25",
+        "explanation": "Crustdata says one identify company request takes at most 25 domains.",
+        "example": "Sending 26 domains in one identify company request should get an error, not a silent cut to 25.",
+        "tool": "crustdata",
+        "operation": "crustdata.identifyCompany",
+        "docText": "each may contain 1 to 25 values.",
+        "docUrl": "https://docs.crustdata.com/api-reference/company-apis/identify-a-company-from-name-domain-id-or-profile-url.md"
+      },
+      {
+        "id": "crustdata.credits.balance-number",
+        "name": "Crustdata get credit balance: credits type",
+        "explanation": "Crustdata says the credits field in a get credit balance response always holds a number.",
+        "example": "If the credits field comes back as \"1250\" (text) instead of a number, Crustdata broke this promise.",
+        "tool": "crustdata",
+        "operation": "crustdata.getCreditBalance",
+        "docText": "account.credits: number. Credits currently remaining on the account.",
+        "docUrl": "https://docs.crustdata.com/api-reference/account-apis/get-account-credit-balance.md"
+      },
+      {
+        "id": "dodo.refund.amount-minor-units",
+        "name": "Dodo create refund: amount in minor units",
+        "explanation": "Dodo says the amount sent to create refund is counted in the smallest currency unit, such as cents for USD.",
+        "example": "Sending an amount of 1234 should read back as an amount of 1234 (meaning $12.34), not 123400 or 12.34.",
+        "tool": "dodo",
+        "operation": "dodo.createRefund",
+        "docText": "the `amount` to refund in the smallest currency unit.",
+        "docUrl": "https://docs.dodopayments.com/features/transactions/refunds.md"
+      },
+      {
+        "id": "dodo.refund.full-retry-no-duplicate",
+        "name": "Dodo create refund: safe to retry",
+        "explanation": "Dodo says sending the same create refund request again never creates a second refund.",
+        "example": "Retrying a create refund call after a timeout should not produce a second refund with a new ID.",
+        "tool": "dodo",
+        "operation": "dodo.createRefund",
+        "docText": "[implied] The refund, together with any earlier refunds on the payment, can't exceed the amount paid.",
+        "docUrl": "https://docs.dodopayments.com/features/transactions/refunds.md"
+      },
+      {
+        "id": "dodo.refunds.amount-integer",
+        "name": "Dodo list refunds: amount type",
+        "explanation": "Dodo says the amount field in a list refunds response always holds a whole number (or empty).",
+        "example": "If the amount field comes back as 12.5 or \"1250\" (text) instead of a whole number (or empty), Dodo broke this promise.",
+        "tool": "dodo",
+        "operation": "dodo.listRefunds",
+        "docText": "amount: integer or null (int32). The refunded amount.",
+        "docUrl": "https://docs.dodopayments.com/api-reference/refunds/get-refunds.md"
+      },
+      {
+        "id": "dodo.refunds.page-size-max-100",
+        "name": "Dodo list refunds: page size max 100",
+        "explanation": "Dodo says a page of refunds never holds more than 100 items.",
+        "example": "Asking for 101 refunds per page should return at most 100 or an error.",
+        "tool": "dodo",
+        "operation": "dodo.listRefunds",
+        "docText": "Page size default is 10 max is 100",
+        "docUrl": "https://docs.dodopayments.com/api-reference/refunds/get-refunds.md"
+      },
+      {
+        "id": "dodo.payments.page-size-max-100",
+        "name": "Dodo list payments: page size max 100",
+        "explanation": "Dodo says a page of payments never holds more than 100 items.",
+        "example": "Asking for 101 payments per page should return at most 100 or an error.",
+        "tool": "dodo",
+        "operation": "dodo.listPayments",
+        "docText": "Page size default is 10 max is 100",
+        "docUrl": "https://docs.dodopayments.com/api-reference/payments/get-payments.md"
+      },
+      {
+        "id": "dodo.payment.refunds-array-present",
+        "name": "Dodo get payment: includes refunds",
+        "explanation": "Dodo says every get payment response includes refunds.",
+        "example": "A get payment reply with no refunds field would break this promise.",
+        "tool": "dodo",
+        "operation": "dodo.getPayment",
+        "docText": "refunds: List of refunds issued for this payment (required)",
+        "docUrl": "https://docs.dodopayments.com/api-reference/payments/get-payments-1.md"
+      },
+      {
+        "id": "dodo.payment.refunds-lists-issued-refund",
+        "name": "Dodo create refund: visible within 1 second",
+        "explanation": "Dodo says a new refund shows up when you read it back within 1 second.",
+        "example": "A read made 1 second after create refund that does not list the new refund would break this promise.",
+        "tool": "dodo",
+        "operation": "dodo.createRefund",
+        "docText": "[implied] refunds: List of refunds issued for this payment",
+        "docUrl": "https://docs.dodopayments.com/api-reference/payments/get-payments-1.md"
+      },
+      {
+        "id": "dodo.product.price-minor-units",
+        "name": "Dodo create product: price in minor units",
+        "explanation": "Dodo says the price sent to create product is counted in the smallest currency unit, such as cents for USD.",
+        "example": "Sending a price of 1234 should read back as a price of 1234 (meaning $12.34), not 123400 or 12.34.",
+        "tool": "dodo",
+        "operation": "dodo.createProduct",
+        "docText": "The payment amount, in the smallest denomination of the currency (e.g., cents for USD).",
+        "docUrl": "https://docs.dodopayments.com/api-reference/products/post-products.md"
+      },
+      {
+        "id": "dodo.customer.missing-email-422",
+        "name": "Dodo create customer: status 422 (email)",
+        "explanation": "Dodo says a create customer request it cannot accept is refused with a 422 (invalid input) error.",
+        "example": "Try it: omit the required email, and the reply should be status 422.",
+        "tool": "dodo",
+        "operation": "dodo.createCustomer",
+        "docText": "required: name, email. 422: Invalid Request Object or Parameters",
+        "docUrl": "https://docs.dodopayments.com/api-reference/customers/create-customer.md"
+      },
+      {
+        "id": "dodo.subscription.change-plan-pending-409",
+        "name": "Dodo change subscription plan: status 409 (subscription ID)",
+        "explanation": "Dodo says a change subscription plan request it cannot accept is refused with a 409 (conflict) error.",
+        "example": "A change subscription plan request that should fail must get status 409, not a success.",
+        "tool": "dodo",
+        "operation": "dodo.changeSubscriptionPlan",
+        "docText": "409: A pending plan change already exists for this subscription (PendingPlanChangeExists).",
+        "docUrl": "https://docs.dodopayments.com/api-reference/subscriptions/change-plan.md"
+      },
+      {
+        "id": "dodo.wallet.credit-amount-minor-units",
+        "name": "Dodo create wallet ledger entry: amount in minor units",
+        "explanation": "Dodo says the amount sent to create wallet ledger entry is counted in the smallest currency unit, such as cents for USD.",
+        "example": "Sending an amount of 1234 should read back as a balance of 1234 (meaning $12.34), not 123400 or 12.34.",
+        "tool": "dodo",
+        "operation": "dodo.createWalletLedgerEntry",
+        "docText": "`amount` is a positive integer in the smallest currency unit.",
+        "docUrl": "https://docs.dodopayments.com/features/customer-wallet.md"
+      },
+      {
+        "id": "dodo.wallet.idempotency-key-no-duplicate",
+        "name": "Dodo create wallet ledger entry: item count max 1",
+        "explanation": "Dodo says sending the same create wallet ledger entry request 3 times still leaves at most 1 item.",
+        "example": "If the list read after sending the same create wallet ledger entry request 3 times holds 2 items, Dodo broke this promise.",
+        "tool": "dodo",
+        "operation": "dodo.createWalletLedgerEntry",
+        "docText": "If you repeat a request with the same key, Dodo Payments creates no new entry and returns the current wallet.",
+        "docUrl": "https://docs.dodopayments.com/features/customer-wallet.md"
+      },
+      {
+        "id": "dodo.wallet.debit-insufficient-400",
+        "name": "Dodo create wallet ledger entry: status 400 (entry type)",
+        "explanation": "Dodo says a create wallet ledger entry request it cannot accept is refused with a 400 (bad request) error.",
+        "example": "Try it: debit 500 from an empty USD wallet, and the reply should be status 400.",
+        "tool": "dodo",
+        "operation": "dodo.createWalletLedgerEntry",
+        "docText": "A debit larger than the balance fails with `400`.",
+        "docUrl": "https://docs.dodopayments.com/features/customer-wallet.md"
+      },
+      {
+        "id": "dodo.wallets.total-balance-usd-integer",
+        "name": "Dodo list customer wallets: total balance USD type",
+        "explanation": "Dodo says the total balance USD field in a list customer wallets response always holds a whole number.",
+        "example": "If the total balance USD field comes back as 12.5 or \"1250\" (text) instead of a whole number, Dodo broke this promise.",
+        "tool": "dodo",
+        "operation": "dodo.listCustomerWallets",
+        "docText": "total_balance_usd: integer (int64). Sum of all wallet balances converted to USD (in smallest unit)",
+        "docUrl": "https://docs.dodopayments.com/api-reference/customers/get-customer-wallets.md"
+      },
+      {
+        "id": "dodo.wallet.ledger-response-balance-integer",
+        "name": "Dodo create wallet ledger entry: balance type",
+        "explanation": "Dodo says the balance field in a create wallet ledger entry response always holds a whole number.",
+        "example": "If the balance field comes back as 12.5 or \"1250\" (text) instead of a whole number, Dodo broke this promise.",
+        "tool": "dodo",
+        "operation": "dodo.createWalletLedgerEntry",
+        "docText": "balance: integer (int64) (CustomerWalletResponse)",
+        "docUrl": "https://docs.dodopayments.com/api-reference/customers/post-customer-wallets-ledger-entries.md"
+      }
+    ],
+    "defectClasses": [
+      {
+        "id": "silent_truncation",
+        "name": "Silent truncation",
+        "explanation": "The tool quietly returns fewer items than you asked for, without saying anything was left out.",
+        "example": "You ask for 101 refunds per page and get exactly 100 back with no error, so one refund is silently missing."
+      },
+      {
+        "id": "silent_coercion",
+        "name": "Silent coercion",
+        "explanation": "The tool quietly changes a value or its type, such as sending a number as text or dropping a setting you sent.",
+        "example": "A headcount documented as a whole number arrives as the text \"1234\"."
+      },
+      {
+        "id": "unit_mismatch",
+        "name": "Unit mismatch",
+        "explanation": "The tool reads or reports money in a different unit than its docs say, such as dollars instead of cents.",
+        "example": "You refund 1234 meaning $12.34, and the tool treats it as $1,234."
+      },
+      {
+        "id": "undocumented_flag",
+        "name": "Undocumented setting",
+        "explanation": "The tool reacts to a setting its docs never mention, or ignores the documented rules for one.",
+        "example": "Asking the identify endpoint for an enrich-only field group returns data instead of the documented 400 error."
+      },
+      {
+        "id": "eventual_consistency",
+        "name": "Delayed visibility",
+        "explanation": "A change you just made takes a while to show up when you read the data back.",
+        "example": "A refund created a moment ago is missing from the payment's refund list for a few seconds."
+      },
+      {
+        "id": "idempotency_hazard",
+        "name": "Duplicate on retry",
+        "explanation": "Sending the same request again, for example after a timeout, can make the action happen twice.",
+        "example": "Retrying a refund that timed out creates a second refund for the same payment."
+      },
+      {
+        "id": "rate_limit",
+        "name": "Rate limit",
+        "explanation": "The tool starts refusing requests when too many arrive in a short time.",
+        "example": "A quick burst of balance checks starts getting status 429 (too many requests)."
+      },
+      {
+        "id": "expiry",
+        "name": "Expiry",
+        "explanation": "Something the tool gave you stops working after a while, such as a link, a token or a cached answer.",
+        "example": "A payment link that worked an hour ago now returns an error."
+      },
+      {
+        "id": "mislabelled_semantics",
+        "name": "Mislabelled meaning",
+        "explanation": "A field or status means something different from what its name or the docs suggest.",
+        "example": "A field named employee count range holds a single number instead of a range like 51-200."
+      },
+      {
+        "id": "honored",
+        "name": "Honored",
+        "explanation": "The tool behaves exactly as its docs say.",
+        "example": "Asking for 101 refunds per page is refused with an error, just as documented."
+      }
+    ],
+    "guardKinds": [
+      {
+        "id": "transform",
+        "name": "Fix the value",
+        "explanation": "Before the call, Notary rewrites a value so the tool receives what it really expects.",
+        "example": "If the tool turns out to read refund amounts 100 times too large, Notary divides the amount by 100 before sending it."
+      },
+      {
+        "id": "require_param",
+        "name": "Always send the setting",
+        "explanation": "Notary always fills in a setting the tool needs with a known safe value instead of trusting the tool's default.",
+        "example": "Every company enrichment call is sent with the basic info, headcount and funding field groups listed."
+      },
+      {
+        "id": "precheck",
+        "name": "Check first",
+        "explanation": "Before a money action, Notary reads the current state and stops if the action would repeat or clash with something already there.",
+        "example": "Before refunding, Notary lists all of the customer's refunds and stops if one already exists for that payment."
+      },
+      {
+        "id": "retry_policy",
+        "name": "Careful retries",
+        "explanation": "Notary never blindly repeats a write, and after a timeout it reads back first and retries only if the write clearly did not happen.",
+        "example": "A refund call times out, Notary reads back and finds the refund already exists, so it does not send it again."
+      },
+      {
+        "id": "paginate_fully",
+        "name": "Read every page",
+        "explanation": "Notary keeps fetching pages until an empty one comes back, so nothing is cut off.",
+        "example": "To find existing refunds, Notary reads pages of 100 until a page comes back empty."
+      },
+      {
+        "id": "block",
+        "name": "Refuse",
+        "explanation": "Notary refuses the call outright because no safe fix is known, and the item is held for a person.",
+        "example": "If a wallet balance arrives in an unexpected form, wallet credits are refused and held for review."
+      }
+    ],
+    "beliefStatuses": [
+      {
+        "id": "hypothesis",
+        "name": "Hypothesis",
+        "explanation": "Notary has an idea about this promise but not enough evidence yet either way.",
+        "example": "After one test, Notary suspects the page limit is not enforced but needs more tests to be sure."
+      },
+      {
+        "id": "candidate",
+        "name": "Candidate",
+        "explanation": "At least two independent tests strongly agree, and the result is waiting for a reviewer to check it.",
+        "example": "Two different tests both show refund amounts read back unchanged, so the belief waits for review."
+      },
+      {
+        "id": "notarized",
+        "name": "Notarized",
+        "explanation": "A reviewer checked the raw test records and agreed, so Notary now trusts this belief and may act on it.",
+        "example": "The reviewer upholds that refund amounts are in cents, so refunds that depend on it may go through."
+      },
+      {
+        "id": "refuted",
+        "name": "Refuted",
+        "explanation": "The evidence went against this belief, so Notary does not rely on it.",
+        "example": "An idea that balances arrive as text is ruled out when every test returns a whole number."
+      },
+      {
+        "id": "abstained",
+        "name": "Abstained",
+        "explanation": "Notary ran out of test budget before the evidence was clear, so it makes no call either way.",
+        "example": "After five tests the results still point both ways, so actions that need this promise are held."
+      },
+      {
+        "id": "unlearned",
+        "name": "Unlearned",
+        "explanation": "Something Notary had trusted stopped matching new evidence, so it withdrew that trust and retired the guards built on it.",
+        "example": "After the tool changes how it pages results, the old page-limit belief is unlearned and its guard is switched off."
+      }
+    ],
+    "decisionStatuses": [
+      {
+        "id": "executed",
+        "name": "Executed",
+        "explanation": "Notary carried out the action, such as a refund or a plan change, through its guards.",
+        "example": "A refund for a small self-serve customer is sent to Dodo and succeeds."
+      },
+      {
+        "id": "held",
+        "name": "Held",
+        "explanation": "Notary paused the action for a person because something it needed was not proven safe yet.",
+        "example": "A refund waits for review because the belief about refund units is not notarized yet."
+      },
+      {
+        "id": "escalated",
+        "name": "Escalated",
+        "explanation": "The billing policy says a person must decide this request, so Notary passed it on.",
+        "example": "A contract customer asks for a full refund, so the account manager decides."
+      },
+      {
+        "id": "denied",
+        "name": "Denied",
+        "explanation": "Notary turned the request down because the billing policy says no or the money was already returned.",
+        "example": "A refund request for a payment that already has a refund is denied."
+      }
+    ],
+    "probeVerdicts": [
+      {
+        "id": "confirmed",
+        "name": "Confirmed",
+        "explanation": "The test result matched exactly one of the competing explanations and ruled out all the others.",
+        "example": "Asking for 101 items returns exactly 100, which only the silent truncation explanation predicted."
+      },
+      {
+        "id": "refuted",
+        "name": "Refuted",
+        "explanation": "The test result went against the explanations being tested.",
+        "example": "Every explanation expected an error or a short page, but the tool returned a normal full page."
+      },
+      {
+        "id": "inconclusive",
+        "name": "Inconclusive",
+        "explanation": "The test result fit more than one explanation, so it cannot pick between them.",
+        "example": "A request is rejected with an error, which both the honored and the strict-limit explanations predicted."
+      },
+      {
+        "id": "uninformative",
+        "name": "Uninformative",
+        "explanation": "The test saw nothing useful, such as an empty list or a missing field, so it says nothing about the promise.",
+        "example": "The test account has only 3 refunds, so a page limit of 100 cannot be tested."
+      },
+      {
+        "id": "invalid",
+        "name": "Invalid",
+        "explanation": "The comparison run read the same as the real run where the two should differ, so the test itself did not work.",
+        "example": "Two different amounts were sent but both read back the same, so the read-back does not reflect what was sent."
+      }
+    ],
+    "policyOutcomes": [
+      {
+        "id": "approve",
+        "name": "Approve",
+        "explanation": "The billing policy allows the request as asked.",
+        "example": "A small self-serve customer asks for part of a payment back and gets the amount asked."
+      },
+      {
+        "id": "partial",
+        "name": "Partial",
+        "explanation": "The billing policy allows only part of the request.",
+        "example": "A small business on the growth plan asks for a full refund and gets half the payment back."
+      },
+      {
+        "id": "deny",
+        "name": "Deny",
+        "explanation": "The billing policy does not allow the request.",
+        "example": "A starter-plan customer asks for a goodwill credit and is offered a refund instead."
+      },
+      {
+        "id": "escalate",
+        "name": "Escalate",
+        "explanation": "The billing policy says a person must decide.",
+        "example": "A customer whose company could not be verified asks for a refund, so a person reviews it."
+      }
+    ],
+    "probeTemplates": [
+      {
+        "id": "boundary_sweep",
+        "name": "Edge test",
+        "explanation": "Try values at and just past a documented limit to see whether the limit is really enforced.",
+        "example": "Ask for 1, 100 and 101 refunds per page and compare what comes back."
+      },
+      {
+        "id": "unit_roundtrip",
+        "name": "Amount round trip",
+        "explanation": "Send a known amount and read it back to see whether the tool kept the same unit.",
+        "example": "Create a product priced 1234 and check that it reads back as 1234, not 123400."
+      },
+      {
+        "id": "retry_after_timeout",
+        "name": "Repeat a write",
+        "explanation": "Send the same write two or three times, as a client would after a timeout, then count how many records exist.",
+        "example": "Send the same keyed wallet credit three times and check that the ledger holds one entry."
+      },
+      {
+        "id": "pagination_completeness",
+        "name": "Count two ways",
+        "explanation": "List the same items page by page and all at once, then check that both ways give the same set.",
+        "example": "Walk several small pages of payments and compare them with one big page of the same payments."
+      },
+      {
+        "id": "write_then_read",
+        "name": "Write, then read",
+        "explanation": "Make a change, then read it back right away and again later to see when it shows up.",
+        "example": "Issue a refund, then check the payment's refund list at once, after 1 second and after 3 seconds."
+      },
+      {
+        "id": "unknown_param",
+        "name": "Unknown setting",
+        "explanation": "Send a request with a setting the tool should not accept and see whether it is rejected, ignored or used.",
+        "example": "Ask the identify endpoint for the headcount field group, which the docs say only enrich supports."
+      },
+      {
+        "id": "type_edge",
+        "name": "Type edge",
+        "explanation": "Read a field where unusual values are likely, such as very large numbers, and check its type matches the docs.",
+        "example": "Check that a large company's headcount still arrives as a whole number, not as text."
+      },
+      {
+        "id": "header_burst",
+        "name": "Small burst",
+        "explanation": "Send a short, capped burst of free read-only requests to see whether a rate limit kicks in.",
+        "example": "Check the credit balance a few times in quick succession and watch for status 429."
+      }
+    ]
+  }
+}

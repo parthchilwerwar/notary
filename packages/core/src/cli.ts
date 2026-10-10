@@ -209,7 +209,18 @@ export function buildProgram(): Command {
     .option("--runs-dir <dir>", "read real bundles from this directory instead of packages/core/runs/")
     .option("--root <dir>", "write export/ and docs/EVALUATION.md under this directory instead of the repo root")
     .option("--no-checks", "skip running `pnpm test` and `guards coverage` for EVALUATION.md")
-    .action(async (opts: { sample?: boolean; out?: string; seed: string; runsDir?: string; root?: string; checks: boolean }) => {
+    .option("--content", "only write the dashboard glossary (generated from code) to packages/web/public/content/glossary.json (--out: its directory)")
+    .action(async (opts: { sample?: boolean; content?: boolean; out?: string; seed: string; runsDir?: string; root?: string; checks: boolean }) => {
+      if (opts.content) {
+        if (opts.sample) throw new Error("--content and --sample are separate exports; run them one at a time");
+        const { writeGlossary } = await import("./export/content.js");
+        const { resolve } = await import("node:path");
+        const dir = opts.out ? resolve(process.env.INIT_CWD ?? process.cwd(), opts.out) : undefined;
+        const { path, glossary } = await writeGlossary(dir);
+        const counts = Object.entries(glossary.counts).map(([k, n]) => `${k} ${n}`).join(", ");
+        console.log(`glossary written to ${path} (${counts}; contentHash ${glossary.contentHash.slice(0, 12)})`);
+        return;
+      }
       if (!opts.sample) {
         const { runExport } = await import("./export/index.js");
         const { join, resolve } = await import("node:path");
