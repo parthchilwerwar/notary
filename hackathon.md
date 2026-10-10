@@ -43,7 +43,12 @@ Machine-readable copy for the dashboard: [packages/web/public/evidence/evidence.
 - Certificates: `notary export --certificates` → `export/REPORT.md` (real: 0 bundles, all claims "not tested"); fixture reports under `packages/web/public/certificates/fixture/<scenario>/`.
 - `docs/EVALUATION.md` is generated from real bundles only: **0 real bundles today**, so every PRD headline metric is "not measured yet".
 
-## Dashboard data (JSON only; UI is Codex's)
+## v2 — Agent Control Center (in progress)
+
+- V1 core support shipped: run timelines, deterministic explain engine (`explain.json`), local `POST /api/ask` and `GET/POST /api/approvals` (localhost + per-session token, Dodo test mode only), browser-safe certificate schemas. 780 core tests pass.
+- Blocked on keys: Ask answers (Bedrock executor model), live approvals (Dodo test key + real held items).
+
+## Dashboard data (JSON only)
 
 - `packages/web/public/bundles/fixture/` — FIXTURE bundles from `notary demo --fixture --publish` (never mixed with real bundles)
 - `packages/web/public/content/glossary.json` — plain-language glossary from `notary export --content`

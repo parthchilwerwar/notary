@@ -102,3 +102,21 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 - [x] Step 4: `demo --fixture --scenario change-api` + re-verification sentinel in guarded runs (#105): API unit switch after q09 → belief un-learns via 5 contrary probes, certificate revoked, guard retired, q10 held.
 - [x] Step 5: README headline + How it works → Read → Test → Challenge → Certify → Enforce (#107).
 - [ ] Not verified live: sentinel probe replay/resume against a recorded live run (needs keys).
+
+## v2 — Agent Control Center (session 7, Oct 10)
+
+Claude Code owns `packages/core` and `packages/web` (Codex out of quota). Phases V0–V5; parallel agents per phase, orchestrator commits.
+
+- [x] **V0 · Rules** (`111a5f7`) — CLAUDE.md/AGENTS.md: Claude Code owns web; web rules.
+- [x] **V1 · Core support** (`0223b39`…`067a179`) — verified: core typecheck clean, **780/780 core tests**, check:secrets clean.
+  - [x] V1.1 timeline: `runs/<runId>/timeline.jsonl` from every run; fixture timelines published (8); `GET /api/bundles/:id/timeline`.
+  - [x] V1.2 explain: `notary export --explain` → `explain.json` (0 real, 16 fixture default, 12 change-api answers), byte-identical on rerun.
+  - [x] V1.3 `POST /api/ask` — curl: keyless → `couldn't answer from the evidence` / `BLOCKED: NOTARY_MODEL_EXECUTOR not set`.
+  - [x] V1.4 `GET/POST /api/approvals` — curl: no token 401, token 200, spoofed Host 403.
+  - [x] V1.5 certificates already built (session 6); re-verified exports unchanged; schemas made browser-safe.
+  - [ ] BLOCKED: Ask answers need `NOTARY_MODEL_EXECUTOR` + AWS credentials.
+  - [ ] BLOCKED: live approve needs `DODO_PAYMENTS_API_KEY`, a seed manifest and a real guarded run with held items (none exist; pending list is empty). Reject works keylessly (tested with doubles).
+- [ ] **V2 · App shell and design system**
+- [ ] **V3 · Mission control**
+- [ ] **V4 · Decision trail, Ask Notary, Approval desk**
+- [ ] **V5 · Polish, evidence, deploy**
