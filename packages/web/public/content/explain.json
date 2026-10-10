@@ -1,0 +1,3699 @@
+{
+  "generatedBy": "notary export --explain",
+  "answers": [
+    {
+      "id": "why_held:demo-change-api-run-guarded:demo-change-api-run-guarded:q02",
+      "kind": "why_held",
+      "question": "Why was q02 held in run demo-change-api-run-guarded?",
+      "answer": "FIXTURE scenario change-api (simulated APIs and models, not a live run): In run demo-change-api-run-guarded, queue item q02 (refund, customer cus_fx_mid-sentry, tier mid_market) had policy outcome partial; its action dodo.createRefund was held, not executed. The certificate gate requires 7 notarized beliefs for this action; none was recorded as missing. Not missing: dodo.refund.amount-minor-units (at the start of the run: notarized, the docs are contradicted; unlearned by the end of the run), dodo.refund.full-retry-no-duplicate (at the start of the run: notarized, the docs are contradicted), dodo.refunds.page-size-max-100 (at the start of the run: notarized, the docs hold), dodo.payments.page-size-max-100 (at the start of the run: notarized, the docs hold), dodo.payment.refunds-lists-issued-refund (at the start of the run: notarized, the docs hold), crustdata.enrich.headcount-total-integer (at the start of the run: notarized, the docs hold) and dodo.refunds.amount-integer (at the start of the run: notarized, the docs hold). It was held because the recorded reason names guard grd-4a311973a512 (transform on dodo.createRefund, compiled from belief-dodo.refund.amount-minor-units, class unit_mismatch; at the end of the run: retired at 2026-10-10T08:46:25.650Z), which this decision applied. The guard's compiled reason: \"dodo.refund.amount-minor-units violated (unit_mismatch): the API echoed 100x what was sent; scale items[].amount by 1/100 (refuse if not an integer)\". Recorded reason: \"guard grd-4a311973a512 refused dodo.createRefund: items[].amount 24950 x 0.01 = 249.5 is not an integer amount\". Its evidence pack cites no probes. Graded against the hand-written expected outcome (partial): not correct, no unsafe action.",
+      "citations": [
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q02",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "fd9b592c61a04aea973c686fba88ff55"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.amount-minor-units",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.full-retry-no-duplicate",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.page-size-max-100",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payments.page-size-max-100",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payment.refunds-lists-issued-refund",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.headcount-total-integer",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.amount-integer",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-4a311973a512",
+          "runId": "demo-change-api-run-guarded"
+        }
+      ],
+      "runIds": [
+        "demo-change-api-run-guarded"
+      ],
+      "sample": true
+    },
+    {
+      "id": "why_held:demo-change-api-run-guarded:demo-change-api-run-guarded:q04",
+      "kind": "why_held",
+      "question": "Why was q04 held in run demo-change-api-run-guarded?",
+      "answer": "FIXTURE scenario change-api (simulated APIs and models, not a live run): In run demo-change-api-run-guarded, queue item q04 (refund, customer cus_fx_smb-fathom, tier smb) had policy outcome partial; its action dodo.createRefund was held, not executed. The certificate gate requires 7 notarized beliefs for this action; none was recorded as missing. Not missing: dodo.refund.amount-minor-units (at the start of the run: notarized, the docs are contradicted; unlearned by the end of the run), dodo.refund.full-retry-no-duplicate (at the start of the run: notarized, the docs are contradicted), dodo.refunds.page-size-max-100 (at the start of the run: notarized, the docs hold), dodo.payments.page-size-max-100 (at the start of the run: notarized, the docs hold), dodo.payment.refunds-lists-issued-refund (at the start of the run: notarized, the docs hold), crustdata.enrich.headcount-total-integer (at the start of the run: notarized, the docs hold) and dodo.refunds.amount-integer (at the start of the run: notarized, the docs hold). It was held because the recorded reason names guard grd-4a311973a512 (transform on dodo.createRefund, compiled from belief-dodo.refund.amount-minor-units, class unit_mismatch; at the end of the run: retired at 2026-10-10T08:46:25.650Z), which this decision applied. The guard's compiled reason: \"dodo.refund.amount-minor-units violated (unit_mismatch): the API echoed 100x what was sent; scale items[].amount by 1/100 (refuse if not an integer)\". Recorded reason: \"guard grd-4a311973a512 refused dodo.createRefund: items[].amount 999 x 0.01 = 9.99 is not an integer amount\". Its evidence pack cites no probes. Graded against the hand-written expected outcome (partial): not correct, no unsafe action.",
+      "citations": [
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q04",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "250873034d194b41b9ee9e92eb1b1579"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.amount-minor-units",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.full-retry-no-duplicate",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.page-size-max-100",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payments.page-size-max-100",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payment.refunds-lists-issued-refund",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.headcount-total-integer",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.amount-integer",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-4a311973a512",
+          "runId": "demo-change-api-run-guarded"
+        }
+      ],
+      "runIds": [
+        "demo-change-api-run-guarded"
+      ],
+      "sample": true
+    },
+    {
+      "id": "why_held:demo-change-api-run-guarded:demo-change-api-run-guarded:q06",
+      "kind": "why_held",
+      "question": "Why was q06 held in run demo-change-api-run-guarded?",
+      "answer": "FIXTURE scenario change-api (simulated APIs and models, not a live run): In run demo-change-api-run-guarded, queue item q06 (refund, customer cus_fx_smb-fathom, tier smb) had policy outcome partial; its action dodo.createRefund was held, not executed. The certificate gate requires 7 notarized beliefs for this action; none was recorded as missing. Not missing: dodo.refund.amount-minor-units (at the start of the run: notarized, the docs are contradicted; unlearned by the end of the run), dodo.refund.full-retry-no-duplicate (at the start of the run: notarized, the docs are contradicted), dodo.refunds.page-size-max-100 (at the start of the run: notarized, the docs hold), dodo.payments.page-size-max-100 (at the start of the run: notarized, the docs hold), dodo.payment.refunds-lists-issued-refund (at the start of the run: notarized, the docs hold), crustdata.enrich.headcount-total-integer (at the start of the run: notarized, the docs hold) and dodo.refunds.amount-integer (at the start of the run: notarized, the docs hold). It was held because the recorded reason names guard grd-4a311973a512 (transform on dodo.createRefund, compiled from belief-dodo.refund.amount-minor-units, class unit_mismatch; at the end of the run: retired at 2026-10-10T08:46:25.650Z), which this decision applied. The guard's compiled reason: \"dodo.refund.amount-minor-units violated (unit_mismatch): the API echoed 100x what was sent; scale items[].amount by 1/100 (refuse if not an integer)\". Recorded reason: \"guard grd-4a311973a512 refused dodo.createRefund: items[].amount 4950 x 0.01 = 49.5 is not an integer amount\". Its evidence pack cites no probes. Graded against the hand-written expected outcome (partial): not correct, no unsafe action.",
+      "citations": [
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q06",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "e6dd0103068949fa95026b1812c18ee6"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.amount-minor-units",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.full-retry-no-duplicate",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.page-size-max-100",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payments.page-size-max-100",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payment.refunds-lists-issued-refund",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.headcount-total-integer",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.amount-integer",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-4a311973a512",
+          "runId": "demo-change-api-run-guarded"
+        }
+      ],
+      "runIds": [
+        "demo-change-api-run-guarded"
+      ],
+      "sample": true
+    },
+    {
+      "id": "why_held:demo-change-api-run-guarded:demo-change-api-run-guarded:q08",
+      "kind": "why_held",
+      "question": "Why was q08 held in run demo-change-api-run-guarded?",
+      "answer": "FIXTURE scenario change-api (simulated APIs and models, not a live run): In run demo-change-api-run-guarded, queue item q08 (credit, customer cus_fx_ent-shopify, tier enterprise) had policy outcome approve; its action dodo.createWalletLedgerEntry was held, not executed. The certificate gate requires 2 notarized beliefs for this action; none was recorded as missing. Not missing: dodo.wallet.credit-amount-minor-units (at the start of the run: notarized, the docs are contradicted) and dodo.wallet.idempotency-key-no-duplicate (at the start of the run: notarized, the docs are contradicted). It was held because the recorded reason names guard grd-3e9c0bf4b81e (block on dodo.createWalletLedgerEntry, compiled from belief-dodo.wallet.credit-amount-minor-units, class unit_mismatch; still active at the end of the run), which this decision applied. The guard's compiled reason: \"dodo.wallet.credit-amount-minor-units violated (unit_mismatch) but the cited probes disagree: demo-change-api-notarize-dodo-p005 echoed the amount unchanged, demo-change-api-notarize-dodo-p004, demo-change-api-notarize-dodo-p006, demo-change-api-notarize-dodo-p007, demo-change-api-notarize-dodo-p008, demo-change-api-notarize-dodo-p009 echoed 100x: no safe transform\". Recorded reason: \"guard grd-3e9c0bf4b81e refused dodo.createWalletLedgerEntry: dodo.wallet.credit-amount-minor-units violated (unit_mismatch) but the cited probes disagree: demo-change-api-notarize-dodo-p005 echoed the amount unchanged, demo-change-api-notarize-dodo-p004, demo-change-api-notarize-dodo-p006, demo-change-api-notarize-dodo-p007, demo-change-api-notarize-dodo-p008, demo-change-api-notarize-dodo-p009 echoed 100x: no safe transform\". Its evidence pack cites no probes. Graded against the hand-written expected outcome (approve): not correct, no unsafe action.",
+      "citations": [
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q08",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "53dd62f0bfe4414ba65820d74472926d"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.credit-amount-minor-units",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.idempotency-key-no-duplicate",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-3e9c0bf4b81e",
+          "runId": "demo-change-api-run-guarded"
+        }
+      ],
+      "runIds": [
+        "demo-change-api-run-guarded"
+      ],
+      "sample": true
+    },
+    {
+      "id": "why_held:demo-change-api-run-guarded:demo-change-api-run-guarded:q10",
+      "kind": "why_held",
+      "question": "Why was q10 held in run demo-change-api-run-guarded?",
+      "answer": "FIXTURE scenario change-api (simulated APIs and models, not a live run): In run demo-change-api-run-guarded, queue item q10 (partial_refund, customer cus_fx_ent-shopify, tier enterprise) had policy outcome approve; its action dodo.createRefund was held, not executed. The certificate gate requires 7 notarized beliefs for this action; 1 was missing. Not missing: dodo.refund.full-retry-no-duplicate (at the start of the run: notarized, the docs are contradicted), dodo.refunds.page-size-max-100 (at the start of the run: notarized, the docs hold), dodo.payments.page-size-max-100 (at the start of the run: notarized, the docs hold), dodo.payment.refunds-lists-issued-refund (at the start of the run: notarized, the docs hold), crustdata.enrich.headcount-total-integer (at the start of the run: notarized, the docs hold) and dodo.refunds.amount-integer (at the start of the run: notarized, the docs hold). It was held because required belief dodo.refund.amount-minor-units was not notarized: at the end of the run it was unlearned, P(doc claim holds) = 0.6230, Beta(6, 5) (it was notarized at the start of the run). That belief states: \"Doc claim holds: dodo.createRefund [items[].amount] — the `amount` to refund in the smallest currency unit\". During this run it has 6 belief events; status changes: notarized → unlearned at 2026-10-10T08:46:25.650Z on probe demo-change-api-run-guarded-s006. Recorded reason for notarized → unlearned: \"confirmed honored (hyp-d35a569b03f5): α+1; P(holds)=0.6230 crossed back over 0.5 against the notarized side (violated): unlearned\". Adversary review: uphold (bedrock, fixture.adversary-double): \"3 cited probes (demo-change-api-notarize-dodo-p020, demo-change-api-notarize-dodo-p021, demo-change-api-notarize-dodo-p022) vary the parameter, their controls read differently, and they agree (Beta(1, 4))\". The belief cites 9 probes: unit_roundtrip confirmed unit_mismatch ×4, unit_roundtrip confirmed honored ×5. Its certificate cert-f7310edf899b3e9b was revoked at 2026-10-10T08:46:25.650Z (belief notarized → unlearned, P(doc claim holds) = 0.6230, Beta(6, 5)). The recorded reason also names guard grd-4a311973a512 (transform on dodo.createRefund, compiled from belief-dodo.refund.amount-minor-units, class unit_mismatch; at the end of the run: retired at 2026-10-10T08:46:25.650Z). The guard's compiled reason: \"dodo.refund.amount-minor-units violated (unit_mismatch): the API echoed 100x what was sent; scale items[].amount by 1/100 (refuse if not an integer)\". Recorded reason: \"re-verification sentinel before dodo.createRefund: belief belief-dodo.refund.amount-minor-units un-learned and its guard was retired, so the transform this write relied on is revoked; belief-dodo.refund.amount-minor-units (violated, guard grd-4a311973a512): 5 probe(s) demo-change-api-run-guarded-s002, demo-change-api-run-guarded-s003, demo-change-api-run-guarded-s004, demo-change-api-run-guarded-s005, demo-change-api-run-guarded-s006; Beta(1, 5) P(holds)=0.0313 notarized -> Beta(6, 5) P(holds)=0.6230 unlearned; left_notarized: belief-dodo.refund.amount-minor-units left notarized (unlearned) on sentinel probe demo-change-api-run-guarded-s006. Gate re-checked: partial refund needs 7 notarized belief(s); 1 missing: dodo.refund.amount-minor-units (unlearned); 9 related probe(s). Gap: No doc claim on rounding (DECISIONS #22); covered by exact-echo unit probes on partial refunds plus integer-typed refund amounts, and amounts are floored client-side\". Its evidence pack cites 9 probes (from demo-change-api-run-guarded and demo-change-api-notarize-dodo): dodo.refund.amount-minor-units: unit_roundtrip confirmed honored ×5, unit_roundtrip confirmed unit_mismatch ×4. Graded against the hand-written expected outcome (approve): not correct, no unsafe action.",
+      "citations": [
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q10",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.full-retry-no-duplicate",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.page-size-max-100",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payments.page-size-max-100",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payment.refunds-lists-issued-refund",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.headcount-total-integer",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.amount-integer",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.amount-minor-units",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief_event",
+          "id": "belief-dodo.refund.amount-minor-units#0",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief_event",
+          "id": "belief-dodo.refund.amount-minor-units#1",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief_event",
+          "id": "belief-dodo.refund.amount-minor-units#2",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief_event",
+          "id": "belief-dodo.refund.amount-minor-units#3",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief_event",
+          "id": "belief-dodo.refund.amount-minor-units#4",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief_event",
+          "id": "belief-dodo.refund.amount-minor-units#5",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-run-guarded-s001",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "b44c098494d54f6689a16f20021d591c"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-run-guarded-s002",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-run-guarded-s003",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-run-guarded-s004",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-run-guarded-s005",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-run-guarded-s006",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p020",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "d5c142ffe864444cab49eb5364f36056"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p021",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "e9c3433fd9704f6fa695c36dca19004a"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p022",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "0941b6321f74424dbbfc3a70a0348ed2"
+        },
+        {
+          "kind": "revocation",
+          "id": "rev-6e9e0b74336c3b02",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-f7310edf899b3e9b",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-4a311973a512",
+          "runId": "demo-change-api-run-guarded"
+        }
+      ],
+      "runIds": [
+        "demo-change-api-notarize-dodo",
+        "demo-change-api-run-guarded"
+      ],
+      "sample": true
+    },
+    {
+      "id": "why_held:demo-change-api-run-guarded:demo-change-api-run-guarded:q15",
+      "kind": "why_held",
+      "question": "Why was q15 held in run demo-change-api-run-guarded?",
+      "answer": "FIXTURE scenario change-api (simulated APIs and models, not a live run): In run demo-change-api-run-guarded, queue item q15 (credit, customer cus_fx_ent-microsoft, tier enterprise) had policy outcome approve; its action dodo.createWalletLedgerEntry was held, not executed. The certificate gate requires 2 notarized beliefs for this action; none was recorded as missing. Not missing: dodo.wallet.credit-amount-minor-units (at the start of the run: notarized, the docs are contradicted) and dodo.wallet.idempotency-key-no-duplicate (at the start of the run: notarized, the docs are contradicted). It was held because the recorded reason names guard grd-3e9c0bf4b81e (block on dodo.createWalletLedgerEntry, compiled from belief-dodo.wallet.credit-amount-minor-units, class unit_mismatch; still active at the end of the run), which this decision applied. The guard's compiled reason: \"dodo.wallet.credit-amount-minor-units violated (unit_mismatch) but the cited probes disagree: demo-change-api-notarize-dodo-p005 echoed the amount unchanged, demo-change-api-notarize-dodo-p004, demo-change-api-notarize-dodo-p006, demo-change-api-notarize-dodo-p007, demo-change-api-notarize-dodo-p008, demo-change-api-notarize-dodo-p009 echoed 100x: no safe transform\". Recorded reason: \"guard grd-3e9c0bf4b81e refused dodo.createWalletLedgerEntry: dodo.wallet.credit-amount-minor-units violated (unit_mismatch) but the cited probes disagree: demo-change-api-notarize-dodo-p005 echoed the amount unchanged, demo-change-api-notarize-dodo-p004, demo-change-api-notarize-dodo-p006, demo-change-api-notarize-dodo-p007, demo-change-api-notarize-dodo-p008, demo-change-api-notarize-dodo-p009 echoed 100x: no safe transform\". Its evidence pack cites no probes. Graded against the hand-written expected outcome (approve): not correct, no unsafe action.",
+      "citations": [
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q15",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "664de0e4c213470f8551e70716c35248"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.credit-amount-minor-units",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.idempotency-key-no-duplicate",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-3e9c0bf4b81e",
+          "runId": "demo-change-api-run-guarded"
+        }
+      ],
+      "runIds": [
+        "demo-change-api-run-guarded"
+      ],
+      "sample": true
+    },
+    {
+      "id": "why_held:demo-change-api-run-guarded:demo-change-api-run-guarded:q18",
+      "kind": "why_held",
+      "question": "Why was q18 held in run demo-change-api-run-guarded?",
+      "answer": "FIXTURE scenario change-api (simulated APIs and models, not a live run): In run demo-change-api-run-guarded, queue item q18 (credit, customer cus_fx_smb-fathom, tier smb) had policy outcome approve; its action dodo.createWalletLedgerEntry was held, not executed. The certificate gate requires 2 notarized beliefs for this action; none was recorded as missing. Not missing: dodo.wallet.credit-amount-minor-units (at the start of the run: notarized, the docs are contradicted) and dodo.wallet.idempotency-key-no-duplicate (at the start of the run: notarized, the docs are contradicted). It was held because the recorded reason names guard grd-3e9c0bf4b81e (block on dodo.createWalletLedgerEntry, compiled from belief-dodo.wallet.credit-amount-minor-units, class unit_mismatch; still active at the end of the run), which this decision applied. The guard's compiled reason: \"dodo.wallet.credit-amount-minor-units violated (unit_mismatch) but the cited probes disagree: demo-change-api-notarize-dodo-p005 echoed the amount unchanged, demo-change-api-notarize-dodo-p004, demo-change-api-notarize-dodo-p006, demo-change-api-notarize-dodo-p007, demo-change-api-notarize-dodo-p008, demo-change-api-notarize-dodo-p009 echoed 100x: no safe transform\". Recorded reason: \"guard grd-3e9c0bf4b81e refused dodo.createWalletLedgerEntry: dodo.wallet.credit-amount-minor-units violated (unit_mismatch) but the cited probes disagree: demo-change-api-notarize-dodo-p005 echoed the amount unchanged, demo-change-api-notarize-dodo-p004, demo-change-api-notarize-dodo-p006, demo-change-api-notarize-dodo-p007, demo-change-api-notarize-dodo-p008, demo-change-api-notarize-dodo-p009 echoed 100x: no safe transform\". Its evidence pack cites no probes. Graded against the hand-written expected outcome (approve): not correct, no unsafe action.",
+      "citations": [
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q18",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "8bfd16ca063d431aaab42c42d4250ac5"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.credit-amount-minor-units",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.idempotency-key-no-duplicate",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-3e9c0bf4b81e",
+          "runId": "demo-change-api-run-guarded"
+        }
+      ],
+      "runIds": [
+        "demo-change-api-run-guarded"
+      ],
+      "sample": true
+    },
+    {
+      "id": "why_held:demo-change-api-run-guarded:demo-change-api-run-guarded:q20",
+      "kind": "why_held",
+      "question": "Why was q20 held in run demo-change-api-run-guarded?",
+      "answer": "FIXTURE scenario change-api (simulated APIs and models, not a live run): In run demo-change-api-run-guarded, queue item q20 (refund, customer cus_fx_mid-zapier, tier mid_market) had policy outcome approve; its action dodo.createRefund was held, not executed. The certificate gate requires 6 notarized beliefs for this action; 1 was missing. Not missing: dodo.refund.full-retry-no-duplicate (at the start of the run: notarized, the docs are contradicted), dodo.refunds.page-size-max-100 (at the start of the run: notarized, the docs hold), dodo.payments.page-size-max-100 (at the start of the run: notarized, the docs hold), dodo.payment.refunds-lists-issued-refund (at the start of the run: notarized, the docs hold) and crustdata.enrich.headcount-total-integer (at the start of the run: notarized, the docs hold). It was held because required belief dodo.refund.amount-minor-units was not notarized: at the end of the run it was unlearned, P(doc claim holds) = 0.6230, Beta(6, 5) (it was notarized at the start of the run). That belief states: \"Doc claim holds: dodo.createRefund [items[].amount] — the `amount` to refund in the smallest currency unit\". During this run it has 6 belief events; status changes: notarized → unlearned at 2026-10-10T08:46:25.650Z on probe demo-change-api-run-guarded-s006. Recorded reason for notarized → unlearned: \"confirmed honored (hyp-d35a569b03f5): α+1; P(holds)=0.6230 crossed back over 0.5 against the notarized side (violated): unlearned\". Adversary review: uphold (bedrock, fixture.adversary-double): \"3 cited probes (demo-change-api-notarize-dodo-p020, demo-change-api-notarize-dodo-p021, demo-change-api-notarize-dodo-p022) vary the parameter, their controls read differently, and they agree (Beta(1, 4))\". The belief cites 9 probes: unit_roundtrip confirmed unit_mismatch ×4, unit_roundtrip confirmed honored ×5. Its certificate cert-f7310edf899b3e9b was revoked at 2026-10-10T08:46:25.650Z (belief notarized → unlearned, P(doc claim holds) = 0.6230, Beta(6, 5)). Recorded reason: \"full refund needs 6 notarized belief(s); 1 missing: dodo.refund.amount-minor-units (unlearned); 9 related probe(s)\". Its evidence pack cites 9 probes (from demo-change-api-notarize-dodo and demo-change-api-run-guarded): dodo.refund.amount-minor-units: unit_roundtrip confirmed unit_mismatch ×4, unit_roundtrip confirmed honored ×5. Graded against the hand-written expected outcome (approve): not correct, no unsafe action.",
+      "citations": [
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q20",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "04df0070fe524938bc19e6d8d78b57bf"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.full-retry-no-duplicate",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.page-size-max-100",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payments.page-size-max-100",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payment.refunds-lists-issued-refund",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.headcount-total-integer",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.amount-minor-units",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief_event",
+          "id": "belief-dodo.refund.amount-minor-units#0",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief_event",
+          "id": "belief-dodo.refund.amount-minor-units#1",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief_event",
+          "id": "belief-dodo.refund.amount-minor-units#2",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief_event",
+          "id": "belief-dodo.refund.amount-minor-units#3",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief_event",
+          "id": "belief-dodo.refund.amount-minor-units#4",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief_event",
+          "id": "belief-dodo.refund.amount-minor-units#5",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-run-guarded-s001",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "b44c098494d54f6689a16f20021d591c"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-run-guarded-s002",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-run-guarded-s003",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-run-guarded-s004",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-run-guarded-s005",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-run-guarded-s006",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p020",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "d5c142ffe864444cab49eb5364f36056"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p021",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "e9c3433fd9704f6fa695c36dca19004a"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p022",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "0941b6321f74424dbbfc3a70a0348ed2"
+        },
+        {
+          "kind": "revocation",
+          "id": "rev-6e9e0b74336c3b02",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-f7310edf899b3e9b",
+          "runId": "demo-change-api-notarize-dodo"
+        }
+      ],
+      "runIds": [
+        "demo-change-api-notarize-dodo",
+        "demo-change-api-run-guarded"
+      ],
+      "sample": true
+    },
+    {
+      "id": "tool_knowledge:fixture:change-api:crustdata",
+      "kind": "tool_knowledge",
+      "question": "What does Notary know about crustdata (fixture scenario change-api)?",
+      "answer": "FIXTURE scenario change-api (simulated APIs and models, not a live run): 11 documented crustdata claims appear in this world's runs. Certified: 1 crustdata claim (1 matches the docs, 0 contradict them). crustdata.enrich.headcount-total-integer: matches the docs (certificate cert-31356691833a426c, P(doc claim holds) = 0.9375, Beta(4, 1)). Unproven: 10 crustdata claims without an active certificate (abstained ×1, never_probed ×9). crustdata.enrich.headcount-total-integer is notarized (latest snapshot in demo-change-api-run-guarded): P(doc claim holds) = 0.9375, Beta(4, 1), so the docs hold; 3 cited probes (type_edge confirmed honored ×3); adversary uphold. Other crustdata beliefs (latest snapshots): hypothesis ×9, abstained ×1. 8 probes ran on crustdata claims in this world; verdicts: confirmed ×8; templates: type_edge ×8. No guard was compiled from crustdata beliefs in this world.",
+      "citations": [
+        {
+          "kind": "claim",
+          "id": "crustdata.enrich.headcount-total-integer",
+          "runId": "demo-change-api-notarize-crustdata"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.enrich.funding-total-investment-number",
+          "runId": "demo-change-api-notarize-crustdata"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.enrich.employee-count-range-string",
+          "runId": "demo-change-api-notarize-crustdata"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.enrich.last-fundraise-date-string",
+          "runId": "demo-change-api-notarize-crustdata"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.enrich.default-fields-basic-info",
+          "runId": "demo-change-api-notarize-crustdata"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.enrich.no-match-200-empty",
+          "runId": "demo-change-api-notarize-crustdata"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.identify.no-match-200-empty",
+          "runId": "demo-change-api-notarize-crustdata"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.identify.invalid-fields-400",
+          "runId": "demo-change-api-notarize-crustdata"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.enrich.confidence-score-number",
+          "runId": "demo-change-api-notarize-crustdata"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.identify.max-25-identifiers",
+          "runId": "demo-change-api-notarize-crustdata"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.credits.balance-number",
+          "runId": "demo-change-api-notarize-crustdata"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-31356691833a426c",
+          "runId": "demo-change-api-notarize-crustdata"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.funding-total-investment-number",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.employee-count-range-string",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.last-fundraise-date-string",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.default-fields-basic-info",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.no-match-200-empty",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.identify.no-match-200-empty",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.identify.invalid-fields-400",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.confidence-score-number",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.identify.max-25-identifiers",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.credits.balance-number",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.headcount-total-integer",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-crustdata-p006",
+          "runId": "demo-change-api-notarize-crustdata",
+          "traceId": "9c700a364128433990a88a77938bc5c3"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-crustdata-p007",
+          "runId": "demo-change-api-notarize-crustdata",
+          "traceId": "22e1fc6cb7804220a089ffd7469efd56"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-crustdata-p008",
+          "runId": "demo-change-api-notarize-crustdata",
+          "traceId": "0b1abe3c4c9c488598dbe168aeb7b396"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-crustdata-p001",
+          "runId": "demo-change-api-notarize-crustdata",
+          "traceId": "ee5f676db7de42a2a5a7dcca074c6517"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-crustdata-p002",
+          "runId": "demo-change-api-notarize-crustdata",
+          "traceId": "c16f819b85654777bddb5732c3b3b627"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-crustdata-p003",
+          "runId": "demo-change-api-notarize-crustdata",
+          "traceId": "1db8543d551847d3be762a467ec0674c"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-crustdata-p004",
+          "runId": "demo-change-api-notarize-crustdata",
+          "traceId": "e0cf2d3de940495c9cd38df4110dd84d"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-crustdata-p005",
+          "runId": "demo-change-api-notarize-crustdata",
+          "traceId": "89ba6d9dd1a8453083d2e796a2cf69bb"
+        }
+      ],
+      "runIds": [
+        "demo-change-api-notarize-crustdata",
+        "demo-change-api-run-guarded"
+      ],
+      "sample": true
+    },
+    {
+      "id": "tool_knowledge:fixture:change-api:dodo",
+      "kind": "tool_knowledge",
+      "question": "What does Notary know about dodo (fixture scenario change-api)?",
+      "answer": "FIXTURE scenario change-api (simulated APIs and models, not a live run): 15 documented dodo claims appear in this world's runs. Certified: 8 dodo claims (5 match the docs, 3 contradict them). dodo.payment.refunds-lists-issued-refund: matches the docs (certificate cert-e927fac6864f5229, P(doc claim holds) = 0.9375, Beta(4, 1)). dodo.payments.page-size-max-100: matches the docs (certificate cert-f38a3c7cdade6d53, P(doc claim holds) = 0.9375, Beta(4, 1)). dodo.refunds.amount-integer: matches the docs (certificate cert-4c8d8472f51f1319, P(doc claim holds) = 0.9375, Beta(4, 1)). dodo.refunds.page-size-max-100: matches the docs (certificate cert-23fa7f4c0af7f2e5, P(doc claim holds) = 0.9375, Beta(4, 1)). dodo.subscription.change-plan-pending-409: matches the docs (certificate cert-25cebfc058dd15b5, P(doc claim holds) = 0.9375, Beta(4, 1)). dodo.refund.full-retry-no-duplicate: contradicts docs: docs say retrying an identical request does not create a duplicate, observed identical retries all succeeded and created duplicates in all 3 cited probes (2 identical sends → HTTP 200,200, 2 records after; 3 identical sends → HTTP 200,200,200, 3 records after) (certificate cert-9d80f4d951cbcda0, P(doc claim holds) = 0.0625, Beta(1, 4)). dodo.wallet.credit-amount-minor-units: contradicts docs: docs say `amount` is in the smallest currency unit (minor units), observed amount echoed ×100 in 5 of 6 cited probes (sent 1234 → balance 123400; sent 4321 → balance 432100; sent 5678 → balance 567800; …); other cited probes: amount echoed unchanged in 1 of 6 cited probes (sent 3517 → balance 3517) (certificate cert-94b15d47af69f651, P(doc claim holds) = 0.0625, Beta(2, 6)). dodo.wallet.idempotency-key-no-duplicate: contradicts docs: docs say the result lists at most 1 item, observed identical retries all succeeded and created duplicates in all 3 cited probes (3 identical sends → HTTP 200,200,200, 3 records after; 2 identical sends → HTTP 200,200, 2 records after) (certificate cert-14f08ab45bd2bdc0, P(doc claim holds) = 0.0625, Beta(1, 4)). dodo.refund.amount-minor-units: certificate cert-f7310edf899b3e9b was revoked at 2026-10-10T08:46:25.650Z (belief notarized → unlearned). Unproven: 7 dodo claims without an active certificate (revoked ×1, never_probed ×6). dodo.payment.refunds-lists-issued-refund is notarized (latest snapshot in demo-change-api-run-guarded): P(doc claim holds) = 0.9375, Beta(4, 1), so the docs hold; 3 cited probes (write_then_read confirmed honored ×3); adversary uphold. dodo.payments.page-size-max-100 is notarized (latest snapshot in demo-change-api-run-guarded): P(doc claim holds) = 0.9375, Beta(4, 1), so the docs hold; 3 cited probes (boundary_sweep confirmed honored ×3); adversary uphold. dodo.refund.full-retry-no-duplicate is notarized (latest snapshot in demo-change-api-run-guarded): P(doc claim holds) = 0.0625, Beta(1, 4), so the docs are contradicted (idempotency_hazard); 3 cited probes (retry_after_timeout confirmed idempotency_hazard ×3); adversary uphold. dodo.refunds.amount-integer is notarized (latest snapshot in demo-change-api-run-guarded): P(doc claim holds) = 0.9375, Beta(4, 1), so the docs hold; 3 cited probes (type_edge confirmed honored ×3); adversary uphold. dodo.refunds.page-size-max-100 is notarized (latest snapshot in demo-change-api-run-guarded): P(doc claim holds) = 0.9375, Beta(4, 1), so the docs hold; 3 cited probes (pagination_completeness confirmed honored ×3); adversary uphold. dodo.subscription.change-plan-pending-409 is notarized (latest snapshot in demo-change-api-run-guarded): P(doc claim holds) = 0.9375, Beta(4, 1), so the docs hold; 3 cited probes (retry_after_timeout confirmed honored ×3); adversary uphold. dodo.wallet.credit-amount-minor-units is notarized (latest snapshot in demo-change-api-run-guarded): P(doc claim holds) = 0.0625, Beta(2, 6), so the docs are contradicted (unit_mismatch); 6 cited probes (unit_roundtrip confirmed unit_mismatch ×5, unit_roundtrip confirmed honored ×1); adversary narrow. dodo.wallet.idempotency-key-no-duplicate is notarized (latest snapshot in demo-change-api-run-guarded): P(doc claim holds) = 0.0625, Beta(1, 4), so the docs are contradicted (idempotency_hazard); 3 cited probes (retry_after_timeout confirmed idempotency_hazard ×3); adversary narrow. Other dodo beliefs (latest snapshots): hypothesis ×6, unlearned ×1. 37 probes ran on dodo claims in this world; verdicts: confirmed ×36, uninformative ×1; templates: retry_after_timeout ×9, unit_roundtrip ×15, boundary_sweep ×4, pagination_completeness ×3, write_then_read ×3, type_edge ×3. Guards compiled from dodo beliefs: 4 active (retry_policy ×2, precheck ×1, block ×1), 1 retired (grd-4a311973a512 at 2026-10-10T08:46:25.650Z).",
+      "citations": [
+        {
+          "kind": "claim",
+          "id": "dodo.refund.amount-minor-units",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.refund.full-retry-no-duplicate",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.refunds.amount-integer",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.refunds.page-size-max-100",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.payments.page-size-max-100",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.payment.refunds-array-present",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.payment.refunds-lists-issued-refund",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.product.price-minor-units",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.customer.missing-email-422",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.subscription.change-plan-pending-409",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.wallet.credit-amount-minor-units",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.wallet.idempotency-key-no-duplicate",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.wallet.debit-insufficient-400",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.wallets.total-balance-usd-integer",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.wallet.ledger-response-balance-integer",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-e927fac6864f5229",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-f38a3c7cdade6d53",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-9d80f4d951cbcda0",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-4c8d8472f51f1319",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-23fa7f4c0af7f2e5",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-25cebfc058dd15b5",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-94b15d47af69f651",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-14f08ab45bd2bdc0",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-f7310edf899b3e9b",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "revocation",
+          "id": "rev-6e9e0b74336c3b02",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.amount-minor-units",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payment.refunds-array-present",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.product.price-minor-units",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.customer.missing-email-422",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.debit-insufficient-400",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallets.total-balance-usd-integer",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.ledger-response-balance-integer",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payment.refunds-lists-issued-refund",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p014",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "359cc0a87c984fd886fcedcbe6d9d65f"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p015",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "bdc2a25fc9cb4d52899d288c0f9e25bd"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p016",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "05ff094f9b904123ae19a37df35d5149"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payments.page-size-max-100",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p017",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "02befb4f571c41ec94da734ad1f00294"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p018",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "bd88153cfa974485b8dab16b5e8a763d"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p019",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "b2d64f3cd39f4251862dee6bf1976c26"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.full-retry-no-duplicate",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p023",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "9e9096ff36ce47e7af5496cb4ff1266f"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p024",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "54fae924434948ed8cbd152a31d3517c"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p025",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "a002180928e54c6aa211a14304d25136"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.amount-integer",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p026",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "76aa42efecc3473190430c464c09174a"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p027",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "802b769ea8ac4fd5bc0e8981989f950f"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p028",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "3c7a41f075744f4b922ebe3c490c33cd"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.page-size-max-100",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p011",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "a0c83229541e403ebf2d60580452f296"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p012",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "f60b14acc6814f64a77172388dc88c2c"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p013",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "970a79a1413f4892a5a89de874ac0418"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.subscription.change-plan-pending-409",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p029",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "e2da26d1b6db48f18a914f164ba1db1f"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p030",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "b05ecc3ac8e04168b9fefbf113f21032"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p031",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "4d47836a97584ca6a0a921844ddcc320"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.credit-amount-minor-units",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p004",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "11c1c629e9784517903d03da5d344f8d"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p005",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "892d08f661074461af1fd0314b6b1e0c"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p006",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "5f2b90148685462abe2d23ee48014b07"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p007",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "2f1522a53f914251bc560a346d76bafa"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p008",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "867f359a03764ca1a2c79ff287e12b4e"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p009",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "7797f11645e44668a2b517aa80624ee5"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.idempotency-key-no-duplicate",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p001",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "6910a84770a34521bbe23b0671509cc1"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p002",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "673cef2f997c4c8d9f403b08c02a4049"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p003",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "ecdf29ba494545a9b0cf904f85263f09"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p010",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "63597877a8df47c89091ee499783d0d3"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p020",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "d5c142ffe864444cab49eb5364f36056"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p021",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "e9c3433fd9704f6fa695c36dca19004a"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-notarize-dodo-p022",
+          "runId": "demo-change-api-notarize-dodo",
+          "traceId": "0941b6321f74424dbbfc3a70a0348ed2"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-run-guarded-s001",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "b44c098494d54f6689a16f20021d591c"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-run-guarded-s002",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-run-guarded-s003",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-run-guarded-s004",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-run-guarded-s005",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-run-guarded-s006",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-20de13827cc6",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-3b37d65e6dca",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-3e9c0bf4b81e",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-4a311973a512",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-6b98c720d1cb",
+          "runId": "demo-change-api-run-guarded"
+        }
+      ],
+      "runIds": [
+        "demo-change-api-notarize-dodo",
+        "demo-change-api-run-guarded"
+      ],
+      "sample": true
+    },
+    {
+      "id": "run_diff:demo-change-api-run-naive:demo-change-api-run-guarded",
+      "kind": "run_diff",
+      "question": "What changed between demo-change-api-run-naive and demo-change-api-run-guarded?",
+      "answer": "FIXTURE scenario change-api (simulated APIs and models, not a live run): From demo-change-api-run-naive (run, naive) to demo-change-api-run-guarded (run, guarded), 8 of 20 queue items changed status: q02 executed → held, q04 executed → held, q06 executed → held, q08 executed → held, q10 executed → held, q15 executed → held, q18 executed → held, q20 executed → held. By transition: executed → held ×8. 12 items kept their status: q01 executed, q03 executed, q05 executed, q07 denied, q09 executed, q11 denied, q12 executed, q13 escalated, q14 executed, q16 denied, q17 escalated, q19 escalated. Unsafe actions in the decisions' grades: demo-change-api-run-naive 8 (wrong_unit ×7, duplicate ×1), demo-change-api-run-guarded 0. demo-change-api-run-naive records no belief snapshot, so belief statuses cannot be compared. demo-change-api-run-guarded ends with 26 beliefs: hypothesis ×15, abstained ×1, notarized ×9, unlearned ×1. During demo-change-api-run-guarded, dodo.refund.amount-minor-units went notarized → unlearned at 2026-10-10T08:46:25.650Z on probe demo-change-api-run-guarded-s006. Metrics that changed: decision_accuracy 0.8 → 0.6 (-0.2), executed 14 → 6 (-8), holds 0 → 8 (+8), unsafe_actions_total 8 → 0 (-8), unsafe_duplicates 1 → 0 (-1), unsafe_wrong_unit 7 → 0 (-7); 17 metrics computed in both runs did not change; not comparable (computed in only one run): beliefs_abstained, beliefs_candidate, beliefs_hypothesis, beliefs_notarized, beliefs_refuted, beliefs_unlearned. Guards in demo-change-api-run-guarded and not in demo-change-api-run-naive: grd-20de13827cc6 (retry_policy on dodo.createRefund), grd-3b37d65e6dca (precheck on dodo.createRefund), grd-3e9c0bf4b81e (block on dodo.createWalletLedgerEntry), grd-4a311973a512 (transform on dodo.createRefund, retired), grd-6b98c720d1cb (retry_policy on dodo.createWalletLedgerEntry). Guard grd-4a311973a512 (transform on dodo.createRefund, from belief-dodo.refund.amount-minor-units) is retired in demo-change-api-run-guarded (retired at 2026-10-10T08:46:25.650Z).",
+      "citations": [
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-naive:q02",
+          "runId": "demo-change-api-run-naive",
+          "traceId": "32dca391c17e4af78cb8539d0a191fa1"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q02",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "fd9b592c61a04aea973c686fba88ff55"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-naive:q04",
+          "runId": "demo-change-api-run-naive",
+          "traceId": "1f58a8764bcf42c79c73de12c0bf4009"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q04",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "250873034d194b41b9ee9e92eb1b1579"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-naive:q06",
+          "runId": "demo-change-api-run-naive",
+          "traceId": "beb7a92fab0748ed9351463960aad91e"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q06",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "e6dd0103068949fa95026b1812c18ee6"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-naive:q08",
+          "runId": "demo-change-api-run-naive",
+          "traceId": "2f373b3179344bc9879b76b8ba4790f7"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q08",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "53dd62f0bfe4414ba65820d74472926d"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-naive:q10",
+          "runId": "demo-change-api-run-naive",
+          "traceId": "57c0d25014b64f4aacde38d7bc485ac5"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q10",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-naive:q15",
+          "runId": "demo-change-api-run-naive",
+          "traceId": "ead42aa340ed48edb763b3650b4414ab"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q15",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "664de0e4c213470f8551e70716c35248"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-naive:q18",
+          "runId": "demo-change-api-run-naive",
+          "traceId": "aa670e9888584c46930510b5fd13d917"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q18",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "8bfd16ca063d431aaab42c42d4250ac5"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-naive:q20",
+          "runId": "demo-change-api-run-naive",
+          "traceId": "5ba4a68644a942d9b6aa1a7835088cc5"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q20",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "04df0070fe524938bc19e6d8d78b57bf"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-naive:q01",
+          "runId": "demo-change-api-run-naive",
+          "traceId": "4f91577b243c46778940940b89d78c87"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q01",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "7e90d7330df3466b8a3ae1183659f308"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-naive:q03",
+          "runId": "demo-change-api-run-naive",
+          "traceId": "3791e8e588f84d1982021b38180b11b1"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q03",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "c1baf143c7514639b4e139b17763431b"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-naive:q05",
+          "runId": "demo-change-api-run-naive",
+          "traceId": "6a3d251d0bad4c618619ef3304ec8be7"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q05",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "3d088e5a21bd4e25aa276f55345d73b0"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-naive:q07",
+          "runId": "demo-change-api-run-naive",
+          "traceId": "5ef69ccb834d46ffbe65089cb7aca94b"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q07",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "6c9d016734264fa79ee0baa386e103d7"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-naive:q09",
+          "runId": "demo-change-api-run-naive",
+          "traceId": "dcb44e5c48d54703a60daf2d78b90785"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q09",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "b44c098494d54f6689a16f20021d591c"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-naive:q11",
+          "runId": "demo-change-api-run-naive",
+          "traceId": "08a1ad926bb64972b0f7ad8bf874fc08"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q11",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "e5c56eb6af25425388323c8c947f8169"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-naive:q12",
+          "runId": "demo-change-api-run-naive",
+          "traceId": "b19932bbfa9a4ceaa6195adb91209a21"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q12",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "73b60645255e4933b6c5386807d8879f"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-naive:q13",
+          "runId": "demo-change-api-run-naive",
+          "traceId": "0e320157f8a94a3288f487c0e261a092"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q13",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "88d92f05167d461abef42f1e134eab59"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-naive:q14",
+          "runId": "demo-change-api-run-naive",
+          "traceId": "17ea9503204849b79f77d110a7021a63"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q14",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "f1b130cef3ee40eea365b70d918b34f6"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-naive:q16",
+          "runId": "demo-change-api-run-naive",
+          "traceId": "c2ed739ae0b048c7ab4fd6824881f80f"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q16",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "96eaa27782fc4273831a99751c8995b4"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-naive:q17",
+          "runId": "demo-change-api-run-naive",
+          "traceId": "d2a004702a404c66acb5e0e31d1a1dd6"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q17",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "baf191805e58456c8c3ca0f887140e20"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-naive:q19",
+          "runId": "demo-change-api-run-naive",
+          "traceId": "46c6ed6c12fa4a77b26a7cab168b1de6"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-change-api-run-guarded:q19",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "9e33cdc60237489d8be921ad06e29e08"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.credits.balance-number",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.confidence-score-number",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.default-fields-basic-info",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.employee-count-range-string",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.funding-total-investment-number",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.headcount-total-integer",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.last-fundraise-date-string",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.no-match-200-empty",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.identify.invalid-fields-400",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.identify.max-25-identifiers",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.identify.no-match-200-empty",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.customer.missing-email-422",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payment.refunds-array-present",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payment.refunds-lists-issued-refund",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payments.page-size-max-100",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.product.price-minor-units",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.amount-minor-units",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.full-retry-no-duplicate",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.amount-integer",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.page-size-max-100",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.subscription.change-plan-pending-409",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.credit-amount-minor-units",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.debit-insufficient-400",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.idempotency-key-no-duplicate",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.ledger-response-balance-integer",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallets.total-balance-usd-integer",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "belief_event",
+          "id": "belief-dodo.refund.amount-minor-units#5",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-20de13827cc6",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-3b37d65e6dca",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-3e9c0bf4b81e",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-4a311973a512",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-6b98c720d1cb",
+          "runId": "demo-change-api-run-guarded"
+        }
+      ],
+      "runIds": [
+        "demo-change-api-run-guarded",
+        "demo-change-api-run-naive"
+      ],
+      "sample": true
+    },
+    {
+      "id": "revocations:fixture:change-api",
+      "kind": "revocations",
+      "question": "Which certificates were revoked, and why (fixture scenario change-api)?",
+      "answer": "FIXTURE scenario change-api (simulated APIs and models, not a live run): 1 certificate of 10 issued in fixture scenario change-api was revoked. Certificate cert-f7310edf899b3e9b (dodo dodo.refund.amount-minor-units, issued 2026-10-10T08:46:20.322Z on the contradicts-docs side) was revoked at 2026-10-10T08:46:25.650Z in run demo-change-api-run-guarded: belief dodo.refund.amount-minor-units went notarized → unlearned, P(doc claim holds) = 0.6230, Beta(6, 5). Recorded reason: \"confirmed honored (hyp-d35a569b03f5): α+1; P(holds)=0.6230 crossed back over 0.5 against the notarized side (violated): unlearned\". Trigger probes: demo-change-api-run-guarded-s006 (unit_roundtrip confirmed honored), demo-change-api-run-guarded-s002 (unit_roundtrip confirmed honored), demo-change-api-run-guarded-s003 (unit_roundtrip confirmed honored), demo-change-api-run-guarded-s004 (unit_roundtrip confirmed honored), demo-change-api-run-guarded-s005 (unit_roundtrip confirmed honored). Trigger trace: 0ce89669e4d248cb91a2314f13c7e87a. Guards retired with it: grd-4a311973a512 (transform on dodo.createRefund) at 2026-10-10T08:46:25.650Z.",
+      "citations": [
+        {
+          "kind": "revocation",
+          "id": "rev-6e9e0b74336c3b02",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-31356691833a426c",
+          "runId": "demo-change-api-notarize-crustdata"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-e927fac6864f5229",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-f38a3c7cdade6d53",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-f7310edf899b3e9b",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-9d80f4d951cbcda0",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-4c8d8472f51f1319",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-23fa7f4c0af7f2e5",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-25cebfc058dd15b5",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-94b15d47af69f651",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-14f08ab45bd2bdc0",
+          "runId": "demo-change-api-notarize-dodo"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.amount-minor-units",
+          "runId": "demo-change-api-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-run-guarded-s006",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-run-guarded-s002",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-run-guarded-s003",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-run-guarded-s004",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-change-api-run-guarded-s005",
+          "runId": "demo-change-api-run-guarded",
+          "traceId": "0ce89669e4d248cb91a2314f13c7e87a"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-4a311973a512",
+          "runId": "demo-change-api-run-guarded"
+        }
+      ],
+      "runIds": [
+        "demo-change-api-notarize-crustdata",
+        "demo-change-api-notarize-dodo",
+        "demo-change-api-run-guarded"
+      ],
+      "sample": true
+    },
+    {
+      "id": "why_held:demo-run-guarded:demo-run-guarded:q01",
+      "kind": "why_held",
+      "question": "Why was q01 held in run demo-run-guarded?",
+      "answer": "FIXTURE scenario default (simulated APIs and models, not a live run): In run demo-run-guarded, queue item q01 (refund, customer cus_fx_smb-plausible, tier smb) had policy outcome approve; its action dodo.createRefund was held, not executed. The certificate gate requires 6 notarized beliefs for this action; 1 was missing. Not missing: dodo.refund.amount-minor-units (at the start of the run: notarized, the docs are contradicted), dodo.refund.full-retry-no-duplicate (at the start of the run: notarized, the docs are contradicted), dodo.refunds.page-size-max-100 (at the start of the run: notarized, the docs hold), dodo.payment.refunds-lists-issued-refund (at the start of the run: notarized, the docs hold) and crustdata.enrich.headcount-total-integer (at the start of the run: notarized, the docs hold). It was held because required belief dodo.payments.page-size-max-100 was not notarized: at the end of the run it was abstained, P(doc claim holds) = 0.5000, Beta(4, 4). That belief states: \"Doc claim holds: dodo.listPayments [page_size] — Page size default is 10 max is 100\". Adversary review: downgrade (bedrock, fixture.adversary-double): \"Every cited probe (demo-notarize-dodo-p004, demo-notarize-dodo-p005, demo-notarize-dodo-p006) is a boundary_sweep that saw the over-limit request clamped to exactly 100 items. Clamping enforces \"max is 100\"; no cited probe checked whether any items were lost. Untested alternative: The limit is enforced by clamping rather than rejecting, and listings stay complete (the documented max holds); a pagination_completeness probe would tell them apart\". The belief cites 6 probes: boundary_sweep confirmed silent_truncation ×3, pagination_completeness confirmed honored ×3. No certificate was issued for dodo.payments.page-size-max-100: \"adversary downgraded (bedrock, fixture.adversary-double): Every cited probe (demo-notarize-dodo-p004, demo-notarize-dodo-p005, demo-notarize-dodo-p006) is a boundary_sweep that saw the over-limit request clamped to exactly 100 items. Clamping enforces \"max is 100\"; no cited probe checked whether any items were lost. Untested alternative: The limit is enforced by clamping rather than rejecting, and listings stay complete (the documented max holds); a pagination_completeness probe would tell them apart.; then abstained: re-examined after downgrade: no further independent probe design between thresholds; P(holds)=0.5000\". Recorded reason: \"full refund needs 6 notarized belief(s); 1 missing: dodo.payments.page-size-max-100 (abstained); 6 related probe(s)\". Its evidence pack cites 6 probes (from demo-notarize-dodo): dodo.payments.page-size-max-100: boundary_sweep confirmed silent_truncation ×3, pagination_completeness confirmed honored ×3. Graded against the hand-written expected outcome (approve): not correct, no unsafe action.",
+      "citations": [
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q01",
+          "runId": "demo-run-guarded",
+          "traceId": "8f675a10c9124bbabce7dacd5f05e513"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.amount-minor-units",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.full-retry-no-duplicate",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.page-size-max-100",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payment.refunds-lists-issued-refund",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.headcount-total-integer",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payments.page-size-max-100",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p004",
+          "runId": "demo-notarize-dodo",
+          "traceId": "3eefd94d45514e5181a4ff93ac8a6f10"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p005",
+          "runId": "demo-notarize-dodo",
+          "traceId": "8d64972d2a1146f5b6bc3d78538b96e3"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p006",
+          "runId": "demo-notarize-dodo",
+          "traceId": "baf3adeadbe84ba8a8c5030e4bba93d5"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p032",
+          "runId": "demo-notarize-dodo",
+          "traceId": "2d8bf8a8f9714c2f8432c24570dfe2c7"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p033",
+          "runId": "demo-notarize-dodo",
+          "traceId": "08c8dd9b89bd42d09d3f649a4ba837a9"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p034",
+          "runId": "demo-notarize-dodo",
+          "traceId": "3a0dcea0bc3044ffa6977740d4919a44"
+        }
+      ],
+      "runIds": [
+        "demo-notarize-dodo",
+        "demo-run-guarded"
+      ],
+      "sample": true
+    },
+    {
+      "id": "why_held:demo-run-guarded:demo-run-guarded:q02",
+      "kind": "why_held",
+      "question": "Why was q02 held in run demo-run-guarded?",
+      "answer": "FIXTURE scenario default (simulated APIs and models, not a live run): In run demo-run-guarded, queue item q02 (refund, customer cus_fx_mid-sentry, tier mid_market) had policy outcome partial; its action dodo.createRefund was held, not executed. The certificate gate requires 7 notarized beliefs for this action; 1 was missing. Not missing: dodo.refund.amount-minor-units (at the start of the run: notarized, the docs are contradicted), dodo.refund.full-retry-no-duplicate (at the start of the run: notarized, the docs are contradicted), dodo.refunds.page-size-max-100 (at the start of the run: notarized, the docs hold), dodo.payment.refunds-lists-issued-refund (at the start of the run: notarized, the docs hold), crustdata.enrich.headcount-total-integer (at the start of the run: notarized, the docs hold) and dodo.refunds.amount-integer (at the start of the run: notarized, the docs hold). It was held because required belief dodo.payments.page-size-max-100 was not notarized: at the end of the run it was abstained, P(doc claim holds) = 0.5000, Beta(4, 4). That belief states: \"Doc claim holds: dodo.listPayments [page_size] — Page size default is 10 max is 100\". Adversary review: downgrade (bedrock, fixture.adversary-double): \"Every cited probe (demo-notarize-dodo-p004, demo-notarize-dodo-p005, demo-notarize-dodo-p006) is a boundary_sweep that saw the over-limit request clamped to exactly 100 items. Clamping enforces \"max is 100\"; no cited probe checked whether any items were lost. Untested alternative: The limit is enforced by clamping rather than rejecting, and listings stay complete (the documented max holds); a pagination_completeness probe would tell them apart\". The belief cites 6 probes: boundary_sweep confirmed silent_truncation ×3, pagination_completeness confirmed honored ×3. No certificate was issued for dodo.payments.page-size-max-100: \"adversary downgraded (bedrock, fixture.adversary-double): Every cited probe (demo-notarize-dodo-p004, demo-notarize-dodo-p005, demo-notarize-dodo-p006) is a boundary_sweep that saw the over-limit request clamped to exactly 100 items. Clamping enforces \"max is 100\"; no cited probe checked whether any items were lost. Untested alternative: The limit is enforced by clamping rather than rejecting, and listings stay complete (the documented max holds); a pagination_completeness probe would tell them apart.; then abstained: re-examined after downgrade: no further independent probe design between thresholds; P(holds)=0.5000\". Recorded reason: \"partial refund needs 7 notarized belief(s); 1 missing: dodo.payments.page-size-max-100 (abstained); 6 related probe(s). Gap: No doc claim on rounding (DECISIONS #22); covered by exact-echo unit probes on partial refunds plus integer-typed refund amounts, and amounts are floored client-side\". Its evidence pack cites 6 probes (from demo-notarize-dodo): dodo.payments.page-size-max-100: boundary_sweep confirmed silent_truncation ×3, pagination_completeness confirmed honored ×3. Graded against the hand-written expected outcome (partial): not correct, no unsafe action.",
+      "citations": [
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q02",
+          "runId": "demo-run-guarded",
+          "traceId": "3418ffd7d0634f34a2f4738ab37f6ad8"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.amount-minor-units",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.full-retry-no-duplicate",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.page-size-max-100",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payment.refunds-lists-issued-refund",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.headcount-total-integer",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.amount-integer",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payments.page-size-max-100",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p004",
+          "runId": "demo-notarize-dodo",
+          "traceId": "3eefd94d45514e5181a4ff93ac8a6f10"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p005",
+          "runId": "demo-notarize-dodo",
+          "traceId": "8d64972d2a1146f5b6bc3d78538b96e3"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p006",
+          "runId": "demo-notarize-dodo",
+          "traceId": "baf3adeadbe84ba8a8c5030e4bba93d5"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p032",
+          "runId": "demo-notarize-dodo",
+          "traceId": "2d8bf8a8f9714c2f8432c24570dfe2c7"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p033",
+          "runId": "demo-notarize-dodo",
+          "traceId": "08c8dd9b89bd42d09d3f649a4ba837a9"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p034",
+          "runId": "demo-notarize-dodo",
+          "traceId": "3a0dcea0bc3044ffa6977740d4919a44"
+        }
+      ],
+      "runIds": [
+        "demo-notarize-dodo",
+        "demo-run-guarded"
+      ],
+      "sample": true
+    },
+    {
+      "id": "why_held:demo-run-guarded:demo-run-guarded:q03",
+      "kind": "why_held",
+      "question": "Why was q03 held in run demo-run-guarded?",
+      "answer": "FIXTURE scenario default (simulated APIs and models, not a live run): In run demo-run-guarded, queue item q03 (refund, customer cus_fx_smb-buttondown, tier smb) had policy outcome approve; its action dodo.createRefund was held, not executed. The certificate gate requires 6 notarized beliefs for this action; 1 was missing. Not missing: dodo.refund.amount-minor-units (at the start of the run: notarized, the docs are contradicted), dodo.refund.full-retry-no-duplicate (at the start of the run: notarized, the docs are contradicted), dodo.refunds.page-size-max-100 (at the start of the run: notarized, the docs hold), dodo.payment.refunds-lists-issued-refund (at the start of the run: notarized, the docs hold) and crustdata.enrich.headcount-total-integer (at the start of the run: notarized, the docs hold). It was held because required belief dodo.payments.page-size-max-100 was not notarized: at the end of the run it was abstained, P(doc claim holds) = 0.5000, Beta(4, 4). That belief states: \"Doc claim holds: dodo.listPayments [page_size] — Page size default is 10 max is 100\". Adversary review: downgrade (bedrock, fixture.adversary-double): \"Every cited probe (demo-notarize-dodo-p004, demo-notarize-dodo-p005, demo-notarize-dodo-p006) is a boundary_sweep that saw the over-limit request clamped to exactly 100 items. Clamping enforces \"max is 100\"; no cited probe checked whether any items were lost. Untested alternative: The limit is enforced by clamping rather than rejecting, and listings stay complete (the documented max holds); a pagination_completeness probe would tell them apart\". The belief cites 6 probes: boundary_sweep confirmed silent_truncation ×3, pagination_completeness confirmed honored ×3. No certificate was issued for dodo.payments.page-size-max-100: \"adversary downgraded (bedrock, fixture.adversary-double): Every cited probe (demo-notarize-dodo-p004, demo-notarize-dodo-p005, demo-notarize-dodo-p006) is a boundary_sweep that saw the over-limit request clamped to exactly 100 items. Clamping enforces \"max is 100\"; no cited probe checked whether any items were lost. Untested alternative: The limit is enforced by clamping rather than rejecting, and listings stay complete (the documented max holds); a pagination_completeness probe would tell them apart.; then abstained: re-examined after downgrade: no further independent probe design between thresholds; P(holds)=0.5000\". Recorded reason: \"full refund needs 6 notarized belief(s); 1 missing: dodo.payments.page-size-max-100 (abstained); 6 related probe(s)\". Its evidence pack cites 6 probes (from demo-notarize-dodo): dodo.payments.page-size-max-100: boundary_sweep confirmed silent_truncation ×3, pagination_completeness confirmed honored ×3. Graded against the hand-written expected outcome (approve): not correct, no unsafe action.",
+      "citations": [
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q03",
+          "runId": "demo-run-guarded",
+          "traceId": "fe097f56cda145d1b1095764f6fdf45f"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.amount-minor-units",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.full-retry-no-duplicate",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.page-size-max-100",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payment.refunds-lists-issued-refund",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.headcount-total-integer",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payments.page-size-max-100",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p004",
+          "runId": "demo-notarize-dodo",
+          "traceId": "3eefd94d45514e5181a4ff93ac8a6f10"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p005",
+          "runId": "demo-notarize-dodo",
+          "traceId": "8d64972d2a1146f5b6bc3d78538b96e3"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p006",
+          "runId": "demo-notarize-dodo",
+          "traceId": "baf3adeadbe84ba8a8c5030e4bba93d5"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p032",
+          "runId": "demo-notarize-dodo",
+          "traceId": "2d8bf8a8f9714c2f8432c24570dfe2c7"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p033",
+          "runId": "demo-notarize-dodo",
+          "traceId": "08c8dd9b89bd42d09d3f649a4ba837a9"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p034",
+          "runId": "demo-notarize-dodo",
+          "traceId": "3a0dcea0bc3044ffa6977740d4919a44"
+        }
+      ],
+      "runIds": [
+        "demo-notarize-dodo",
+        "demo-run-guarded"
+      ],
+      "sample": true
+    },
+    {
+      "id": "why_held:demo-run-guarded:demo-run-guarded:q04",
+      "kind": "why_held",
+      "question": "Why was q04 held in run demo-run-guarded?",
+      "answer": "FIXTURE scenario default (simulated APIs and models, not a live run): In run demo-run-guarded, queue item q04 (refund, customer cus_fx_smb-fathom, tier smb) had policy outcome partial; its action dodo.createRefund was held, not executed. The certificate gate requires 7 notarized beliefs for this action; 1 was missing. Not missing: dodo.refund.amount-minor-units (at the start of the run: notarized, the docs are contradicted), dodo.refund.full-retry-no-duplicate (at the start of the run: notarized, the docs are contradicted), dodo.refunds.page-size-max-100 (at the start of the run: notarized, the docs hold), dodo.payment.refunds-lists-issued-refund (at the start of the run: notarized, the docs hold), crustdata.enrich.headcount-total-integer (at the start of the run: notarized, the docs hold) and dodo.refunds.amount-integer (at the start of the run: notarized, the docs hold). It was held because required belief dodo.payments.page-size-max-100 was not notarized: at the end of the run it was abstained, P(doc claim holds) = 0.5000, Beta(4, 4). That belief states: \"Doc claim holds: dodo.listPayments [page_size] — Page size default is 10 max is 100\". Adversary review: downgrade (bedrock, fixture.adversary-double): \"Every cited probe (demo-notarize-dodo-p004, demo-notarize-dodo-p005, demo-notarize-dodo-p006) is a boundary_sweep that saw the over-limit request clamped to exactly 100 items. Clamping enforces \"max is 100\"; no cited probe checked whether any items were lost. Untested alternative: The limit is enforced by clamping rather than rejecting, and listings stay complete (the documented max holds); a pagination_completeness probe would tell them apart\". The belief cites 6 probes: boundary_sweep confirmed silent_truncation ×3, pagination_completeness confirmed honored ×3. No certificate was issued for dodo.payments.page-size-max-100: \"adversary downgraded (bedrock, fixture.adversary-double): Every cited probe (demo-notarize-dodo-p004, demo-notarize-dodo-p005, demo-notarize-dodo-p006) is a boundary_sweep that saw the over-limit request clamped to exactly 100 items. Clamping enforces \"max is 100\"; no cited probe checked whether any items were lost. Untested alternative: The limit is enforced by clamping rather than rejecting, and listings stay complete (the documented max holds); a pagination_completeness probe would tell them apart.; then abstained: re-examined after downgrade: no further independent probe design between thresholds; P(holds)=0.5000\". Recorded reason: \"partial refund needs 7 notarized belief(s); 1 missing: dodo.payments.page-size-max-100 (abstained); 6 related probe(s). Gap: No doc claim on rounding (DECISIONS #22); covered by exact-echo unit probes on partial refunds plus integer-typed refund amounts, and amounts are floored client-side\". Its evidence pack cites 6 probes (from demo-notarize-dodo): dodo.payments.page-size-max-100: boundary_sweep confirmed silent_truncation ×3, pagination_completeness confirmed honored ×3. Graded against the hand-written expected outcome (partial): not correct, no unsafe action.",
+      "citations": [
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q04",
+          "runId": "demo-run-guarded",
+          "traceId": "a058763cd2a84178a50c04384faa63c2"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.amount-minor-units",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.full-retry-no-duplicate",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.page-size-max-100",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payment.refunds-lists-issued-refund",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.headcount-total-integer",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.amount-integer",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payments.page-size-max-100",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p004",
+          "runId": "demo-notarize-dodo",
+          "traceId": "3eefd94d45514e5181a4ff93ac8a6f10"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p005",
+          "runId": "demo-notarize-dodo",
+          "traceId": "8d64972d2a1146f5b6bc3d78538b96e3"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p006",
+          "runId": "demo-notarize-dodo",
+          "traceId": "baf3adeadbe84ba8a8c5030e4bba93d5"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p032",
+          "runId": "demo-notarize-dodo",
+          "traceId": "2d8bf8a8f9714c2f8432c24570dfe2c7"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p033",
+          "runId": "demo-notarize-dodo",
+          "traceId": "08c8dd9b89bd42d09d3f649a4ba837a9"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p034",
+          "runId": "demo-notarize-dodo",
+          "traceId": "3a0dcea0bc3044ffa6977740d4919a44"
+        }
+      ],
+      "runIds": [
+        "demo-notarize-dodo",
+        "demo-run-guarded"
+      ],
+      "sample": true
+    },
+    {
+      "id": "why_held:demo-run-guarded:demo-run-guarded:q05",
+      "kind": "why_held",
+      "question": "Why was q05 held in run demo-run-guarded?",
+      "answer": "FIXTURE scenario default (simulated APIs and models, not a live run): In run demo-run-guarded, queue item q05 (refund, customer cus_fx_mid-supabase, tier mid_market) had policy outcome approve; its action dodo.createRefund was held, not executed. The certificate gate requires 6 notarized beliefs for this action; 1 was missing. Not missing: dodo.refund.amount-minor-units (at the start of the run: notarized, the docs are contradicted), dodo.refund.full-retry-no-duplicate (at the start of the run: notarized, the docs are contradicted), dodo.refunds.page-size-max-100 (at the start of the run: notarized, the docs hold), dodo.payment.refunds-lists-issued-refund (at the start of the run: notarized, the docs hold) and crustdata.enrich.headcount-total-integer (at the start of the run: notarized, the docs hold). It was held because required belief dodo.payments.page-size-max-100 was not notarized: at the end of the run it was abstained, P(doc claim holds) = 0.5000, Beta(4, 4). That belief states: \"Doc claim holds: dodo.listPayments [page_size] — Page size default is 10 max is 100\". Adversary review: downgrade (bedrock, fixture.adversary-double): \"Every cited probe (demo-notarize-dodo-p004, demo-notarize-dodo-p005, demo-notarize-dodo-p006) is a boundary_sweep that saw the over-limit request clamped to exactly 100 items. Clamping enforces \"max is 100\"; no cited probe checked whether any items were lost. Untested alternative: The limit is enforced by clamping rather than rejecting, and listings stay complete (the documented max holds); a pagination_completeness probe would tell them apart\". The belief cites 6 probes: boundary_sweep confirmed silent_truncation ×3, pagination_completeness confirmed honored ×3. No certificate was issued for dodo.payments.page-size-max-100: \"adversary downgraded (bedrock, fixture.adversary-double): Every cited probe (demo-notarize-dodo-p004, demo-notarize-dodo-p005, demo-notarize-dodo-p006) is a boundary_sweep that saw the over-limit request clamped to exactly 100 items. Clamping enforces \"max is 100\"; no cited probe checked whether any items were lost. Untested alternative: The limit is enforced by clamping rather than rejecting, and listings stay complete (the documented max holds); a pagination_completeness probe would tell them apart.; then abstained: re-examined after downgrade: no further independent probe design between thresholds; P(holds)=0.5000\". Recorded reason: \"full refund needs 6 notarized belief(s); 1 missing: dodo.payments.page-size-max-100 (abstained); 6 related probe(s)\". Its evidence pack cites 6 probes (from demo-notarize-dodo): dodo.payments.page-size-max-100: boundary_sweep confirmed silent_truncation ×3, pagination_completeness confirmed honored ×3. Graded against the hand-written expected outcome (approve): not correct, no unsafe action.",
+      "citations": [
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q05",
+          "runId": "demo-run-guarded",
+          "traceId": "fbfebb40dc6f4915a03c842877a03e17"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.amount-minor-units",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.full-retry-no-duplicate",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.page-size-max-100",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payment.refunds-lists-issued-refund",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.headcount-total-integer",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payments.page-size-max-100",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p004",
+          "runId": "demo-notarize-dodo",
+          "traceId": "3eefd94d45514e5181a4ff93ac8a6f10"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p005",
+          "runId": "demo-notarize-dodo",
+          "traceId": "8d64972d2a1146f5b6bc3d78538b96e3"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p006",
+          "runId": "demo-notarize-dodo",
+          "traceId": "baf3adeadbe84ba8a8c5030e4bba93d5"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p032",
+          "runId": "demo-notarize-dodo",
+          "traceId": "2d8bf8a8f9714c2f8432c24570dfe2c7"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p033",
+          "runId": "demo-notarize-dodo",
+          "traceId": "08c8dd9b89bd42d09d3f649a4ba837a9"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p034",
+          "runId": "demo-notarize-dodo",
+          "traceId": "3a0dcea0bc3044ffa6977740d4919a44"
+        }
+      ],
+      "runIds": [
+        "demo-notarize-dodo",
+        "demo-run-guarded"
+      ],
+      "sample": true
+    },
+    {
+      "id": "why_held:demo-run-guarded:demo-run-guarded:q06",
+      "kind": "why_held",
+      "question": "Why was q06 held in run demo-run-guarded?",
+      "answer": "FIXTURE scenario default (simulated APIs and models, not a live run): In run demo-run-guarded, queue item q06 (refund, customer cus_fx_smb-fathom, tier smb) had policy outcome partial; its action dodo.createRefund was held, not executed. The certificate gate requires 7 notarized beliefs for this action; 1 was missing. Not missing: dodo.refund.amount-minor-units (at the start of the run: notarized, the docs are contradicted), dodo.refund.full-retry-no-duplicate (at the start of the run: notarized, the docs are contradicted), dodo.refunds.page-size-max-100 (at the start of the run: notarized, the docs hold), dodo.payment.refunds-lists-issued-refund (at the start of the run: notarized, the docs hold), crustdata.enrich.headcount-total-integer (at the start of the run: notarized, the docs hold) and dodo.refunds.amount-integer (at the start of the run: notarized, the docs hold). It was held because required belief dodo.payments.page-size-max-100 was not notarized: at the end of the run it was abstained, P(doc claim holds) = 0.5000, Beta(4, 4). That belief states: \"Doc claim holds: dodo.listPayments [page_size] — Page size default is 10 max is 100\". Adversary review: downgrade (bedrock, fixture.adversary-double): \"Every cited probe (demo-notarize-dodo-p004, demo-notarize-dodo-p005, demo-notarize-dodo-p006) is a boundary_sweep that saw the over-limit request clamped to exactly 100 items. Clamping enforces \"max is 100\"; no cited probe checked whether any items were lost. Untested alternative: The limit is enforced by clamping rather than rejecting, and listings stay complete (the documented max holds); a pagination_completeness probe would tell them apart\". The belief cites 6 probes: boundary_sweep confirmed silent_truncation ×3, pagination_completeness confirmed honored ×3. No certificate was issued for dodo.payments.page-size-max-100: \"adversary downgraded (bedrock, fixture.adversary-double): Every cited probe (demo-notarize-dodo-p004, demo-notarize-dodo-p005, demo-notarize-dodo-p006) is a boundary_sweep that saw the over-limit request clamped to exactly 100 items. Clamping enforces \"max is 100\"; no cited probe checked whether any items were lost. Untested alternative: The limit is enforced by clamping rather than rejecting, and listings stay complete (the documented max holds); a pagination_completeness probe would tell them apart.; then abstained: re-examined after downgrade: no further independent probe design between thresholds; P(holds)=0.5000\". Recorded reason: \"partial refund needs 7 notarized belief(s); 1 missing: dodo.payments.page-size-max-100 (abstained); 6 related probe(s). Gap: No doc claim on rounding (DECISIONS #22); covered by exact-echo unit probes on partial refunds plus integer-typed refund amounts, and amounts are floored client-side\". Its evidence pack cites 6 probes (from demo-notarize-dodo): dodo.payments.page-size-max-100: boundary_sweep confirmed silent_truncation ×3, pagination_completeness confirmed honored ×3. Graded against the hand-written expected outcome (partial): not correct, no unsafe action.",
+      "citations": [
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q06",
+          "runId": "demo-run-guarded",
+          "traceId": "48f4838cf60c41c5a2d3f1e35a030c4b"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.amount-minor-units",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.full-retry-no-duplicate",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.page-size-max-100",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payment.refunds-lists-issued-refund",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.headcount-total-integer",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.amount-integer",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payments.page-size-max-100",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p004",
+          "runId": "demo-notarize-dodo",
+          "traceId": "3eefd94d45514e5181a4ff93ac8a6f10"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p005",
+          "runId": "demo-notarize-dodo",
+          "traceId": "8d64972d2a1146f5b6bc3d78538b96e3"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p006",
+          "runId": "demo-notarize-dodo",
+          "traceId": "baf3adeadbe84ba8a8c5030e4bba93d5"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p032",
+          "runId": "demo-notarize-dodo",
+          "traceId": "2d8bf8a8f9714c2f8432c24570dfe2c7"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p033",
+          "runId": "demo-notarize-dodo",
+          "traceId": "08c8dd9b89bd42d09d3f649a4ba837a9"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p034",
+          "runId": "demo-notarize-dodo",
+          "traceId": "3a0dcea0bc3044ffa6977740d4919a44"
+        }
+      ],
+      "runIds": [
+        "demo-notarize-dodo",
+        "demo-run-guarded"
+      ],
+      "sample": true
+    },
+    {
+      "id": "why_held:demo-run-guarded:demo-run-guarded:q08",
+      "kind": "why_held",
+      "question": "Why was q08 held in run demo-run-guarded?",
+      "answer": "FIXTURE scenario default (simulated APIs and models, not a live run): In run demo-run-guarded, queue item q08 (credit, customer cus_fx_ent-shopify, tier enterprise) had policy outcome approve; its action dodo.createWalletLedgerEntry was held, not executed. The certificate gate requires 2 notarized beliefs for this action; none was recorded as missing. Not missing: dodo.wallet.credit-amount-minor-units (at the start of the run: notarized, the docs are contradicted) and dodo.wallet.idempotency-key-no-duplicate (at the start of the run: notarized, the docs are contradicted). It was held because the recorded reason names guard grd-001913575809 (block on dodo.createWalletLedgerEntry, compiled from belief-dodo.wallet.credit-amount-minor-units, class unit_mismatch; still active at the end of the run), which this decision applied. The guard's compiled reason: \"dodo.wallet.credit-amount-minor-units violated (unit_mismatch) but the cited probes disagree: demo-notarize-dodo-p008 echoed the amount unchanged, demo-notarize-dodo-p007, demo-notarize-dodo-p009, demo-notarize-dodo-p010, demo-notarize-dodo-p011, demo-notarize-dodo-p012 echoed 100x: no safe transform\". Recorded reason: \"guard grd-001913575809 refused dodo.createWalletLedgerEntry: dodo.wallet.credit-amount-minor-units violated (unit_mismatch) but the cited probes disagree: demo-notarize-dodo-p008 echoed the amount unchanged, demo-notarize-dodo-p007, demo-notarize-dodo-p009, demo-notarize-dodo-p010, demo-notarize-dodo-p011, demo-notarize-dodo-p012 echoed 100x: no safe transform\". Its evidence pack cites no probes. Graded against the hand-written expected outcome (approve): not correct, no unsafe action.",
+      "citations": [
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q08",
+          "runId": "demo-run-guarded",
+          "traceId": "6d48ee8e21f7477bbf3ae55fdb35742d"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.credit-amount-minor-units",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.idempotency-key-no-duplicate",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-001913575809",
+          "runId": "demo-run-guarded"
+        }
+      ],
+      "runIds": [
+        "demo-run-guarded"
+      ],
+      "sample": true
+    },
+    {
+      "id": "why_held:demo-run-guarded:demo-run-guarded:q09",
+      "kind": "why_held",
+      "question": "Why was q09 held in run demo-run-guarded?",
+      "answer": "FIXTURE scenario default (simulated APIs and models, not a live run): In run demo-run-guarded, queue item q09 (partial_refund, customer cus_fx_mid-sentry, tier mid_market) had policy outcome approve; its action dodo.createRefund was held, not executed. The certificate gate requires 7 notarized beliefs for this action; 1 was missing. Not missing: dodo.refund.amount-minor-units (at the start of the run: notarized, the docs are contradicted), dodo.refund.full-retry-no-duplicate (at the start of the run: notarized, the docs are contradicted), dodo.refunds.page-size-max-100 (at the start of the run: notarized, the docs hold), dodo.payment.refunds-lists-issued-refund (at the start of the run: notarized, the docs hold), crustdata.enrich.headcount-total-integer (at the start of the run: notarized, the docs hold) and dodo.refunds.amount-integer (at the start of the run: notarized, the docs hold). It was held because required belief dodo.payments.page-size-max-100 was not notarized: at the end of the run it was abstained, P(doc claim holds) = 0.5000, Beta(4, 4). That belief states: \"Doc claim holds: dodo.listPayments [page_size] — Page size default is 10 max is 100\". Adversary review: downgrade (bedrock, fixture.adversary-double): \"Every cited probe (demo-notarize-dodo-p004, demo-notarize-dodo-p005, demo-notarize-dodo-p006) is a boundary_sweep that saw the over-limit request clamped to exactly 100 items. Clamping enforces \"max is 100\"; no cited probe checked whether any items were lost. Untested alternative: The limit is enforced by clamping rather than rejecting, and listings stay complete (the documented max holds); a pagination_completeness probe would tell them apart\". The belief cites 6 probes: boundary_sweep confirmed silent_truncation ×3, pagination_completeness confirmed honored ×3. No certificate was issued for dodo.payments.page-size-max-100: \"adversary downgraded (bedrock, fixture.adversary-double): Every cited probe (demo-notarize-dodo-p004, demo-notarize-dodo-p005, demo-notarize-dodo-p006) is a boundary_sweep that saw the over-limit request clamped to exactly 100 items. Clamping enforces \"max is 100\"; no cited probe checked whether any items were lost. Untested alternative: The limit is enforced by clamping rather than rejecting, and listings stay complete (the documented max holds); a pagination_completeness probe would tell them apart.; then abstained: re-examined after downgrade: no further independent probe design between thresholds; P(holds)=0.5000\". Recorded reason: \"partial refund needs 7 notarized belief(s); 1 missing: dodo.payments.page-size-max-100 (abstained); 6 related probe(s). Gap: No doc claim on rounding (DECISIONS #22); covered by exact-echo unit probes on partial refunds plus integer-typed refund amounts, and amounts are floored client-side\". Its evidence pack cites 6 probes (from demo-notarize-dodo): dodo.payments.page-size-max-100: boundary_sweep confirmed silent_truncation ×3, pagination_completeness confirmed honored ×3. Graded against the hand-written expected outcome (approve): not correct, no unsafe action.",
+      "citations": [
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q09",
+          "runId": "demo-run-guarded",
+          "traceId": "f373c8d228144edabd4f949a125f44eb"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.amount-minor-units",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.full-retry-no-duplicate",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.page-size-max-100",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payment.refunds-lists-issued-refund",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.headcount-total-integer",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.amount-integer",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payments.page-size-max-100",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p004",
+          "runId": "demo-notarize-dodo",
+          "traceId": "3eefd94d45514e5181a4ff93ac8a6f10"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p005",
+          "runId": "demo-notarize-dodo",
+          "traceId": "8d64972d2a1146f5b6bc3d78538b96e3"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p006",
+          "runId": "demo-notarize-dodo",
+          "traceId": "baf3adeadbe84ba8a8c5030e4bba93d5"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p032",
+          "runId": "demo-notarize-dodo",
+          "traceId": "2d8bf8a8f9714c2f8432c24570dfe2c7"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p033",
+          "runId": "demo-notarize-dodo",
+          "traceId": "08c8dd9b89bd42d09d3f649a4ba837a9"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p034",
+          "runId": "demo-notarize-dodo",
+          "traceId": "3a0dcea0bc3044ffa6977740d4919a44"
+        }
+      ],
+      "runIds": [
+        "demo-notarize-dodo",
+        "demo-run-guarded"
+      ],
+      "sample": true
+    },
+    {
+      "id": "why_held:demo-run-guarded:demo-run-guarded:q10",
+      "kind": "why_held",
+      "question": "Why was q10 held in run demo-run-guarded?",
+      "answer": "FIXTURE scenario default (simulated APIs and models, not a live run): In run demo-run-guarded, queue item q10 (partial_refund, customer cus_fx_ent-shopify, tier enterprise) had policy outcome approve; its action dodo.createRefund was held, not executed. The certificate gate requires 7 notarized beliefs for this action; 1 was missing. Not missing: dodo.refund.amount-minor-units (at the start of the run: notarized, the docs are contradicted), dodo.refund.full-retry-no-duplicate (at the start of the run: notarized, the docs are contradicted), dodo.refunds.page-size-max-100 (at the start of the run: notarized, the docs hold), dodo.payment.refunds-lists-issued-refund (at the start of the run: notarized, the docs hold), crustdata.enrich.headcount-total-integer (at the start of the run: notarized, the docs hold) and dodo.refunds.amount-integer (at the start of the run: notarized, the docs hold). It was held because required belief dodo.payments.page-size-max-100 was not notarized: at the end of the run it was abstained, P(doc claim holds) = 0.5000, Beta(4, 4). That belief states: \"Doc claim holds: dodo.listPayments [page_size] — Page size default is 10 max is 100\". Adversary review: downgrade (bedrock, fixture.adversary-double): \"Every cited probe (demo-notarize-dodo-p004, demo-notarize-dodo-p005, demo-notarize-dodo-p006) is a boundary_sweep that saw the over-limit request clamped to exactly 100 items. Clamping enforces \"max is 100\"; no cited probe checked whether any items were lost. Untested alternative: The limit is enforced by clamping rather than rejecting, and listings stay complete (the documented max holds); a pagination_completeness probe would tell them apart\". The belief cites 6 probes: boundary_sweep confirmed silent_truncation ×3, pagination_completeness confirmed honored ×3. No certificate was issued for dodo.payments.page-size-max-100: \"adversary downgraded (bedrock, fixture.adversary-double): Every cited probe (demo-notarize-dodo-p004, demo-notarize-dodo-p005, demo-notarize-dodo-p006) is a boundary_sweep that saw the over-limit request clamped to exactly 100 items. Clamping enforces \"max is 100\"; no cited probe checked whether any items were lost. Untested alternative: The limit is enforced by clamping rather than rejecting, and listings stay complete (the documented max holds); a pagination_completeness probe would tell them apart.; then abstained: re-examined after downgrade: no further independent probe design between thresholds; P(holds)=0.5000\". Recorded reason: \"partial refund needs 7 notarized belief(s); 1 missing: dodo.payments.page-size-max-100 (abstained); 6 related probe(s). Gap: No doc claim on rounding (DECISIONS #22); covered by exact-echo unit probes on partial refunds plus integer-typed refund amounts, and amounts are floored client-side\". Its evidence pack cites 6 probes (from demo-notarize-dodo): dodo.payments.page-size-max-100: boundary_sweep confirmed silent_truncation ×3, pagination_completeness confirmed honored ×3. Graded against the hand-written expected outcome (approve): not correct, no unsafe action.",
+      "citations": [
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q10",
+          "runId": "demo-run-guarded",
+          "traceId": "a61b466a74f143d9a2d123995bcdc96e"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.amount-minor-units",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.full-retry-no-duplicate",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.page-size-max-100",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payment.refunds-lists-issued-refund",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.headcount-total-integer",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.amount-integer",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payments.page-size-max-100",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p004",
+          "runId": "demo-notarize-dodo",
+          "traceId": "3eefd94d45514e5181a4ff93ac8a6f10"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p005",
+          "runId": "demo-notarize-dodo",
+          "traceId": "8d64972d2a1146f5b6bc3d78538b96e3"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p006",
+          "runId": "demo-notarize-dodo",
+          "traceId": "baf3adeadbe84ba8a8c5030e4bba93d5"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p032",
+          "runId": "demo-notarize-dodo",
+          "traceId": "2d8bf8a8f9714c2f8432c24570dfe2c7"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p033",
+          "runId": "demo-notarize-dodo",
+          "traceId": "08c8dd9b89bd42d09d3f649a4ba837a9"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p034",
+          "runId": "demo-notarize-dodo",
+          "traceId": "3a0dcea0bc3044ffa6977740d4919a44"
+        }
+      ],
+      "runIds": [
+        "demo-notarize-dodo",
+        "demo-run-guarded"
+      ],
+      "sample": true
+    },
+    {
+      "id": "why_held:demo-run-guarded:demo-run-guarded:q15",
+      "kind": "why_held",
+      "question": "Why was q15 held in run demo-run-guarded?",
+      "answer": "FIXTURE scenario default (simulated APIs and models, not a live run): In run demo-run-guarded, queue item q15 (credit, customer cus_fx_ent-microsoft, tier enterprise) had policy outcome approve; its action dodo.createWalletLedgerEntry was held, not executed. The certificate gate requires 2 notarized beliefs for this action; none was recorded as missing. Not missing: dodo.wallet.credit-amount-minor-units (at the start of the run: notarized, the docs are contradicted) and dodo.wallet.idempotency-key-no-duplicate (at the start of the run: notarized, the docs are contradicted). It was held because the recorded reason names guard grd-001913575809 (block on dodo.createWalletLedgerEntry, compiled from belief-dodo.wallet.credit-amount-minor-units, class unit_mismatch; still active at the end of the run), which this decision applied. The guard's compiled reason: \"dodo.wallet.credit-amount-minor-units violated (unit_mismatch) but the cited probes disagree: demo-notarize-dodo-p008 echoed the amount unchanged, demo-notarize-dodo-p007, demo-notarize-dodo-p009, demo-notarize-dodo-p010, demo-notarize-dodo-p011, demo-notarize-dodo-p012 echoed 100x: no safe transform\". Recorded reason: \"guard grd-001913575809 refused dodo.createWalletLedgerEntry: dodo.wallet.credit-amount-minor-units violated (unit_mismatch) but the cited probes disagree: demo-notarize-dodo-p008 echoed the amount unchanged, demo-notarize-dodo-p007, demo-notarize-dodo-p009, demo-notarize-dodo-p010, demo-notarize-dodo-p011, demo-notarize-dodo-p012 echoed 100x: no safe transform\". Its evidence pack cites no probes. Graded against the hand-written expected outcome (approve): not correct, no unsafe action.",
+      "citations": [
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q15",
+          "runId": "demo-run-guarded",
+          "traceId": "6196119677ec4fee91f41f14be7bb1c0"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.credit-amount-minor-units",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.idempotency-key-no-duplicate",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-001913575809",
+          "runId": "demo-run-guarded"
+        }
+      ],
+      "runIds": [
+        "demo-run-guarded"
+      ],
+      "sample": true
+    },
+    {
+      "id": "why_held:demo-run-guarded:demo-run-guarded:q18",
+      "kind": "why_held",
+      "question": "Why was q18 held in run demo-run-guarded?",
+      "answer": "FIXTURE scenario default (simulated APIs and models, not a live run): In run demo-run-guarded, queue item q18 (credit, customer cus_fx_smb-fathom, tier smb) had policy outcome approve; its action dodo.createWalletLedgerEntry was held, not executed. The certificate gate requires 2 notarized beliefs for this action; none was recorded as missing. Not missing: dodo.wallet.credit-amount-minor-units (at the start of the run: notarized, the docs are contradicted) and dodo.wallet.idempotency-key-no-duplicate (at the start of the run: notarized, the docs are contradicted). It was held because the recorded reason names guard grd-001913575809 (block on dodo.createWalletLedgerEntry, compiled from belief-dodo.wallet.credit-amount-minor-units, class unit_mismatch; still active at the end of the run), which this decision applied. The guard's compiled reason: \"dodo.wallet.credit-amount-minor-units violated (unit_mismatch) but the cited probes disagree: demo-notarize-dodo-p008 echoed the amount unchanged, demo-notarize-dodo-p007, demo-notarize-dodo-p009, demo-notarize-dodo-p010, demo-notarize-dodo-p011, demo-notarize-dodo-p012 echoed 100x: no safe transform\". Recorded reason: \"guard grd-001913575809 refused dodo.createWalletLedgerEntry: dodo.wallet.credit-amount-minor-units violated (unit_mismatch) but the cited probes disagree: demo-notarize-dodo-p008 echoed the amount unchanged, demo-notarize-dodo-p007, demo-notarize-dodo-p009, demo-notarize-dodo-p010, demo-notarize-dodo-p011, demo-notarize-dodo-p012 echoed 100x: no safe transform\". Its evidence pack cites no probes. Graded against the hand-written expected outcome (approve): not correct, no unsafe action.",
+      "citations": [
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q18",
+          "runId": "demo-run-guarded",
+          "traceId": "23254704503348c786707ae2cb102881"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.credit-amount-minor-units",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.idempotency-key-no-duplicate",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-001913575809",
+          "runId": "demo-run-guarded"
+        }
+      ],
+      "runIds": [
+        "demo-run-guarded"
+      ],
+      "sample": true
+    },
+    {
+      "id": "why_held:demo-run-guarded:demo-run-guarded:q20",
+      "kind": "why_held",
+      "question": "Why was q20 held in run demo-run-guarded?",
+      "answer": "FIXTURE scenario default (simulated APIs and models, not a live run): In run demo-run-guarded, queue item q20 (refund, customer cus_fx_mid-zapier, tier mid_market) had policy outcome approve; its action dodo.createRefund was held, not executed. The certificate gate requires 6 notarized beliefs for this action; 1 was missing. Not missing: dodo.refund.amount-minor-units (at the start of the run: notarized, the docs are contradicted), dodo.refund.full-retry-no-duplicate (at the start of the run: notarized, the docs are contradicted), dodo.refunds.page-size-max-100 (at the start of the run: notarized, the docs hold), dodo.payment.refunds-lists-issued-refund (at the start of the run: notarized, the docs hold) and crustdata.enrich.headcount-total-integer (at the start of the run: notarized, the docs hold). It was held because required belief dodo.payments.page-size-max-100 was not notarized: at the end of the run it was abstained, P(doc claim holds) = 0.5000, Beta(4, 4). That belief states: \"Doc claim holds: dodo.listPayments [page_size] — Page size default is 10 max is 100\". Adversary review: downgrade (bedrock, fixture.adversary-double): \"Every cited probe (demo-notarize-dodo-p004, demo-notarize-dodo-p005, demo-notarize-dodo-p006) is a boundary_sweep that saw the over-limit request clamped to exactly 100 items. Clamping enforces \"max is 100\"; no cited probe checked whether any items were lost. Untested alternative: The limit is enforced by clamping rather than rejecting, and listings stay complete (the documented max holds); a pagination_completeness probe would tell them apart\". The belief cites 6 probes: boundary_sweep confirmed silent_truncation ×3, pagination_completeness confirmed honored ×3. No certificate was issued for dodo.payments.page-size-max-100: \"adversary downgraded (bedrock, fixture.adversary-double): Every cited probe (demo-notarize-dodo-p004, demo-notarize-dodo-p005, demo-notarize-dodo-p006) is a boundary_sweep that saw the over-limit request clamped to exactly 100 items. Clamping enforces \"max is 100\"; no cited probe checked whether any items were lost. Untested alternative: The limit is enforced by clamping rather than rejecting, and listings stay complete (the documented max holds); a pagination_completeness probe would tell them apart.; then abstained: re-examined after downgrade: no further independent probe design between thresholds; P(holds)=0.5000\". Recorded reason: \"full refund needs 6 notarized belief(s); 1 missing: dodo.payments.page-size-max-100 (abstained); 6 related probe(s)\". Its evidence pack cites 6 probes (from demo-notarize-dodo): dodo.payments.page-size-max-100: boundary_sweep confirmed silent_truncation ×3, pagination_completeness confirmed honored ×3. Graded against the hand-written expected outcome (approve): not correct, no unsafe action.",
+      "citations": [
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q20",
+          "runId": "demo-run-guarded",
+          "traceId": "40556882b6324130a74244f0f0fb1479"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.amount-minor-units",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.full-retry-no-duplicate",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.page-size-max-100",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payment.refunds-lists-issued-refund",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.headcount-total-integer",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payments.page-size-max-100",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p004",
+          "runId": "demo-notarize-dodo",
+          "traceId": "3eefd94d45514e5181a4ff93ac8a6f10"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p005",
+          "runId": "demo-notarize-dodo",
+          "traceId": "8d64972d2a1146f5b6bc3d78538b96e3"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p006",
+          "runId": "demo-notarize-dodo",
+          "traceId": "baf3adeadbe84ba8a8c5030e4bba93d5"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p032",
+          "runId": "demo-notarize-dodo",
+          "traceId": "2d8bf8a8f9714c2f8432c24570dfe2c7"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p033",
+          "runId": "demo-notarize-dodo",
+          "traceId": "08c8dd9b89bd42d09d3f649a4ba837a9"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p034",
+          "runId": "demo-notarize-dodo",
+          "traceId": "3a0dcea0bc3044ffa6977740d4919a44"
+        }
+      ],
+      "runIds": [
+        "demo-notarize-dodo",
+        "demo-run-guarded"
+      ],
+      "sample": true
+    },
+    {
+      "id": "tool_knowledge:fixture:default:crustdata",
+      "kind": "tool_knowledge",
+      "question": "What does Notary know about crustdata (fixture scenario default)?",
+      "answer": "FIXTURE scenario default (simulated APIs and models, not a live run): 11 documented crustdata claims appear in this world's runs. Certified: 1 crustdata claim (1 matches the docs, 0 contradict them). crustdata.enrich.headcount-total-integer: matches the docs (certificate cert-5b3a99c450b4234f, P(doc claim holds) = 0.9375, Beta(4, 1)). Unproven: 10 crustdata claims without an active certificate (abstained ×1, never_probed ×9). crustdata.enrich.headcount-total-integer is notarized (latest snapshot in demo-run-guarded): P(doc claim holds) = 0.9375, Beta(4, 1), so the docs hold; 3 cited probes (type_edge confirmed honored ×3); adversary uphold. Other crustdata beliefs (latest snapshots): hypothesis ×9, abstained ×1. 8 probes ran on crustdata claims in this world; verdicts: confirmed ×8; templates: type_edge ×8. No guard was compiled from crustdata beliefs in this world.",
+      "citations": [
+        {
+          "kind": "claim",
+          "id": "crustdata.enrich.headcount-total-integer",
+          "runId": "demo-notarize-crustdata"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.enrich.funding-total-investment-number",
+          "runId": "demo-notarize-crustdata"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.enrich.employee-count-range-string",
+          "runId": "demo-notarize-crustdata"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.enrich.last-fundraise-date-string",
+          "runId": "demo-notarize-crustdata"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.enrich.default-fields-basic-info",
+          "runId": "demo-notarize-crustdata"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.enrich.no-match-200-empty",
+          "runId": "demo-notarize-crustdata"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.identify.no-match-200-empty",
+          "runId": "demo-notarize-crustdata"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.identify.invalid-fields-400",
+          "runId": "demo-notarize-crustdata"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.enrich.confidence-score-number",
+          "runId": "demo-notarize-crustdata"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.identify.max-25-identifiers",
+          "runId": "demo-notarize-crustdata"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.credits.balance-number",
+          "runId": "demo-notarize-crustdata"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-5b3a99c450b4234f",
+          "runId": "demo-notarize-crustdata"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.funding-total-investment-number",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.employee-count-range-string",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.last-fundraise-date-string",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.default-fields-basic-info",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.no-match-200-empty",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.identify.no-match-200-empty",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.identify.invalid-fields-400",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.confidence-score-number",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.identify.max-25-identifiers",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.credits.balance-number",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.headcount-total-integer",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-crustdata-p006",
+          "runId": "demo-notarize-crustdata",
+          "traceId": "d1938250b5d141179eb38c9a5523e2eb"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-crustdata-p007",
+          "runId": "demo-notarize-crustdata",
+          "traceId": "d572aa7e976149cfbd64da435db2d73f"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-crustdata-p008",
+          "runId": "demo-notarize-crustdata",
+          "traceId": "56a947c1064a4637be940bace3e11ef3"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-crustdata-p001",
+          "runId": "demo-notarize-crustdata",
+          "traceId": "4c6cc52bcdb84bd9adfc29bc14b1906f"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-crustdata-p002",
+          "runId": "demo-notarize-crustdata",
+          "traceId": "c04f9412fa6e4582a5f4e524a2f4fc70"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-crustdata-p003",
+          "runId": "demo-notarize-crustdata",
+          "traceId": "c075f8c09560478fb2ad42ed792ca154"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-crustdata-p004",
+          "runId": "demo-notarize-crustdata",
+          "traceId": "18696a25a4e84de0867df9402e669c78"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-crustdata-p005",
+          "runId": "demo-notarize-crustdata",
+          "traceId": "cd7bcfa4320c4593ba197fc989a8dab9"
+        }
+      ],
+      "runIds": [
+        "demo-notarize-crustdata",
+        "demo-run-guarded"
+      ],
+      "sample": true
+    },
+    {
+      "id": "tool_knowledge:fixture:default:dodo",
+      "kind": "tool_knowledge",
+      "question": "What does Notary know about dodo (fixture scenario default)?",
+      "answer": "FIXTURE scenario default (simulated APIs and models, not a live run): 15 documented dodo claims appear in this world's runs. Certified: 8 dodo claims (4 match the docs, 4 contradict them). dodo.payment.refunds-lists-issued-refund: matches the docs (certificate cert-406d91b7a0b5baa8, P(doc claim holds) = 0.9375, Beta(4, 1)). dodo.refunds.amount-integer: matches the docs (certificate cert-a6a51bcd56691de6, P(doc claim holds) = 0.9375, Beta(4, 1)). dodo.refunds.page-size-max-100: matches the docs (certificate cert-0e4cc67f669fb4a8, P(doc claim holds) = 0.9375, Beta(4, 1)). dodo.subscription.change-plan-pending-409: matches the docs (certificate cert-4b40aa13795e3daf, P(doc claim holds) = 0.9375, Beta(4, 1)). dodo.refund.amount-minor-units: contradicts docs: docs say `amount` is in the smallest currency unit (minor units), observed amount echoed ×100 in all 3 cited probes (sent 100 → amount 10000; sent 120 → amount 12000; sent 130 → amount 13000) (certificate cert-93e8d5ff6c3c99a5, P(doc claim holds) = 0.0625, Beta(1, 4)). dodo.refund.full-retry-no-duplicate: contradicts docs: docs say retrying an identical request does not create a duplicate, observed identical retries all succeeded and created duplicates in all 3 cited probes (2 identical sends → HTTP 200,200, 2 records after; 3 identical sends → HTTP 200,200,200, 3 records after) (certificate cert-eac1684684999d11, P(doc claim holds) = 0.0625, Beta(1, 4)). dodo.wallet.credit-amount-minor-units: contradicts docs: docs say `amount` is in the smallest currency unit (minor units), observed amount echoed ×100 in 5 of 6 cited probes (sent 1234 → balance 123400; sent 4321 → balance 432100; sent 5678 → balance 567800; …); other cited probes: amount echoed unchanged in 1 of 6 cited probes (sent 3517 → balance 3517) (certificate cert-9813c29f1f678661, P(doc claim holds) = 0.0625, Beta(2, 6)). dodo.wallet.idempotency-key-no-duplicate: contradicts docs: docs say the result lists at most 1 item, observed identical retries all succeeded and created duplicates in all 3 cited probes (3 identical sends → HTTP 200,200,200, 3 records after; 2 identical sends → HTTP 200,200, 2 records after) (certificate cert-cfea7c308f553679, P(doc claim holds) = 0.0625, Beta(1, 4)). Unproven: 7 dodo claims without an active certificate (downgraded ×1, never_probed ×6). dodo.payment.refunds-lists-issued-refund is notarized (latest snapshot in demo-run-guarded): P(doc claim holds) = 0.9375, Beta(4, 1), so the docs hold; 3 cited probes (write_then_read confirmed honored ×3); adversary uphold. dodo.refund.amount-minor-units is notarized (latest snapshot in demo-run-guarded): P(doc claim holds) = 0.0625, Beta(1, 4), so the docs are contradicted (unit_mismatch); 3 cited probes (unit_roundtrip confirmed unit_mismatch ×3); adversary uphold. dodo.refund.full-retry-no-duplicate is notarized (latest snapshot in demo-run-guarded): P(doc claim holds) = 0.0625, Beta(1, 4), so the docs are contradicted (idempotency_hazard); 3 cited probes (retry_after_timeout confirmed idempotency_hazard ×3); adversary uphold. dodo.refunds.amount-integer is notarized (latest snapshot in demo-run-guarded): P(doc claim holds) = 0.9375, Beta(4, 1), so the docs hold; 3 cited probes (type_edge confirmed honored ×3); adversary uphold. dodo.refunds.page-size-max-100 is notarized (latest snapshot in demo-run-guarded): P(doc claim holds) = 0.9375, Beta(4, 1), so the docs hold; 3 cited probes (pagination_completeness confirmed honored ×3); adversary uphold. dodo.subscription.change-plan-pending-409 is notarized (latest snapshot in demo-run-guarded): P(doc claim holds) = 0.9375, Beta(4, 1), so the docs hold; 3 cited probes (retry_after_timeout confirmed honored ×3); adversary uphold. dodo.wallet.credit-amount-minor-units is notarized (latest snapshot in demo-run-guarded): P(doc claim holds) = 0.0625, Beta(2, 6), so the docs are contradicted (unit_mismatch); 6 cited probes (unit_roundtrip confirmed unit_mismatch ×5, unit_roundtrip confirmed honored ×1); adversary narrow. dodo.wallet.idempotency-key-no-duplicate is notarized (latest snapshot in demo-run-guarded): P(doc claim holds) = 0.0625, Beta(1, 4), so the docs are contradicted (idempotency_hazard); 3 cited probes (retry_after_timeout confirmed idempotency_hazard ×3); adversary narrow. Other dodo beliefs (latest snapshots): hypothesis ×6, abstained ×1. 34 probes ran on dodo claims in this world; verdicts: confirmed ×33, uninformative ×1; templates: retry_after_timeout ×9, boundary_sweep ×4, unit_roundtrip ×9, pagination_completeness ×6, write_then_read ×3, type_edge ×3. Guards compiled from dodo beliefs: 5 active (block ×1, transform ×1, retry_policy ×2, precheck ×1), 0 retired.",
+      "citations": [
+        {
+          "kind": "claim",
+          "id": "dodo.refund.amount-minor-units",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.refund.full-retry-no-duplicate",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.refunds.amount-integer",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.refunds.page-size-max-100",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.payments.page-size-max-100",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.payment.refunds-array-present",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.payment.refunds-lists-issued-refund",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.product.price-minor-units",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.customer.missing-email-422",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.subscription.change-plan-pending-409",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.wallet.credit-amount-minor-units",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.wallet.idempotency-key-no-duplicate",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.wallet.debit-insufficient-400",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.wallets.total-balance-usd-integer",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.wallet.ledger-response-balance-integer",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-406d91b7a0b5baa8",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-93e8d5ff6c3c99a5",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-eac1684684999d11",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-a6a51bcd56691de6",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-0e4cc67f669fb4a8",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-4b40aa13795e3daf",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-9813c29f1f678661",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-cfea7c308f553679",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payments.page-size-max-100",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payment.refunds-array-present",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.product.price-minor-units",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.customer.missing-email-422",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.debit-insufficient-400",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallets.total-balance-usd-integer",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.ledger-response-balance-integer",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payment.refunds-lists-issued-refund",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p017",
+          "runId": "demo-notarize-dodo",
+          "traceId": "83c9b9b8fd4e4869b2fc4fb4f3f3ed4c"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p018",
+          "runId": "demo-notarize-dodo",
+          "traceId": "91819bf9ae5743148a44a4350e5b233a"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p019",
+          "runId": "demo-notarize-dodo",
+          "traceId": "b675d96221fc4da49a7f39279a4feac4"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.amount-minor-units",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p020",
+          "runId": "demo-notarize-dodo",
+          "traceId": "012977a7096e443a8c7aed7cb431f34b"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p021",
+          "runId": "demo-notarize-dodo",
+          "traceId": "832086d09f1b4a7b9e45f3ac626bfe08"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p022",
+          "runId": "demo-notarize-dodo",
+          "traceId": "c93b4a6b7ed24f23934f4d0b14f66468"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.full-retry-no-duplicate",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p023",
+          "runId": "demo-notarize-dodo",
+          "traceId": "65279468ff014e45931df39ff5e4d478"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p024",
+          "runId": "demo-notarize-dodo",
+          "traceId": "7a1eb980759746e98a6728ec1000c264"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p025",
+          "runId": "demo-notarize-dodo",
+          "traceId": "a8969725141d4d29888280e75c7f25e3"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.amount-integer",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p026",
+          "runId": "demo-notarize-dodo",
+          "traceId": "b69d9f6ee3e248b9967724b87c89e303"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p027",
+          "runId": "demo-notarize-dodo",
+          "traceId": "2f27b14399c8461888f708233f2af9c5"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p028",
+          "runId": "demo-notarize-dodo",
+          "traceId": "969a34b1acbe48a1af4b8bfeb2b85a1f"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.page-size-max-100",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p014",
+          "runId": "demo-notarize-dodo",
+          "traceId": "5f624c87302647e4acdbbbafe77563ec"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p015",
+          "runId": "demo-notarize-dodo",
+          "traceId": "b705d1b99ef644468f25f79e17cdf71c"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p016",
+          "runId": "demo-notarize-dodo",
+          "traceId": "1fcb619f95ef46d8be68cc96f9009abc"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.subscription.change-plan-pending-409",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p029",
+          "runId": "demo-notarize-dodo",
+          "traceId": "d5dff4db3e4a4d61868e2d0565a2cb7f"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p030",
+          "runId": "demo-notarize-dodo",
+          "traceId": "8693acde53d643c89e3b0b37f987e40e"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p031",
+          "runId": "demo-notarize-dodo",
+          "traceId": "92dc4a2b284a4b87a150eb7f597f9ce5"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.credit-amount-minor-units",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p007",
+          "runId": "demo-notarize-dodo",
+          "traceId": "ecc2f18e4a984650a963988c504fa980"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p008",
+          "runId": "demo-notarize-dodo",
+          "traceId": "fb8f7cad486d493da9230d6be422829f"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p009",
+          "runId": "demo-notarize-dodo",
+          "traceId": "4e37bb490f9f41ff96d2c878afa2e663"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p010",
+          "runId": "demo-notarize-dodo",
+          "traceId": "113199d6c87243a1899693d90718cd95"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p011",
+          "runId": "demo-notarize-dodo",
+          "traceId": "313fc5b437024f57b3bd3d5b67530d3c"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p012",
+          "runId": "demo-notarize-dodo",
+          "traceId": "c6fa207ae95b4742a0a897bd03b13705"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.idempotency-key-no-duplicate",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p001",
+          "runId": "demo-notarize-dodo",
+          "traceId": "fbed0816119a4d4db32de527db4e398a"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p002",
+          "runId": "demo-notarize-dodo",
+          "traceId": "91acf18d7b534e8f91a5edd895c34ef1"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p003",
+          "runId": "demo-notarize-dodo",
+          "traceId": "943896e6829847feafc50e606099e41a"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p004",
+          "runId": "demo-notarize-dodo",
+          "traceId": "3eefd94d45514e5181a4ff93ac8a6f10"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p005",
+          "runId": "demo-notarize-dodo",
+          "traceId": "8d64972d2a1146f5b6bc3d78538b96e3"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p006",
+          "runId": "demo-notarize-dodo",
+          "traceId": "baf3adeadbe84ba8a8c5030e4bba93d5"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p013",
+          "runId": "demo-notarize-dodo",
+          "traceId": "38044be2bff7484c9aff582b13175c05"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p032",
+          "runId": "demo-notarize-dodo",
+          "traceId": "2d8bf8a8f9714c2f8432c24570dfe2c7"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p033",
+          "runId": "demo-notarize-dodo",
+          "traceId": "08c8dd9b89bd42d09d3f649a4ba837a9"
+        },
+        {
+          "kind": "probe",
+          "id": "demo-notarize-dodo-p034",
+          "runId": "demo-notarize-dodo",
+          "traceId": "3a0dcea0bc3044ffa6977740d4919a44"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-001913575809",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-0a7a2cbf59f3",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-20de13827cc6",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-3b37d65e6dca",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-6b98c720d1cb",
+          "runId": "demo-run-guarded"
+        }
+      ],
+      "runIds": [
+        "demo-notarize-dodo",
+        "demo-run-guarded"
+      ],
+      "sample": true
+    },
+    {
+      "id": "run_diff:demo-run-naive:demo-run-guarded",
+      "kind": "run_diff",
+      "question": "What changed between demo-run-naive and demo-run-guarded?",
+      "answer": "FIXTURE scenario default (simulated APIs and models, not a live run): From demo-run-naive (run, naive) to demo-run-guarded (run, guarded), 12 of 20 queue items changed status: q01 executed → held, q02 executed → held, q03 executed → held, q04 executed → held, q05 executed → held, q06 executed → held, q08 executed → held, q09 executed → held, q10 executed → held, q15 executed → held, q18 executed → held, q20 executed → held. By transition: executed → held ×12. 8 items kept their status: q07 denied, q11 denied, q12 executed, q13 escalated, q14 executed, q16 denied, q17 escalated, q19 escalated. Unsafe actions in the decisions' grades: demo-run-naive 9 (wrong_unit ×8, duplicate ×1), demo-run-guarded 0. demo-run-naive records no belief snapshot, so belief statuses cannot be compared. demo-run-guarded ends with 26 beliefs: hypothesis ×15, abstained ×2, notarized ×9. Metrics that changed: automation_rate 0.25 → 0.1 (-0.15), decision_accuracy 0.75 → 0.4 (-0.35), executed 14 → 2 (-12), holds 0 → 12 (+12), unsafe_actions_total 9 → 0 (-9), unsafe_duplicates 1 → 0 (-1), unsafe_wrong_unit 8 → 0 (-8); 16 metrics computed in both runs did not change; not comparable (computed in only one run): beliefs_abstained, beliefs_candidate, beliefs_hypothesis, beliefs_notarized, beliefs_refuted, beliefs_unlearned. Guards in demo-run-guarded and not in demo-run-naive: grd-001913575809 (block on dodo.createWalletLedgerEntry), grd-0a7a2cbf59f3 (transform on dodo.createRefund), grd-20de13827cc6 (retry_policy on dodo.createRefund), grd-3b37d65e6dca (precheck on dodo.createRefund), grd-6b98c720d1cb (retry_policy on dodo.createWalletLedgerEntry).",
+      "citations": [
+        {
+          "kind": "decision",
+          "id": "demo-run-naive:q01",
+          "runId": "demo-run-naive",
+          "traceId": "cf04ba80f8c34ed5a359b6dc80ed7b5a"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q01",
+          "runId": "demo-run-guarded",
+          "traceId": "8f675a10c9124bbabce7dacd5f05e513"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-naive:q02",
+          "runId": "demo-run-naive",
+          "traceId": "208f331199364d259dbfccf3ac557c81"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q02",
+          "runId": "demo-run-guarded",
+          "traceId": "3418ffd7d0634f34a2f4738ab37f6ad8"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-naive:q03",
+          "runId": "demo-run-naive",
+          "traceId": "805aef35357f48dc8fc656e8166a0c09"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q03",
+          "runId": "demo-run-guarded",
+          "traceId": "fe097f56cda145d1b1095764f6fdf45f"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-naive:q04",
+          "runId": "demo-run-naive",
+          "traceId": "eac8bc231ce342929b1e24f98960c385"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q04",
+          "runId": "demo-run-guarded",
+          "traceId": "a058763cd2a84178a50c04384faa63c2"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-naive:q05",
+          "runId": "demo-run-naive",
+          "traceId": "6ea0e35c5d934e73a0b328e82c9b0ea1"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q05",
+          "runId": "demo-run-guarded",
+          "traceId": "fbfebb40dc6f4915a03c842877a03e17"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-naive:q06",
+          "runId": "demo-run-naive",
+          "traceId": "82a590e8a19442f1b3750171d1e205e9"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q06",
+          "runId": "demo-run-guarded",
+          "traceId": "48f4838cf60c41c5a2d3f1e35a030c4b"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-naive:q08",
+          "runId": "demo-run-naive",
+          "traceId": "3c9bf8115ed348e997c79b5358a0b259"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q08",
+          "runId": "demo-run-guarded",
+          "traceId": "6d48ee8e21f7477bbf3ae55fdb35742d"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-naive:q09",
+          "runId": "demo-run-naive",
+          "traceId": "3bf88a03aa034e72bb915a7cc98c3373"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q09",
+          "runId": "demo-run-guarded",
+          "traceId": "f373c8d228144edabd4f949a125f44eb"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-naive:q10",
+          "runId": "demo-run-naive",
+          "traceId": "a275facc909144b9ab25535f8e456718"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q10",
+          "runId": "demo-run-guarded",
+          "traceId": "a61b466a74f143d9a2d123995bcdc96e"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-naive:q15",
+          "runId": "demo-run-naive",
+          "traceId": "dee8a005a47b414faf911e7a9131192a"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q15",
+          "runId": "demo-run-guarded",
+          "traceId": "6196119677ec4fee91f41f14be7bb1c0"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-naive:q18",
+          "runId": "demo-run-naive",
+          "traceId": "a44acf3214d748c3bb4518a4399b4fa3"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q18",
+          "runId": "demo-run-guarded",
+          "traceId": "23254704503348c786707ae2cb102881"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-naive:q20",
+          "runId": "demo-run-naive",
+          "traceId": "90a6640516244985b77d2497230e4e48"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q20",
+          "runId": "demo-run-guarded",
+          "traceId": "40556882b6324130a74244f0f0fb1479"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-naive:q07",
+          "runId": "demo-run-naive",
+          "traceId": "4dbc74566e1b4c369311b45ef51c6197"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q07",
+          "runId": "demo-run-guarded",
+          "traceId": "465acd324e7a47399d9a606064588d5a"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-naive:q11",
+          "runId": "demo-run-naive",
+          "traceId": "a479ca1fbe67475a9c6b8333dbc2932a"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q11",
+          "runId": "demo-run-guarded",
+          "traceId": "e56b1a19f33e49ac8b6ca213c3df203d"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-naive:q12",
+          "runId": "demo-run-naive",
+          "traceId": "68f463b93c384f158ed24060bffcd9bb"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q12",
+          "runId": "demo-run-guarded",
+          "traceId": "fc4d0494813e47a79cc399b4ce8d6781"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-naive:q13",
+          "runId": "demo-run-naive",
+          "traceId": "21c7d3830b35427cae95800dfa73f4c0"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q13",
+          "runId": "demo-run-guarded",
+          "traceId": "8c2361564da94653b5bac2da92fdd381"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-naive:q14",
+          "runId": "demo-run-naive",
+          "traceId": "7c2cab43cf75402892106549ccf7c3f1"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q14",
+          "runId": "demo-run-guarded",
+          "traceId": "4d88f69be0304992aa11060ea641b935"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-naive:q16",
+          "runId": "demo-run-naive",
+          "traceId": "bb8d51a18532422e80282395ca429412"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q16",
+          "runId": "demo-run-guarded",
+          "traceId": "cfa717080d514e8b9b9b3a0e50c8af0d"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-naive:q17",
+          "runId": "demo-run-naive",
+          "traceId": "26573a6d797a426fab760289841058bf"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q17",
+          "runId": "demo-run-guarded",
+          "traceId": "b49d65beafe0425d8ffa67a45bc824e0"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-naive:q19",
+          "runId": "demo-run-naive",
+          "traceId": "17d5514fd1814faaad675c17ea2b6dc8"
+        },
+        {
+          "kind": "decision",
+          "id": "demo-run-guarded:q19",
+          "runId": "demo-run-guarded",
+          "traceId": "abe8a0d6ae694bda92c809c3d30a6015"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.credits.balance-number",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.confidence-score-number",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.default-fields-basic-info",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.employee-count-range-string",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.funding-total-investment-number",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.headcount-total-integer",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.last-fundraise-date-string",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.no-match-200-empty",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.identify.invalid-fields-400",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.identify.max-25-identifiers",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.identify.no-match-200-empty",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.customer.missing-email-422",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payment.refunds-array-present",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payment.refunds-lists-issued-refund",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payments.page-size-max-100",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.product.price-minor-units",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.amount-minor-units",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.full-retry-no-duplicate",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.amount-integer",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.page-size-max-100",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.subscription.change-plan-pending-409",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.credit-amount-minor-units",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.debit-insufficient-400",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.idempotency-key-no-duplicate",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.ledger-response-balance-integer",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallets.total-balance-usd-integer",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-001913575809",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-0a7a2cbf59f3",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-20de13827cc6",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-3b37d65e6dca",
+          "runId": "demo-run-guarded"
+        },
+        {
+          "kind": "guard",
+          "id": "grd-6b98c720d1cb",
+          "runId": "demo-run-guarded"
+        }
+      ],
+      "runIds": [
+        "demo-run-guarded",
+        "demo-run-naive"
+      ],
+      "sample": true
+    },
+    {
+      "id": "revocations:fixture:default",
+      "kind": "revocations",
+      "question": "Which certificates were revoked, and why (fixture scenario default)?",
+      "answer": "FIXTURE scenario default (simulated APIs and models, not a live run): No certificate in fixture scenario default was revoked: all 9 issued certificates are active.",
+      "citations": [
+        {
+          "kind": "certificate",
+          "id": "cert-5b3a99c450b4234f",
+          "runId": "demo-notarize-crustdata"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-406d91b7a0b5baa8",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-93e8d5ff6c3c99a5",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-eac1684684999d11",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-a6a51bcd56691de6",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-0e4cc67f669fb4a8",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-4b40aa13795e3daf",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-9813c29f1f678661",
+          "runId": "demo-notarize-dodo"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-cfea7c308f553679",
+          "runId": "demo-notarize-dodo"
+        }
+      ],
+      "runIds": [
+        "demo-notarize-crustdata",
+        "demo-notarize-dodo"
+      ],
+      "sample": true
+    }
+  ]
+}
