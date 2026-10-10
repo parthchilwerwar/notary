@@ -6,6 +6,7 @@ export {
   bedrockTransport,
   isAwsCredentialError,
   scrubber,
+  setLlmWarningSink,
 } from "./client.js";
 export {
   AWS_REGION_ENV,
@@ -36,7 +37,16 @@ export type {
   LlmLike,
   LlmMessage,
 } from "./client.js";
-export { BEDROCK_PRICING_URL, PRICE_TABLE, REGIONAL_PREMIUM, costUsd, resolvePrice } from "./pricing.js";
-export type { ModelPrice, PriceSource, ResolvedPrice } from "./pricing.js";
+export { BEDROCK_PRICING_URL, PRICE_TABLE, REGIONAL_PREMIUM, costUsd, priceCall, reportedCostUsd, resolvePrice } from "./pricing.js";
+export type { ModelPrice, PriceSource, PricedCall, ResolvedPrice } from "./pricing.js";
+export {
+  ESTIMATE_CHARS_PER_TOKEN,
+  MAX_USD_ENV,
+  UsdCapExceededError,
+  estimateInputTokens,
+  isUsdCapExceeded,
+  maxUsdFromEnv,
+  usdCapFromStopReason,
+} from "./budget.js";
 export { MODEL_ENV, ModelConfigError, ROLES, baseModelId, requireModel, resolveModels } from "./roles.js";
 export type { ModelRoster } from "./roles.js";

@@ -492,7 +492,7 @@ export async function notarize(opts: NotarizeOptions): Promise<NotarizeResult> {
         const prefer = templateNamedIn(b.adversary?.reason);
         return [{ claimId: b.claimId, rivals, ...(prefer ? { prefer } : {}) }];
       });
-      if (subjects.length && !(recon.stoppedReason ?? loop.stoppedReason)) {
+      if (subjects.length && !(recon.stoppedReason ?? loop.stoppedReason ?? beliefs.usdCapStopped)) {
         const first = loop;
         const round = await runProbeLoop({
           ...loopShared,
@@ -551,6 +551,7 @@ export async function notarize(opts: NotarizeOptions): Promise<NotarizeResult> {
             ...second.lines.slice(3),
           ],
           ...((beliefs.adversaryBlocked ?? second.adversaryBlocked) ? { adversaryBlocked: (beliefs.adversaryBlocked ?? second.adversaryBlocked)! } : {}),
+          ...((beliefs.usdCapStopped ?? second.usdCapStopped) ? { usdCapStopped: (beliefs.usdCapStopped ?? second.usdCapStopped)! } : {}),
           reviews: {
             uphold: beliefs.reviews.uphold + second.reviews.uphold,
             narrow: beliefs.reviews.narrow + second.reviews.narrow,
@@ -661,7 +662,8 @@ async function writeNotarizeBundle(a: {
 }): Promise<NotarizeResult> {
   const { recon, loop, ledger, runId, beliefs } = a;
   const tool = a.opts.tool;
-  const stopReason = recon.stoppedReason ?? loop.stoppedReason;
+  // Credit budget, probe cap or NOTARY_MAX_USD (reflector in the loop, or the adversary phase).
+  const stopReason = recon.stoppedReason ?? loop.stoppedReason ?? beliefs.usdCapStopped;
   const status: RunBundle["status"] = stopReason ? "stopped_budget" : "completed";
   const usageByRole: UsageByRole = a.llm.meter?.snapshot() ?? { executor: ZERO, reflector: loop.usage, adversary: ZERO };
   const verdicts = countVerdicts(loop.probes);
@@ -787,6 +789,8 @@ async function writeNotarizeBundle(a: {
   if (loop.verification.claims.length) lines.push(`verification probes (no anomaly; deterministic rivals): ${loop.verification.claims.join(", ")}`);
   for (const v of loop.verification.skipped) lines.push(`verification skipped ${v.claimId}: ${v.reason}`);
   if (stopReason) lines.push(`STOPPED: ${stopReason}`);
+  // Unknown prices are recorded as $0: say so next to the run, naming the env vars to set.
+  for (const w of a.llm.meter?.warnings ?? []) lines.push(`pricing: ${w}`);
   lines.push(`bundle: ${bundlePath}`);
   const blockedCandidates = beliefs.adversaryBlocked !== undefined && beliefs.after.some((b) => b.status === "candidate");
   return { exitCode: blockedCandidates ? 3 : 0, lines, status, runId, bundlePath, loop, beliefs };

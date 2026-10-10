@@ -11,7 +11,9 @@ import { BeliefStore, beliefIdFor } from "../src/beliefs/store.js";
 import { designFingerprint } from "../src/beliefs/params.js";
 import { claimById, contractEntryById, crustdataContract, dodoContract } from "../src/contracts/index.js";
 import { FixtureApi, FixtureWorld } from "../src/demo/fixture-api.js";
-import { adversaryDecision, createFixtureLlm } from "../src/demo/fixture-llm.js";
+import { adversaryDecision, createFixtureLlm, fixtureConverseTransport, fixtureLlmEnv } from "../src/demo/fixture-llm.js";
+import { LlmClient } from "../src/llm/client.js";
+import { budgetSnapshot } from "../src/timeline/derive.js";
 import type { CompleteRequest, CompleteResult, LlmLike } from "../src/llm/client.js";
 import { REQUIRED_CLAIMS } from "../src/queue/required.js";
 import {
@@ -36,7 +38,7 @@ import {
   writeThenRead,
 } from "../src/reflect/templates/index.js";
 import type { ProbeContext, ProbeDesign, ProbeTemplateModule, Skip } from "../src/reflect/templates/index.js";
-import type { Anomaly, Claim, Hypothesis } from "../src/schema/index.js";
+import type { Anomaly, Claim, Hypothesis, RunBundle } from "../src/schema/index.js";
 import { NotaryDb } from "../src/store/db.js";
 import { fakeProbe } from "./fakes.js";
 import { CreditLedger, DEFAULT_CREDIT_BUDGET, createTools, setRecorderTransport } from "../src/tools/index.js";
@@ -418,6 +420,34 @@ describe("re-examination after an adversary downgrade", () => {
     expect(broke.probes).toHaveLength(0);
     expect(broke.stoppedReason).toMatch(/budget/i);
   });
+
+  it("notarize at NOTARY_MAX_USD stops cleanly: stopped_budget bundle naming the cap, budget snapshot reports it", async () => {
+    setup();
+    // The real LlmClient over the fixture double, with a $0 cap: the first reflector call is refused before any I/O.
+    const llm = new LlmClient({ env: { ...fixtureLlmEnv(), NOTARY_MAX_USD: "0" }, transport: fixtureConverseTransport() });
+    const res = await notarize({
+      tool: "dodo",
+      env: ENV,
+      runsDir: join(dir, "runs"),
+      cassetteDir: join(dir, "cassettes"),
+      dbPath: join(dir, "notary.sqlite"),
+      llm,
+      manifestPath: join(dir, "manifest.json"),
+      queuePath: SEEDED_QUEUE_PATH,
+      sleep: async () => {},
+      recordReplay: false,
+      runId: "vp-notarize-usd-cap",
+    });
+    expect(res.exitCode).toBe(0);
+    expect(res.status).toBe("stopped_budget");
+    expect(res.lines).toContainEqual(expect.stringMatching(/^STOPPED: USD cap reached: NOTARY_MAX_USD=0 /));
+    expect(res.loop!.probes).toEqual([]);
+    expect(llm.meter.snapshot().reflector.calls).toBe(0);
+    const bundle = JSON.parse(readFileSync(res.bundlePath!, "utf8")) as RunBundle;
+    expect(bundle.status).toBe("stopped_budget");
+    expect(bundle.stopReason).toMatch(/NOTARY_MAX_USD=0/);
+    expect(budgetSnapshot(bundle).usdCap).toBe(0);
+  }, 60_000);
 
   it("notarize runs at most ONE extra round and ONE more review per downgraded claim (reviewer that always downgrades)", async () => {
     setup();

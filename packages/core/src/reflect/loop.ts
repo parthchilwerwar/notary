@@ -47,7 +47,8 @@
  * the claim go after unused ones. No anomalies, no verification, no model call (refuted -> abstain).
  * Abstentions in this round carry "re-examined after downgrade".
  *
- * Caps kept: credit budget (BudgetExceededError stops cleanly, stoppedReason), header_burst per-run
+ * Caps kept: credit budget (BudgetExceededError stops cleanly, stoppedReason), the model USD cap
+ * (NOTARY_MAX_USD: a UsdCapExceededError from a reflector call stops the run the same way), header_burst per-run
  * cap, step repeat ≤ 3 (templates), MAX_PROBES_PER_RUN. BLOCKED errors propagate.
  */
 import { BeliefStore } from "../beliefs/store.js";
@@ -61,6 +62,7 @@ import { REQUIRED_CLAIMS } from "../queue/required.js";
 import type { Anomaly, Claim, Hypothesis, Probe, ProbeTemplate, RoleUsage, Tool } from "../schema/index.js";
 import type { NotaryDb } from "../store/db.js";
 import { BudgetExceededError } from "../tools/index.js";
+import { isUsdCapExceeded } from "../llm/budget.js";
 import type { CreditLedger } from "../tools/index.js";
 import { DEFECT_CLASS_NOTES, hypothesisId, proposeHypotheses, reproposeAfterRefutation } from "./hypotheses.js";
 import type { Rejection } from "./hypotheses.js";
@@ -265,8 +267,17 @@ export async function runProbeLoop(opts: ProbeLoopOptions): Promise<ProbeLoopRes
 
   opts.db.saveAnomalies(opts.runId, anomalies);
 
-  // 1. One batched reflector call for every open anomaly.
-  const proposed = await proposeHypotheses({ anomalies, claims: opts.claims, llm: opts.llm });
+  // 1. One batched reflector call for every open anomaly. NOTARY_MAX_USD reached → nothing is
+  // probed and the run stops cleanly with the cap as its stoppedReason (like a credit-budget stop).
+  let capStop: string | undefined;
+  let proposed: Awaited<ReturnType<typeof proposeHypotheses>>;
+  try {
+    proposed = await proposeHypotheses({ anomalies, claims: opts.claims, llm: opts.llm });
+  } catch (err) {
+    if (!isUsdCapExceeded(err)) throw err;
+    capStop = `${err.message} (before the reflector proposed hypotheses)`;
+    proposed = { hypotheses: [], rejected: [], usage: { inputTokens: 0, outputTokens: 0, usd: 0, calls: 0 } };
+  }
   const hypotheses: Hypothesis[] = [...proposed.hypotheses];
   const hypothesesById = new Map(hypotheses.map((h) => [h.id, h]));
   const rejected: Rejection[] = [...proposed.rejected];
@@ -278,7 +289,7 @@ export async function runProbeLoop(opts: ProbeLoopOptions): Promise<ProbeLoopRes
   const skipped: SkippedAnomaly[] = [];
   const probesForClaim = new Map<string, number>();
   const outcomes = new Map<string, ClaimOutcome>();
-  let stoppedReason: string | undefined;
+  let stoppedReason: string | undefined = capStop;
   let seq = opts.seqStart ?? 0;
   const reasonPrefix = opts.reexamine ? `${REEXAMINED_AFTER_DOWNGRADE}: ` : "";
 
@@ -448,7 +459,14 @@ export async function runProbeLoop(opts: ProbeLoopOptions): Promise<ProbeLoopRes
         }
         reproposed = true;
         preferTemplate = undefined;
-        const again = await reproposeAfterRefutation({ anomaly, claim, refuted: live, evidence: result.probe, llm: opts.llm });
+        let again: Awaited<ReturnType<typeof reproposeAfterRefutation>>;
+        try {
+          again = await reproposeAfterRefutation({ anomaly, claim, refuted: live, evidence: result.probe, llm: opts.llm });
+        } catch (err) {
+          if (!isUsdCapExceeded(err)) throw err;
+          stoppedReason = `${err.message} (before re-proposing for ${subject.id})`;
+          return true;
+        }
         usage = addUsage(usage, again.usage);
         rejected.push(...again.rejected);
         hypotheses.push(...again.hypotheses);
@@ -468,9 +486,9 @@ export async function runProbeLoop(opts: ProbeLoopOptions): Promise<ProbeLoopRes
     return false;
   };
 
-  let stop = false;
+  let stop = capStop !== undefined;
   const reexamined: string[] = [];
-  if (opts.reexamine) {
+  if (opts.reexamine && !stop) {
     for (const r of opts.reexamine) {
       const claim = claims.get(r.claimId);
       if (!claim) {
@@ -491,7 +509,7 @@ export async function runProbeLoop(opts: ProbeLoopOptions): Promise<ProbeLoopRes
       }
     }
   }
-  for (const anomaly of opts.reexamine ? [] : anomalies) {
+  for (const anomaly of opts.reexamine || stop ? [] : anomalies) {
     const claim = claims.get(anomaly.claimId);
     if (!claim) {
       skipped.push({ anomalyId: anomaly.id, reason: `claim ${anomaly.claimId} not found` });

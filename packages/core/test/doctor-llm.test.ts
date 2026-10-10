@@ -69,6 +69,28 @@ describe("doctor --llm (litellm)", () => {
     expect(r.lines.at(-1)).toMatch(/^result: OK/);
   });
 
+  it("reports the USD cap and each role's price source; an unknown price is a WARN naming the env vars (exit unchanged)", async () => {
+    const { t } = chat();
+    const r = await runLlmDoctor({
+      env: { ...ENV, NOTARY_MAX_USD: "2", NOTARY_PRICE_REFLECTOR_IN: "3", NOTARY_PRICE_REFLECTOR_OUT: "15" },
+      chatTransport: t,
+      listModels: async () => LISTED,
+    });
+    expect(r.exitCode).toBe(0);
+    const text = r.lines.join("\n");
+    expect(text).toContain("NOTARY_MAX_USD: $2 per run (calls stop before exceeding it)");
+    expect(text).toContain("price reflector: env override NOTARY_PRICE_REFLECTOR_IN/_OUT ($3 in / $15 out per 1M tokens)");
+    expect(text).toContain("price executor: the proxy's x-litellm-response-cost if it sends one, else unknown (set NOTARY_PRICE_EXECUTOR_IN/_OUT to fix it)");
+    expect(text).toMatch(/ok {3}reflector test call: .*\(price: env\)/);
+    expect(text).toContain('WARN executor: price unknown for "test-haiku" — USD is recorded as $0');
+    expect(text).toContain("FIX: set NOTARY_PRICE_EXECUTOR_IN=<USD per 1M input tokens> and NOTARY_PRICE_EXECUTOR_OUT=<USD per 1M output tokens> in .env");
+    expect(text).not.toContain("WARN reflector");
+
+    const bad = await runLlmDoctor({ env: { ...ENV, NOTARY_MAX_USD: "lots" }, chatTransport: t, listModels: async () => LISTED });
+    expect(bad.exitCode).toBe(1);
+    expect(bad.lines.join("\n")).toContain("FIX: set NOTARY_MAX_USD to a non-negative number of USD per run");
+  });
+
   it("normalizes a base URL without /v1 and never prints user:password", async () => {
     const r = await runLlmDoctor({
       env: { ...ENV, LITELLM_BASE_URL: "https://user:pw-secret@litellm.test.example/" },

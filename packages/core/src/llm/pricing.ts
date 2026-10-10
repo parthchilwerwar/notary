@@ -1,11 +1,13 @@
 /**
  * USD per 1M input / output tokens, per model id.
  *
- * Resolution order for a call made by `role` with `modelId`:
+ * Resolution order for a call made by `role` with `modelId` (`priceCall`):
  *   1. env overrides NOTARY_PRICE_<ROLE>_IN and NOTARY_PRICE_<ROLE>_OUT (USD per 1M tokens; both
- *      must be set and be non-negative numbers),
- *   2. the table below,
- *   3. otherwise the price is unknown: usd = 0 and a warning is recorded. Notary never guesses a
+ *      must be set and be non-negative numbers) — they apply to any model id, LiteLLM names included,
+ *   2. the cost the LiteLLM proxy reports for that response (`x-litellm-response-cost` header, USD),
+ *   3. the table below (Bedrock model ids only),
+ *   4. otherwise the price is unknown: usd = 0, price source "unknown", and a warning naming the
+ *      env vars is recorded on the meter and printed once per process. Notary never guesses a
  *      price; set the env override for any model not listed.
  *
  * Sources (checked 2026-10-10):
@@ -47,7 +49,7 @@ export const PRICE_TABLE: Readonly<Record<string, TableEntry>> = {
   "anthropic.claude-3-5-haiku-20241022-v1:0": { inPerM: 0.8, outPerM: 4, regionalPremium: false },
 };
 
-export type PriceSource = "env" | "table" | "unknown";
+export type PriceSource = "env" | "litellm" | "table" | "unknown";
 
 export type ResolvedPrice = {
   price: ModelPrice | null;
@@ -90,8 +92,43 @@ export function resolvePrice(role: Role, modelId: string, env: Env = process.env
   return {
     price: null,
     source: "unknown",
-    warning: `No price for model "${modelId}" (${role}); usd recorded as 0. Set ${inName}/${outName} from ${BEDROCK_PRICING_URL}`,
+    warning: `No price for model "${modelId}" (${role}); usd recorded as 0. Set ${inName} and ${outName} (USD per 1M tokens; Bedrock list prices: ${BEDROCK_PRICING_URL})`,
   };
+}
+
+/** The proxy-reported cost of one response (USD), or null when absent / unusable. */
+export function reportedCostUsd(headers: Record<string, string> | undefined): number | null {
+  const raw = headers?.["x-litellm-response-cost"]?.trim();
+  if (!raw) return null;
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+export type PricedCall = {
+  usd: number;
+  source: PriceSource;
+  /** Set when the price is unknown (usd recorded as 0) or an override is half-set. */
+  warning?: string;
+};
+
+/**
+ * USD for one finished call, by precedence: env override > LiteLLM-reported > table > unknown (0).
+ * `reportedUsd` is the proxy's own figure for this response, when it sent one.
+ */
+export function priceCall(
+  role: Role,
+  modelId: string,
+  tokens: { inputTokens: number; outputTokens: number },
+  env: Env = process.env,
+  reportedUsd: number | null = null,
+): PricedCall {
+  const r = resolvePrice(role, modelId, env);
+  if (r.source === "env") return { usd: costUsd(r.price, tokens.inputTokens, tokens.outputTokens), source: "env" };
+  // A half-set override is a config error: keep its warning even if the proxy reported a cost.
+  const halfSet = r.warning && /must both be/.test(r.warning) ? { warning: r.warning } : {};
+  if (reportedUsd !== null) return { usd: Math.round(reportedUsd * 1e9) / 1e9, source: "litellm", ...halfSet };
+  if (r.source === "table") return { usd: costUsd(r.price, tokens.inputTokens, tokens.outputTokens), source: "table" };
+  return { usd: 0, source: "unknown", ...(r.warning ? { warning: r.warning } : {}) };
 }
 
 /** USD for one call; 0 when the price is unknown. Rounded to 1e-9 to keep sums stable. */

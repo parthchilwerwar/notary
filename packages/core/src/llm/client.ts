@@ -25,6 +25,11 @@
  * stays in the callers. A non-credential transport error is rethrown (scrubbed) for the caller's
  * fail-safe path.
  *
+ * Cost (src/llm/pricing.ts priceCall): env override > LiteLLM-reported (`x-litellm-response-cost`)
+ * > Bedrock table > unknown (usd 0, price source "unknown", warning on the meter and once on stderr).
+ * USD cap (src/llm/budget.ts): with NOTARY_MAX_USD set, every call first checks the run's spend plus
+ * a high estimate of this call and throws UsdCapExceededError (before any I/O) when it would exceed.
+ *
  * Every call opens a neatlogs span "notary.llm" (CHAIN) with role, model id, token counts and USD;
  * prompts are never put in its attributes. Under it, the SDK's provider wrapper (wrapBedrock /
  * wrapOpenAI) emits the LLM span, which does carry the (already secret-scrubbed) messages and
@@ -35,7 +40,9 @@ import type { ConverseCommandInput, ConverseCommandOutput } from "@aws-sdk/clien
 import type { Role, UsageByRole } from "../schema/index.js";
 import { MissingCredentialError } from "../tools/errors.js";
 import { traceBedrockClient, withSpan } from "../trace/index.js";
-import { costUsd, resolvePrice } from "./pricing.js";
+import { costUsd, priceCall, reportedCostUsd, resolvePrice } from "./pricing.js";
+import type { PriceSource } from "./pricing.js";
+import { UsdCapExceededError, estimateInputTokens, maxUsdFromEnv } from "./budget.js";
 import { ROLES, requireModel, resolveModels } from "./roles.js";
 import type { ModelRoster } from "./roles.js";
 import { AWS_REGION_ENV, LITELLM_API_KEY_ENV, LITELLM_BASE_URL_ENV, llmInvalid, llmMissing, llmProvider, normalizeLiteLlmBaseUrl } from "./config.js";
@@ -61,6 +68,8 @@ export type CompleteResult = {
   outputTokens: number;
   usd: number;
   modelId: string;
+  /** Where `usd` came from: env override, LiteLLM-reported, Bedrock table, or unknown (usd 0). */
+  priceSource?: PriceSource;
   /** Stop reason in Bedrock's vocabulary, e.g. "end_turn", "max_tokens" (LiteLLM finish_reason is mapped); "unknown" if absent. */
   stopReason: string;
 };
@@ -99,6 +108,28 @@ export function scrubber(env: Env): (text: string) => string {
   };
 }
 
+let warningSink: ((message: string) => void) | null = (message) => console.warn(`notary: warning: ${message}`);
+const warnedOnce = new Set<string>();
+
+/** Print a pricing/config warning once per process (stderr by default). */
+function warnOnce(message: string): void {
+  if (warnedOnce.has(message)) return;
+  warnedOnce.add(message);
+  try {
+    warningSink?.(message);
+  } catch {
+    // a warning must never break a call
+  }
+}
+
+/** Replace the once-per-process warning sink (tests; null silences it). Returns the previous sink. */
+export function setLlmWarningSink(sink: ((message: string) => void) | null): ((message: string) => void) | null {
+  const prev = warningSink;
+  warningSink = sink;
+  warnedOnce.clear();
+  return prev;
+}
+
 /** Per-role token and USD accounting. */
 export class UsageMeter {
   private readonly usage: UsageByRole = {
@@ -118,7 +149,14 @@ export class UsageMeter {
   }
 
   warn(message: string): void {
-    if (!this.warnings.includes(message)) this.warnings.push(message);
+    if (this.warnings.includes(message)) return;
+    this.warnings.push(message);
+    warnOnce(message);
+  }
+
+  /** USD recorded so far across all roles (the run's model spend). */
+  totalUsd(): number {
+    return Math.round((this.usage.executor.usd + this.usage.reflector.usd + this.usage.adversary.usd) * 1e9) / 1e9;
   }
 
   /** The bundle's `usageByRole` shape, always with all three roles. A copy. */
@@ -154,7 +192,14 @@ export type LlmClientOptions = {
 };
 
 /** One provider reply, normalized. */
-type ProviderReply = { text: string; inputTokens: number; outputTokens: number; stopReason: string };
+type ProviderReply = {
+  text: string;
+  inputTokens: number;
+  outputTokens: number;
+  stopReason: string;
+  /** Cost the provider reported for this response (LiteLLM `x-litellm-response-cost`), else null. */
+  reportedUsd: number | null;
+};
 type ProviderRequest = { system?: string; messages: LlmMessage[]; maxTokens: number };
 type ProviderCall = (modelId: string, req: ProviderRequest) => Promise<ProviderReply>;
 
@@ -176,6 +221,8 @@ function scrubError(err: unknown, clean: (s: string) => string): unknown {
 export class LlmClient implements LlmLike {
   readonly meter: UsageMeter;
   readonly provider: LlmProvider;
+  /** NOTARY_MAX_USD for this client's run, or null (no cap). */
+  readonly maxUsd: number | null;
   private readonly env: Env;
   private readonly roster: ModelRoster;
   private transport: ConverseTransport | undefined;
@@ -185,6 +232,7 @@ export class LlmClient implements LlmLike {
     this.env = opts.env ?? process.env;
     this.provider = llmProvider(this.env); // throws ModelConfigError on an unknown provider
     this.roster = resolveModels(this.env); // throws ModelConfigError on a separation-of-duties breach
+    this.maxUsd = maxUsdFromEnv(this.env); // throws ModelConfigError on an unusable NOTARY_MAX_USD
     this.meter = opts.meter ?? new UsageMeter();
     if (this.provider === "litellm" && opts.transport && !opts.chatTransport) {
       throw new Error("LlmClient: a Bedrock transport was injected but NOTARY_LLM_PROVIDER=litellm (inject chatTransport)");
@@ -235,7 +283,7 @@ export class LlmClient implements LlmLike {
           max_tokens: req.maxTokens,
           temperature: 0,
         };
-        const { completion } = await transport(body);
+        const { completion, headers } = await transport(body);
         const choice = completion.choices?.[0];
         const content = choice?.message?.content;
         return {
@@ -243,6 +291,7 @@ export class LlmClient implements LlmLike {
           inputTokens: completion.usage?.prompt_tokens ?? 0,
           outputTokens: completion.usage?.completion_tokens ?? 0,
           stopReason: stopReasonFromFinish(choice?.finish_reason),
+          reportedUsd: reportedCostUsd(headers),
         };
       };
     }
@@ -267,8 +316,23 @@ export class LlmClient implements LlmLike {
         inputTokens: out.usage?.inputTokens ?? 0,
         outputTokens: out.usage?.outputTokens ?? 0,
         stopReason: String(out.stopReason ?? "unknown"),
+        reportedUsd: null,
       };
     };
+  }
+
+  /**
+   * NOTARY_MAX_USD check before a call (and before each retry): throws UsdCapExceededError when the
+   * run's spend plus a high estimate of this call (0 when the price isn't known up front) would
+   * exceed the cap. No I/O.
+   */
+  private checkUsdCap(role: Role, modelId: string, req: ProviderRequest): void {
+    if (this.maxUsd === null) return;
+    const spent = this.meter.totalUsd();
+    const known = resolvePrice(role, modelId, this.env);
+    const chars = (req.system?.length ?? 0) + req.messages.reduce((n, m) => n + m.content.length, 0);
+    const estimate = known.price ? costUsd(known.price, estimateInputTokens(chars), req.maxTokens) : 0;
+    if (spent >= this.maxUsd || spent + estimate > this.maxUsd) throw new UsdCapExceededError(role, this.maxUsd, spent, estimate);
   }
 
   async complete(req: CompleteRequest): Promise<CompleteResult> {
@@ -287,6 +351,8 @@ export class LlmClient implements LlmLike {
       "notary.llm",
       { "notary.role": req.role, "llm.model_id": modelId, "llm.provider": this.provider },
       async () => {
+        if (setAttr && this.maxUsd !== null) setAttr("llm.usd_cap", this.maxUsd);
+        this.checkUsdCap(req.role, modelId, scrubbed);
         let out: ProviderReply;
         try {
           out = await call(modelId, scrubbed);
@@ -294,9 +360,9 @@ export class LlmClient implements LlmLike {
           throw scrubError(err, clean);
         }
         const { inputTokens, outputTokens, text, stopReason } = out;
-        const priced = resolvePrice(req.role, modelId, this.env);
+        const priced = priceCall(req.role, modelId, { inputTokens, outputTokens }, this.env, out.reportedUsd);
         if (priced.warning) this.meter.warn(priced.warning);
-        const usd = costUsd(priced.price, inputTokens, outputTokens);
+        const usd = priced.usd;
         this.meter.add(req.role, { inputTokens, outputTokens, usd });
 
         if (setAttr) {
@@ -306,7 +372,7 @@ export class LlmClient implements LlmLike {
           setAttr("llm.price_source", priced.source);
           setAttr("llm.stop_reason", stopReason);
         }
-        return { text, inputTokens, outputTokens, usd, modelId, stopReason };
+        return { text, inputTokens, outputTokens, usd, modelId, stopReason, priceSource: priced.source };
       },
       // CHAIN, not LLM: the wrapped provider client emits the LLM child span (no double capture).
       { kind: "CHAIN", onSpan: (_ids, set) => (setAttr = set) },

@@ -4,7 +4,8 @@
  *
  * Fail safe: a malformed, prose-only or schema-violating reply, or a non-credential transport
  * error, yields {review: null, failure} — never a thrown error and never a guessed verdict.
- * BLOCKED (missing model id / AWS credentials) and ModelConfigError propagate unchanged.
+ * BLOCKED (missing model id / provider settings), ModelConfigError and the USD cap
+ * (UsdCapExceededError: the run stops cleanly, it is not a failed review) propagate unchanged.
  */
 import type { LlmLike } from "../llm/index.js";
 import type { AdversaryReview } from "../schema/index.js";
@@ -16,7 +17,7 @@ export const ADVERSARY_MAX_TOKENS = 1500;
 
 function mustPropagate(err: unknown): boolean {
   // A replay cassette miss is never a "failed review": the replay diverged and must fail loudly (P8).
-  return isBlocked(err) || (err instanceof Error && (err.name === "ModelConfigError" || err.name === "CassetteMissError"));
+  return isBlocked(err) || (err instanceof Error && (err.name === "ModelConfigError" || err.name === "CassetteMissError" || err.name === "UsdCapExceededError"));
 }
 
 export async function reviewWithBedrock(args: {

@@ -9,7 +9,9 @@
  *   3. each configured role model is in that list
  *   4. separation of duties: reflector ≠ adversary (base model id, as src/llm/roles.ts compares)
  *   5. one tiny call per role (max 5 output tokens, "Reply with OK") through the real LlmClient:
- *      latency, tokens, USD
+ *      latency, tokens, USD and where the price came from (env / litellm / table / unknown)
+ * Also printed: the USD cap (NOTARY_MAX_USD) and each role's price source; an unknown price is a
+ * WARN line naming NOTARY_PRICE_<ROLE>_IN/_OUT (usd is recorded as 0 until set).
  * bedrock: the same, minus the listing (Bedrock has no per-key model list here); credentials are
  * only exercised by the test calls.
  *
@@ -35,6 +37,8 @@ import type { LlmConfigIssue, LlmProvider } from "./config.js";
 import { liteLlmModelLister } from "./litellm.js";
 import type { ChatTransport, ModelLister } from "./litellm.js";
 import { MODEL_ENV, ROLES, baseModelId } from "./roles.js";
+import { MAX_USD_ENV, maxUsdFromEnv } from "./budget.js";
+import { resolvePrice } from "./pricing.js";
 
 type Env = Record<string, string | undefined>;
 
@@ -141,6 +145,24 @@ export async function runLlmDoctor(opts: LlmDoctorOptions = {}): Promise<LlmDoct
   }
   for (const role of ROLES) out(`  ${role.padEnd(9)} ${MODEL_ENV[role]} = ${read(env, MODEL_ENV[role]) || "(not set)"}`);
 
+  // Cost: the per-run cap and where each role's price will come from.
+  try {
+    const cap = maxUsdFromEnv(env);
+    out(`  ${MAX_USD_ENV}: ${cap === null ? "not set (no USD cap)" : `$${cap} per run (calls stop before exceeding it)`}`);
+  } catch {
+    fail(`${MAX_USD_ENV} is "${read(env, MAX_USD_ENV)}"`, `set ${MAX_USD_ENV} to a non-negative number of USD per run, e.g. ${MAX_USD_ENV}=1, or leave it empty for no cap`);
+  }
+  for (const role of ROLES) {
+    const id = read(env, MODEL_ENV[role]);
+    if (!id) continue;
+    const r = resolvePrice(role, id, env);
+    const names = `NOTARY_PRICE_${role.toUpperCase()}_IN/_OUT`;
+    if (r.source === "env") out(`  price ${role}: env override ${names} ($${r.price!.inPerM} in / $${r.price!.outPerM} out per 1M tokens)`);
+    else if (r.warning && /must both be/.test(r.warning)) fail(`price ${role}: ${r.warning}`, `set both ${names} (USD per 1M tokens) or neither`);
+    else if (r.source === "table") out(`  price ${role}: Bedrock table ($${r.price!.inPerM} in / $${r.price!.outPerM} out per 1M tokens)${provider === "litellm" ? "; a proxy-reported cost takes precedence" : ""}`);
+    else out(`  price ${role}: ${provider === "litellm" ? "the proxy's x-litellm-response-cost if it sends one, else unknown" : "unknown"} (set ${names} to fix it)`);
+  }
+
   // Config issues, de-duplicated across roles (the connection settings are shared).
   const issues = new Map<string, LlmConfigIssue>();
   for (const role of ROLES) for (const i of llmConfigIssues(env, role)) if (!issues.has(i.variable)) issues.set(i.variable, i);
@@ -235,9 +257,15 @@ export async function runLlmDoctor(opts: LlmDoctorOptions = {}): Promise<LlmDoct
       try {
         const res = await llm.complete({ role, messages: [{ role: "user", content: DOCTOR_PROMPT }], maxTokens: DOCTOR_MAX_TOKENS });
         const ms = Math.round(now() - t0);
+        const source = res.priceSource ?? "unknown";
         out(
-          `ok   ${role} test call: "${id}" ${ms} ms, ${res.inputTokens} in / ${res.outputTokens} out tokens, $${res.usd.toFixed(6)}, stop ${res.stopReason}, reply ${JSON.stringify(res.text.slice(0, 40))}`,
+          `ok   ${role} test call: "${id}" ${ms} ms, ${res.inputTokens} in / ${res.outputTokens} out tokens, $${res.usd.toFixed(6)} (price: ${source}), stop ${res.stopReason}, reply ${JSON.stringify(res.text.slice(0, 40))}`,
         );
+        if (source === "unknown") {
+          const up = role.toUpperCase();
+          out(`WARN ${role}: price unknown for "${id}" — USD is recorded as $0 (and ${MAX_USD_ENV} can only count proxy-reported costs)`);
+          out(`  FIX: set NOTARY_PRICE_${up}_IN=<USD per 1M input tokens> and NOTARY_PRICE_${up}_OUT=<USD per 1M output tokens> in .env`);
+        }
       } catch (err) {
         const status = statusOf(err);
         fail(

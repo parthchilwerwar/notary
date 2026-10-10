@@ -5,6 +5,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { contractEntryById } from "../src/contracts/index.js";
 import type { CompleteRequest, CompleteResult, LlmLike } from "../src/llm/client.js";
+import { UsdCapExceededError } from "../src/llm/budget.js";
 import { BeliefStore, beliefIdFor } from "../src/beliefs/store.js";
 import { designFingerprint } from "../src/beliefs/params.js";
 import { DEFAULT_MAX_PROBES_PER_CLAIM, maxProbesPerClaimFromEnv, runProbeLoop } from "../src/reflect/loop.js";
@@ -707,6 +708,29 @@ describe("runProbeLoop", () => {
     expect(res.skipped).toEqual([{ anomalyId: "anom-2", reason: `belief ${beliefIdFor(claim.id)} is already candidate` }]);
     expect(res.usage).toMatchObject({ calls: 1, inputTokens: 100 });
     expect(db.loadProbes("loop-1").map((p) => p.id)).toEqual(res.probes.map((p) => p.id));
+  });
+
+  it("NOTARY_MAX_USD reached at the reflector call: nothing probed, the run stops with the cap as its stoppedReason", async () => {
+    const db = freshDb();
+    const io = echo((n) => n * 100);
+    const capped = {
+      async complete(): Promise<never> {
+        throw new UsdCapExceededError("reflector", 0.01, 0.0095, 0.002);
+      },
+    };
+    const res = await runProbeLoop({
+      tool: "dodo",
+      anomalies: [anomalyFor(claim, "anom-1")],
+      claims: [claim],
+      tools: io,
+      llm: capped,
+      db,
+      runId: "loop-cap",
+      ledger: new CreditLedger({ budget: 10 }),
+    });
+    expect(res.probes).toEqual([]);
+    expect(res.stoppedReason).toMatch(/^USD cap reached: NOTARY_MAX_USD=0\.01 .*\(before the reflector proposed hypotheses\)$/);
+    expect(io.log).toHaveLength(0);
   });
 
   it("never repeats a design fingerprint, within a run or across runs on the same belief", async () => {

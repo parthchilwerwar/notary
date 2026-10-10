@@ -18,6 +18,7 @@ import type { LlmLike } from "../llm/index.js";
 import type { Belief, BeliefEvent, BeliefStatus, Claim, Hypothesis, Probe, Tool } from "../schema/index.js";
 import type { NotaryDb } from "../store/db.js";
 import { isBlocked } from "../tools/index.js";
+import { isUsdCapExceeded } from "../llm/budget.js";
 import { checkEvidence, loadSpanRecords } from "./evidence.js";
 import { BeliefStore } from "./store.js";
 import type { BeliefPrior } from "./store.js";
@@ -58,6 +59,8 @@ export interface BeliefsPhaseResult {
   lines: string[];
   /** Set when the adversary could not run (BLOCKED or config error); candidates stay candidates. */
   adversaryBlocked?: string;
+  /** NOTARY_MAX_USD stopped the adversary review (the UsdCapExceededError message); remaining candidates stay candidate. */
+  usdCapStopped?: string;
   reviews: { uphold: number; narrow: number; downgrade: number; failed: number };
   evidence: { checked: number; invalid: number; source: string };
 }
@@ -152,6 +155,7 @@ export async function runBeliefsPhase(opts: BeliefsPhaseOptions): Promise<Belief
   // 5. Adversary on every candidate.
   const reviews = { uphold: 0, narrow: 0, downgrade: 0, failed: 0 };
   let adversaryBlocked: string | undefined;
+  let usdCapStopped: string | undefined;
   const reviewOnly = opts.reviewOnly ? new Set(opts.reviewOnly) : undefined;
   const candidates = store.list(opts.tool).filter((b) => b.status === "candidate" && (!reviewOnly || reviewOnly.has(b.claimId)));
   if (candidates.length && opts.backend === "bedrock") {
@@ -172,6 +176,10 @@ export async function runBeliefsPhase(opts: BeliefsPhaseOptions): Promise<Belief
       store.applyAdversary(b.id, null, adversaryBlocked);
       continue;
     }
+    if (usdCapStopped) {
+      store.applyAdversary(b.id, null, `adversary review not run: ${usdCapStopped}`);
+      continue;
+    }
     const cited = b.evidence.map((e) => e.probeId);
     const own = opts.probes.filter((p) => p.claimId === b.claimId).map((p) => p.id);
     const { probes } = loadProbesById(opts.db, [...new Set([...cited, ...own])], opts.probes);
@@ -190,6 +198,12 @@ export async function runBeliefsPhase(opts: BeliefsPhaseOptions): Promise<Belief
       if (isBlocked(err)) {
         adversaryBlocked = err.message;
         store.applyAdversary(b.id, null, adversaryBlocked);
+        continue;
+      }
+      if (isUsdCapExceeded(err)) {
+        // The run's model budget is spent: stop reviewing (a stop, not a failed review).
+        usdCapStopped = err.message;
+        store.applyAdversary(b.id, null, `adversary review not run: ${usdCapStopped}`);
         continue;
       }
       outcome = { review: null, failure: `adversary error: ${errText(err)}` };
@@ -213,6 +227,10 @@ export async function runBeliefsPhase(opts: BeliefsPhaseOptions): Promise<Belief
     `evidence: checked ${checked}, invalid ${invalid} (source ${spans.source})`,
     `adversary: backend=${opts.backend} uphold=${reviews.uphold} narrow=${reviews.narrow} downgrade=${reviews.downgrade} failed=${reviews.failed}`,
   );
+  if (usdCapStopped) {
+    const n = after.filter((b) => b.status === "candidate").length;
+    lines.push(`STOPPED: ${usdCapStopped} (adversary review stopped; ${n} belief(s) stay candidate)`);
+  }
   if (adversaryBlocked) {
     const n = after.filter((b) => b.status === "candidate").length;
     lines.push(`${adversaryBlocked.startsWith("BLOCKED:") ? adversaryBlocked : `BLOCKED: ${adversaryBlocked}`} (adversary review skipped; ${n} belief(s) stay candidate)`);
@@ -223,6 +241,7 @@ export async function runBeliefsPhase(opts: BeliefsPhaseOptions): Promise<Belief
     events,
     lines,
     ...(adversaryBlocked ? { adversaryBlocked } : {}),
+    ...(usdCapStopped ? { usdCapStopped } : {}),
     reviews,
     evidence: { checked, invalid, source: spans.source },
   };

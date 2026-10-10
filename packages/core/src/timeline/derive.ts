@@ -35,7 +35,8 @@
  * Budget snapshot: credits = credits.total / credits.budget (the configured credit budget); tool
  * calls = Σ probe.calls + Σ decision.effects.length (every external call the bundle records; recon
  * calls are not records and are not counted), cap null (no tool-call cap is configured anywhere);
- * usdByRole = usageByRole.*.usd; usdCap null (no USD cap exists in config); stopReason = the
+ * usdByRole = usageByRole.*.usd; usdCap = the NOTARY_MAX_USD named in a USD-cap stopReason, else null
+ * (the bundle records no cap otherwise); stopReason = the
  * bundle's stopReason.
  */
 import { TOOLS } from "../certify/certificates.js";
@@ -45,6 +46,7 @@ import { buildRevocations } from "../certify/revocations.js";
 import type { Revocation } from "../certify/revocations.js";
 import type { Belief, BeliefEvent, Decision, Probe, RunBundle } from "../schema/index.js";
 import type { BudgetSnapshot, TimelineEvent, TimelineEventType, TimelineStage } from "../schema/timeline.js";
+import { usdCapFromStopReason } from "../llm/budget.js";
 
 export type DerivedTimelineEvent = Omit<TimelineEvent, "seq">;
 
@@ -136,7 +138,9 @@ export function budgetSnapshot(bundle: RunBundle): BudgetSnapshot {
       reflector: bundle.usageByRole.reflector.usd,
       adversary: bundle.usageByRole.adversary.usd,
     },
-    usdCap: null,
+    // The frozen bundle schema has no USD-cap field; the cap is known only when the run stopped on it
+    // (its stopReason states "NOTARY_MAX_USD=<n>"). Otherwise null (no cap, or a cap never reached).
+    usdCap: usdCapFromStopReason(bundle.stopReason),
     ...(bundle.stopReason ? { stopReason: bundle.stopReason } : {}),
   };
 }

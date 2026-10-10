@@ -11,6 +11,7 @@ import { NotaryDb, predictionHash } from "../src/store/db.js";
 import { initTracing, setSpanSink, shutdownTracing, tracingEnabled, withSpan } from "../src/trace/index.js";
 import type { SpanRecord } from "../src/trace/index.js";
 import { MissingCredentialError } from "../src/tools/errors.js";
+import { UsdCapExceededError } from "../src/llm/budget.js";
 
 const CLAIM: Claim = {
   id: "dodo.refunds.page-size-max",
@@ -413,6 +414,22 @@ describe("runBeliefsPhase: probes -> beliefs -> evidence check -> adversary", ()
     expect(res.after[0]!.status).toBe("candidate");
     expect(res.lines.at(-1)).toBe("BLOCKED: NOTARY_MODEL_ADVERSARY not set (adversary review skipped; 1 belief(s) stay candidate)");
     expect(res.events.at(-1)).toMatchObject({ from: "candidate", to: "candidate", reason: expect.stringMatching(/BLOCKED/) });
+  });
+
+  it("bedrock adversary at NOTARY_MAX_USD: review stops (not a failed review), the candidate stays candidate", async () => {
+    const { db, runsDir, probes } = await seed();
+    const llm = {
+      complete: async () => {
+        throw new UsdCapExceededError("adversary", 0.05, 0.05, 0);
+      },
+      modelFor: (_role: string) => "test-adversary-model",
+    };
+    const res = await runBeliefsPhase({ db, tool: "dodo", runsDir, claims: [CLAIM], probes, hypotheses: HYPS, backend: "bedrock", llm: llm as never });
+    expect(res.usdCapStopped).toMatch(/^USD cap reached: NOTARY_MAX_USD=0\.05/);
+    expect(res.reviews).toEqual({ uphold: 0, narrow: 0, downgrade: 0, failed: 0 });
+    expect(res.after[0]!.status).toBe("candidate");
+    expect(res.lines.at(-1)).toMatch(/^STOPPED: USD cap reached: NOTARY_MAX_USD=0\.05 .*\(adversary review stopped; 1 belief\(s\) stay candidate\)$/);
+    expect(res.events.at(-1)).toMatchObject({ from: "candidate", to: "candidate", reason: expect.stringMatching(/NOTARY_MAX_USD/) });
   });
 
   it("probed beliefs still between thresholds at the end of the run abstain", async () => {
