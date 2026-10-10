@@ -222,7 +222,7 @@ export function recordedRunId(runsDir: string, tool: Tool): string | undefined {
     }
     if (!v.ok) continue;
     const b = v.bundle;
-    if (b.kind !== "notarize" || b.tool !== tool || b.mode !== "live" || !cassetteNames(b.cassettes).some((n) => n === `probes-${tool}` || n === `${b.runId}-probes`)) continue;
+    if (b.sample || b.kind !== "notarize" || b.tool !== tool || b.mode !== "live" || !cassetteNames(b.cassettes).some((n) => n === `probes-${tool}` || n === `${b.runId}-probes`)) continue;
     const at = b.finishedAt ?? b.startedAt;
     if (!best || at > best.at) best = { runId: b.runId, at };
   }

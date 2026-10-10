@@ -21,13 +21,17 @@ export {
   computeContentHash,
   listCassettes,
   loadCassette,
+  recorderTransport,
   saveCassette,
+  setRecorderTransport,
 } from "./recorder.js";
 export type {
   Cassette,
   Exchange,
   ExchangeListener,
+  FetchLike,
   RecordedResponse,
+  RecorderTransport,
   RecorderMode,
   RecorderOptions,
   RequestSpec,

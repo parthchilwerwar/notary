@@ -60,6 +60,9 @@ export function loadPinned(ref: string, dir: string = DEFAULT_CASSETTE_DIR): Cas
   } catch (err) {
     throw new PinMismatchError(ref, err instanceof Error ? err.message : String(err));
   }
+  if (cassette.fixture === true) {
+    throw new PinMismatchError(ref, "FIXTURE cassette (simulated traffic from `notary demo --fixture`), never a recorded live run");
+  }
   if (hash === undefined) throw new PinMismatchError(ref, "not pinned to a content hash (recorded before P8?)");
   if (cassette.contentHash !== hash) {
     throw new PinMismatchError(ref, `content hash ${cassette.contentHash.slice(0, 12)} does not match the bundle's pin ${hash.slice(0, 12)}`);

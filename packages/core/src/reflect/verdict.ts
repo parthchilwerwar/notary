@@ -16,6 +16,7 @@
  */
 import { canonicalJson } from "../bundle/hash.js";
 import type { ProbeVerdict } from "../schema/index.js";
+import { ANY } from "./templates/types.js";
 import type { ProbeDesign, ProbeObservation, ProbeTemplateModule } from "./templates/types.js";
 
 export interface VerdictInput {
@@ -80,5 +81,18 @@ export function judge(template: ProbeTemplateModule, design: ProbeDesign, observ
   const ids = Object.keys(design.predictions).sort();
   const matches: Record<string, boolean> = {};
   for (const id of ids) matches[id] = template.matches(design.predictions[id]!, observation);
-  return decideVerdict({ hypothesisIds: ids, matches, informative: template.informative(observation), instrument: observation.instrument });
+  const result = decideVerdict({ hypothesisIds: ids, matches, informative: template.informative(observation), instrument: observation.instrument });
+  // A hypothesis this template makes no prediction for (outcomes ["*"]) matches every observation.
+  // It must never be CONFIRMED by elimination: "confirmed" needs the observation to match the
+  // hypothesis's own prediction (found by `notary demo --fixture`; see test/demo.test.ts).
+  const winner = result.winningHypothesisId;
+  if (result.verdict === "confirmed" && winner && design.predictions[winner]?.outcomes.includes(ANY)) {
+    return {
+      verdict: "inconclusive",
+      refutedIds: [],
+      needsRepropose: false,
+      reason: `only ${winner} matched, and this template makes no prediction for its class: no update`,
+    };
+  }
+  return result;
 }

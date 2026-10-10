@@ -30,7 +30,7 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 ## Notes
 
 **P0 (Oct 10).** Workspace, schema stubs, CLI skeleton (all commands stubbed), `src/trace/` + `notary doctor`, `.env.example`, `CLAUDE.md`, `docs/DECISIONS.md`. 25 tests pass, typecheck clean. Two "done when" items are still open and must close before P1 work starts:
-- [ ] Live test span in neatlogs: `notary doctor` currently reports `NEATLOGS_API_KEY not set; no span sent`. Add the key to `.env` and re-run `pnpm notary doctor`.
+- [x] Live test span in neatlogs: closed Oct 10. With the key in `.env`, `pnpm notary doctor` flushed span `notary.doctor` (trace `bf92d825f020148b4478c617f26aa28c`).
 - [ ] Entire checkpoint: the Entire CLI isn't installed, so this commit has none. Install it and run `entire enable`.
 
 **P1 (Oct 10).** Recorder (live/replay, redaction, occurrence-keyed replay), Crustdata + Dodo raw clients behind `createTools({wrap})`, credit ledger, Dodo test-mode lock, frozen bundle schema + content hash, `notary export --sample` → `packages/web/public/bundles/sample-42.json` (validates, hash matches). `pnpm check:secrets` + pre-commit hook. 63 tests pass. Endpoints in `docs/ENDPOINTS.md`.
@@ -73,5 +73,5 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 
 ## Session 3 — keyless hardening (Oct 10)
 - [x] Step 1 keyless health check run for real (fresh-clone install, typecheck, 481 tests, check:secrets, coverage 0 unguarded; every CLI command with --help and with no keys; `serve` curl incl. tampered bundle → `x-notary-hash-mismatch: 1`). Two failures found: `doctor` exit 1 not BLOCKED/3 (DECISIONS #73), SSE not cross-process (#74) — both fixed with tests (`test/health-fixes.test.ts`).
-- [ ] Step 2 `notary demo --fixture` walkthrough
+- [x] Step 2 `notary demo --fixture`: whole pipeline over an in-process fixture API + model doubles (6 planted quirks), all bundles `sample: true` with FIXTURE disclosure in `runs/demo/`, excluded from export/replay/metrics (checked by the demo itself). Fixed on the way: `*`-only hypothesis was 'confirmed' (now inconclusive), unit_mismatch never compiled to a transform guard (read wrong field), `notarize --replay` could pick demo bundles. Surfaced 7 larger bugs → Step 3.
 - [x] Step 4 open audit findings — fixed A-10 (per-call-site coverage allow-list), A-19 (replay compares records, not just metrics), A-22 (prior strength capped at 2); won't fix A-18/A-20/A-21 (reasons in AUDIT.md); open: A-12/13/15/17/23/24 need keys or installs, A-11/14/16 need a user decision. Totals: 12 fixed, 6 open (keys), 3 open (decision), 3 won't fix, 2 verified.

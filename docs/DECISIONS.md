@@ -133,3 +133,13 @@ Where the docs and reality disagree, or a choice the docs leave open. Newest pha
 | 75 | Coverage allow-list (A-10) | Entries name the function and exact call-site count instead of whole files; a new raw call in an allow-listed file is UNGUARDED | Audit Medium finding |
 | 76 | Replay identity (A-19) | `notary replay` compares probes, hypotheses, anomalies, beliefs and decisions record by record, not just metrics; any difference exits 1 | Matching metrics can hide different behavior |
 | 77 | Prior strength (A-22) | `NOTARY_PRIOR_STRENGTH` is capped at 2 (larger values throw), so two contrary probes always outweigh a transferred prior | Priors may speed probing, never decide it |
+
+## Neatlogs tracing pass
+
+| # | Docs say | Reality / decision | Why |
+| --- | --- | --- | --- |
+| 78 | Neatlogs setup guide: capture Bedrock with the SDK's provider wrapper; one workflow name per entry point | `bedrockTransport` wraps its client with `wrapBedrock` (via `traceBedrockClient`), so each Converse call emits an LLM span with messages, completion and usage. The manual `notary.llm` span is now kind CHAIN (role + USD only), so one model call never yields two LLM spans. Each command inits with its own `workflowName` (`notarize`, `recon`, `queue-run`, `noise-floor`, `doctor`) and roots its work in a WORKFLOW span (`withWorkflow`, export only, not written to spans.jsonl). Replay paths still init nothing | The guide says to use the provider's own capture mechanism, never two mechanisms on one call, and to name entry points by task |
+| 79 | Guide: install the latest SDK | `neatlogs` stays at 1.1.26: pnpm's minimum-release-age policy rejects 1.1.27/1.1.28 (published 2026-10-09, under a day old). Upgrade once they age past the policy | Supply-chain policy outranks "latest" |
+| 78 | Fixture walkthrough | `notary demo --fixture` drives the real pipeline through a process-wide recorder transport (`setRecorderTransport`) backed by an in-process simulated Crustdata/Dodo with 6 planted, printed quirks, plus deterministic reflector/adversary doubles. Global fetch is trapped (0 calls). Cassettes it saves carry `fixture: true` and can't be saved into `fixtures/cassettes`; `loadPinned` refuses them; bundles are `sample: true` with a FIXTURE disclosure | Shows the whole flow without faking a live run |
+| 79 | Verdict with a wildcard prediction | A hypothesis whose template predicts `*` (no prediction) could be "confirmed" as the last one standing; now inconclusive | Found by the demo |
+| 80 | unit_mismatch → transform | The compiler read `observed.treatment.ratio`, the runner stores `observed.ratio`; the guard always fell back to block. Fixed | Found by the demo |

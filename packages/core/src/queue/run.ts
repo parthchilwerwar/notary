@@ -68,6 +68,7 @@ export interface RunQueueOptions {
   cassette?: string;
   /** Continue an interrupted guarded run (`runId`, else the latest unfinished one). */
   resume?: boolean;
+  /** Resume: the run to continue. Live (not resume): override the default `run-<variant>-<stamp>` runId (demo). */
   runId?: string;
   /** Default: expected.json next to the queue file. */
   expectedFile?: string;
@@ -247,7 +248,7 @@ export async function runQueue(opts: RunQueueOptions): Promise<RunQueueResult> {
         });
       }
     } else {
-      runId = `run-${opts.variant}-${compactStamp(started)}`;
+      runId = opts.runId ?? `run-${opts.variant}-${compactStamp(started)}`;
       cassetteName = runId;
       tools =
         opts.tools ??

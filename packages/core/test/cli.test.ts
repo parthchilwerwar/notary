@@ -17,7 +17,7 @@ function parse(args: string[]) {
 describe("cli", () => {
   it("registers every TDD subcommand plus doctor", () => {
     const names = buildProgram().commands.map((c) => c.name());
-    expect(names).toEqual(["notarize", "run", "replay", "eval", "export", "serve", "guards", "doctor"]);
+    expect(names).toEqual(["notarize", "run", "replay", "eval", "export", "serve", "guards", "demo", "doctor"]);
     const guards = buildProgram().commands.find((c) => c.name() === "guards");
     expect(guards?.commands.map((c) => c.name())).toEqual(["coverage"]);
   });
@@ -38,6 +38,7 @@ describe("cli", () => {
     expect(isKeylessInvocation(["node", "cli", "eval", "noise-floor", "--queue", "q", "--replay"])).toBe(true);
     expect(isKeylessInvocation(["node", "cli", "eval", "noise-floor", "--queue", "q"])).toBe(false);
     expect(isKeylessInvocation(["node", "cli", "run", "--replay", "c"])).toBe(false);
+    expect(isKeylessInvocation(["node", "cli", "demo", "--fixture"])).toBe(true);
   });
 
   it("not-implemented commands still raise NotImplementedError", () => {

@@ -9,7 +9,7 @@
  *
  *   unit_mismatch        transform on claim.operation: scale the request param `claim.param` by
  *                        1 / observed ratio, where the ratio (echoed / sent) is read from the
- *                        belief's cited unit_roundtrip probes (observed.treatment.ratio). If the
+ *                        belief's cited unit_roundtrip probes (observed.ratio, as runner.ts records it). If the
  *                        cited probes disagree or carry no ratio, there is no safe transform: block.
  *   idempotency_hazard   retry_policy on claim.operation (no blind write retries; on timeout/5xx
  *                        read back and retry only if the read-back proves the write did not land)
@@ -97,8 +97,10 @@ export function observedUnitRatios(b: Belief, probesById: ReadonlyMap<string, Pr
     if (ev.valid === false) continue;
     const p = probesById.get(ev.probeId);
     if (!p || p.template !== "unit_roundtrip") continue;
-    const obs = p.observed as { outcome?: unknown; treatment?: { ratio?: unknown } } | undefined;
-    const ratio = obs?.treatment?.ratio;
+    // reflect/runner.ts records `observed` as {outcome, ...observation.treatment}, so the ratio is a
+    // top-level field on real probes; `treatment.ratio` is the older nested shape (kept for old records).
+    const obs = p.observed as { outcome?: unknown; ratio?: unknown; treatment?: { ratio?: unknown } } | undefined;
+    const ratio = obs?.ratio ?? obs?.treatment?.ratio;
     if ((obs?.outcome === "x100" || obs?.outcome === "div100") && typeof ratio === "number" && Number.isFinite(ratio) && ratio > 0) {
       out.push({ probeId: p.id, ratio });
     }

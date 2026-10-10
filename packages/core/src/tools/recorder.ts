@@ -52,6 +52,43 @@ export interface Cassette {
   exchanges: Exchange[];
   /** sha256 of the canonical JSON of `exchanges`. */
   contentHash: string;
+  /**
+   * Set on every cassette written while a FIXTURE transport is installed (`notary demo --fixture`):
+   * simulated traffic, never a recorded live run. Replay refuses such cassettes (replay/pins.ts).
+   */
+  fixture?: true;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Transport override (demo hook)
+
+/** A fetch-compatible function: what the recorder sends live requests through. */
+export type FetchLike = (input: string, init: RequestInit) => Promise<Response>;
+
+export interface RecorderTransport {
+  fetch: FetchLike;
+  /** True for simulated traffic: cassettes saved meanwhile are stamped `fixture: true`. */
+  fixture: boolean;
+}
+
+let transportOverride: RecorderTransport | null = null;
+
+/**
+ * Process-wide transport override for live-mode recorders (used only by `notary demo --fixture`,
+ * which installs an in-process fixture API). While a fixture transport is installed, every saved
+ * cassette is stamped `fixture: true` and saving into the real cassette dir is refused. Returns
+ * a function that restores the previous override.
+ */
+export function setRecorderTransport(t: RecorderTransport | null): () => void {
+  const previous = transportOverride;
+  transportOverride = t;
+  return () => {
+    transportOverride = previous;
+  };
+}
+
+export function recorderTransport(): RecorderTransport | null {
+  return transportOverride;
 }
 
 export interface RecordedResponse {
@@ -250,6 +287,13 @@ export function listCassettes(dir: string = DEFAULT_CASSETTE_DIR): string[] {
 
 export function saveCassette(cassette: Cassette, dir: string = DEFAULT_CASSETTE_DIR): string {
   const file = cassettePath(cassette.name, dir);
+  if (transportOverride?.fixture) {
+    // Simulated traffic never lands next to recorded live cassettes, and is always marked.
+    if (resolve(dir) === resolve(DEFAULT_CASSETTE_DIR)) {
+      throw new Error(`refusing to save fixture cassette ${cassette.name} into ${DEFAULT_CASSETTE_DIR} (fixture transport installed)`);
+    }
+    cassette = { ...cassette, fixture: true };
+  }
   mkdirSync(dir, { recursive: true });
   writeFileSync(file, `${JSON.stringify(cassette, null, 2)}\n`, "utf8");
   return file;
@@ -404,7 +448,7 @@ export class Recorder {
         signal: AbortSignal.timeout(this.opts.timeoutMs ?? 30_000),
       };
       if (payload !== undefined) init.body = payload;
-      res = await globalThis.fetch(spec.url, init);
+      res = await (transportOverride?.fetch ?? globalThis.fetch)(spec.url, init);
     } catch (err) {
       return {
         ...base,

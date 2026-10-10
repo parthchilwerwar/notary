@@ -266,6 +266,18 @@ export function buildProgram(): Command {
     });
 
   program
+    .command("demo")
+    .description("Run the whole pipeline end to end on FIXTURE data (simulated APIs and model doubles; no keys, no network)")
+    .option("--fixture", "required: use the in-process fixture API and model doubles (the only demo mode)")
+    .action(async (opts: { fixture?: boolean }) => {
+      if (!opts.fixture) throw new Error("notary demo needs --fixture (there is no live demo: live runs are `notarize` and `run`)");
+      const { runFixtureDemo } = await import("./demo/index.js");
+      const result = await runFixtureDemo();
+      for (const line of result.lines) console.log(line);
+      process.exitCode = result.exitCode;
+    });
+
+  program
     .command("doctor")
     .description("Emit one neatlogs test span and flush")
     .action(async () => {
@@ -290,7 +302,7 @@ export function buildProgram(): Command {
 export function isKeylessInvocation(argv: readonly string[]): boolean {
   const args = argv.slice(2);
   const cmd = args.find((a) => !a.startsWith("-"));
-  if (cmd === "replay") return true;
+  if (cmd === "replay" || cmd === "demo") return true;
   return cmd === "eval" && args.includes("--replay");
 }
 
