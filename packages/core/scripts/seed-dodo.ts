@@ -34,6 +34,9 @@ import {
   DODO_MAX_PAGE_SIZE,
   SEED_PLAN,
   plannedPayments,
+  probeHandles,
+  probeSeedCost,
+  refundedPaymentHandles,
   seedEmail,
   seedSteps,
   subscriptionPaymentHandle,
@@ -83,6 +86,16 @@ export function formatPlan(plan: SeedPlan = SEED_PLAN): string {
       ` (needs ${Math.ceil(bulkCount / DODO_MAX_PAGE_SIZE)} pages)`,
   );
   lines.push(`pre-existing refunds: ${plan.existingRefunds.map((h) => `pay:${h}`).join(", ")}`);
+  const probe = probeHandles(plan);
+  const cost = probeSeedCost(plan);
+  lines.push(
+    `PROBE-ONLY customer cust:${cost.customer} (never referenced by fixtures/queue/seeded.json): ${cost.payments} payments` +
+      ` (${cost.humanCheckouts} hosted checkout, ${cost.headlessPayments} headless), ${cost.refunds} refunds, ${cost.subscriptions} subscriptions`,
+  );
+  lines.push(
+    `  added cost (Dodo TEST mode, no real money): ${cost.chargedMinor} ${plan.currency} minor units charged, ${cost.refundedMinor} refunded by the seed;` +
+      ` ${probe.openPayments.length} open payments left for refund probes, ${probe.refundedPayments.length} refunded for refund-list probes`,
+  );
   lines.push(`write calls ${steps.filter((s) => s.kind === "api" && !s.op.startsWith("dodo.list") && !s.op.startsWith("dodo.get")).length},` +
     ` human checkouts ${steps.filter((s) => s.kind === "human").length} (plus polling reads)`);
   lines.push(`manifest -> ${DEFAULT_MANIFEST_PATH}`);
@@ -228,7 +241,8 @@ async function seed(plan: SeedPlan, waitMinutes: number): Promise<SeedManifest> 
     manifest.subscriptions[h] = { subscriptionId, customerHandle: h, productHandle: c.plan };
   }
 
-  // 5. Headless payments with the saved payment method (add-ons, onboarding, bulk top-ups)
+  // 5. Headless payments with the saved payment method (add-ons, onboarding, bulk top-ups, probe-only payments)
+  const extraSubs = new Set(probeHandles(plan).extraSubscriptionPayments);
   for (const p of plannedPayments(plan).filter((x) => x.via === "headless")) {
     const first = firstPayment[p.customer]!;
     const paymentMethodId = typeof first.payment_method_id === "string" ? first.payment_method_id : null;
@@ -267,6 +281,14 @@ async function seed(plan: SeedPlan, waitMinutes: number): Promise<SeedManifest> 
       status: String(payment.status),
     };
     console.log(`paid     pay:${p.handle} -> ${payment.payment_id} (${payment.total_amount})`);
+    // PROBE-ONLY extra subscriptions: a headless checkout of a recurring product. Whether Dodo turns it
+    // into a subscription is not documented; if no subscription_id comes back, the change-plan probes
+    // simply have fewer subscriptions (they skip with a reason). The queue never uses these.
+    if (extraSubs.has(p.handle)) {
+      const subscriptionId = typeof payment.subscription_id === "string" ? payment.subscription_id : null;
+      if (subscriptionId) manifest.subscriptions[p.handle] = { subscriptionId, customerHandle: p.customer, productHandle: p.product };
+      else console.warn(`warning: probe-only payment ${p.handle} carries no subscription_id; not recorded as a subscription`);
+    }
   }
 
   // 6. Verify subscriptions
@@ -275,12 +297,15 @@ async function seed(plan: SeedPlan, waitMinutes: number): Promise<SeedManifest> 
     console.log(`sub      sub:${h} -> ${data.subscription_id} status ${data.status}`);
   }
 
-  // 7. Pre-existing refunds
-  for (const h of plan.existingRefunds) {
+  // 7. Pre-existing refunds (the queue's trap case) and the probe-only refunded set (refund-list probes)
+  for (const h of refundedPaymentHandles(plan)) {
     const pay = manifest.payments[h];
     if (!pay) throw new Error(`existingRefunds: no seeded payment ${h}`);
     const { data } = await call(() =>
-      dodo.createRefund({ payment_id: pay.paymentId, reason: "Notary seed: pre-existing refund (seeded fixture)" }),
+      dodo.createRefund({
+        payment_id: pay.paymentId,
+        reason: plan.existingRefunds.includes(h) ? "Notary seed: pre-existing refund (seeded fixture)" : "Notary seed: probe-only refund (refund-list probes)",
+      }),
     );
     console.log(`refund   pay:${h} -> ${data.refund_id} status ${data.status}`);
   }

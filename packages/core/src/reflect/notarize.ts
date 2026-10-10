@@ -18,6 +18,11 @@
  * the adversary (`--adversary bedrock|session`, default bedrock) reviews each candidate. A missing
  * adversary model prints BLOCKED and leaves the candidates as candidates (exit 3).
  *
+ * Re-examination (DECISIONS #85): a candidate the adversary DOWNGRADES gets one bounded extra round in
+ * the same run — never-applied designs only (the template the adversary's reason names first), the
+ * same ledger / burst counter / payment pools / per-run probe cap, then the evidence check and ONE more
+ * adversary review of those claims. Still not candidate -> abstained ("re-examined after downgrade").
+ *
  * P7 transfer priors (`--priors-from <tool>` [`--priors-bundle <path>`]): the source tool's latest
  * notarize bundle (runs/<runId>/<runId>.json, hash-verified) gives per-defect-class base rates and
  * each NEW belief of this run starts from its claim's transfer prior (src/beliefs/priors.ts).
@@ -50,6 +55,8 @@ import { claimById } from "../contracts/index.js";
 import { GuardRegistry, compileGuards, wireRetirement } from "../guards/index.js";
 import type { BeliefsPhaseResult } from "../beliefs/phase.js";
 import { DEFAULT_MANIFEST_PATH, loadManifest } from "../queue/manifest.js";
+import { SEED_PLAN, probeHandles, refundedPaymentHandles } from "../queue/seed-plan.js";
+import type { SeedPlan } from "../queue/seed-plan.js";
 import type { Belief, Guard, Probe, RoleUsage, RunBundle, Tool, UsageByRole } from "../schema/index.js";
 import { DEFAULT_DB_PATH, openDb } from "../store/db.js";
 import type { NotaryDb } from "../store/db.js";
@@ -67,7 +74,7 @@ import {
   saveCassette,
 } from "../tools/index.js";
 import type { Cassette } from "../tools/index.js";
-import { maxProbesPerClaimFromEnv, runProbeLoop } from "./loop.js";
+import { MAX_PROBES_PER_RUN, REEXAMINED_AFTER_DOWNGRADE, maxProbesPerClaimFromEnv, runProbeLoop, templateNamedIn } from "./loop.js";
 import { lambdaFromEnv } from "./score.js";
 import type { ProbeLoopResult } from "./loop.js";
 import { BurstCounter, SimplePaymentPool, probeIoFromTools } from "./templates/index.js";
@@ -123,6 +130,8 @@ export interface NotarizeOptions {
   priorsSourceRecord?: { from: Tool; runId: string; beliefsAfter: Belief[] };
   /** Replay: the recorded probe payment pool instead of the seed manifest. */
   paymentPool?: string[];
+  /** Replay: the recorded probe subscription pool (change-plan probes) instead of the seed manifest. */
+  subscriptionPool?: string[];
   /** Replay: more pinned cassette refs to list in the bundle (model cassette, replay record). */
   extraCassettes?: string[];
   /** unguarded_call_sites for bundle.metrics (the CLI runs the coverage check); default null. */
@@ -169,7 +178,6 @@ function compactStamp(d: Date): string {
   return d.toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
 }
 
-/** Succeeded seeded payments the seeded queue never references, last handles first. */
 /**
  * The raw (unguarded) REPLAY ProbeIo of every probing path: probes must see the raw recorded
  * response to confirm or refute a belief (DECISIONS #56), so this module is the one place outside
@@ -195,16 +203,46 @@ export function rawReplayProbeIo(opts: {
   );
 }
 
-export function probePaymentPool(manifestPath: string, queuePath: string): { ids: string[]; note?: string } {
-  if (!existsSync(manifestPath)) return { ids: [], note: "no seed manifest: refund probes are skipped" };
+/**
+ * Probe-reserved Dodo resources (DECISIONS #42, #81): never anything the seeded queue references.
+ *
+ * Payments: when the manifest holds the plan's PROBE-ONLY customer (seed-plan.ts `probe`; a customer
+ * the queue never names), only its open (unrefunded) one-time payments, in handle order. Older
+ * manifests without it fall back to every succeeded payment no queue item references, last handles
+ * first. Payments the seed itself refunded are never offered (a refund probe on them proves nothing).
+ * Subscriptions (change-plan probes): those of customers the queue never names (cust:/sub: refs), in
+ * handle order.
+ */
+export function probePaymentPool(
+  manifestPath: string,
+  queuePath: string,
+  plan: SeedPlan = SEED_PLAN,
+): { ids: string[]; subscriptionIds: string[]; note?: string } {
+  if (!existsSync(manifestPath)) return { ids: [], subscriptionIds: [], note: "no seed manifest: refund and change-plan probes are skipped" };
   const manifest = loadManifest(manifestPath);
   const queueText = existsSync(queuePath) ? readFileSync(queuePath, "utf8") : "";
-  const used = new Set([...queueText.matchAll(/"pay:([A-Za-z0-9._-]+)"/g)].map((m) => m[1]!));
-  const ids = Object.entries(manifest.payments)
-    .filter(([handle, p]) => !used.has(handle) && p.status === "succeeded")
-    .sort(([a], [b]) => (a < b ? 1 : a > b ? -1 : 0))
-    .map(([, p]) => p.paymentId);
-  return { ids };
+  const refs = (kind: string) => new Set([...queueText.matchAll(new RegExp(`"${kind}:([A-Za-z0-9._-]+)"`, "g"))].map((m) => m[1]!));
+  const usedPay = refs("pay");
+  const usedCust = refs("cust");
+  const usedSub = refs("sub");
+  const refunded = new Set(refundedPaymentHandles(plan));
+  const usable = (handle: string): boolean => {
+    const p = manifest.payments[handle];
+    return p !== undefined && !usedPay.has(handle) && !usedCust.has(p.customerHandle) && p.status === "succeeded" && !refunded.has(handle);
+  };
+  const probe = probeHandles(plan);
+  const reserved = !usedCust.has(probe.customer) && probe.openPayments.some((h) => manifest.payments[h]?.customerHandle === probe.customer);
+  const ids = reserved
+    ? probe.openPayments.filter(usable).map((h) => manifest.payments[h]!.paymentId)
+    : Object.entries(manifest.payments)
+        .filter(([handle, p]) => !usedPay.has(handle) && p.status === "succeeded" && !refunded.has(handle))
+        .sort(([a], [b]) => (a < b ? 1 : a > b ? -1 : 0))
+        .map(([, p]) => p.paymentId);
+  const subscriptionIds = Object.entries(manifest.subscriptions)
+    .filter(([handle, sub]) => !usedSub.has(handle) && !usedCust.has(sub.customerHandle))
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([, sub]) => sub.subscriptionId);
+  return { ids, subscriptionIds };
 }
 
 /** runId of the newest LIVE notarize bundle of `tool` that recorded `probes-<tool>` (for tag alignment). */
@@ -367,14 +405,14 @@ export async function notarize(opts: NotarizeOptions): Promise<NotarizeResult> {
           }
         : undefined;
       const beliefsBefore = beliefStore.list(opts.tool);
-      const pool: { ids: string[]; note?: string } = opts.paymentPool
-        ? { ids: [...opts.paymentPool] }
+      const pool: { ids: string[]; subscriptionIds: string[]; note?: string } = opts.paymentPool
+        ? { ids: [...opts.paymentPool], subscriptionIds: [...(opts.subscriptionPool ?? [])] }
         : opts.tool === "dodo"
           ? probePaymentPool(opts.manifestPath ?? DEFAULT_MANIFEST_PATH, opts.queuePath ?? SEEDED_QUEUE_PATH)
-          : { ids: [] };
-      loop = await runProbeLoop({
+          : { ids: [], subscriptionIds: [] };
+      // One run-wide set of probe resources: the re-examination round shares them with the main loop.
+      const loopShared = {
         tool: opts.tool,
-        anomalies: recon.anomalies,
         claims: recon.entries.map((e) => e.claim),
         entries: recon.entries,
         tools: probeIoFromTools(tools, opts.sleep ? { sleep: opts.sleep } : {}),
@@ -387,11 +425,13 @@ export async function notarize(opts: NotarizeOptions): Promise<NotarizeResult> {
         lambda: params.lambda,
         burst: new BurstCounter(),
         payments: new SimplePaymentPool(pool.ids),
+        subscriptions: new SimplePaymentPool(pool.subscriptionIds),
         ...(priors ? { priors } : {}),
         ...(opts.now ? { now: opts.now } : {}),
-      });
+      };
+      loop = await runProbeLoop({ ...loopShared, anomalies: recon.anomalies });
       const abstainedClaimIds = recon.anomalies.filter((an) => loop.abstained.includes(an.id)).map((an) => an.claimId);
-      const beliefs = await runBeliefsPhase({
+      let beliefs = await runBeliefsPhase({
         db,
         store: beliefStore,
         before: beliefsBefore,
@@ -410,6 +450,84 @@ export async function notarize(opts: NotarizeOptions): Promise<NotarizeResult> {
         ...(review ? { review } : {}),
         ...(opts.now ? { now: opts.now } : {}),
       });
+      // Re-examination after an adversary downgrade: at most ONE extra round per run (see the header).
+      const downgraded = [...new Set(beliefs.events.filter((e) => e.from === "candidate" && e.to === "hypothesis" && e.reason.startsWith("adversary downgrade")).map((e) => e.beliefId))].sort();
+      const subjects = downgraded.flatMap((beliefId) => {
+        const b = beliefStore.get(beliefId);
+        if (!b || b.status !== "hypothesis") return [];
+        const last = [...loop.probes].reverse().find((pr) => pr.claimId === b.claimId);
+        const rivals = (last?.hypothesisIds ?? []).flatMap((id) => loop.hypotheses.filter((h) => h.id === id));
+        const prefer = templateNamedIn(b.adversary?.reason);
+        return [{ claimId: b.claimId, rivals, ...(prefer ? { prefer } : {}) }];
+      });
+      if (subjects.length && !(recon.stoppedReason ?? loop.stoppedReason)) {
+        const first = loop;
+        const round = await runProbeLoop({
+          ...loopShared,
+          anomalies: [],
+          verifyClaims: [],
+          reexamine: subjects,
+          seqStart: first.probes.length,
+          maxProbesPerRun: Math.max(0, MAX_PROBES_PER_RUN - first.probes.length),
+        });
+        const ids = subjects.map((x) => x.claimId);
+        const second = await runBeliefsPhase({
+          db,
+          store: beliefStore,
+          before: beliefs.before,
+          eventsSince,
+          tool: opts.tool,
+          runsDir: spansDir,
+          claims,
+          probes: round.probes,
+          hypotheses: first.hypotheses,
+          stoppedReason: round.stoppedReason,
+          abstainReason: `${REEXAMINED_AFTER_DOWNGRADE}; the run's one extra round ended between thresholds`,
+          reviewOnly: ids,
+          backend: params.adversary,
+          llm,
+          env,
+          ...(priors ? { priors } : {}),
+          ...(review ? { review } : {}),
+          ...(opts.now ? { now: opts.now } : {}),
+        });
+        // A re-examined claim still open (unprobed, or downgraded again by its one extra review): abstain it.
+        for (const id of ids) {
+          const b = beliefStore.byClaim(id);
+          if (b?.status === "hypothesis") beliefStore.abstain(b.id, `${REEXAMINED_AFTER_DOWNGRADE}; still not notarized after the one extra round (${round.probes.filter((pr) => pr.claimId === id).length} probe(s)${round.stoppedReason ? `, ${round.stoppedReason}` : ""}); P(holds)=${b.confidence.toFixed(4)}`);
+        }
+        const outcomes = new Map(first.claimOutcomes.map((o) => [o.claimId, o]));
+        for (const o of round.claimOutcomes) outcomes.set(o.claimId, o);
+        const stopped = first.stoppedReason ?? round.stoppedReason;
+        loop = {
+          ...first,
+          probes: [...first.probes, ...round.probes],
+          claimOutcomes: [...outcomes.values()].sort((a, b) => (a.claimId < b.claimId ? -1 : a.claimId > b.claimId ? 1 : 0)),
+          ...(stopped ? { stoppedReason: stopped } : {}),
+          ...(round.reexamined ? { reexamined: round.reexamined } : {}),
+        };
+        const after = beliefStore.list(opts.tool);
+        const afterIds = new Set(after.map((b) => b.id));
+        beliefs = {
+          before: beliefs.before,
+          after,
+          events: beliefStore.events(undefined, eventsSince).filter((e) => afterIds.has(e.beliefId)),
+          lines: [
+            second.lines[0]!, // final belief counts
+            ...beliefs.lines.slice(1),
+            `re-examination after downgrade (one round): ${ids.join(", ")}: ${round.probes.length} probe(s); ${ids.map((id) => `${id}=${beliefStore.byClaim(id)?.status}`).join(", ")}`,
+            ...second.lines.slice(3),
+          ],
+          ...((beliefs.adversaryBlocked ?? second.adversaryBlocked) ? { adversaryBlocked: (beliefs.adversaryBlocked ?? second.adversaryBlocked)! } : {}),
+          reviews: {
+            uphold: beliefs.reviews.uphold + second.reviews.uphold,
+            narrow: beliefs.reviews.narrow + second.reviews.narrow,
+            downgrade: beliefs.reviews.downgrade + second.reviews.downgrade,
+            failed: beliefs.reviews.failed + second.reviews.failed,
+          },
+          evidence: { checked: beliefs.evidence.checked + second.evidence.checked, invalid: beliefs.evidence.invalid + second.evidence.invalid, source: beliefs.evidence.source },
+        };
+      }
       // Compile the notarized beliefs (all tools) into the registry; this tool's guards go in the bundle.
       const allBeliefs = beliefStore.list();
       const cited = [...new Set(allBeliefs.filter((b) => b.status === "notarized").flatMap((b) => b.evidence.map((e) => e.probeId)))];
@@ -453,6 +571,7 @@ export async function notarize(opts: NotarizeOptions): Promise<NotarizeResult> {
             files: {},
             ...(priorsRecord ? { priorsSource: priorsRecord } : {}),
             paymentPool: pool.ids,
+            subscriptionPool: pool.subscriptionIds,
             store: snapshot,
           },
           cassetteDir,
@@ -526,7 +645,12 @@ async function writeNotarizeBundle(a: {
     );
   }
   if (a.identity !== runId) disclosure.push(`Probe ids and request tags use the recorded run id ${a.identity}.`);
-  if (tool === "dodo") disclosure.push("Dodo Payments test mode only; refund probes use seeded payments the seeded queue does not reference.");
+  if (tool === "dodo") disclosure.push("Dodo Payments test mode only; refund and change-plan probes use seeded probe-only payments and subscriptions the seeded queue does not reference.");
+  if (loop.verification.claims.length) {
+    disclosure.push(
+      `Verification probes: ${loop.verification.claims.length} required claim(s) with no anomaly this run (${loop.verification.claims.join(", ")}) were probed against a deterministic rival pair {honored, suspected class from src/contracts/priors-map.ts} built by code, not proposed by a model; same commit-then-run loop, caps and budget.`,
+    );
+  }
   if (a.priors) {
     disclosure.push(
       `Transfer priors from ${a.priors.from} notarize bundle ${a.priors.sourceRunId}: each new belief started from Beta(1 + s(1 - r), 1 + s*r), r = the ${a.priors.from} base rate of its claim's suspected defect class, s = ${a.priors.strength} pseudo-counts (Beta(1, 1) when ${a.priors.from} settled nothing relevant).`,
@@ -620,6 +744,8 @@ async function writeNotarizeBundle(a: {
   }
   if (a.poolNote) lines.push(`note: ${a.poolNote}`);
   for (const s of loop.skipped) lines.push(`skipped ${s.anomalyId}: ${s.reason}`);
+  if (loop.verification.claims.length) lines.push(`verification probes (no anomaly; deterministic rivals): ${loop.verification.claims.join(", ")}`);
+  for (const v of loop.verification.skipped) lines.push(`verification skipped ${v.claimId}: ${v.reason}`);
   if (stopReason) lines.push(`STOPPED: ${stopReason}`);
   lines.push(`bundle: ${bundlePath}`);
   const blockedCandidates = beliefs.adversaryBlocked !== undefined && beliefs.after.some((b) => b.status === "candidate");

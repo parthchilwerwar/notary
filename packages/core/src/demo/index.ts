@@ -27,6 +27,7 @@ import { finalizeBundle, verifyBundle, writeBundle } from "../bundle/index.js";
 import { RUNS_DIR } from "../checker/notarize.js";
 import { collectBundles, runExport } from "../export/index.js";
 import { DEFAULT_MANIFEST_PATH } from "../queue/manifest.js";
+import { seedSteps } from "../queue/seed-plan.js";
 import { runQueue } from "../queue/run.js";
 import { SEEDED_QUEUE_PATH, notarize, recordedRunId } from "../reflect/notarize.js";
 import type { NotarizeResult } from "../reflect/notarize.js";
@@ -139,7 +140,7 @@ interface LiveStops {
 function liveStops(env: NodeJS.ProcessEnv): LiveStops {
   const has = (k: string) => (env[k] ?? "").trim().length > 0;
   const missing = (ks: string[]) => ks.filter((k) => !has(k)).map((k) => `${k} not set`);
-  const manifest = existsSync(DEFAULT_MANIFEST_PATH) ? [] : ["no seed manifest (fixtures/seed/manifest.json: live seed with a Dodo test key + 11 hosted test-card checkouts)"];
+  const manifest = existsSync(DEFAULT_MANIFEST_PATH) ? [] : [`no seed manifest (fixtures/seed/manifest.json: live seed with a Dodo test key + ${seedSteps().filter((st) => st.kind === "human").length} hosted test-card checkouts)`];
   const own: Record<number, string[]> = {
     1: missing(["CRUSTDATA_API_KEY", "DODO_PAYMENTS_API_KEY"]),
     2: [],
@@ -289,7 +290,7 @@ export async function runFixtureDemo(opts: FixtureDemoOptions = {}): Promise<Fix
     for (const b of nb) lines.push(...anomalyLines(b));
     lines.push(`  ${stops.line(2)}`);
 
-    lines.push(heading(3, "Reflector hypotheses (one batched model call; the model only proposes)"));
+    lines.push(heading(3, "Hypotheses (reflector: one batched model call, the model only proposes; verification rivals: built by code, no model)"));
     for (const b of nb) lines.push(...hypothesisLines(b));
     lines.push(`  ${stops.line(3)}`);
 
@@ -300,7 +301,7 @@ export async function runFixtureDemo(opts: FixtureDemoOptions = {}): Promise<Fix
       if (!orderOk) problems.push(`${b.runId}: a probe's committedAt is not before its ranAt`);
     }
     for (const t of ["crustdata", "dodo"] as const) {
-      for (const s of (notarized[t]?.result.lines ?? []).filter((l) => l.startsWith("skipped "))) lines.push(`  ${t}: ${short(s, 200)}`);
+      for (const s of (notarized[t]?.result.lines ?? []).filter((l) => l.startsWith("skipped ") || l.startsWith("verification "))) lines.push(`  ${t}: ${short(s, 200)}`);
     }
     lines.push(`  ${stops.line(4)}`);
 

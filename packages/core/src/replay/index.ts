@@ -255,6 +255,7 @@ export async function replayBundle(
         params: inputs.params,
         ...(inputs.priorsSource ? { priorsSourceRecord: inputs.priorsSource } : {}),
         paymentPool: inputs.paymentPool ?? [],
+        subscriptionPool: inputs.subscriptionPool ?? [],
         extraCassettes: [llmRec.ref, inputsRef],
         ...(backend === "session" ? { review: llm.review } : {}),
         sleep: async () => {},

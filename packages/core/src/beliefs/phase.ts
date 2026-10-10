@@ -45,6 +45,10 @@ export interface BeliefsPhaseOptions {
   before?: Belief[];
   /** Report belief events appended after this seq (default: from the start of this phase). */
   eventsSince?: number;
+  /** Abstain reason for probed beliefs still between thresholds (re-examination round: "re-examined after downgrade"). */
+  abstainReason?: string;
+  /** Review only candidates of these claims (re-examination round: one more review of the re-examined claims). */
+  reviewOnly?: readonly string[];
 }
 
 export interface BeliefsPhaseResult {
@@ -118,7 +122,9 @@ export async function runBeliefsPhase(opts: BeliefsPhaseOptions): Promise<Belief
   for (const claimId of [...probed].sort()) {
     const b = store.byClaim(claimId)!;
     if (b.status !== "hypothesis") continue; // an unlearned belief keeps that status visible
-    const why = opts.stoppedReason
+    const why = opts.abstainReason
+      ? `${opts.abstainReason}${opts.stoppedReason ? ` (${opts.stoppedReason})` : ""}`
+      : opts.stoppedReason
       ? `budget ended between thresholds (${opts.stoppedReason})`
       : abstainedClaims.has(claimId)
         ? "every proposed rival was refuted twice; the run's probe allowance ended between thresholds"
@@ -146,7 +152,8 @@ export async function runBeliefsPhase(opts: BeliefsPhaseOptions): Promise<Belief
   // 5. Adversary on every candidate.
   const reviews = { uphold: 0, narrow: 0, downgrade: 0, failed: 0 };
   let adversaryBlocked: string | undefined;
-  const candidates = store.list(opts.tool).filter((b) => b.status === "candidate");
+  const reviewOnly = opts.reviewOnly ? new Set(opts.reviewOnly) : undefined;
+  const candidates = store.list(opts.tool).filter((b) => b.status === "candidate" && (!reviewOnly || reviewOnly.has(b.claimId)));
   if (candidates.length && opts.backend === "bedrock") {
     const withModel = opts.llm as (LlmLike & { modelFor?: (role: "adversary") => string }) | undefined;
     if (!withModel) adversaryBlocked = "BLOCKED: no LLM client for the bedrock adversary";

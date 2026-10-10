@@ -139,6 +139,30 @@ describe("notary demo --fixture (FIXTURE data, simulated APIs and model doubles)
     expect(guarded.decisions.filter((d) => d.status === "held").every((d) => d.evidencePack !== undefined)).toBe(true);
   });
 
+  it("verification probes notarize required claims that had no anomaly, so the guarded run can execute what they gate", () => {
+    const dodo = first.bundles.find((b) => b.runId === DEMO_RUN_IDS.notarizeDodo)!;
+    const verifyHyps = new Set(dodo.hypotheses.filter((h) => h.anomalyId.startsWith("verify:")).map((h) => h.id));
+    const verifyProbes = dodo.probes.filter((p) => p.hypothesisIds.every((id) => verifyHyps.has(id)));
+    expect(verifyProbes.length).toBeGreaterThan(0);
+    const anomalyClaims = new Set(dodo.anomalies.map((a) => a.claimId));
+    for (const p of verifyProbes) expect(anomalyClaims.has(p.claimId)).toBe(false);
+    // recon: [] claims are exercised against probe-only seeded state and settle on both sides
+    const after = new Map(dodo.beliefs.after.map((b) => [b.claimId, b]));
+    expect(after.get("dodo.subscription.change-plan-pending-409")).toMatchObject({ status: "notarized", class: "honored" });
+    expect(after.get("dodo.payment.refunds-lists-issued-refund")).toMatchObject({ status: "notarized", class: "honored" });
+    expect(after.get("dodo.refund.amount-minor-units")).toMatchObject({ status: "notarized", class: "unit_mismatch" });
+    expect(after.get("dodo.refund.full-retry-no-duplicate")).toMatchObject({ status: "notarized", class: "idempotency_hazard" });
+    // the guarded run executes items whose required beliefs are all notarized, and only those
+    const guarded = first.bundles.find((b) => b.runId === DEMO_RUN_IDS.guarded)!;
+    const executed = guarded.decisions.filter((d) => d.status === "executed");
+    expect(executed.length).toBeGreaterThan(0);
+    for (const d of executed) expect(d.missingBeliefs).toEqual([]);
+    for (const d of guarded.decisions.filter((x) => x.status === "held")) {
+      expect(d.missingBeliefs.length).toBeGreaterThan(0);
+      expect(d.evidencePack).toBeDefined();
+    }
+  });
+
   it("is deterministic: a second run prints the same summary (timestamps aside)", async () => {
     const second = await runFixtureDemo({ outDir, slowFullRefundMs: 300, readinessEnv: {} });
     expect(second.exitCode).toBe(0);

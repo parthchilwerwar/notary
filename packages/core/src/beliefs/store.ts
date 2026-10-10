@@ -483,7 +483,10 @@ export class BeliefStore {
       const past = sidePastThreshold(confidence);
       if (past) {
         const n = this.independentProbes(beliefId, past);
-        if (n >= MIN_INDEPENDENT_PROBES) {
+        const downgraded = r.adversary_json != null && (JSON.parse(str(r.adversary_json)) as { verdict?: string }).verdict === "downgrade";
+        if (downgraded && !this.freshSupport(beliefId, probeId, past)) {
+          why = `${reason}; P(holds)=${confidence.toFixed(4)} past the ${past} threshold, but the adversary downgraded this belief: it returns to candidate only on a NEW confirmed, independent ${past} probe (DECISIONS #86)`;
+        } else if (n >= MIN_INDEPENDENT_PROBES) {
           to = "candidate";
           why = `${reason}; P(holds)=${confidence.toFixed(4)} past the ${past} threshold with ${n} independent probes: candidate`;
           patch.side = past;
@@ -505,6 +508,24 @@ export class BeliefStore {
       this.onLeaveNotarized?.(b, event);
     }
     return { event };
+  }
+
+  /**
+   * DECISIONS #86 (audit A-01 class): after an adversary downgrade the old evidence already sits past
+   * the threshold, so status may move again only on NEW informative evidence: the probe being applied
+   * must be confirmed on `side` (cited, not marked invalid) with a design fingerprint no other cited
+   * probe of this belief has. Uninformative / inconclusive / invalid probes and replicates never re-promote.
+   */
+  private freshSupport(beliefId: string, probeId: string | undefined, side: Side): boolean {
+    if (!probeId) return false;
+    const row = this.db
+      .prepare("SELECT fingerprint FROM belief_probes WHERE belief_id = ? AND probe_id = ? AND cited = 1 AND side = ? AND (valid IS NULL OR valid = 1)")
+      .get(beliefId, probeId, side) as Row | undefined;
+    if (!row) return false;
+    const other = this.db
+      .prepare("SELECT 1 AS x FROM belief_probes WHERE belief_id = ? AND probe_id <> ? AND cited = 1 AND fingerprint = ?")
+      .get(beliefId, probeId, str(row.fingerprint));
+    return !other;
   }
 
   /** Budget ended between the thresholds: hypothesis/unlearned → abstained. Other statuses are left alone. */

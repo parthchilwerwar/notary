@@ -50,16 +50,33 @@ export function anomalyLines(bundle: RunBundle): string[] {
   ];
 }
 
+/** Hypothesis.anomalyId of a verification rival (src/reflect/loop.ts verificationSubjectId). */
+const VERIFY_PREFIX = "verify:";
+
+function isVerificationProbe(bundle: RunBundle, p: Probe): boolean {
+  return p.hypothesisIds.some((id) => bundle.hypotheses.find((h) => h.id === id)?.anomalyId.startsWith(VERIFY_PREFIX));
+}
+
 export function hypothesisLines(bundle: RunBundle): string[] {
   const out: string[] = [];
   const byAnomaly = new Map<string, Hypothesis[]>();
   for (const h of bundle.hypotheses) byAnomaly.set(h.anomalyId, [...(byAnomaly.get(h.anomalyId) ?? []), h]);
+  const proposed = bundle.hypotheses.filter((h) => !h.anomalyId.startsWith(VERIFY_PREFIX));
+  const verifyIds = [...byAnomaly.keys()].filter((k) => k.startsWith(VERIFY_PREFIX)).sort();
+  const n = bundle.anomalies.length;
   const u = bundle.usageByRole.reflector;
-  out.push(`${bundle.tool}: ${bundle.hypotheses.length} hypotheses for ${byAnomaly.size} anomal${byAnomaly.size === 1 ? "y" : "ies"} — reflector double: ${u.calls} call(s), ${u.inputTokens} in / ${u.outputTokens} out tokens, $${u.usd} (fixture model, no cost)`);
+  out.push(`${bundle.tool}: ${proposed.length} hypotheses for ${n} anomal${n === 1 ? "y" : "ies"} — reflector double: ${u.calls} call(s), ${u.inputTokens} in / ${u.outputTokens} out tokens, ${u.usd} (fixture model, no cost)`);
   for (const a of [...bundle.anomalies].sort((x, y) => (x.id < y.id ? -1 : 1))) {
     const hs = byAnomaly.get(a.id) ?? [];
     out.push(`  ${a.id} (${a.claimId}):${hs.length ? "" : " no valid hypotheses"}`);
     for (const h of hs) out.push(`    - ${h.class} [${h.distinguishingTest}] ${h.id}: ${short(h.statement, 96)}`);
+  }
+  if (verifyIds.length) {
+    out.push(`${bundle.tool}: verification rivals for ${verifyIds.length} required claim(s) with no anomaly — {honored, suspected class} built by code from src/contracts/priors-map.ts, no model call`);
+    for (const id of verifyIds) {
+      const hs = byAnomaly.get(id)!;
+      out.push(`  ${id.slice(VERIFY_PREFIX.length)}: ${hs.map((h) => `${h.class} ${h.id}`).join(" vs ")} [${hs[0]!.distinguishingTest}]`);
+    }
   }
   return out;
 }
@@ -79,7 +96,7 @@ export function probeLines(bundle: RunBundle): { lines: string[]; orderOk: boole
     const outcome = (p.observed as { outcome?: unknown } | undefined)?.outcome;
     const note = (p.observed as { note?: unknown } | undefined)?.note;
     const w = winnerClass(bundle, p);
-    out.push(`  ${p.id}  ${p.claimId}  ${p.template}${variant}`);
+    out.push(`  ${p.id}  ${p.claimId}  ${p.template}${variant}${isVerificationProbe(bundle, p) ? "  [verification]" : ""}`);
     out.push(
       `      prediction sha256 ${p.predictionHash.slice(0, 16)}…  committedAt ${p.committedAt} ${ok ? "<" : "NOT BEFORE"} ranAt ${p.ranAt ?? "?"}`,
     );
@@ -95,7 +112,7 @@ export function beliefLines(beliefs: readonly Belief[]): string[] {
     (b) =>
       `  ${b.status.padEnd(10)} ${b.claimId}  P(holds)=${b.confidence.toFixed(4)}  α=${b.alpha} β=${b.beta}  cited probes=${b.evidence.length}${b.class ? `  class=${b.class}` : ""}`,
   );
-  out.push(`  ${untouched.length} belief(s) untouched at Beta(1,1), status hypothesis (no anomaly on their claim, so the loop never probed them)`);
+  out.push(`  ${untouched.length} belief(s) untouched at Beta(1,1), status hypothesis (no anomaly on their claim and no verification probe for it: verification covers the required-beliefs map only)`);
   return out;
 }
 

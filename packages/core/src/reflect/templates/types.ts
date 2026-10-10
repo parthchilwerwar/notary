@@ -44,6 +44,8 @@ export interface ProbeDesign {
   estCalls: number;
   /** Probe-reserved Dodo payment ids this design consumes (see PaymentPool). */
   paymentIds?: string[];
+  /** Probe-reserved Dodo subscription ids this design consumes (change-plan probes). */
+  subscriptionIds?: string[];
 }
 
 export interface Skip {
@@ -92,7 +94,7 @@ export interface CostModel {
   creditsPerCall(op: string, params: Record<string, unknown>): number;
 }
 
-/** Probe-reserved Dodo payments (succeeded, not referenced by the seeded queue). */
+/** Probe-reserved Dodo resources by id (payments: succeeded, never referenced by the seeded queue; also used for subscriptions). */
 export interface PaymentPool {
   available(): readonly string[];
   consume(ids: readonly string[]): void;
@@ -153,6 +155,8 @@ export interface ProbeContext {
   costs: CostModel;
   burst: BurstCounter;
   payments: PaymentPool;
+  /** Probe-reserved Dodo subscriptions (change-plan probes); default none (those probes skip with a reason). */
+  subscriptions?: PaymentPool;
   /**
    * Which design variant to build (0-based; default 0). Only templates that declare `variants > 1`
    * read it; each variant changes the treatment's value at the claim's parameter (or, for
@@ -164,6 +168,8 @@ export interface ProbeContext {
 
 export interface ProbeTemplateModule {
   name: ProbeTemplate;
+  /** Predicted outcomes per defect class (the template's class table; a class it lacks gets the "*" wildcard). */
+  classTable?: Partial<Record<DefectClass, readonly string[]>>;
   /** Distinct deterministic designs this template can build per claim (ctx.variant 0..n-1); default 1. */
   variants?: number;
   appliesTo(claim: Claim): boolean;

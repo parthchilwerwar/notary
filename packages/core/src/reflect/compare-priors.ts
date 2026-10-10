@@ -91,6 +91,8 @@ export interface CompareArmsOptions {
   ledger?: () => CreditLedger;
   /** A fresh payment pool per arm; default empty. */
   payments?: () => PaymentPool;
+  /** A fresh probe subscription pool per arm (change-plan probes); default empty. */
+  subscriptions?: () => PaymentPool;
   maxProbesPerClaim?: number;
   lambda?: number;
   templates?: readonly ProbeTemplateModule[];
@@ -172,6 +174,7 @@ async function runArm(
         ...(opts.templates ? { templates: opts.templates } : {}),
         burst: new BurstCounter(),
         payments: opts.payments?.() ?? new SimplePaymentPool(),
+        subscriptions: opts.subscriptions?.() ?? new SimplePaymentPool(),
         ...(opts.now ? { now: opts.now } : {}),
       });
       stoppedReason = loop.stoppedReason;
@@ -310,7 +313,7 @@ export async function comparePriors(opts: ComparePriorsOptions): Promise<Compare
     const probesHash = loadCassette(`probes-${tool}`, { dir: cassetteDir }).contentHash;
     const recorded = recordedRunId(runsDir, tool);
     const loopRunId = recorded ?? `notarize-${tool}-replay-${recon.cassetteHash.slice(0, 12)}`;
-    const pool = tool === "dodo" ? probePaymentPool(opts.manifestPath ?? DEFAULT_MANIFEST_PATH, opts.queuePath ?? SEEDED_QUEUE_PATH) : { ids: [] };
+    const pool = tool === "dodo" ? probePaymentPool(opts.manifestPath ?? DEFAULT_MANIFEST_PATH, opts.queuePath ?? SEEDED_QUEUE_PATH) : { ids: [], subscriptionIds: [] };
 
     const compare = await comparePriorArms({
       tool,
@@ -323,6 +326,7 @@ export async function comparePriors(opts: ComparePriorsOptions): Promise<Compare
       io: (ledger) => rawReplayProbeIo({ cassette: `probes-${tool}`, cassetteDir, ledger, env }),
       ledger: () => new CreditLedger({ env }),
       payments: () => new SimplePaymentPool(pool.ids),
+      subscriptions: () => new SimplePaymentPool(pool.subscriptionIds),
       maxProbesPerClaim: maxProbesPerClaimFromEnv(env),
       now,
     });

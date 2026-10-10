@@ -11,8 +11,9 @@
  *
  * Adversary double — reads ONLY the evidence packet (raw probe records) and applies fixed rules:
  *   1. fewer than 2 cited probes                                   -> downgrade
- *   2. a cited probe sent the same claim parameter in treatment and control (value templates)
- *                                                                  -> downgrade
+ *   2. a cited probe sent the same claim parameter in treatment and control (value templates;
+ *      count templates and record-varying templates such as type_edge are exempt, the same split
+ *      as src/beliefs/params.ts COUNT_TEMPLATES / EXERCISE_TEMPLATES)  -> downgrade
  *   3. a silent_truncation belief whose every cited probe is a boundary_sweep that saw the
  *      over-limit request clamped to exactly the documented max: clamping is consistent with
  *      "max is 100" and no probe checked whether items were lost   -> downgrade
@@ -22,7 +23,7 @@
  */
 import type { ConverseCommandInput, ConverseCommandOutput } from "@aws-sdk/client-bedrock-runtime";
 import { canonicalJson } from "../bundle/hash.js";
-import { COUNT_TEMPLATES, requestSteps, valuesAtPath } from "../beliefs/params.js";
+import { COUNT_TEMPLATES, EXERCISE_TEMPLATES, requestSteps, valuesAtPath } from "../beliefs/params.js";
 import { LlmClient } from "../llm/index.js";
 import type { ConverseTransport } from "../llm/index.js";
 import type { DefectClass, ProbeTemplate } from "../schema/index.js";
@@ -249,7 +250,9 @@ export function adversaryDecision(packet: PacketLike): AdversaryDecision {
   // Rule 2: does each cited probe vary the claim's parameter?
   if (claim.param !== "") {
     for (const p of cited) {
-      if (COUNT_TEMPLATES.has(p.template as ProbeTemplate)) continue;
+      // Only value templates vary the parameter itself (params.ts): count templates vary how often the
+      // op is sent, record templates (type_edge) send the same parameter to different records.
+      if (COUNT_TEMPLATES.has(p.template as ProbeTemplate) || EXERCISE_TEMPLATES.has(p.template as ProbeTemplate)) continue;
       const tv = requestSteps(p.params).flatMap((s) => valuesAtPath(s.params, claim.param));
       const cv = requestSteps(p.control?.params).flatMap((s) => valuesAtPath(s.params, claim.param));
       if (tv.length > 0 && canonicalJson(tv) === canonicalJson(cv)) {

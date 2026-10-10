@@ -43,6 +43,7 @@ function remainingHeader(ex: Exchange | undefined): number | null {
 
 export const headerBurst: ProbeTemplateModule = {
   name: "header_burst",
+  classTable: BURST_TABLE,
 
   appliesTo(claim) {
     return BURST_TARGET[claim.tool] !== undefined;

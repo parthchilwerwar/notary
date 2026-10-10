@@ -53,6 +53,7 @@ function idsOf(body: unknown, op: string): string[] | null {
 
 export const paginationCompleteness: ProbeTemplateModule = {
   name: "pagination_completeness",
+  classTable: PAGINATION_TABLE,
   variants: 3,
 
   appliesTo(claim) {

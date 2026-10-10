@@ -15,11 +15,15 @@
  * Instrument: "the refund exists" must read differently before the write (control: its id in the
  * payment) and after it (treatment: direct getRefund found it). Equal readings mean the write
  * never landed, so a "never" would say nothing about refunds[].
+ *
+ * DESIGN VARIANTS (each on its own probe-reserved payment, stamped `variant: k`): v0 full refund;
+ * v1 partial refund of 100; v2 partial refund of 150 (minor units, on the payment's first line).
+ * The precheck reads refunds[] after both kinds of refund, so both kinds are exercised.
  */
 import { containsValue } from "../../checker/path.js";
 import { executeVariants, finishDesign, first, firstValue, informativeOutcome, is2xx, matchesOutcome, predictionsFor } from "./common.js";
 import type { ClassTable } from "./common.js";
-import type { ProbeObservation, ProbeTemplateModule } from "./types.js";
+import type { ProbeObservation, ProbeStep, ProbeTemplateModule } from "./types.js";
 
 export const WRITE_READ_TABLE: ClassTable = {
   honored: ["within"],
@@ -28,9 +32,13 @@ export const WRITE_READ_TABLE: ClassTable = {
 };
 
 export const LATE_READ_FACTOR = 3;
+/** Partial amount per variant (undefined = full refund). */
+export const WRITE_READ_VARIANTS: ReadonlyArray<number | undefined> = [undefined, 100, 150];
 
 export const writeThenRead: ProbeTemplateModule = {
   name: "write_then_read",
+  classTable: WRITE_READ_TABLE,
+  variants: WRITE_READ_VARIANTS.length,
 
   appliesTo(claim) {
     return claim.expect.kind === "consistentWithin" && claim.operation === "dodo.createRefund";
@@ -40,24 +48,41 @@ export const writeThenRead: ProbeTemplateModule = {
     if (!writeThenRead.appliesTo(claim) || claim.expect.kind !== "consistentWithin") {
       return { skip: "write_then_read needs a consistentWithin claim on dodo.createRefund" };
     }
+    const k = ctx.variant ?? 0;
+    if (k >= WRITE_READ_VARIANTS.length) return { skip: `write_then_read: no variant ${k}` };
     const pool = ctx.payments.available();
     if (pool.length < 1) return { skip: "write_then_read on refunds needs a probe-reserved succeeded payment (seed manifest)" };
     const paymentId = pool[0]!;
     const ms = claim.expect.ms;
     const read = { op: "dodo.getPayment", params: { payment_id: paymentId } };
+    const partial = WRITE_READ_VARIANTS[k];
+    const writeSteps: ProbeStep[] =
+      partial === undefined
+        ? [{ op: "dodo.createRefund", params: { payment_id: paymentId, reason: `notary probe consistency ${ctx.tag}` }, tag: "write", note: "Full refund" }]
+        : [
+            { ...read, setup: true, note: "Read the payment's product" },
+            {
+              op: "dodo.createRefund",
+              params: { payment_id: paymentId, items: [{ item_id: "$from:0:product_cart[0].product_id", amount: partial }], reason: `notary probe consistency ${ctx.tag}` },
+              tag: "write",
+              note: `Partial refund of ${partial}`,
+            },
+          ];
+    const w = writeSteps.length - 1;
     return finishDesign(
       {
         template: "write_then_read",
         params: {
           steps: [
-            { op: "dodo.createRefund", params: { payment_id: paymentId, reason: `notary probe consistency ${ctx.tag}` }, tag: "write", note: "Full refund" },
+            ...writeSteps,
             { ...read, tag: "read_now", note: "Read right away" },
             { ...read, delayMs: ms, tag: "read_window", note: `Read at ~${ms} ms` },
             { ...read, delayMs: (LATE_READ_FACTOR - 1) * ms, tag: "read_late", note: `Read at ~${LATE_READ_FACTOR * ms} ms` },
-            { op: "dodo.getRefund", params: { refund_id: "$from:0:refund_id" }, tag: "direct", note: "Read the refund by id" },
+            { op: "dodo.getRefund", params: { refund_id: `$from:${w}:refund_id` }, tag: "direct", note: "Read the refund by id" },
           ],
           windowMs: ms,
           idPath: claim.param,
+          ...(k > 0 ? { variant: k } : {}),
         },
         control: { params: { steps: [{ ...read, tag: "before", note: "Payment before the write" }] } },
         predictions: predictionsFor(hypotheses, WRITE_READ_TABLE),

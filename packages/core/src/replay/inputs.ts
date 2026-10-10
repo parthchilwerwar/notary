@@ -60,6 +60,8 @@ export interface ReplayInputs {
   files: { queue?: FilePin; expected?: FilePin; manifest?: FilePin };
   priorsSource?: { from: Tool; runId: string; beliefsAfter: Belief[] };
   paymentPool?: string[];
+  /** Probe subscription pool (change-plan probes); absent in records made before it existed. */
+  subscriptionPool?: string[];
   /** null for runs that use no store (naive). */
   store: StoreSnapshot | null;
 }

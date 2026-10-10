@@ -54,6 +54,7 @@ export function boundaryOverValues(max: number): number[] {
 
 export const boundarySweep: ProbeTemplateModule = {
   name: "boundary_sweep",
+  classTable: BOUNDARY_TABLE,
   variants: 3,
 
   appliesTo(claim) {

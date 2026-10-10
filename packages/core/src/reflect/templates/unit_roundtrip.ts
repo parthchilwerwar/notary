@@ -104,6 +104,7 @@ function writeSteps(claim: Claim, ctx: ProbeContext, variant: "t" | "c", amount:
 
 export const unitRoundtrip: ProbeTemplateModule = {
   name: "unit_roundtrip",
+  classTable: UNIT_TABLE,
   variants: 3,
 
   appliesTo(claim) {

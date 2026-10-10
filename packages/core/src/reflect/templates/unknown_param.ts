@@ -31,6 +31,7 @@ const INVALID_VALUE_PARAMS = new Set(["fields"]);
 
 export const unknownParam: ProbeTemplateModule = {
   name: "unknown_param",
+  classTable: UNKNOWN_PARAM_TABLE,
 
   appliesTo(claim) {
     if (claim.expect.kind === "errorOnUnknownParam") return claim.param !== "";

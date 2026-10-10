@@ -18,12 +18,18 @@
  * identical values mean both reads hit the same record.
  *
  * Edge recipes per op (others are skipped):
- *   crustdata.enrichCompany        recon's two domains split: treatment the first, control the second
+ *   crustdata.enrichCompany        variant k: treatment = domain k, control = domain k+1 of the
+ *                                  record list (the recon's domains, then the seeded queue's company
+ *                                  domains, src/queue/seed-plan.ts queueCompanyDomains); up to
+ *                                  ENRICH_EDGE_VARIANTS designs, 2 enrich calls of 1 domain each
+ *                                  (4 credits at list price) per probe
  *   dodo.createWalletLedgerEntry   credit 2^31 (treatment) vs 1 (control), each on a fresh customer
  *   dodo.listCustomerWallets       fresh customer credited 2^31 (treatment) vs untouched (control)
- *   dodo.listRefunds               page of 100 (treatment) vs page of 1 (control)
+ *   dodo.listRefunds               v0 page of 100 vs page of 1; v1 page 1 (size 10) vs page of 1;
+ *                                  v2 page 2 (size 10) vs page of 2 — different records each time
  */
 import { resolvePath } from "../../checker/path.js";
+import { queueCompanyDomains } from "../../queue/seed-plan.js";
 import {
   entryFor,
   executeVariants,
@@ -87,22 +93,45 @@ export function classifyValue(type: string, v: unknown): string {
 
 const PRIORITY = ["other_type", "formatted_string", "numeric_string", "float"];
 
+/** Crustdata enrich designs per claim (each costs 2 single-domain enrich calls). */
+export const ENRICH_EDGE_VARIANTS = 5;
+/** listRefunds designs: [treatment params, control params] per variant. */
+export const REFUND_LIST_EDGE_VARIANTS = [
+  [{ page_size: 100 }, { page_size: 1 }],
+  [{ page_size: 10, page_number: 1 }, { page_size: 1 }],
+  [{ page_size: 10, page_number: 2 }, { page_size: 2 }],
+] as const;
+
+/** The records enrich type probes read: the recon's domains first, then the seeded queue's companies. */
+export function enrichEdgeDomains(reconDomains: readonly string[]): string[] {
+  return [...new Set([...reconDomains, ...queueCompanyDomains()])];
+}
+
 /**
- * Variant k > 0 exists only for Crustdata enrich: the treatment/control records rotate through the
- * recon's domains (treatment = domains[k], control = domains[k+1 mod n]), so each variant reads a
- * different record. Other recipes have a single design.
+ * Variants (k > 0) exist for Crustdata enrich (treatment = record k, control = record k+1 of
+ * enrichEdgeDomains) and dodo.listRefunds (different pages); other recipes have a single design.
  */
 function edgeRecipe(op: string, steps: readonly ProbeStep[], tag: string, k = 0): { t: ProbeStep[]; c: ProbeStep[] } | null {
   if (op === "crustdata.enrichCompany") {
     const base = steps.find((s) => s.op === op && Array.isArray(s.params.domains) && (s.params.domains as unknown[]).length >= 2);
     if (!base) return null;
-    const domains = base.params.domains as string[];
-    if (k >= domains.length) return null;
+    const domains = enrichEdgeDomains(base.params.domains as string[]);
+    if (k >= ENRICH_EDGE_VARIANTS || k + 1 >= domains.length) return null;
     const a = domains[k]!;
-    const b = domains[(k + 1) % domains.length]!;
+    const b = domains[k + 1]!;
     return {
       t: [{ ...base, params: { ...base.params, domains: [a] }, tag: "read", note: `Enrich ${a}` }],
       c: [{ ...base, params: { ...base.params, domains: [b] }, tag: "read", note: `Enrich ${b}` }],
+    };
+  }
+  if (op === "dodo.listRefunds") {
+    const v = REFUND_LIST_EDGE_VARIANTS[k];
+    if (!v) return null;
+    const [t, c] = v;
+    const label = (q: Record<string, number>) => `page_size ${q.page_size}${q.page_number ? `, page ${q.page_number}` : ""}`;
+    return {
+      t: [{ op, params: { ...t }, tag: "read", note: `Refunds, ${label(t)}` }],
+      c: [{ op, params: { ...c }, tag: "read", note: `Refunds, ${label(c)}` }],
     };
   }
   if (k > 0) return null;
@@ -124,18 +153,13 @@ function edgeRecipe(op: string, steps: readonly ProbeStep[], tag: string, k = 0)
       c: [freshCustomerStep(`${tag}-c`), list],
     };
   }
-  if (op === "dodo.listRefunds") {
-    return {
-      t: [{ op, params: { page_size: 100 }, tag: "read", note: "Refunds, page of 100" }],
-      c: [{ op, params: { page_size: 1 }, tag: "read", note: "Refunds, page of 1" }],
-    };
-  }
   return null;
 }
 
 export const typeEdge: ProbeTemplateModule = {
   name: "type_edge",
-  variants: 3,
+  classTable: TYPE_EDGE_TABLE,
+  variants: ENRICH_EDGE_VARIANTS,
 
   appliesTo(claim) {
     return claim.expect.kind === "type";

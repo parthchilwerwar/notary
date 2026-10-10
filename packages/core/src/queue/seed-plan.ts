@@ -36,6 +36,24 @@ export interface SeedPlan {
   bulk: { customer: string; product: string; count: number; handlePrefix: string };
   /** Refunds created during seeding, so a queue request can hit an already-refunded payment. */
   existingRefunds: string[];
+  /**
+   * PROBE-ONLY resources (DECISIONS #42, #81): a customer that fixtures/queue/seeded.json never
+   * references, so probes can refund, list and change plans without touching anything the graded
+   * queue reads. Its subscription checkout is one of the hosted (human) checkouts; everything else
+   * is headless. See `probeHandles()` for the derived handles.
+   */
+  probe: {
+    /** Customer handle (also listed in `customers`, so it gets its own hosted subscription checkout). */
+    customer: string;
+    /** One-time product the probe payments buy (priced well above 100x any refund-probe amount). */
+    product: string;
+    /** Payments fully refunded during seeding: the refund-list probes need a set larger than a page (>= 30). */
+    refunded: number;
+    /** Payments left succeeded and unrefunded: refund probes (unit_roundtrip, retry_after_timeout, write_then_read) consume them. */
+    open: number;
+    /** Extra subscriptions (headless, on the customer's plan) so each change-plan probe variant has a fresh one. */
+    extraSubscriptions: number;
+  };
 }
 
 /** Dodo's documented page_size maximum on list endpoints (docs/ENDPOINTS.md). */
@@ -51,6 +69,7 @@ export const SEED_PLAN: SeedPlan = {
     addon: { name: "Notary Seed - Add-on pack", kind: "one_time", price: 1_999 },
     onboarding: { name: "Notary Seed - Onboarding package", kind: "one_time", price: 15_000 },
     topup: { name: "Notary Seed - Usage top-up", kind: "one_time", price: 100 },
+    "probe-item": { name: "Notary Seed - Probe-only item (never in the queue)", kind: "one_time", price: 25_000 },
   },
   customers: {
     "ent-microsoft": { name: "Seed Microsoft", companyDomain: "microsoft.com", plan: "scale", walletCredit: 500 },
@@ -81,10 +100,54 @@ export const SEED_PLAN: SeedPlan = {
       extraPayments: { "smb-fathom-addon": "addon" },
       walletCredit: 500,
     },
+    // PROBE-ONLY: never referenced by fixtures/queue/seeded.json (asserted in test/verification.test.ts).
+    "probe-only": { name: "Seed Probe-only (Notary probes, never in the queue)", companyDomain: "notary-probe-only.invalid", plan: "starter" },
   },
   bulk: { customer: "mid-retool", product: "topup", count: 105, handlePrefix: "mid-retool-topup-" },
   existingRefunds: ["mid-retool-topup-001"],
+  probe: { customer: "probe-only", product: "probe-item", refunded: 30, open: 15, extraSubscriptions: 2 },
 };
+
+/** Handles of the probe-only resources a plan creates. */
+export interface ProbeHandles {
+  customer: string;
+  /** Payments fully refunded during seeding (refund-list probes). */
+  refundedPayments: string[];
+  /** Succeeded, unrefunded payments reserved for refund probes. */
+  openPayments: string[];
+  /** Subscription handles: the customer's own (handle = customer) plus the extra headless ones. */
+  subscriptions: string[];
+  /** Payment handles of the extra subscriptions (headless recurring checkouts; subscription handle = payment handle). */
+  extraSubscriptionPayments: string[];
+}
+
+const pad3 = (i: number): string => String(i).padStart(3, "0");
+
+export function probeHandles(plan: SeedPlan = SEED_PLAN): ProbeHandles {
+  const c = plan.probe.customer;
+  const range = (n: number, kind: string) => Array.from({ length: n }, (_, i) => `${c}-${kind}-${pad3(i + 1)}`);
+  const extra = range(plan.probe.extraSubscriptions, "sub");
+  return {
+    customer: c,
+    refundedPayments: range(plan.probe.refunded, "refunded"),
+    openPayments: range(plan.probe.open, "open"),
+    subscriptions: [c, ...extra],
+    extraSubscriptionPayments: extra,
+  };
+}
+
+/** Every payment handle the seed refunds (the queue's pre-existing refund + the probe-only refunds). */
+export function refundedPaymentHandles(plan: SeedPlan = SEED_PLAN): string[] {
+  return [...plan.existingRefunds, ...probeHandles(plan).refundedPayments];
+}
+
+/** Company domains of the customers the seeded queue can reference (the probe-only customer excluded), sorted. */
+export function queueCompanyDomains(plan: SeedPlan = SEED_PLAN): string[] {
+  return Object.entries(plan.customers)
+    .filter(([h]) => h !== plan.probe.customer)
+    .map(([, c]) => c.companyDomain)
+    .sort();
+}
 
 /** Test-only email for a seeded customer (example.com is reserved; no real person). */
 export function seedEmail(customerHandle: string): string {
@@ -128,6 +191,16 @@ export function plannedPayments(plan: SeedPlan = SEED_PLAN): PlannedPayment[] {
   for (let i = 1; i <= plan.bulk.count; i++) {
     out.push({ handle: bulkPaymentHandle(plan, i), customer: plan.bulk.customer, product: plan.bulk.product, amount: price(plan.bulk.product), via: "headless" });
   }
+  // PROBE-ONLY payments (never referenced by the queue): the refunded set, the open set, extra subscriptions.
+  const probe = probeHandles(plan);
+  const probeCustomer = plan.customers[probe.customer];
+  if (!probeCustomer) throw new Error(`Seed plan: probe customer "${probe.customer}" is not in customers`);
+  for (const handle of [...probe.refundedPayments, ...probe.openPayments]) {
+    out.push({ handle, customer: probe.customer, product: plan.probe.product, amount: price(plan.probe.product), via: "headless" });
+  }
+  for (const handle of probe.extraSubscriptionPayments) {
+    out.push({ handle, customer: probe.customer, product: probeCustomer.plan, amount: price(probeCustomer.plan), via: "headless" });
+  }
   return out;
 }
 
@@ -144,7 +217,7 @@ export function plannedHandles(plan: SeedPlan = SEED_PLAN): PlannedHandles {
     customers: new Set(Object.keys(plan.customers)),
     products: new Set(Object.keys(plan.products)),
     payments: new Map(plannedPayments(plan).map((p) => [p.handle, p])),
-    subscriptions: new Set(Object.keys(plan.customers)),
+    subscriptions: new Set([...Object.keys(plan.customers), ...probeHandles(plan).extraSubscriptionPayments]),
   };
 }
 
@@ -161,6 +234,36 @@ export interface SeedStep {
   detail: string;
   /** human: needs a person to finish a hosted checkout with a Dodo test card. */
   kind: "api" | "human";
+}
+
+/** What the probe-only resources add to a seed (all Dodo TEST mode; amounts in minor units). */
+export interface ProbeSeedCost {
+  customer: string;
+  humanCheckouts: number;
+  headlessPayments: number;
+  payments: number;
+  refunds: number;
+  subscriptions: number;
+  /** Sum of the probe-only payments' amounts (test mode: no real money moves). */
+  chargedMinor: number;
+  /** Sum of the probe-only refunds the seed itself issues. */
+  refundedMinor: number;
+}
+
+export function probeSeedCost(plan: SeedPlan = SEED_PLAN): ProbeSeedCost {
+  const h = probeHandles(plan);
+  const payments = plannedPayments(plan).filter((p) => p.customer === h.customer);
+  const refunded = new Set(h.refundedPayments);
+  return {
+    customer: h.customer,
+    humanCheckouts: payments.filter((p) => p.via === "checkout").length,
+    headlessPayments: payments.filter((p) => p.via === "headless").length,
+    payments: payments.length,
+    refunds: h.refundedPayments.length,
+    subscriptions: h.subscriptions.length,
+    chargedMinor: payments.reduce((s, p) => s + p.amount, 0),
+    refundedMinor: payments.filter((p) => refunded.has(p.handle)).reduce((s, p) => s + p.amount, 0),
+  };
 }
 
 /** The ordered list of actions the live seed performs (what `--plan` prints). */
@@ -197,6 +300,9 @@ export function seedSteps(plan: SeedPlan = SEED_PLAN): SeedStep[] {
   }
   for (const h of plan.existingRefunds) {
     steps.push({ op: "dodo.createRefund", handle: `pay:${h}`, detail: "pre-existing full refund (lands on a later page of listPayments)", kind: "api" });
+  }
+  for (const h of probeHandles(plan).refundedPayments) {
+    steps.push({ op: "dodo.createRefund", handle: `pay:${h}`, detail: "PROBE-ONLY full refund (refund-list probes need a set larger than one page)", kind: "api" });
   }
   for (const [h, c] of Object.entries(plan.customers)) {
     if (c.walletCredit) {

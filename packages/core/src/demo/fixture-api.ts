@@ -6,9 +6,10 @@
  * of it. NOTHING HERE IS A RESULT: every response is simulated, and every bundle the demo writes is
  * labelled `sample: true` with a FIXTURE DATA disclosure.
  *
- * World: built from SEED_PLAN (src/queue/seed-plan.ts) — the 6 products, 11 customers, every planned
- * payment (subscriptions, extra one-time payments, 105 bulk top-ups), one subscription per customer,
- * the pre-existing refund and the seeded wallet credits — plus a Crustdata company table whose
+ * World: built from SEED_PLAN (src/queue/seed-plan.ts) — its products, customers, every planned
+ * payment (subscriptions, extra one-time payments, 105 bulk top-ups, the probe-only payments), one
+ * subscription per customer plus the probe-only extra subscriptions, the pre-existing refund, the
+ * probe-only refunded set and the seeded wallet credits — plus a Crustdata company table whose
  * headcounts map to the tiers in fixtures/queue/expected.json. State is in memory, so writes affect
  * later reads. Ids and timestamps come from counters, so the same calls give the same bytes.
  *
@@ -38,7 +39,7 @@
  */
 import { DODO_TEST_HOST } from "../tools/recorder.js";
 import type { FetchLike } from "../tools/recorder.js";
-import { SEED_PLAN, plannedPayments, seedEmail } from "../queue/seed-plan.js";
+import { SEED_PLAN, plannedPayments, probeHandles, refundedPaymentHandles, seedEmail } from "../queue/seed-plan.js";
 import type { SeedPlan } from "../queue/seed-plan.js";
 import type { SeedManifest } from "../queue/manifest.js";
 
@@ -328,22 +329,28 @@ export class FixtureWorld {
         payment_link: null,
       });
     }
-    for (const [h, c] of Object.entries(plan.customers)) {
+    const probe = probeHandles(plan);
+    const subscriptionsToSeed: Array<[handle: string, customer: string, plan: string]> = [
+      ...Object.entries(plan.customers).map(([h, c]) => [h, h, c.plan] as [string, string, string]),
+      ...probe.extraSubscriptionPayments.map((h) => [h, probe.customer, plan.customers[probe.customer]!.plan] as [string, string, string]),
+    ];
+    for (const [h, customer, product] of subscriptionsToSeed) {
       const id = `sub_fx_${h}`;
       this.handles.subscriptions.set(h, id);
       this.subscriptions.set(id, {
         subscription_id: id,
-        customer_id: this.handles.customers.get(h)!,
-        product_id: this.handles.products.get(c.plan)!,
+        customer_id: this.handles.customers.get(customer)!,
+        product_id: this.handles.products.get(product)!,
         quantity: 1,
         status: "active",
         created_at: this.tick(),
         scheduled_change: null,
       });
     }
-    for (const h of plan.existingRefunds) {
+    // The queue's pre-existing refund first, then the probe-only refunded set (same order as the live seed).
+    for (const h of refundedPaymentHandles(plan)) {
       const pay = this.payments.get(this.handles.payments.get(h)!)!;
-      this.addRefund(pay, pay.total_amount, "seed: pre-existing full refund");
+      this.addRefund(pay, pay.total_amount, plan.existingRefunds.includes(h) ? "seed: pre-existing full refund" : "seed: probe-only refund");
     }
     for (const [h, c] of Object.entries(plan.customers)) {
       // The live seed credits through the same API, so the seeded balance shows quirk Q2 too.
@@ -367,6 +374,10 @@ export class FixtureWorld {
     const subscriptions: SeedManifest["subscriptions"] = {};
     for (const [h, c] of Object.entries(plan.customers)) {
       subscriptions[h] = { subscriptionId: this.handles.subscriptions.get(h)!, customerHandle: h, productHandle: c.plan };
+    }
+    const probe = probeHandles(plan);
+    for (const h of probe.extraSubscriptionPayments) {
+      subscriptions[h] = { subscriptionId: this.handles.subscriptions.get(h)!, customerHandle: probe.customer, productHandle: plan.customers[probe.customer]!.plan };
     }
     const wallets: NonNullable<SeedManifest["wallets"]> = {};
     for (const [h, c] of Object.entries(plan.customers)) if (c.walletCredit) wallets[h] = { currency: plan.currency, seededCredit: c.walletCredit };
