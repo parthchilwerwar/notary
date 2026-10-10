@@ -14,10 +14,23 @@
 //    record in the loaded world (validateCitations). Anything else is
 //    {ok:false, answer:"couldn't answer from the evidence", reason}.
 //
-// Model not configured (no NOTARY_MODEL_EXECUTOR or AWS_REGION) -> ok:false with a "BLOCKED: ..."
-// reason and no network call. Each ask runs in one span "notary.ask" recording the question length,
-// the retrieved record count, the world and whether the citations were valid (never the question
-// text, a token or a secret).
+// Model not configured (llmBlockedReason: NOTARY_MODEL_EXECUTOR plus LITELLM_BASE_URL/LITELLM_API_KEY
+// or AWS_REGION, per NOTARY_LLM_PROVIDER) -> ok:false with a "BLOCKED: <VAR> not set — ... run
+// `pnpm notary doctor --llm`" reason and no network call. At NOTARY_MAX_USD the cap message is the reason.
+//
+// Tracing (neatlogs, one trace per question; README of neatlogs 1.1.26 is the authority):
+//   notary.ask            WORKFLOW  root: question length, run named, world, counts, ok, reason
+//     notary.ask.retrieve RETRIEVER world, records indexed, top-N `kind:id` ids + scores (ids only)
+//     notary.llm          CHAIN     opened by LlmClient (role, model id, tokens, USD); the provider
+//       <LLM span>        LLM       wrapper (wrapBedrock / wrapOpenAI) is the one LLM-span owner
+//     notary.ask.validate GUARDRAIL cited / passed / failed `kind:id` lists, ok, reason; on the
+//                                   BLOCKED and other no-reply paths: skipped=true + the reason
+// Never the question text, the prompt, the session token or a secret in attributes. Nesting is by
+// async context (the SDK's AsyncLocalStorage), so concurrent asks are separate traces. Spans also go
+// to a local sink scoped to the ask (AskOptions.spansPath; serve: runs/_ask/spans.jsonl), never into
+// an approval's run file. After each ask a flush is started and NOT awaited: export problems never
+// delay or fail the HTTP response. A rate-limited ask (ask-limit.ts) is one short root span with
+// notary.ask.rate_limited=true.
 //
 // Read-only by construction: this module imports no tool client, guarded wrapper, queue executor or
 // approval code (test/ask.test.ts checks the import graph), so an ask can never trigger an action.
@@ -28,12 +41,15 @@ import type { RecordIndex } from "../explain/citations.js";
 import { worldKeyOf } from "../explain/world.js";
 import { LlmClient } from "../llm/client.js";
 import type { LlmLike } from "../llm/client.js";
-import { MODEL_ENV } from "../llm/roles.js";
+import { isUsdCapExceeded } from "../llm/budget.js";
+import { llmBlockedReason } from "../llm/config.js";
 import { AskRequestSchema, CitationSchema } from "../schema/explain.js";
 import type { AskRequest, AskResponse, Citation } from "../schema/explain.js";
 import type { RunBundle } from "../schema/index.js";
-import { flushTracing, withSpan } from "../trace/index.js";
+import { flushTracing, withSpan, withSpanSink } from "../trace/index.js";
+import type { SpanIds, SpanKind, TraceAttrs } from "../trace/index.js";
 import { z } from "zod";
+import { ASK_RPM_ENV, SlidingWindowLimiter, askRpm, retryAfterSeconds } from "./ask-limit.js";
 import { indexWorldRecords } from "./ask-world.js";
 import type { WorldRecords, WorldSources } from "./ask-world.js";
 import { loadVerifiedBundles } from "./bundle-source.js";
@@ -57,6 +73,62 @@ export interface AskOptions extends WorldSources {
   /** Test seam: a model double. When set, the BLOCKED config check is skipped. */
   llm?: LlmLike;
   topN?: number;
+  /**
+   * Local span sink for this ask's spans (withSpanSink): a file, or null for none. Undefined: the
+   * process-wide sink (setSpanSink). createApp passes <runsDir>/_ask/spans.jsonl.
+   */
+  spansPath?: string | null;
+  /** Started (never awaited) once after every ask. Default flushTracing. Test seam. */
+  flush?: () => Promise<unknown>;
+  /** Questions per minute per session for POST /api/ask; default from NOTARY_ASK_RPM, else 10. */
+  rpm?: number;
+  /** Clock (ms) for the rate limiter. Test seam. */
+  now?: () => number;
+}
+
+/** Directory under runs/ holding serve's ask spans (a leading "_" can never be a run id). */
+export const ASK_SPANS_DIR = "_ask";
+/** Longest `kind:id` list written to one attribute. */
+const ASK_ID_LIST_CHARS = 2000;
+
+type Setter = (key: string, value: string | number | boolean) => void;
+
+function idList(xs: readonly { kind: string; id: string }[]): string {
+  const s = xs.map((x) => `${x.kind}:${x.id}`).join(",");
+  return s.length > ASK_ID_LIST_CHARS ? `${s.slice(0, ASK_ID_LIST_CHARS)}...(truncated)` : s;
+}
+
+/** One span whose body gets the attribute setter. Bodies return small summaries only (the SDK records the return value). */
+function step<T>(name: string, kind: SpanKind, attrs: TraceAttrs, fn: (set: Setter) => Promise<T> | T, onIds?: (ids: SpanIds) => void): Promise<T> {
+  let setter: Setter = () => {};
+  return withSpan(name, attrs, () => fn((k, v) => setter(k, v)), {
+    kind,
+    onSpan: (ids, s) => {
+      setter = s;
+      onIds?.(ids);
+    },
+  });
+}
+
+/** Run one ask's spans in its own sink scope, then start (not await) a flush. */
+async function tracedAsk<T>(opts: AskOptions, fn: () => Promise<T>): Promise<T> {
+  try {
+    return opts.spansPath === undefined ? await fn() : await withSpanSink(opts.spansPath, fn);
+  } finally {
+    startFlush(opts.flush ?? flushTracing);
+  }
+}
+
+function startFlush(flush: () => Promise<unknown>): void {
+  try {
+    void Promise.resolve(flush()).catch(() => undefined);
+  } catch {
+    // an export problem never reaches the response
+  }
+}
+
+function rootAttrs(req: AskRequest): TraceAttrs {
+  return { "notary.ask.question_length": req.question.length, "notary.ask.run_named": req.runId !== undefined };
 }
 
 export interface RetrievedRecord {
@@ -235,98 +307,170 @@ function failed(reason: string, traceId?: string): AskResponse {
 
 /** BLOCKED reason when the executor model can't be called, else null. No network. */
 export function askBlockedReason(env: Env): string | null {
-  if (!(env[MODEL_ENV.executor] ?? "").trim()) return `BLOCKED: ${MODEL_ENV.executor} not set`;
-  if (!(env.AWS_REGION ?? "").trim()) return "BLOCKED: AWS_REGION not set";
-  return null;
+  // Provider-aware (NOTARY_LLM_PROVIDER: litellm needs LITELLM_BASE_URL/LITELLM_API_KEY, bedrock
+  // AWS_REGION; both need NOTARY_MODEL_EXECUTOR). The message names the exact variable and points
+  // to `pnpm notary doctor --llm`.
+  return llmBlockedReason(env, "executor");
 }
 
 export async function answerQuestion(req: AskRequest, opts: AskOptions): Promise<AskResponse> {
   const env = opts.env ?? process.env;
+  const topN = opts.topN ?? ASK_TOP_N;
   let traceId: string | undefined;
-  let set: ((k: string, v: string | number | boolean) => void) | undefined;
-  const out = await withSpan(
-    "notary.ask",
-    { "notary.ask.question_length": req.question.length, "notary.ask.run_named": req.runId !== undefined },
-    async (): Promise<AskResponse> => {
-      const note = (k: string, v: string | number | boolean): void => set?.(k, v);
-      const finish = (r: AskResponse, citationsValid: boolean): AskResponse => {
-        note("notary.ask.ok", r.ok);
-        note("notary.ask.citations_valid", citationsValid);
-        if (!r.ok) note("notary.ask.reason", r.reason.slice(0, 200));
-        return r;
-      };
+  const out = await tracedAsk(opts, () =>
+    step(
+      "notary.ask",
+      "WORKFLOW",
+      rootAttrs(req),
+      async (note): Promise<AskResponse> => {
+        const finish = (r: AskResponse, citationsValid: boolean): AskResponse => {
+          note("notary.ask.ok", r.ok);
+          note("notary.ask.citations_valid", citationsValid);
+          if (!r.ok) note("notary.ask.reason", r.reason.slice(0, 200));
+          return r;
+        };
+        /** The validation step on a path with no model reply to validate: skipped, with the reason. */
+        const skip = async (reason: string): Promise<AskResponse> => {
+          await step("notary.ask.validate", "GUARDRAIL", { "notary.ask.skipped": true, "notary.ask.ok": false, "notary.ask.reason": reason.slice(0, 200) }, () => ({ skipped: true }));
+          return finish(failed(reason), false);
+        };
 
-      const blocked = opts.llm ? null : askBlockedReason(env);
-      if (blocked) {
-        note("notary.ask.retrieved", 0);
-        return finish(failed(blocked), false);
-      }
+        const blocked = opts.llm ? null : askBlockedReason(env);
+        note("notary.ask.blocked", blocked !== null);
+        note("notary.ask.model_called", false);
 
-      const loaded = await loadVerifiedBundles(opts.bundleDirs());
-      const r = retrieve(loaded, req, {
-        topN: opts.topN ?? ASK_TOP_N,
-        runsDir: opts.runsDir ?? null,
-        certificatesDir: opts.certificatesDir === undefined ? DEFAULT_CERTIFICATES_DIR : opts.certificatesDir,
-      });
-      if ("error" in r) {
-        note("notary.ask.retrieved", 0);
-        return finish(failed(r.error), false);
-      }
-      note("notary.ask.world", r.world);
-      note("notary.ask.indexed", r.index.size);
-      note("notary.ask.retrieved", r.records.length);
-      if (r.records.length === 0) return finish(failed("no records matched the question"), false);
-
-      let llm: LlmLike;
-      try {
-        llm = opts.llm ?? new LlmClient({ env });
-      } catch (err) {
-        return finish(failed(`model config invalid: ${err instanceof Error ? err.message : String(err)}`), false);
-      }
-      let text: string;
-      try {
-        const res = await llm.complete({
-          role: "executor",
-          system: ASK_SYSTEM_PROMPT,
-          messages: [{ role: "user", content: buildAskPrompt(req.question, r.records) }],
-          maxTokens: 1024,
+        // 1. Retrieval: always, BLOCKED included (local files only, no network), so the trace shows
+        //    what the question would have been answered from. Ids, counts and scores only.
+        let r: Retrieval | { error: string } = { error: "retrieval did not run" };
+        await step("notary.ask.retrieve", "RETRIEVER", { "notary.ask.top_n": topN }, async (set) => {
+          const loaded = await loadVerifiedBundles(opts.bundleDirs());
+          set("notary.ask.bundles_loaded", loaded.length);
+          const got = retrieve(loaded, req, {
+            topN,
+            runsDir: opts.runsDir ?? null,
+            certificatesDir: opts.certificatesDir === undefined ? DEFAULT_CERTIFICATES_DIR : opts.certificatesDir,
+          });
+          r = got;
+          if ("error" in got) {
+            set("notary.ask.retrieved", 0);
+            set("notary.ask.error", got.error.slice(0, 200));
+            return { retrieved: 0 };
+          }
+          set("notary.ask.world", got.world);
+          set("notary.ask.world_bundles", got.bundles.length);
+          set("notary.ask.indexed", got.index.size);
+          set("notary.ask.retrieved", got.records.length);
+          set("notary.ask.record_ids", idList(got.records));
+          set("notary.ask.scores", got.records.map((x) => x.score).join(","));
+          return { retrieved: got.records.length };
         });
-        text = res.text;
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        return finish(failed(msg.startsWith("BLOCKED:") ? msg : `model call failed: ${msg}`), false);
-      }
+        const got = r as Retrieval | { error: string };
+        if ("error" in got) note("notary.ask.retrieved", 0);
+        else {
+          note("notary.ask.world", got.world);
+          note("notary.ask.indexed", got.index.size);
+          note("notary.ask.retrieved", got.records.length);
+        }
 
-      const parsed = parseModelAnswer(text);
-      if (!parsed.ok) return finish(failed(parsed.reason), false);
-      const check = validateCitations(parsed.citations, r.index);
-      note("notary.ask.citations", parsed.citations.length);
-      if (!check.ok) {
-        const why = parsed.citations.length === 0 ? "the answer cites no record" : `${check.invalid.length} citation(s) do not resolve to a loaded record`;
-        return finish(failed(why), false);
-      }
-      // Fill in the trace id of a uniquely resolved record (deterministic, from the index).
-      const citations = parsed.citations.map((c) => {
-        if (c.traceId) return c;
-        const hits = r.index.find(c.kind, c.id, c.runId);
-        const t = hits.length === 1 ? hits[0]!.traceId : undefined;
-        return t ? { ...c, traceId: t } : c;
-      });
-      return finish({ ok: true, answer: parsed.answer, citations }, true);
-    },
-    {
-      onSpan: (ids, setter) => {
-        traceId = ids.traceId;
-        set = setter;
+        if (blocked) return await skip(blocked);
+        if ("error" in got) return await skip(got.error);
+        if (got.records.length === 0) return await skip("no records matched the question");
+
+        // 2. The model call. LlmClient opens "notary.llm" (CHAIN: role, model id, tokens, USD) and the
+        //    provider wrapper emits the one LLM span under it; both nest under this root by context.
+        let llm: LlmLike;
+        try {
+          llm = opts.llm ?? new LlmClient({ env });
+        } catch (err) {
+          return await skip(`model config invalid: ${err instanceof Error ? err.message : String(err)}`);
+        }
+        let text: string;
+        note("notary.ask.model_called", true);
+        try {
+          const res = await llm.complete({
+            role: "executor",
+            system: ASK_SYSTEM_PROMPT,
+            messages: [{ role: "user", content: buildAskPrompt(req.question, got.records) }],
+            maxTokens: 1024,
+          });
+          text = res.text;
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          return await skip(msg.startsWith("BLOCKED:") || isUsdCapExceeded(err) ? msg : `model call failed: ${msg}`);
+        }
+
+        // 3. Citation validation by code.
+        let result: AskResponse = failed("validation did not run");
+        await step("notary.ask.validate", "GUARDRAIL", {}, (set) => {
+          const parsed = parseModelAnswer(text);
+          set("notary.ask.parse_ok", parsed.ok);
+          if (!parsed.ok) {
+            result = failed(parsed.reason);
+          } else {
+            const check = validateCitations(parsed.citations, got.index);
+            const bad = new Set(check.invalid);
+            set("notary.ask.cited", idList(parsed.citations));
+            set("notary.ask.cited_count", parsed.citations.length);
+            set("notary.ask.passed", idList(parsed.citations.filter((c) => !bad.has(c))));
+            set("notary.ask.failed", idList(check.invalid));
+            set("notary.ask.failed_count", check.invalid.length);
+            if (!check.ok) {
+              result = failed(parsed.citations.length === 0 ? "the answer cites no record" : `${check.invalid.length} citation(s) do not resolve to a loaded record`);
+            } else {
+              // Fill in the trace id of a uniquely resolved record (deterministic, from the index).
+              const citations = parsed.citations.map((c) => {
+                if (c.traceId) return c;
+                const hits = got.index.find(c.kind, c.id, c.runId);
+                const t = hits.length === 1 ? hits[0]!.traceId : undefined;
+                return t ? { ...c, traceId: t } : c;
+              });
+              result = { ok: true, answer: parsed.answer, citations };
+            }
+          }
+          set("notary.ask.ok", result.ok);
+          if (!result.ok) set("notary.ask.reason", result.reason.slice(0, 200));
+          return { ok: result.ok };
+        });
+        const final = result as AskResponse;
+        if (final.ok) note("notary.ask.citations", final.citations.length);
+        return finish(final, final.ok);
       },
-    },
+      (ids) => {
+        traceId = ids.traceId;
+      },
+    ),
   );
-  await flushTracing();
   return traceId && out.traceId === undefined ? { ...out, traceId } : out;
 }
 
-/** Mount POST /api/ask (token + localhost). */
+/** The trace of a rate-limited ask: one short root span, no retrieval, no model call. */
+async function traceRateLimited(req: AskRequest, rpm: number, retryAfterS: number, opts: AskOptions): Promise<void> {
+  await tracedAsk(opts, () =>
+    step(
+      "notary.ask",
+      "WORKFLOW",
+      {
+        ...rootAttrs(req),
+        "notary.ask.rate_limited": true,
+        "notary.ask.rpm": rpm,
+        "notary.ask.retry_after_s": retryAfterS,
+        "notary.ask.ok": false,
+        "notary.ask.model_called": false,
+        "notary.ask.reason": `rate limited (${ASK_RPM_ENV}=${rpm})`,
+      },
+      () => ({ rateLimited: true }),
+    ),
+  );
+}
+
+/**
+ * Mount POST /api/ask (token + localhost), rate limited per session: this mount's session gets its
+ * own sliding-window counter (ask-limit.ts). Over the limit -> 429 + Retry-After, no model call.
+ */
 export function mountAsk(app: Hono, opts: AskOptions & { session: ApiSession }): void {
+  const limit = askRpm(opts.env ?? process.env, opts.rpm);
+  if (limit.problem) console.warn(`notary serve: ${limit.problem}`);
+  const limiter = new SlidingWindowLimiter({ limit: limit.rpm, ...(opts.now ? { now: opts.now } : {}) });
   app.post("/api/ask", requireLocalSession(opts.session), async (c) => {
     let body: unknown;
     try {
@@ -336,6 +480,13 @@ export function mountAsk(app: Hono, opts: AskOptions & { session: ApiSession }):
     }
     const parsed = AskRequestSchema.safeParse(body);
     if (!parsed.success) return c.json({ error: `invalid ask request: ${parsed.error.issues[0]?.message ?? "invalid"}` }, 400);
+    const gate = limiter.take();
+    if (!gate.ok) {
+      const retryAfterS = retryAfterSeconds(gate.retryAfterMs);
+      await traceRateLimited(parsed.data, limit.rpm, retryAfterS, opts);
+      c.header("Retry-After", String(retryAfterS));
+      return c.json({ error: `rate limited: at most ${limit.rpm} questions per minute (${ASK_RPM_ENV})` }, 429);
+    }
     return c.json(await answerQuestion(parsed.data, opts));
   });
 }

@@ -49,9 +49,12 @@
  *
  * Local span sink (TDD "Integrations": "OTel spans are also written to runs/<runId>/spans.jsonl
  * as a fallback evidence source"): once `setSpanSink(path)` is set, EVERY withSpan appends one
- * JSONL record {name, traceId, spanId, parentSpanId?, startedAt, endedAt, attrs, status, error?,
- * exported?} (exported: true only when the SDK opened the span, see src/trace/links.ts)
- * to that file when the span ends, whether or not neatlogs is enabled. With the SDK on, the ids
+ * JSONL record {name, kind?, traceId, spanId, parentSpanId?, startedAt, endedAt, attrs, status,
+ * error?, exported?} (exported: true only when the SDK opened the span, see src/trace/links.ts;
+ * kind only when the caller passed one) to that file when the span ends, whether or not neatlogs
+ * is enabled. `withSpanSink(path, fn)` overrides the process-wide sink for the spans opened inside
+ * `fn`'s async context only (a long-running `notary serve` uses it so concurrent requests never
+ * write into each other's files, whatever another request does to the global sink). With the SDK on, the ids
  * are the real OTel ids; with it off, they are generated locally (32-hex trace id, 16-hex span id
  * from crypto.randomUUID) and nested spans inherit their parent's trace id. `attrs` carries the
  * initial attributes plus any set later through `onSpan`'s setter, with the same secret masking
@@ -180,6 +183,8 @@ export type SpanIds = { spanId: string; traceId: string };
 /** One line of runs/<runId>/spans.jsonl. */
 export type SpanRecord = {
   name: string;
+  /** neatlogs span kind, when the caller passed one (WORKFLOW, RETRIEVER, GUARDRAIL, CHAIN, LLM, ...). */
+  kind?: string;
   traceId: string;
   spanId: string;
   parentSpanId?: string;
@@ -193,6 +198,8 @@ export type SpanRecord = {
 };
 
 let sinkPath: string | null = null;
+/** Async-context sink override (withSpanSink); takes precedence over `sinkPath` when set. */
+const sinkScope = new AsyncLocalStorage<{ path: string | null }>();
 const localContext = new AsyncLocalStorage<SpanIds>();
 /** Trace ids of spans the SDK opened in this process (used to gate neatlogs trace links). */
 const exportedTraceIds = new Set<string>();
@@ -218,14 +225,30 @@ export function spanSinkPath(): string | null {
   return sinkPath;
 }
 
+/**
+ * Run `fn` with its own span sink: every span opened inside `fn`'s async context (however deep) is
+ * written to `path` (null: to no file), never to the process-wide sink, even if something else
+ * swaps the global sink with setSpanSink meanwhile. Outside `fn` nothing changes.
+ */
+export function withSpanSink<T>(path: string | null, fn: () => Promise<T> | T): Promise<T> {
+  if (path) {
+    try {
+      mkdirSync(dirname(path), { recursive: true });
+    } catch {
+      // writing will fail later and be ignored
+    }
+  }
+  return sinkScope.run({ path }, async () => await fn());
+}
+
 function hexId(chars: number): string {
   let out = "";
   while (out.length < chars) out += randomUUID().replace(/-/g, "");
   return out.slice(0, chars);
 }
 
-function writeSpanRecord(rec: SpanRecord): void {
-  const path = sinkPath;
+function writeSpanRecord(rec: SpanRecord, scoped: { path: string | null } | undefined): void {
+  const path = scoped ? scoped.path : sinkPath;
   if (!path) return;
   try {
     const secrets = secretEnvValues();
@@ -257,10 +280,12 @@ export async function withSpan<T>(
   const mod = sdk;
   const attributes = safeAttrs({ ...(runId ? { "notary.runId": runId } : {}), ...attrs });
   const parent = localContext.getStore();
+  const scopedSink = sinkScope.getStore();
   const startedAt = new Date().toISOString();
   // Sink record state; ids are replaced by the real OTel ids when the SDK opens a span.
   const rec: SpanRecord = {
     name,
+    ...(opts.kind ? { kind: opts.kind } : {}),
     traceId: parent?.traceId ?? hexId(32),
     spanId: hexId(16),
     ...(parent ? { parentSpanId: parent.spanId } : {}),
@@ -275,7 +300,7 @@ export async function withSpan<T>(
       rec.status = "error";
       rec.error = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
     }
-    writeSpanRecord(rec);
+    writeSpanRecord(rec, scopedSink);
   };
   const recordAttr = (k: string, v: string | number | boolean): TraceAttrs => {
     const clean = safeAttrs({ [k]: v });

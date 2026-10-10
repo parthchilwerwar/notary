@@ -136,9 +136,9 @@ describe("answer validation", () => {
     const res = await answerQuestion({ question: "why?" }, { bundleDirs: dirs, env: {} });
     expect(res).toMatchObject({ ok: false, answer: ASK_FAILED_ANSWER });
     if (res.ok) return;
-    expect(res.reason).toBe("BLOCKED: NOTARY_MODEL_EXECUTOR not set");
+    expect(res.reason).toBe("BLOCKED: NOTARY_MODEL_EXECUTOR not set — set it in .env (see .env.example) and run `pnpm notary doctor --llm`");
     const noRegion = await answerQuestion({ question: "why?" }, { bundleDirs: dirs, env: { NOTARY_MODEL_EXECUTOR: "some.model" } });
-    expect(noRegion).toMatchObject({ ok: false, reason: "BLOCKED: AWS_REGION not set" });
+    expect(noRegion).toMatchObject({ ok: false, reason: "BLOCKED: AWS_REGION not set — set it in .env (see .env.example) and run `pnpm notary doctor --llm`" });
   });
 
   it("each ask is one span with question length, retrieved count and citation validity (never the question text)", async () => {

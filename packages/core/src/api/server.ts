@@ -8,6 +8,7 @@
 //                         belief.changed, run.finished, timeline) with Last-Event-ID replay
 //
 //   POST /api/ask         Ask Notary (src/api/ask.ts): cited answers from the loaded records
+//                         (NOTARY_ASK_RPM per session, 429 + Retry-After; spans in runs/_ask/spans.jsonl)
 //   GET|POST /api/approvals  approval desk (src/api/approvals.ts)
 //
 // The ask and approvals endpoints need the per-session token (Authorization: Bearer) AND a loopback
@@ -31,7 +32,7 @@ import type { EventBus, NotaryEvent } from "./bus.js";
 import { servedTimeline } from "../timeline/serve.js";
 import { mountApprovals } from "./approvals.js";
 import type { ApprovalsOptions } from "./approvals.js";
-import { mountAsk } from "./ask.js";
+import { ASK_SPANS_DIR, mountAsk } from "./ask.js";
 import type { AskOptions } from "./ask.js";
 import { createSession } from "./session.js";
 import type { ApiSession, CreatedSession } from "./session.js";
@@ -135,7 +136,8 @@ export function createApp(opts: ApiOptions = {}): Hono {
       // POST + Authorization + Content-Type for the token-protected ask/approvals endpoints; loopback origins only.
       allowMethods: ["GET", "HEAD", "POST", "OPTIONS"],
       allowHeaders: ["Last-Event-ID", "Cache-Control", "Authorization", "Content-Type"],
-      exposeHeaders: [HASH_MISMATCH_HEADER],
+      // Retry-After: the ask endpoint's 429 (rate limit) tells the dashboard when to try again.
+      exposeHeaders: [HASH_MISMATCH_HEADER, "Retry-After"],
     }),
   );
 
@@ -231,8 +233,12 @@ export function createApp(opts: ApiOptions = {}): Hono {
 
   // The only non-read endpoints: token + localhost (src/api/session.ts). Ask is read-only by construction.
   const session = opts.session ?? createSession();
+  const runsDir = opts.runsDir === undefined ? DEFAULT_RUNS_DIR : opts.runsDir;
   mountAsk(app, {
-    runsDir: opts.runsDir === undefined ? DEFAULT_RUNS_DIR : opts.runsDir,
+    runsDir,
+    // Ask spans get their own local sink (runs/_ask/spans.jsonl), scoped to each ask's async context,
+    // so they never land in an approval's runs/<runId>/spans.jsonl (approvals swap the global sink).
+    spansPath: runsDir === null ? null : join(runsDir, ASK_SPANS_DIR, "spans.jsonl"),
     ...opts.ask,
     session,
     bundleDirs: () => bundleDirectories(opts),
