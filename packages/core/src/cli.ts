@@ -211,7 +211,24 @@ export function buildProgram(): Command {
     .option("--no-checks", "skip running `pnpm test` and `guards coverage` for EVALUATION.md")
     .option("--content", "only write the dashboard glossary (generated from code) to packages/web/public/content/glossary.json (--out: its directory)")
     .option("--evidence", "only regenerate packages/web/public/evidence/evidence.json from facts on disk (doctor record, trace link template, entire, docs/BUSINESS.md)")
-    .action(async (opts: { sample?: boolean; content?: boolean; out?: string; seed: string; runsDir?: string; root?: string; checks: boolean }) => {
+    .option("--certificates", "only write certificates from REAL bundles: packages/web/public/certificates/<tool>.json + report.json and export/REPORT.md (--out: certificates directory, --runs-dir, --root)")
+    .option("--fixture", "with --certificates: build from the FIXTURE demo bundles (packages/core/runs/demo) into certificates/fixture/ and export/REPORT.fixture.md")
+    .action(async (opts: { sample?: boolean; content?: boolean; out?: string; seed: string; runsDir?: string; root?: string; checks: boolean; certificates?: boolean; fixture?: boolean }) => {
+      if (opts.fixture && !opts.certificates) throw new Error("--fixture only applies to --certificates (fixture bundles are published by `notary demo --fixture --publish`)");
+      if (opts.certificates) {
+        if (opts.sample || opts.content || (opts as { evidence?: boolean }).evidence) throw new Error("--certificates is a separate export; run it on its own");
+        const { writeCertificates } = await import("./certify/index.js");
+        const { join, resolve } = await import("node:path");
+        const at = (p: string): string => resolve(process.env.INIT_CWD ?? process.cwd(), p);
+        const result = await writeCertificates({
+          fixture: opts.fixture === true,
+          ...(opts.runsDir ? { runsDir: at(opts.runsDir) } : {}),
+          ...(opts.out ? { webDir: at(opts.out) } : {}),
+          ...(opts.root ? { exportDir: join(at(opts.root), "export") } : {}),
+        });
+        for (const line of result.lines) console.log(line);
+        return;
+      }
       if ((opts as { evidence?: boolean }).evidence) {
         const { writeEvidence } = await import("./export/evidence.js");
         for (const line of writeEvidence().lines) console.log(line);

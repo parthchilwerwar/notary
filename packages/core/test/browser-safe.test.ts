@@ -7,7 +7,8 @@ import { describe, expect, it } from "vitest";
 // packages/web imports the schema and the bundle hash in the browser, so these modules (and
 // everything they import) must not touch Node-only modules or globals.
 const SRC = resolve(dirname(fileURLToPath(import.meta.url)), "../src");
-const ENTRIES = ["schema/index.ts", "schema/bundle.ts", "bundle/hash.ts"];
+// certify/certificates.ts + report.ts: the dashboard can re-verify certificate sha256s in the browser.
+const ENTRIES = ["schema/index.ts", "schema/bundle.ts", "bundle/hash.ts", "certify/certificates.ts", "certify/report.ts"];
 const ALLOWED_PACKAGES = new Set(["zod"]);
 const NODE_BUILTINS = new Set(builtinModules.flatMap((m) => [m, `node:${m}`]));
 const NODE_GLOBALS = /\b(process\.|Buffer\b|require\(|__dirname|__filename)/;
