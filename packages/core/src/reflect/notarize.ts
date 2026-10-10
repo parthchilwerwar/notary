@@ -41,6 +41,7 @@ import { cassetteNames, pinIfPresent } from "../replay/pins.js";
 import { INPUTS_VERSION, saveInputs, snapshotStore } from "../replay/inputs.js";
 import { RecordingLlm } from "../replay/llm-cassette.js";
 import { RUNS_DIR } from "../checker/notarize.js";
+import { bundleTraceLinks } from "../trace/links.js";
 import { observedClaimIds } from "../checker/check.js";
 import { runRecon } from "../checker/recon.js";
 import type { ReconResult } from "../checker/recon.js";
@@ -718,7 +719,12 @@ async function writeNotarizeBundle(a: {
           }
         : {}),
     },
-    traceLinks: {},
+    // Empty unless a neatlogs trace link template exists (src/trace/links.ts); then exported traces only.
+    traceLinks: bundleTraceLinks({
+      traceIds: [...loop.probes.map((p) => p.traceId), ...recon.anomalies.map((x) => x.traceId)],
+      runsDir: a.opts.runsDir ?? RUNS_DIR,
+      ...(a.opts.env ? { env: a.opts.env } : {}),
+    }),
     cassettes: a.cassettes,
   };
   // P8: every TDD metric (src/eval/metrics.ts); belief precision's ground truth = the checker's verdicts on this run's recon.

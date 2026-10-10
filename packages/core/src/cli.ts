@@ -210,7 +210,13 @@ export function buildProgram(): Command {
     .option("--root <dir>", "write export/ and docs/EVALUATION.md under this directory instead of the repo root")
     .option("--no-checks", "skip running `pnpm test` and `guards coverage` for EVALUATION.md")
     .option("--content", "only write the dashboard glossary (generated from code) to packages/web/public/content/glossary.json (--out: its directory)")
+    .option("--evidence", "only regenerate packages/web/public/evidence/evidence.json from facts on disk (doctor record, trace link template, entire, docs/BUSINESS.md)")
     .action(async (opts: { sample?: boolean; content?: boolean; out?: string; seed: string; runsDir?: string; root?: string; checks: boolean }) => {
+      if ((opts as { evidence?: boolean }).evidence) {
+        const { writeEvidence } = await import("./export/evidence.js");
+        for (const line of writeEvidence().lines) console.log(line);
+        return;
+      }
       if (opts.content) {
         if (opts.sample) throw new Error("--content and --sample are separate exports; run them one at a time");
         const { writeGlossary } = await import("./export/content.js");
@@ -303,6 +309,18 @@ export function buildProgram(): Command {
       const { DEFAULT_PATHS } = await import("./export/index.js");
       const published = await publishFixtureBundles(result.bundles, { webBundlesDir: DEFAULT_PATHS.webBundlesDir });
       for (const line of published.lines) console.log(line);
+    });
+
+  program
+    .command("trace-link")
+    .description("Derive the neatlogs trace URL template from one real trace URL and write packages/core/config/neatlogs.json")
+    .requiredOption("--example <url>", "a trace URL copied from the neatlogs UI")
+    .requiredOption("--trace-id <id>", "the 32-hex trace id that URL shows (must appear in it exactly once)")
+    .action(async (opts: { example: string; traceId: string }) => {
+      const { writeNeatlogsConfig } = await import("./trace/links.js");
+      const { config, path } = writeNeatlogsConfig(opts.example, opts.traceId);
+      console.log(`trace link template: ${config.traceUrlTemplate}`);
+      console.log(`written to ${path}; run \`pnpm notary export --evidence\` to add the doctor trace link`);
     });
 
   program

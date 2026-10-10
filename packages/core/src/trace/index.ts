@@ -49,7 +49,8 @@
  *
  * Local span sink (TDD "Integrations": "OTel spans are also written to runs/<runId>/spans.jsonl
  * as a fallback evidence source"): once `setSpanSink(path)` is set, EVERY withSpan appends one
- * JSONL record {name, traceId, spanId, parentSpanId?, startedAt, endedAt, attrs, status, error?}
+ * JSONL record {name, traceId, spanId, parentSpanId?, startedAt, endedAt, attrs, status, error?,
+ * exported?} (exported: true only when the SDK opened the span, see src/trace/links.ts)
  * to that file when the span ends, whether or not neatlogs is enabled. With the SDK on, the ids
  * are the real OTel ids; with it off, they are generated locally (32-hex trace id, 16-hex span id
  * from crypto.randomUUID) and nested spans inherit their parent's trace id. `attrs` carries the
@@ -187,10 +188,19 @@ export type SpanRecord = {
   attrs: TraceAttrs;
   status: "ok" | "error";
   error?: string;
+  /** true when the SDK opened this span (real OTel ids, sent to neatlogs); absent for local-only spans. */
+  exported?: true;
 };
 
 let sinkPath: string | null = null;
 const localContext = new AsyncLocalStorage<SpanIds>();
+/** Trace ids of spans the SDK opened in this process (used to gate neatlogs trace links). */
+const exportedTraceIds = new Set<string>();
+
+/** Trace ids this process sent to neatlogs (spans opened through the SDK). */
+export function exportedTraceIdsInProcess(): ReadonlySet<string> {
+  return exportedTraceIds;
+}
 
 /** Append every span to `path` as JSONL from now on; null turns the sink off. */
 export function setSpanSink(path: string | null): void {
@@ -304,6 +314,10 @@ export async function withSpan<T>(
         const ctx = span.spanContext();
         if (ctx.traceId) rec.traceId = ctx.traceId;
         if (ctx.spanId) rec.spanId = ctx.spanId;
+        if (ctx.traceId && ctx.spanId) {
+          rec.exported = true;
+          exportedTraceIds.add(ctx.traceId.toLowerCase());
+        }
       } catch {
         // keep the local ids
       }

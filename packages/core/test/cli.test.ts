@@ -15,9 +15,9 @@ function parse(args: string[]) {
 }
 
 describe("cli", () => {
-  it("registers every TDD subcommand plus doctor", () => {
+  it("registers every TDD subcommand plus trace-link and doctor", () => {
     const names = buildProgram().commands.map((c) => c.name());
-    expect(names).toEqual(["notarize", "run", "replay", "eval", "export", "serve", "guards", "demo", "doctor"]);
+    expect(names).toEqual(["notarize", "run", "replay", "eval", "export", "serve", "guards", "demo", "trace-link", "doctor"]);
     const guards = buildProgram().commands.find((c) => c.name() === "guards");
     expect(guards?.commands.map((c) => c.name())).toEqual(["coverage"]);
   });

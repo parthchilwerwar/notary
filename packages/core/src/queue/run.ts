@@ -46,6 +46,7 @@ import type { Tools, Wrap } from "../tools/index.js";
 import { DEFAULT_CLIENT_TIMEOUT_MS, executeQueue } from "./executor.js";
 import type { GateHook, PolicyFns, QueueTools, ResumeEntry } from "./executor.js";
 import { createGate } from "./gate.js";
+import { bundleTraceLinks } from "../trace/links.js";
 import { ExpectedFileSchema, collectGroundTruth, gradeRun } from "./grader.js";
 import type { ExpectedEntry, GroundTruthSnapshot } from "./grader.js";
 import { DEFAULT_MANIFEST_PATH, loadManifest } from "./manifest.js";
@@ -534,8 +535,11 @@ async function writeRunBundle(a: {
   for (const n of exec.notes) disclosure.push(`${opts.variant === "naive" ? "Client timeout" : "Note"}: ${n}`);
   if (exec.notProcessed.length) disclosure.push(`Not processed (budget stop): ${exec.notProcessed.join(", ")}`);
 
-  const traceLinks: Record<string, string> = {};
-  for (const d of graded.decisions as Decision[]) Object.assign(traceLinks, d.evidencePack?.traceLinks ?? {});
+  // Local spans.jsonl receipts from the gate's evidence packs; a receipt becomes a neatlogs URL only
+  // when a trace link template exists and the trace was exported (src/trace/links.ts).
+  const receipts: Record<string, string> = {};
+  for (const d of graded.decisions as Decision[]) Object.assign(receipts, d.evidencePack?.traceLinks ?? {});
+  const traceLinks = bundleTraceLinks({ fallback: receipts, runsDir: opts.runsDir ?? RUNS_DIR, ...(opts.env ? { env: opts.env } : {}) });
 
   const snap = a.tools.ledger.snapshot();
   const manifestCassette = (a.manifest as unknown as { cassette?: unknown }).cassette;

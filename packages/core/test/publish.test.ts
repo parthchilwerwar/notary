@@ -11,7 +11,8 @@ import { createApp } from "../src/api/server.js";
 import { FIXTURE_BUNDLES_SUBDIR, buildSampleBundle, finalizeBundle, verifyBundle, writeBundle } from "../src/bundle/index.js";
 import { FIXTURE_DISCLOSURE } from "../src/demo/index.js";
 import { fixturePublishRefusal, publishFixtureBundles } from "../src/demo/publish.js";
-import { EVIDENCE_PATH, EvidenceSchema, PLACEHOLDER_URL, PRIVATE_REPO_URL, SPONSOR_NAMES, loadEvidence } from "../src/export/evidence.js";
+import { EVIDENCE_PATH, EvidenceSchema, PLACEHOLDER_URL, PRIVATE_REPO_URL, SPONSOR_NAMES, buildEvidence, gatherEvidenceFacts, loadEvidence } from "../src/export/evidence.js";
+import { resolveTraceLinkTemplate, traceLinkFor } from "../src/trace/links.js";
 import { runExport } from "../src/export/index.js";
 import { BundleIndexSchema } from "../src/schema/bundle.js";
 import type { RunBundle } from "../src/schema/index.js";
@@ -209,14 +210,23 @@ describe("packages/web/public/evidence/evidence.json", () => {
     expect(EvidenceSchema.safeParse(JSON.parse(readFileSync(EVIDENCE_PATH, "utf8"))).success).toBe(true);
   });
 
+  it("is exactly what `notary export --evidence` generates from facts on disk", () => {
+    expect(evidence).toEqual(buildEvidence(gatherEvidenceFacts()));
+  });
+
   it("has no placeholder link, no private-repo link and no invented trace URL", () => {
+    // A neatlogs trace URL is allowed only when built from a template derived from a real trace URL.
+    const { template } = resolveTraceLinkTemplate();
+    const doctorLink = traceLinkFor("8e4a01d2811652fa2e8c4e4334642137", template);
     for (const e of evidence) {
       for (const l of e.links) {
         expect(l.url).toMatch(/^https:\/\//);
         expect(PLACEHOLDER_URL.test(l.url)).toBe(false);
         expect(l.url.toLowerCase().startsWith(PRIVATE_REPO_URL)).toBe(false);
-        expect(l.url).not.toMatch(/neatlogs\.com/); // the neatlogs trace URL format is unknown
-        expect(l.url).not.toMatch(/8e4a01d2811652fa2e8c4e4334642137/);
+        if (l.url !== doctorLink) {
+          expect(l.url).not.toMatch(/neatlogs\.com/);
+          expect(l.url).not.toMatch(/8e4a01d2811652fa2e8c4e4334642137/);
+        }
       }
     }
     // The schema itself rejects placeholders and the private repo.
@@ -227,13 +237,15 @@ describe("packages/web/public/evidence/evidence.json", () => {
     expect(bad("http://docs.entire.io/cli-reference/graph")).toBe(false);
   });
 
-  it("status rules: neatlogs live (SDK export, trace id in notes), Entire and cfo.ai pending", () => {
+  it("status rules follow the facts: neatlogs live from the recorded doctor success; Entire and cfo.ai only with their facts", () => {
+    const facts = gatherEvidenceFacts();
+    expect(facts.doctor?.traceId).toBe("8e4a01d2811652fa2e8c4e4334642137"); // seeded from DECISIONS #93
     expect(by("neatlogs").status).toBe("live");
     expect(by("neatlogs").notes).toContain("8e4a01d2811652fa2e8c4e4334642137");
-    expect(by("neatlogs").notes).toMatch(/neatlogs-cli is not installed/);
-    expect(by("Entire").status).toBe("pending");
+    expect(by("neatlogs").notes).toMatch(/neatlogs-cli is (not installed|installed)/);
+    expect(by("Entire").status).toBe(facts.entire.onPath && facts.entire.checkpointRefs.length > 0 ? "live" : "pending");
     expect(by("Entire").links.map((l) => l.url)).toEqual(["https://docs.entire.io/cli-reference/graph"]);
-    expect(by("cfo.ai").status).toBe("pending");
+    expect(by("cfo.ai").status).toBe(facts.businessPlan ? "live" : "pending");
     expect(by("cfo.ai").links).toEqual([]);
     // The Entire docs URL is the one recorded in DECISIONS #61.
     const decisions = readFileSync(fileURLToPath(new URL("../../../docs/DECISIONS.md", import.meta.url)), "utf8");

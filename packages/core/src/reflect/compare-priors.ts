@@ -40,6 +40,7 @@ import {
   transferPriors,
 } from "../beliefs/priors.js";
 import { RUNS_DIR } from "../checker/notarize.js";
+import { bundleTraceLinks } from "../trace/links.js";
 import { observedClaimIds } from "../checker/check.js";
 import { runRecon } from "../checker/recon.js";
 import type { ContractEntry } from "../contracts/types.js";
@@ -370,7 +371,8 @@ export async function comparePriors(opts: ComparePriorsOptions): Promise<Compare
       usageByRole: ma.meter?.snapshot() ?? { executor: ZERO, reflector: ZERO, adversary: ZERO },
       credits: { byEndpoint: arm.ledger.byEndpoint, total: arm.ledger.total, budget: arm.ledger.budget },
       metrics: { ...compare.metrics, priors_strength: strength },
-      traceLinks: {},
+      // Empty unless a neatlogs trace link template exists (src/trace/links.ts); then exported traces only.
+      traceLinks: bundleTraceLinks({ traceIds: [...arm.probes.map((p) => p.traceId), ...recon.anomalies.map((x) => x.traceId)], runsDir, env }),
       cassettes: [pinIfPresent(`recon-${tool}`, cassetteDir), pinIfPresent(`probes-${tool}`, cassetteDir)],
     };
     // P8: every TDD metric (src/eval/metrics.ts); probes_to_candidate_with/_without_priors are kept.

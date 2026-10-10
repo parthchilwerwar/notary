@@ -17,6 +17,7 @@ import type { ContractEntry } from "../contracts/types.js";
 import type { RunBundle, Tool } from "../schema/index.js";
 import { DEFAULT_CASSETTE_DIR, TestModeLockError, computeContentHash, isBlocked, loadCassette, saveCassette } from "../tools/index.js";
 import type { CreditLedger } from "../tools/index.js";
+import { bundleTraceLinks } from "../trace/links.js";
 import { checkAllDetailed, observedClaimIds } from "./check.js";
 import { runRecon } from "./recon.js";
 import type { ReconResult } from "./recon.js";
@@ -190,7 +191,8 @@ export async function reconOnly(opts: ReconOnlyOptions): Promise<ReconOnlyResult
       anomalies: recon.anomalies.length,
       skippedSteps: recon.steps.filter((s) => s.status !== "ran").length,
     },
-    traceLinks: {},
+    // Empty unless a neatlogs trace link template exists (src/trace/links.ts); then exported traces only.
+    traceLinks: bundleTraceLinks({ traceIds: recon.anomalies.map((x) => x.traceId), runsDir: opts.runsDir ?? RUNS_DIR, ...(opts.env ? { env: opts.env } : {}) }),
     cassettes,
   };
   const unguarded = opts.unguardedCallSites ? await opts.unguardedCallSites() : null;
