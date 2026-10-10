@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import { readFile } from "node:fs/promises";
 import { computeContentHash } from "../../core/src/bundle/hash.ts";
 const base = process.env.NOTARY_PREVIEW_URL ?? "http://127.0.0.1:5175";
-const out = resolve(process.env.NOTARY_SCREENSHOTS ?? "screenshots/U5");
+const out = resolve(process.env.NOTARY_SCREENSHOTS ?? "screenshots/U6");
 await mkdir(out, { recursive: true });
 const browser = await chromium.launch({ channel: "chrome", headless: true });
 const report = [];
@@ -83,6 +83,19 @@ try {
         await expect(page.locator(".fixture-banner")).toHaveText(
           "Fixture data — simulated APIs, not a live run",
         );
+        if (name === "Overview" && width === 1440 && theme === "light") {
+          const chart = page.locator(".funnel-card .dither-bars");
+          const box = await chart.boundingBox();
+          if (!box) throw new Error("Queue chart has no measurable bounds.");
+          await page.mouse.move(
+            box.x + 40 + (box.width - 52) * 0.3,
+            box.y + 80,
+          );
+          const tooltip = chart.locator(".chart-tooltip");
+          await expect(tooltip).toContainText("Decided");
+          await expect(tooltip).toContainText("Drop vs previous bar");
+          await page.mouse.move(0, 0);
+        }
         if (name === "Probe log")
           await page
             .getByRole("combobox", { name: "Filter probes by template" })

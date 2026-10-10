@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { RunBundle } from "../../core/src/schema";
+import { DitherGradient } from "./components/dither-kit/gradient";
 import {
   Card,
   CardHeader,
@@ -245,6 +246,13 @@ export function Overview({
         <CostBreakdown bundle={bundle} />
       </Panel>
       <Card className="analytics-card insight-card">
+        <DitherGradient
+          from="blue"
+          direction="right"
+          opacity={0.4}
+          cell={2}
+          bloom="off"
+        />
         <CardContent>
           <span className="insight-label">The takeaway</span>
           <h2>{insight(bundle, comparison)}</h2>

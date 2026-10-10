@@ -1,7 +1,7 @@
 # @notary/web
 
 Read-only Notary dashboard built with React, Vite, Tailwind, shadcn/ui primitives
-and Recharts. The home page is Overview; Queue, Beliefs, Probe log, Runs
+and Dither Kit. The home page is Overview; Queue, Beliefs, Probe log, Runs
 comparison, Economics and Evidence share its visual system. Geist uses light and
 regular weights. Warm neutral surfaces, a blue accent and SVG diagonal hatching
 separate focus and baseline series. Green/red are reserved for safety deltas.
@@ -108,3 +108,17 @@ deep-link refreshes, theme persistence, missing tool receipts, live result
 precedence and visible tamper rejection. The first visual review corrected filled
 CTA foreground contrast in both themes. The numbered process and hero anecdote
 are user-requested structural/content numbers; measured statistics stay file-backed.
+
+## U6 chart polish
+
+The dashboard now uses Dither Kit's canvas bar and line charts. The line fill uses
+step sampling and recorded SVG step connectors, so no intermediate observations
+are invented. Unknown values are labelled and withheld from bar painting; zeros
+remain explicit. Axis labels use observed values, with fewer ticks when counts
+are close. Queue tooltip drops remain signed differences between adjacent counts.
+The source and MIT declaration are recorded in docs/CREDITS.md.
+
+Insight and landing CTA cards use the kit's static blue dither gradient over a
+dark blue surface. The same Phosphor family supplies chevrons and context icons
+for native selects, retaining keyboard/touch behavior. The current visual check
+writes artifacts to ignored screenshots/U6 and verifies the queue hover tooltip.

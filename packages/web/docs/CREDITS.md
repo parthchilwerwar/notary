@@ -46,3 +46,29 @@ not product statistics. The supplied hero anecdote includes its requested HTTP
 status. All measured result values come from verified bundles, and tool copy and
 status come from public/evidence/evidence.json. Fixture results include both the
 persistent AGENTS.md disclosure and the requested planted-quirks label.
+
+## U6 — Dither Kit
+
+Graphs and the blue card wash use actual [Dither Kit](https://www.tripwire.sh/dither-kit)
+source, installed with shadcn CLI 4.21.4 from these publisher registry URLs:
+
+- https://www.tripwire.sh/r/core.json
+- https://www.tripwire.sh/r/bar-chart.json
+- https://www.tripwire.sh/r/area-chart.json
+- https://www.tripwire.sh/r/gradient.json
+
+Publisher: Boring Software, Inc. / ripgrim. License: **MIT**, declared in the
+publisher's [registry-core package metadata](https://github.com/Boring-Software-Inc/dither-kit/blob/main/packages/registry-core/package.json)
+and [published core package](https://www.npmjs.com/package/@dither-kit/core).
+The registry's original source and comments are retained under
+`src/components/dither-kit`. These source files were adapted to Notary: blue
+palette, explicit observed axis ticks, step sampling for recorded line trends,
+no decorative stars, and data receipts with unknown values preserved. Canvas
+fills are decorative; measured values remain available as text and accessible
+chart descriptions. Gradients use a static blue wash over a dark blue surface.
+The Dither Kit docs credit Evil Charts as the original visual inspiration.
+
+New dependencies are exact: motion 14.1.0, d3-scale 4.0.2, d3-shape 3.2.0,
+@types/d3-scale 4.0.9 and @types/d3-shape 3.2.0. Recharts was removed after the
+chart replacement. Select controls retain native keyboard/touch behavior and use
+the existing Phosphor icon library; no additional icon dependency was added.

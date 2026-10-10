@@ -64,6 +64,7 @@ export function Comparison({
               comparison
               focusName={bundle.runId}
               comparisonName={comparison.runId}
+              unit={metric.key === "unsafe_actions_total" ? "" : "ratio"}
             />
             <p className="chart-note">
               Baseline:{" "}

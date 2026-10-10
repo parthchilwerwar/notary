@@ -1,3 +1,5 @@
+import { SelectControl } from "./components/SelectControl";
+import { FunnelIcon as Funnel } from "@phosphor-icons/react/dist/csr/Funnel";
 import { useState } from "react";
 import type { RunBundle } from "../../core/src/schema";
 import { Empty, Fields, Json, Status, Trace } from "./components";
@@ -38,7 +40,8 @@ export function Beliefs({ bundle }: { bundle: RunBundle }) {
         </div>
         <label className="inline-label">
           Status
-          <select
+          <SelectControl
+            icon={<Funnel size={16} />}
             aria-label="Filter beliefs by status"
             value={status}
             onChange={(event) => setStatus(event.target.value)}
@@ -49,7 +52,7 @@ export function Beliefs({ bundle }: { bundle: RunBundle }) {
                 {label(value)}
               </option>
             ))}
-          </select>
+          </SelectControl>
         </label>
       </div>
       <div className="belief-note">

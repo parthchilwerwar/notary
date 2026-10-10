@@ -552,3 +552,35 @@
 .landing a.bg-primary {
   color: var(--primary-fg);
 }
+.landing-cta {
+  position: relative;
+  overflow: hidden;
+  background: #153566;
+  color: #fff;
+}
+.landing-cta > .absolute {
+  z-index: 0;
+}
+.landing-cta > h2,
+.landing-cta > p,
+.landing-cta > .eyebrow,
+.landing-cta > .landing-actions {
+  position: relative;
+  z-index: 1;
+}
+.landing-cta .eyebrow,
+.landing-cta > p {
+  color: #e2eafb;
+}
+.landing-cta a.bg-primary {
+  background: #fff;
+  color: #153566;
+}
+.landing-cta .landing-actions > a:not(.bg-primary) {
+  background: transparent;
+  color: #fff;
+  border-color: #ffffff66;
+}
+.landing-cta .landing-actions > a:hover {
+  text-decoration: none;
+}

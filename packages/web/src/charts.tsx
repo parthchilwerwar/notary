@@ -1,41 +1,83 @@
-import { useId } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  LabelList,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import { number, usd } from "./data";
+import { BarChart } from "./components/dither-kit/bar-chart";
+import { Bar } from "./components/dither-kit/bar";
+import { LineChart } from "./components/dither-kit/area-chart";
+import { Line } from "./components/dither-kit/area";
+import { XAxis } from "./components/dither-kit/x-axis";
+import { YAxis } from "./components/dither-kit/y-axis";
+import { Grid } from "./components/dither-kit/grid";
+import { useChart } from "./components/dither-kit/chart-context";
+import { number, percent, usd } from "./data";
 
-export function Hatch({ id }: { id: string }) {
+type BarRow = {
+  name: string;
+  value: number | null;
+  comparison?: number | null;
+  drop?: number | null;
+};
+const format = (value: number | null | undefined, unit: string) =>
+  value == null
+    ? "Not computable"
+    : unit === "USD"
+      ? usd(value)
+      : unit === "ratio"
+        ? percent(value)
+        : number(value);
+function ReceiptTooltip({
+  unit = "",
+  funnel = false,
+}: {
+  unit?: string;
+  funnel?: boolean;
+}) {
+  const chart = useChart();
+  if (chart.hoverIndex == null) return null;
+  const row = chart.data[chart.hoverIndex] as BarRow;
   return (
-    <pattern
-      id={id}
-      width="8"
-      height="8"
-      patternUnits="userSpaceOnUse"
-      patternTransform="rotate(35)"
-    >
-      <rect width="8" height="8" fill="var(--hatch-bg)" />
-      <line
-        x1="0"
-        y1="0"
-        x2="0"
-        y2="8"
-        stroke="var(--hatch-line)"
-        strokeWidth="2"
-      />
-    </pattern>
+    <div className="chart-tooltip dither-receipt-tooltip">
+      <strong>{row.name}</strong>
+      {chart.configKeys.map((key) => (
+        <p key={key}>
+          {chart.config[key].label}:{" "}
+          {format(row[key as keyof BarRow] as number | null | undefined, unit)}
+        </p>
+      ))}
+      {funnel && row.drop != null && (
+        <p>
+          Drop vs previous bar: {number(row.drop)}
+          <small>Terminal outcomes are separate branches.</small>
+        </p>
+      )}
+    </div>
   );
 }
-
+ReceiptTooltip.chartLayer = "dom" as const;
+function RecordedStepStroke() {
+  const chart = useChart();
+  if (!chart.ready) return null;
+  const points = chart.data.map((row, index) => ({
+    x: chart.xCenter(index),
+    y: chart.y(Number(row.value)),
+  }));
+  const path = points
+    .map((point, index) =>
+      index ? `H ${point.x} V ${point.y}` : `M ${point.x} ${point.y}`,
+    )
+    .join(" ");
+  return (
+    <g aria-hidden="true">
+      <path d={path} stroke="var(--blue)" strokeWidth={2} fill="none" />
+      {points.map((point, index) => (
+        <circle
+          key={index}
+          cx={point.x}
+          cy={point.y}
+          r={3}
+          fill="var(--blue)"
+        />
+      ))}
+    </g>
+  );
+}
 export function Bars({
   data,
   comparison = false,
@@ -44,173 +86,91 @@ export function Bars({
   unit = "",
   funnel = false,
 }: {
-  data: {
-    name: string;
-    value: number | null;
-    comparison?: number | null;
-    drop?: number | null;
-  }[];
+  data: BarRow[];
   comparison?: boolean;
   focusName?: string;
   comparisonName?: string;
   unit?: string;
   funnel?: boolean;
 }) {
-  const pattern = useId().replaceAll(":", "");
-  if (data.every((row) => !row.value && (!comparison || !row.comparison))) {
-    return (
-      <div className="zero-chart-list">
+  const positive = data.some(
+    (row) => (row.value ?? 0) > 0 || (comparison && (row.comparison ?? 0) > 0),
+  );
+  const ticks = [
+    ...new Set(
+      data
+        .flatMap((row) => [row.value, comparison ? row.comparison : null])
+        .filter((v): v is number => v != null),
+    ),
+  ].sort((a, b) => a - b);
+  return (
+    <div
+      className="dither-chart-group"
+      role="img"
+      aria-label={data
+        .map(
+          (row) =>
+            `${row.name}: ${format(row.value, unit)}${comparison ? `; baseline: ${format(row.comparison, unit)}` : ""}`,
+        )
+        .join(". ")}
+    >
+      {positive && (
+        <div className="bar-chart dither-bars">
+          <BarChart
+            data={data}
+            config={{
+              value: { label: focusName, color: "blue" },
+              ...(comparison
+                ? {
+                    comparison: {
+                      label: comparisonName,
+                      color: "grey" as const,
+                    },
+                  }
+                : {}),
+            }}
+            animate={false}
+            bloom="off"
+            margins={{ left: 40, right: 12, top: 12, bottom: 28 }}
+          >
+            <XAxis dataKey="name" />
+            <YAxis
+              ticks={
+                ticks.length > 2 ? [ticks[0], ticks[ticks.length - 1]] : ticks
+              }
+              tickFormatter={(value) => format(value, unit)}
+            />
+            <ReceiptTooltip unit={unit} funnel={funnel} />
+            <Bar dataKey="value" variant="gradient" />
+            {comparison && <Bar dataKey="comparison" variant="hatched" />}
+          </BarChart>
+        </div>
+      )}
+      <div className="chart-value-list">
         {data.map((row) => (
           <div key={row.name}>
             <span>{row.name}</span>
             <span>
-              {row.value == null
-                ? "Not computable"
-                : unit === "USD"
-                  ? usd(row.value)
-                  : number(row.value)}
+              <i className="value-key" />
+              {format(row.value, unit)}
               {comparison && (
                 <>
-                  {" "}
-                  /{" "}
-                  {row.comparison == null
-                    ? "Not computable"
-                    : unit === "USD"
-                      ? usd(row.comparison)
-                      : number(row.comparison)}
+                  <i className="value-key baseline" />
+                  {format(row.comparison, unit)}
                 </>
               )}
             </span>
           </div>
         ))}
-        <p className="chart-note">
-          {comparison ? "Focus / baseline" : "Recorded values"} · no positive
-          values to plot.
-        </p>
       </div>
-    );
-  }
-  return (
-    <div
-      className="bar-chart"
-      style={{ height: Math.max(180, data.length * (comparison ? 68 : 48)) }}
-      role="img"
-      aria-label={data
-        .map(
-          (d) =>
-            `${d.name}: ${d.value ?? "not computable"} ${unit}${comparison ? `; ${comparisonName}: ${d.comparison ?? "not computable"}` : ""}`,
-        )
-        .join(". ")}
-    >
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={data}
-          layout="vertical"
-          margin={{ top: 8, right: 48, bottom: 8, left: 0 }}
-          barCategoryGap="24%"
-        >
-          <defs>
-            <Hatch id={pattern} />
-          </defs>
-          <XAxis type="number" hide domain={[0, "dataMax"]} />
-          <YAxis
-            dataKey="name"
-            type="category"
-            width={92}
-            axisLine={false}
-            tickLine={false}
-            tick={{ fill: "var(--muted)", fontSize: 11 }}
-          />
-          <Tooltip
-            cursor={{ fill: "var(--hover)" }}
-            content={({ active, payload }) => {
-              if (!active || !payload?.length) return null;
-              const row = payload[0].payload as (typeof data)[number];
-              return (
-                <div className="chart-tooltip">
-                  <strong>{row.name}</strong>
-                  {payload.map((item) => (
-                    <p key={String(item.dataKey)}>
-                      {item.dataKey === "comparison"
-                        ? comparisonName
-                        : focusName}
-                      : {number(Number(item.value))} {unit}
-                    </p>
-                  ))}
-                  {funnel && row.drop != null && (
-                    <p>
-                      Drop vs previous bar: {number(row.drop)}
-                      <small>Terminal outcomes are separate branches.</small>
-                    </p>
-                  )}
-                </div>
-              );
-            }}
-          />
-          <Bar
-            name={focusName}
-            dataKey="value"
-            fill={funnel ? `url(#${pattern})` : "var(--blue)"}
-            radius={[0, 8, 8, 0]}
-            isAnimationActive={false}
-            maxBarSize={24}
-          >
-            {data.map((row, index) => (
-              <Cell
-                key={row.name}
-                fill={
-                  funnel && index === 0
-                    ? "var(--blue)"
-                    : funnel
-                      ? `url(#${pattern})`
-                      : "var(--blue)"
-                }
-              />
-            ))}
-            <LabelList
-              dataKey="value"
-              position="right"
-              fill="var(--muted)"
-              fontSize={11}
-              formatter={(value) =>
-                value == null
-                  ? ""
-                  : unit === "USD"
-                    ? usd(Number(value))
-                    : number(Number(value))
-              }
-            />
-          </Bar>
-          {comparison && (
-            <Bar
-              name={comparisonName}
-              dataKey="comparison"
-              fill={`url(#${pattern})`}
-              radius={[0, 8, 8, 0]}
-              isAnimationActive={false}
-              maxBarSize={24}
-            >
-              <LabelList
-                dataKey="comparison"
-                position="right"
-                fill="var(--muted)"
-                fontSize={11}
-                formatter={(value) =>
-                  value == null
-                    ? ""
-                    : unit === "USD"
-                      ? usd(Number(value))
-                      : number(Number(value))
-                }
-              />
-            </Bar>
-          )}
-        </BarChart>
-      </ResponsiveContainer>
+      {!positive && (
+        <p className="chart-note">
+          Recorded values · no positive values to plot.
+        </p>
+      )}
     </div>
   );
 }
-
 export function StepTrend({
   data,
 }: {
@@ -221,61 +181,26 @@ export function StepTrend({
       className="trend-chart"
       role="img"
       aria-label={data
-        .map((d) => `${d.name}: ${d.value} unsafe actions`)
+        .map((row) => `${row.name}: ${row.value} unsafe actions`)
         .join(". ")}
     >
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart
-          data={data}
-          margin={{ top: 16, right: 20, left: -24, bottom: 0 }}
-        >
-          <CartesianGrid
-            vertical={false}
-            stroke="var(--line)"
-            strokeDasharray="3 6"
-          />
-          <XAxis
-            dataKey="name"
-            axisLine={false}
-            tickLine={false}
-            tick={{ fontSize: 11, fill: "var(--muted)" }}
-          />
-          <YAxis
-            domain={[0, "dataMax"]}
-            ticks={[...new Set(data.map((d) => d.value))]}
-            allowDecimals={false}
-            axisLine={false}
-            tickLine={false}
-            tick={{ fontSize: 11, fill: "var(--muted)" }}
-          />
-          <Tooltip
-            contentStyle={{
-              background: "var(--surface)",
-              border: "1px solid var(--line)",
-              borderRadius: 12,
-              color: "var(--fg)",
-            }}
-          />
-          <Line
-            dataKey="value"
-            name="Unsafe actions"
-            type="stepAfter"
-            stroke="var(--blue)"
-            strokeWidth={2}
-            dot={{
-              r: 4,
-              fill: "var(--blue)",
-              stroke: "var(--surface)",
-              strokeWidth: 2,
-            }}
-            isAnimationActive={false}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+      <LineChart
+        data={data}
+        config={{ value: { label: "Unsafe actions", color: "blue" } }}
+        animate={false}
+        bloom="off"
+        margins={{ left: 32, right: 16, top: 20, bottom: 28 }}
+      >
+        <Grid />
+        <XAxis dataKey="name" />
+        <YAxis ticks={[...new Set(data.map((row) => row.value))]} />
+        <ReceiptTooltip />
+        <Line dataKey="value" variant="dotted" />
+        <RecordedStepStroke />
+      </LineChart>
     </div>
   );
 }
-
 export function Segments({
   rows,
 }: {
@@ -294,11 +219,9 @@ export function Segments({
             className="segmented-track"
             aria-label={`${row.name}: ${row.value}`}
           >
-            <span style={{ width: max ? `${(row.value / max) * 100}%` : "0%" }}>
-              {Array.from({ length: row.value }, (_, i) => (
-                <i key={i} />
-              ))}
-            </span>
+            <span
+              style={{ width: max ? `${(row.value / max) * 100}%` : "0%" }}
+            />
           </div>
         </div>
       ))}

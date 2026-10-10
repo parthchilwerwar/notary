@@ -1,3 +1,5 @@
+import { SelectControl } from "./components/SelectControl";
+import { FlaskIcon as Flask } from "@phosphor-icons/react/dist/csr/Flask";
 import { useState } from "react";
 import type { RunBundle } from "../../core/src/schema";
 import { Empty, Json, Status, Trace } from "./components";
@@ -22,7 +24,8 @@ export function ProbeLog({ bundle }: { bundle: RunBundle }) {
         <p>{number(probes.length)} probes in view</p>
         <label className="inline-label">
           Template
-          <select
+          <SelectControl
+            icon={<Flask size={16} />}
             aria-label="Filter probes by template"
             value={template}
             onChange={(e) => setTemplate(e.target.value)}
@@ -33,7 +36,7 @@ export function ProbeLog({ bundle }: { bundle: RunBundle }) {
                 {label(t)}
               </option>
             ))}
-          </select>
+          </SelectControl>
         </label>
       </div>
       <div className="probe-timeline">

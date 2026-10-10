@@ -1,3 +1,4 @@
+import { SelectControl } from "./components/SelectControl";
 import { useEffect, useState } from "react";
 import { MoonIcon as Moon } from "@phosphor-icons/react/dist/csr/Moon";
 import { SunIcon as Sun } from "@phosphor-icons/react/dist/csr/Sun";
@@ -18,6 +19,8 @@ import { comparable } from "./analytics";
 import { date, label, loadCatalog } from "./data";
 import { Link, useLocation, useNavigate } from "react-router";
 import { useTheme } from "./useTheme";
+import { StackIcon as Stack } from "@phosphor-icons/react/dist/csr/Stack";
+import { ArrowsLeftRightIcon as CompareIcon } from "@phosphor-icons/react/dist/csr/ArrowsLeftRight";
 
 const screens = [
   {
@@ -205,7 +208,8 @@ export default function App() {
           <div className="run-controls">
             <label>
               Selected run
-              <select
+              <SelectControl
+                icon={<Stack size={16} />}
                 aria-label="Selected run"
                 value={selected}
                 disabled={!all.length}
@@ -220,11 +224,12 @@ export default function App() {
                     {b.runId} · {b.sample ? "Fixture" : "Live"}
                   </option>
                 ))}
-              </select>
+              </SelectControl>
             </label>
             <label>
               Compare with
-              <select
+              <SelectControl
+                icon={<CompareIcon size={16} />}
                 aria-label="Compare with"
                 value={comparison?.runId ?? ""}
                 disabled={!candidates.length}
@@ -238,7 +243,7 @@ export default function App() {
                     {label(b.variant)} · {b.runId}
                   </option>
                 ))}
-              </select>
+              </SelectControl>
             </label>
             <Button
               variant="outline"

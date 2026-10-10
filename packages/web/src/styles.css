@@ -1364,3 +1364,107 @@ meter::-moz-meter-bar {
 .zero-chart-list > div > span:last-child {
   font-variant-numeric: tabular-nums;
 }
+.select-control {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+.select-control select {
+  appearance: none;
+  width: 100%;
+  padding-right: 40px;
+}
+.select-control.with-icon select {
+  padding-left: 40px;
+}
+.select-leading {
+  position: absolute;
+  left: 16px;
+  color: var(--muted);
+  display: flex;
+  pointer-events: none;
+}
+.select-chevron {
+  position: absolute;
+  right: 16px;
+  color: var(--muted);
+  pointer-events: none;
+}
+.run-controls .select-control {
+  width: 248px;
+  max-width: 100%;
+}
+.dither-bars {
+  height: 192px;
+}
+.dither-receipt-tooltip {
+  position: absolute;
+  top: 4px;
+  left: 40px;
+  z-index: 12;
+  pointer-events: none;
+  max-width: calc(100% - 48px);
+}
+.chart-value-list {
+  margin-top: 16px;
+}
+.chart-value-list > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 11px;
+}
+.chart-value-list > div > span:last-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.value-key {
+  height: 6px;
+  width: 6px;
+  background: var(--blue);
+  border-radius: 1px;
+}
+.value-key.baseline {
+  background: var(--hatch-line);
+  margin-left: 8px;
+}
+.insight-card {
+  position: relative;
+  background: #153566;
+}
+.insight-card > div:last-child {
+  position: relative;
+  z-index: 1;
+  padding: 36px;
+}
+.insight-card > .absolute {
+  padding: 0 !important;
+}
+.segmented-track > span {
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 18px,
+      var(--surface) 18px 21px
+    ),
+    repeating-linear-gradient(
+      125deg,
+      var(--hatch-bg) 0 4px,
+      var(--hatch-line) 4px 5px
+    );
+}
+@media (max-width: 700px) {
+  .run-controls .select-control {
+    width: 100%;
+  }
+  .insight-card > div:last-child {
+    padding: 24px;
+  }
+}

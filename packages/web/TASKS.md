@@ -1,6 +1,6 @@
 # Dashboard phases
 
-One phase per Codex session, per the root AGENTS.md. U5 is the current phase, as requested by the user. U2 live mode and U3 deployment remain scheduled separately.
+One phase per Codex session, per the root AGENTS.md. U6 is the current phase, as requested by the user. U2 live mode and U3 deployment remain scheduled separately.
 
 ## U1 — Shell, Queue and Beliefs
 
@@ -67,3 +67,13 @@ Visual artifacts are in ignored `screenshots/U4` and can be regenerated with
 - [x] New runtime and development dependencies pinned to exact versions.
 - [x] Production build, 19 tests, 32 screenshot combinations, tamper rejection, live precedence, pending tools and route refresh checks.
 - [x] Commit `U5: landing page`.
+
+## U6 — Dither charts and control polish
+
+- [x] Install actual Dither Kit bar, line and gradient sources from the publisher registry.
+- [x] Replace Recharts, preserve missing metrics, render explicit data receipts and recorded step transitions.
+- [x] Remove decorative stars and pin new chart dependencies exactly.
+- [x] Refine dashboard insight and landing CTA cards with a blue dither wash and readable contrast.
+- [x] Native selectors with Phosphor chevrons and run/comparison/status/template icons.
+- [x] Build, 21 tests and 32 responsive/theme screenshot combinations; check queue hover, integrity and fixture/live separation.
+- [x] Commit `U6: dither charts and control polish`.
