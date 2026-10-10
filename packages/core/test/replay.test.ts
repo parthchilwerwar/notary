@@ -19,7 +19,7 @@ import { normalizeVolatile } from "../src/replay/llm-cassette.js";
 import { compareRecords } from "../src/replay/records.js";
 import { parseRef, pinRef } from "../src/replay/pins.js";
 import type { Probe, RunBundle } from "../src/schema/index.js";
-import { makeDriftFixture } from "../src/tools/drift-fixture.js";
+import { makeDriftFixture, parseTransform } from "../src/tools/drift-fixture.js";
 import { computeContentHash, loadCassette, saveCassette } from "../src/tools/index.js";
 
 const dirs: string[] = [];
@@ -483,23 +483,26 @@ describe("model-call normalization", () => {
 });
 
 describe("notary replay --drift", () => {
-  it("replays the fixture's source run, then un-learns: prints the belief trajectory and the retired guards", async () => {
+  it("A-16: replays the fixture's source run, then a consistent op-level drift: one step per distinct design; too few designs -> not un-learned, exit 1", async () => {
     const d = dirsFor();
     const driftDir = tempDir("notary-replay-drift-");
     const original = await liveNotarize(d);
-    const probes = loadCassette(`${original.runId}-probes`, { dir: d.cassettes });
-    // TEST drift fixture: the first treatment write now echoes the price unchanged (the tool "fixed" its units).
-    const target = probes.exchanges.find((e) => (e.requestBody as { name?: string }).name?.includes("-p1-t "))!;
-    makeDriftFixture({ from: `${original.runId}-probes`, exchange: `${target.requestHash}:${target.occurrence}`, path: "$.price.price", value: 1234, out: "test-drift", cassetteDir: d.cassettes, driftDir });
+    // TEST drift fixture: every createProduct echo is now divided by 100 (the tool "fixed" its units everywhere).
+    const fx = makeDriftFixture({ from: `${original.runId}-probes`, op: "dodo.createProduct", path: "$.price.price", transform: parseTransform("div100"), out: "test-drift", cassetteDir: d.cassettes, driftDir });
+    expect(fx.fixture.drift.changed.length).toBeGreaterThan(1);
 
     vi.stubGlobal("fetch", refuseFetch);
     const res = await runReplay({ drift: "test-drift", driftDir, runsDir: d.runs, webBundlesDir: null, cassetteDir: d.cassettes, unguardedCallSites: async () => 0 });
-    expect(res.exitCode, res.lines.join("\n")).toBe(0);
     expect(res.lines).toContain(`drift: source run ${original.runId} (replayed first to rebuild its store)`);
     expect(res.lines).toContain("trajectory belief-dodo.product.price-minor-units (violated):");
-    expect(res.lines.some((l) => /^  pass \d+ confirmed .* status=unlearned$/.test(l))).toBe(true);
-    expect(res.lines.find((l) => l.startsWith("retired guards:"))).toMatch(/^retired guards: .+ on dodo\./);
-    expect(res.lines).toContain("stop: unlearned after 4 pass(es)");
+    const steps = res.lines.filter((l) => /^  design \d+ /.test(l));
+    expect(steps.length).toBeGreaterThan(1);
+    expect(new Set(steps.map((l) => l.slice(l.indexOf("[")))).size).toBe(steps.length); // each design once
+    // The run notarized at Beta(1,4) from its own designs; replaying each once can at most tie at 0.5. Never faked.
+    expect(res.lines.some((l) => /^stop: not un-learned: only \d+ distinct designs? observed the change$/.test(l))).toBe(true);
+    expect(res.lines).toContain("retired guards: none");
+    expect(res.exitCode, res.lines.join("\n")).toBe(1);
+    expect(res.lines.at(-1)).toMatch(/un-learned no belief/);
   }, 60_000);
 
   it("a fixture whose source cassette no recorded bundle pins is refused", async () => {

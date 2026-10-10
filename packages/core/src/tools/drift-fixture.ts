@@ -1,17 +1,31 @@
 /**
- * Drift fixtures (TDD "Drift fixture", PRD FR-16): a copy of one REAL recorded cassette with exactly
- * one response field deliberately changed, to simulate a tool changing its behavior. Written to
+ * Drift fixtures (TDD "Drift fixture", PRD FR-16; audit A-16): a copy of one REAL recorded cassette
+ * with its responses deliberately rewritten to simulate a tool changing its behavior. Written to
  * packages/core/fixtures/drift/<name>.json by `pnpm --filter @notary/core make:drift`.
  *
- * The file is an ordinary cassette (same `exchanges`, `contentHash` recomputed over the altered
- * exchanges, so loadCassette verifies it) plus a top-level disclosure:
- *     drift: { source, sourceContentHash, exchange, path, before, after, note }
- * `note` always reads DRIFT_NOTE, so nothing downstream can mistake the fixture for real traffic.
+ * Two modes:
+ *   behavior (A-16, the honest one): `--op <opName> [--match <path>=<json>] --set <path>=<value|expr>`
+ *     rewrites EVERY exchange of that op (and match) the same way, like a real API change: all
+ *     dodo.listRefunds responses now clamp, all createRefund echoes are x100, ... Exchanges where the
+ *     field is missing, not numeric for an arithmetic transform, or already equal are left alone and
+ *     listed under `skipped` with the reason. Zero changed exchanges is refused.
+ *   exchange (legacy): `--exchange <requestHash>[:occurrence] --set <path>=<value|expr>` changes that
+ *     one exchange only. A one-exchange fixture can rarely un-learn anything once replicates count
+ *     once (see src/beliefs/drift.ts); it is kept for targeted tests.
  *
- * Exchange selector: "<requestHash>[:<occurrence>]" (occurrence default 0); a unique hash prefix of
- * at least 8 hex characters is accepted. Field path: JSONPath-style into the exchange's response
- * body, "$.items[0].amount" (the leading "$." is optional), or "$status" for the HTTP status code.
- * The field must already exist and the new value must differ from the recorded one.
+ * The file is an ordinary cassette (same `exchanges`, `contentHash` recomputed over the rewritten
+ * exchanges, so loadCassette verifies it) plus a top-level disclosure:
+ *     drift: { source, sourceContentHash, op?, match?, exchange?, path, transform,
+ *              changed: [{ exchange: "<requestHash>:<occurrence>", op, before, after }], skipped, note }
+ * `note` always reads DRIFT_NOTE (exchange mode) or DRIFT_NOTE_BEHAVIOR, so nothing downstream can
+ * mistake the fixture for real traffic.
+ *
+ * Paths: `--set` is JSONPath-style into the response body, "$.items[0].amount" (the leading "$." is
+ * optional), or "$status" for the HTTP status code. `--match` selects on the REQUEST body by default
+ * ("$.price.price" or "$request.price.price"), or on the response with "$response.<path>", or
+ * "$status"; the value is JSON and compared canonically.
+ * Values: JSON (`1234`, `"text"`, `null`, `{"a":1}`) sets the field; `x<k>` multiplies a numeric
+ * field by k and `div<k>` divides it by k (e.g. x100, div100).
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -23,21 +37,46 @@ import type { Cassette, Exchange } from "./recorder.js";
 export const DEFAULT_DRIFT_DIR = fileURLToPath(new URL("../../fixtures/drift/", import.meta.url));
 
 export const DRIFT_NOTE = "DRIFT FIXTURE — one response deliberately altered to simulate a tool behavior change";
+export const DRIFT_NOTE_BEHAVIOR = "DRIFT FIXTURE — every matching response deliberately rewritten to simulate a tool behavior change";
+
+const ChangedSchema = z.object({
+  /** "<requestHash>:<occurrence>". */
+  exchange: z.string(),
+  op: z.string(),
+  before: z.unknown(),
+  after: z.unknown(),
+});
 
 export const DriftMetaSchema = z.object({
   /** Name of the real cassette this fixture was copied from. */
   source: z.string(),
   sourceContentHash: z.string(),
-  /** "<requestHash>:<occurrence>" of the altered exchange. */
-  exchange: z.string(),
+  /** Behavior mode: the op every rewritten exchange belongs to. */
+  op: z.string().optional(),
+  /** Behavior mode: optional selector within the op. */
+  match: z.object({ path: z.string(), value: z.unknown() }).optional(),
+  /** Exchange mode: "<requestHash>:<occurrence>" of the one altered exchange. */
+  exchange: z.string().optional(),
   path: z.string(),
-  before: z.unknown(),
-  after: z.unknown(),
-  note: z.literal(DRIFT_NOTE),
+  /** "set <json>" | "x<k>" | "div<k>". */
+  transform: z.string(),
+  /** Every exchange the fixture changed, with the recorded and the rewritten value. */
+  changed: z.array(ChangedSchema).min(1),
+  /** Matching exchanges left unchanged, with the reason. */
+  skipped: z.array(z.object({ exchange: z.string(), reason: z.string() })).default([]),
+  /** Exchange mode only (kept for the one-field disclosure). */
+  before: z.unknown().optional(),
+  after: z.unknown().optional(),
+  note: z.union([z.literal(DRIFT_NOTE), z.literal(DRIFT_NOTE_BEHAVIOR)]),
 });
 export type DriftMeta = z.infer<typeof DriftMetaSchema>;
 
 export type DriftFixture = Cassette & { drift: DriftMeta };
+
+/** "<requestHash>:<occurrence>" keys of every exchange a drift fixture changed. */
+export function driftedExchangeKeys(meta: DriftMeta): Set<string> {
+  return new Set(meta.changed.map((c) => c.exchange));
+}
 
 export class DriftFixtureError extends Error {
   /** True when the refusal is a missing prerequisite (no real cassette), reported as BLOCKED. */
@@ -83,6 +122,60 @@ export function parseAssignment(arg: string): { path: string; value: unknown } {
   }
 }
 
+export type DriftTransform = { kind: "set"; value: unknown } | { kind: "scale"; factor: number } | { kind: "divide"; divisor: number };
+
+/** "x100" / "*100" -> scale, "div100" / "/100" -> divide, anything else JSON -> set. */
+export function parseTransform(raw: string): DriftTransform {
+  const s = raw.trim();
+  const mul = /^(?:x|\*)(\d+(?:\.\d+)?)$/.exec(s);
+  if (mul) return { kind: "scale", factor: Number(mul[1]) };
+  const div = /^(?:div|\/)(\d+(?:\.\d+)?)$/.exec(s);
+  if (div) {
+    const divisor = Number(div[1]);
+    if (divisor === 0) throw new DriftFixtureError(`--set ${s}: cannot divide by zero`);
+    return { kind: "divide", divisor };
+  }
+  try {
+    return { kind: "set", value: JSON.parse(s) as unknown };
+  } catch {
+    throw new DriftFixtureError(`--set value must be JSON (e.g. 1234, "text", null, {"a":1}) or an expression (x100, div100); got ${raw}`);
+  }
+}
+
+/** "<path>=<json | x<k> | div<k>>". */
+export function parseSetArg(arg: string): { path: string; transform: DriftTransform } {
+  const i = arg.indexOf("=");
+  if (i <= 0) throw new DriftFixtureError(`--set needs <jsonPath>=<value>, got "${arg}"`);
+  return { path: arg.slice(0, i), transform: parseTransform(arg.slice(i + 1)) };
+}
+
+/** "<path>=<json>" for --match. */
+export function parseMatchArg(arg: string): { path: string; value: unknown } {
+  const i = arg.indexOf("=");
+  if (i <= 0) throw new DriftFixtureError(`--match needs <jsonPath>=<json value>, got "${arg}"`);
+  const raw = arg.slice(i + 1);
+  try {
+    return { path: arg.slice(0, i), value: JSON.parse(raw) as unknown };
+  } catch {
+    throw new DriftFixtureError(`--match value must be JSON (e.g. 1234, "text", null); got ${raw}`);
+  }
+}
+
+export function describeTransform(t: DriftTransform): string {
+  if (t.kind === "scale") return `x${t.factor}`;
+  if (t.kind === "divide") return `div${t.divisor}`;
+  return `set ${canonicalJson(t.value)}`;
+}
+
+/** Apply a transform to a recorded value; a string reason when it does not apply. */
+function applyTransform(t: DriftTransform, before: unknown): { after: unknown } | { skip: string } {
+  if (t.kind === "set") return { after: t.value };
+  if (typeof before !== "number" || !Number.isFinite(before)) return { skip: `${describeTransform(t)} needs a number, the recorded value is ${canonicalJson(before ?? null)}` };
+  const raw = t.kind === "scale" ? before * t.factor : before / t.divisor;
+  // toPrecision(15) drops binary noise (12.34 * 100 = 1233.9999999999998 -> 1234).
+  return { after: Number(raw.toPrecision(15)) };
+}
+
 function findExchange(cassette: Cassette, selector: string): Exchange {
   const [hashPart, occPart] = selector.split(":");
   const hash = (hashPart ?? "").trim().toLowerCase();
@@ -97,6 +190,8 @@ function findExchange(cassette: Cassette, selector: string): Exchange {
   return ex;
 }
 
+class MissingField extends DriftFixtureError {}
+
 function getAt(root: unknown, segments: readonly Segment[], path: string): { parent: Record<string, unknown> | unknown[]; key: Segment; value: unknown } {
   let cur: unknown = root;
   for (let i = 0; i < segments.length; i++) {
@@ -104,11 +199,11 @@ function getAt(root: unknown, segments: readonly Segment[], path: string): { par
     const last = i === segments.length - 1;
     let next: unknown;
     if (typeof seg === "number") {
-      if (!Array.isArray(cur) || seg >= cur.length) throw new DriftFixtureError(`field ${path} does not exist in the recorded response (index ${seg})`);
+      if (!Array.isArray(cur) || seg >= cur.length) throw new MissingField(`field ${path} does not exist in the recorded response (index ${seg})`);
       next = cur[seg];
     } else {
       if (cur === null || typeof cur !== "object" || Array.isArray(cur) || !Object.hasOwn(cur, seg)) {
-        throw new DriftFixtureError(`field ${path} does not exist in the recorded response (at "${seg}")`);
+        throw new MissingField(`field ${path} does not exist in the recorded response (at "${seg}")`);
       }
       next = (cur as Record<string, unknown>)[seg];
     }
@@ -118,14 +213,70 @@ function getAt(root: unknown, segments: readonly Segment[], path: string): { par
   throw new DriftFixtureError(`empty field path ${path}`);
 }
 
+/** Rewrite one exchange's field in place; returns before/after, or a skip reason. */
+function rewrite(ex: Exchange, path: string, t: DriftTransform): { before: unknown; after: unknown } | { skip: string } {
+  const parsed = parseFieldPath(path);
+  if (parsed.status) {
+    const res = applyTransform(t, ex.status);
+    if ("skip" in res) return res;
+    if (typeof res.after !== "number" || !Number.isInteger(res.after)) throw new DriftFixtureError("$status must be set to an integer HTTP status");
+    const before = ex.status;
+    if (before === res.after) return { skip: `$status already equals ${before}` };
+    ex.status = res.after;
+    return { before, after: res.after };
+  }
+  let at;
+  try {
+    at = getAt(ex.responseBody, parsed.segments, path);
+  } catch (err) {
+    if (err instanceof MissingField) return { skip: err.message };
+    throw err;
+  }
+  const res = applyTransform(t, at.value);
+  if ("skip" in res) return res;
+  if (canonicalJson(at.value ?? null) === canonicalJson(res.after ?? null)) return { skip: `field ${path} already equals ${canonicalJson(res.after ?? null)}` };
+  if (Array.isArray(at.parent)) at.parent[at.key as number] = res.after;
+  else at.parent[at.key as string] = res.after;
+  return { before: at.value, after: res.after };
+}
+
+/** Does the exchange satisfy `--match`? Missing paths never match. */
+function matches(ex: Exchange, match: { path: string; value: unknown }): boolean {
+  const p = match.path.trim();
+  const want = canonicalJson(match.value ?? null);
+  if (p === "$status") return canonicalJson(ex.status) === want;
+  let root: unknown = ex.requestBody;
+  let rest = p;
+  if (p.startsWith("$response.")) {
+    root = ex.responseBody;
+    rest = `$.${p.slice("$response.".length)}`;
+  } else if (p.startsWith("$request.")) {
+    rest = `$.${p.slice("$request.".length)}`;
+  }
+  const parsed = parseFieldPath(rest);
+  if (parsed.status) return canonicalJson(ex.status) === want;
+  try {
+    return canonicalJson(getAt(root, parsed.segments, p).value ?? null) === want;
+  } catch (err) {
+    if (err instanceof MissingField) return false;
+    throw err;
+  }
+}
+
 export interface MakeDriftOptions {
   /** Real cassette name (in cassetteDir) or path. */
   from: string;
-  /** "<requestHash>[:<occurrence>]". */
-  exchange: string;
+  /** Behavior mode: rewrite every exchange of this op (exactly one of op / exchange). */
+  op?: string;
+  /** Behavior mode: only exchanges where this path equals this value (see the header). */
+  match?: { path: string; value: unknown };
+  /** Exchange mode: "<requestHash>[:<occurrence>]". */
+  exchange?: string;
   /** Field path; see the header. */
   path: string;
-  value: unknown;
+  /** The rewrite: a transform, or `value` (shorthand for {kind:"set", value}). */
+  transform?: DriftTransform;
+  value?: unknown;
   /** Fixture name (file <driftDir>/<out>.json). */
   out: string;
   cassetteDir?: string;
@@ -134,7 +285,7 @@ export interface MakeDriftOptions {
   force?: boolean;
 }
 
-/** Copy a real cassette with exactly one response field changed; returns the fixture and its path. */
+/** Copy a real cassette with the requested responses rewritten; returns the fixture and its path. */
 export function makeDriftFixture(opts: MakeDriftOptions): { fixture: DriftFixture; path: string } {
   const cassetteDir = opts.cassetteDir ?? DEFAULT_CASSETTE_DIR;
   const driftDir = opts.driftDir ?? DEFAULT_DRIFT_DIR;
@@ -146,28 +297,50 @@ export function makeDriftFixture(opts: MakeDriftOptions): { fixture: DriftFixtur
       true,
     );
   }
+  if ((opts.op === undefined) === (opts.exchange === undefined)) throw new DriftFixtureError("make:drift needs exactly one of --op (behavior rewrite) or --exchange (one exchange)");
+  if (opts.match && opts.op === undefined) throw new DriftFixtureError("--match only applies with --op");
+  if (opts.transform === undefined && opts.value === undefined) throw new DriftFixtureError("make:drift needs a value (--set <path>=<value>)");
+  const transform: DriftTransform = opts.transform ?? { kind: "set", value: opts.value };
   const source = loadCassette(opts.from, { dir: cassetteDir }); // verifies its content hash
   if ((source as Partial<DriftFixture>).drift !== undefined) throw new DriftFixtureError(`${opts.from} is itself a drift fixture; copy a real cassette`);
   if (!/^[A-Za-z0-9._-]+$/.test(opts.out)) throw new DriftFixtureError(`invalid fixture name ${opts.out}`);
   const outPath = join(driftDir, `${opts.out}.json`);
   if (existsSync(outPath) && !opts.force) throw new DriftFixtureError(`${outPath} already exists (pass --force to overwrite)`);
+  parseFieldPath(opts.path); // fail fast on a bad path
 
-  const target = findExchange(source, opts.exchange);
   const exchanges: Exchange[] = JSON.parse(JSON.stringify(source.exchanges)) as Exchange[];
-  const copy = exchanges.find((e) => e.requestHash === target.requestHash && e.occurrence === target.occurrence)!;
-  const parsed = parseFieldPath(opts.path);
-  let before: unknown;
-  if (parsed.status) {
-    if (typeof opts.value !== "number" || !Number.isInteger(opts.value)) throw new DriftFixtureError("$status must be set to an integer HTTP status");
-    before = copy.status;
-    copy.status = opts.value;
+  const key = (e: Exchange): string => `${e.requestHash}:${e.occurrence}`;
+  const changed: DriftMeta["changed"] = [];
+  const skipped: DriftMeta["skipped"] = [];
+  let meta: Omit<DriftMeta, "changed" | "skipped" | "note">;
+
+  if (opts.exchange !== undefined) {
+    const target = findExchange(source, opts.exchange);
+    const copy = exchanges.find((e) => e.requestHash === target.requestHash && e.occurrence === target.occurrence)!;
+    const r = rewrite(copy, opts.path, transform);
+    if ("skip" in r) {
+      if (/does not exist/.test(r.skip)) throw new DriftFixtureError(r.skip);
+      throw new DriftFixtureError(`${r.skip}; a drift fixture must change it`);
+    }
+    changed.push({ exchange: key(copy), op: copy.op, before: r.before, after: r.after });
+    meta = { source: source.name, sourceContentHash: source.contentHash, exchange: key(copy), path: opts.path, transform: describeTransform(transform), before: r.before, after: r.after };
   } else {
-    const at = getAt(copy.responseBody, parsed.segments, opts.path);
-    before = at.value;
-    if (Array.isArray(at.parent)) at.parent[at.key as number] = opts.value;
-    else at.parent[at.key as string] = opts.value;
+    const selected = exchanges.filter((e) => e.op === opts.op && (!opts.match || matches(e, opts.match)));
+    for (const ex of selected) {
+      const r = rewrite(ex, opts.path, transform);
+      if ("skip" in r) skipped.push({ exchange: key(ex), reason: r.skip });
+      else changed.push({ exchange: key(ex), op: ex.op, before: r.before, after: r.after });
+    }
+    if (changed.length === 0) {
+      const sel = `op ${opts.op}${opts.match ? ` where ${opts.match.path} = ${canonicalJson(opts.match.value ?? null)}` : ""}`;
+      throw new DriftFixtureError(
+        `the rewrite changes zero exchanges: ${selected.length} exchange(s) of ${source.name} match ${sel}` +
+          (skipped.length ? ` and every one was left unchanged (${skipped[0]!.reason}${skipped.length > 1 ? `; +${skipped.length - 1} more` : ""})` : "") +
+          " — no fixture was written",
+      );
+    }
+    meta = { source: source.name, sourceContentHash: source.contentHash, op: opts.op!, ...(opts.match ? { match: opts.match } : {}), path: opts.path, transform: describeTransform(transform) };
   }
-  if (canonicalJson(before) === canonicalJson(opts.value)) throw new DriftFixtureError(`field ${opts.path} already equals ${canonicalJson(opts.value)}; a drift fixture must change it`);
 
   const fixture: DriftFixture = {
     name: opts.out,
@@ -175,15 +348,7 @@ export function makeDriftFixture(opts: MakeDriftOptions): { fixture: DriftFixtur
     createdAt: source.createdAt,
     exchanges,
     contentHash: computeContentHash(exchanges),
-    drift: {
-      source: source.name,
-      sourceContentHash: source.contentHash,
-      exchange: `${target.requestHash}:${target.occurrence}`,
-      path: opts.path,
-      before,
-      after: opts.value,
-      note: DRIFT_NOTE,
-    },
+    drift: { ...meta, changed, skipped, note: opts.exchange !== undefined ? DRIFT_NOTE : DRIFT_NOTE_BEHAVIOR },
   };
   const path = saveCassette(fixture, driftDir);
   return { fixture, path };

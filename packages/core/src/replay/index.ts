@@ -15,7 +15,9 @@
  *
  * `--drift <fixture>` instead replays the notarize bundle whose probe cassette the drift fixture was
  * copied from (matched by content hash), then runs replayDrift on the resulting store and prints
- * each affected belief's trajectory and the guards it retired.
+ * each affected belief's trajectory (one step per DISTINCT design; replicates count once, A-16) and
+ * the guards it retired. Exit 1 when no belief un-learned, with "not un-learned: only N distinct
+ * designs observed the change" (A-05): too few designs is reported, never faked.
  */
 import { existsSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -377,19 +379,21 @@ async function driftReplay(opts: ReplayOptions, bundles: RunBundle[], lines: str
       probes: source.probes,
       hypotheses: source.hypotheses,
       env: {},
-      maxPasses: 10,
       ...(opts.now ? { now: opts.now } : {}),
     });
     lines.push(...result.lines);
     for (const t of result.trajectories) {
       lines.push(`trajectory ${t.beliefId} (${t.side}):`);
       lines.push(`  start  alpha=${t.start.alpha} beta=${t.start.beta} P(holds)=${t.start.pHolds.toFixed(4)} status=${t.start.status}`);
-      for (const s of t.steps) lines.push(`  pass ${s.pass} ${s.verdict.padEnd(13)} alpha=${s.alpha} beta=${s.beta} P(holds)=${s.pHolds.toFixed(4)} status=${s.status}`);
+      t.steps.forEach((s, i) =>
+        lines.push(
+          `  design ${i + 1} ${s.verdict.padEnd(13)} alpha=${s.alpha} beta=${s.beta} P(holds)=${s.pHolds.toFixed(4)} status=${s.status}  [${s.design}${s.replicateIds.length ? `; ${s.replicateIds.length} replicate(s) not re-counted` : ""}]`,
+        ),
+      );
     }
     lines.push(`retired guards: ${result.retiredGuards.length ? result.retiredGuards.map((g) => `${g.id} (${g.kind} on ${g.operation})`).join(", ") : "none"}`);
     // P9 (AUDIT-05): a drift replay that un-learned nothing has not shown FR-16; never report it as a pass.
-    const unlearned = result.trajectories.filter((t) => t.steps.some((s) => s.status === "unlearned"));
-    if (unlearned.length === 0) {
+    if (!result.unlearned) {
       failures.push(
         `FAIL: the drift fixture un-learned no belief (${result.trajectories.length} affected belief(s), none reached unlearned): FR-16 not demonstrated`,
       );
