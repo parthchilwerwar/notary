@@ -1,5 +1,8 @@
-import { describe, expect, it } from "vitest";
-import { buildProgram, NotImplementedError } from "../src/cli.js";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { describe, expect, it, vi } from "vitest";
+import { buildProgram, isKeylessInvocation, NotImplementedError } from "../src/cli.js";
 
 function parse(args: string[]) {
   const program = buildProgram();
@@ -14,16 +17,46 @@ function parse(args: string[]) {
 describe("cli", () => {
   it("registers every TDD subcommand plus doctor", () => {
     const names = buildProgram().commands.map((c) => c.name());
-    expect(names).toEqual(["notarize", "run", "replay", "export", "serve", "guards", "doctor"]);
+    expect(names).toEqual(["notarize", "run", "replay", "eval", "export", "serve", "guards", "doctor"]);
     const guards = buildProgram().commands.find((c) => c.name() === "guards");
     expect(guards?.commands.map((c) => c.name())).toEqual(["coverage"]);
   });
 
-  it.each([
-    [["replay"]],
-    [["export"]],
-  ])("stubs %j with a not-implemented error", async (args) => {
-    await expect(parse(args)).rejects.toBeInstanceOf(NotImplementedError);
+  it("replay has --bundle and --drift; eval noise-floor has --queue, --runs (default 3) and --replay (P8)", () => {
+    const replay = buildProgram().commands.find((c) => c.name() === "replay");
+    expect(replay?.options.map((o) => o.long)).toEqual(["--bundle", "--drift"]);
+    const nf = buildProgram()
+      .commands.find((c) => c.name() === "eval")
+      ?.commands.find((c) => c.name() === "noise-floor");
+    expect(nf?.options.map((o) => o.long)).toEqual(["--queue", "--runs", "--replay"]);
+    expect(nf?.options.find((o) => o.long === "--runs")?.defaultValue).toBe("3");
+  });
+
+  it("replay and eval --replay never load .env; everything else does", () => {
+    expect(isKeylessInvocation(["node", "cli", "replay"])).toBe(true);
+    expect(isKeylessInvocation(["node", "cli", "replay", "--bundle", "x"])).toBe(true);
+    expect(isKeylessInvocation(["node", "cli", "eval", "noise-floor", "--queue", "q", "--replay"])).toBe(true);
+    expect(isKeylessInvocation(["node", "cli", "eval", "noise-floor", "--queue", "q"])).toBe(false);
+    expect(isKeylessInvocation(["node", "cli", "run", "--replay", "c"])).toBe(false);
+  });
+
+  it("not-implemented commands still raise NotImplementedError", () => {
+    expect(new NotImplementedError("x", "P9")).toBeInstanceOf(Error);
+  });
+
+  it("export (no --sample) runs for real: writes TOOLS.md, guards.json, EVALUATION.md; no real runs -> all unverified", async () => {
+    const root = mkdtempSync(join(tmpdir(), "notary-cli-export-"));
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      await parse(["export", "--runs-dir", join(root, "runs"), "--root", root, "--out", join(root, "web"), "--no-checks"]);
+      expect(readFileSync(join(root, "export", "TOOLS.md"), "utf8")).toMatch(/No real notarize bundles exist yet/);
+      expect(JSON.parse(readFileSync(join(root, "export", "guards.json"), "utf8"))).toEqual({ generatedFrom: [], guards: [] });
+      expect(readFileSync(join(root, "docs", "EVALUATION.md"), "utf8")).toMatch(/from 0 bundles — do not edit by hand/);
+      expect(existsSync(join(root, "web", "index.json"))).toBe(false);
+    } finally {
+      log.mockRestore();
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
   it("guards coverage has --json and --backend auto|entire|tsc", () => {

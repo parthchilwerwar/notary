@@ -20,6 +20,11 @@ import { z } from "zod";
 import { emitEvent } from "../api/bus.js";
 import { BeliefStore, beliefIdFor } from "../beliefs/store.js";
 import { finalizeBundle, writeBundle } from "../bundle/index.js";
+import type { UnhashedBundle } from "../bundle/index.js";
+import { consolidateMetrics } from "../eval/metrics.js";
+import { INPUTS_VERSION, pinFile, saveInputs, snapshotStore } from "../replay/inputs.js";
+import type { StoreSnapshot } from "../replay/inputs.js";
+import { pinIfPresent } from "../replay/pins.js";
 import { claimById } from "../contracts/index.js";
 import { GuardRegistry, compileGuards, guarded, wireRetirement } from "../guards/index.js";
 import { QueueRequestSchema } from "../schema/index.js";
@@ -38,12 +43,12 @@ import {
   loadCassette,
 } from "../tools/index.js";
 import type { Tools, Wrap } from "../tools/index.js";
-import { executeQueue } from "./executor.js";
+import { DEFAULT_CLIENT_TIMEOUT_MS, executeQueue } from "./executor.js";
 import type { GateHook, PolicyFns, QueueTools, ResumeEntry } from "./executor.js";
 import { createGate } from "./gate.js";
 import { ExpectedFileSchema, collectGroundTruth, gradeRun } from "./grader.js";
 import type { ExpectedEntry, GroundTruthSnapshot } from "./grader.js";
-import { loadManifest } from "./manifest.js";
+import { DEFAULT_MANIFEST_PATH, loadManifest } from "./manifest.js";
 import type { SeedManifest } from "./manifest.js";
 import { REQUIRED_GAPS } from "./required.js";
 import { RunStateStore } from "./run-state.js";
@@ -83,6 +88,17 @@ export interface RunQueueOptions {
   policy?: PolicyFns;
   db?: NotaryDb;
   gate?: GateHook;
+  // ---- P8 replay -----------------------------------------------------------------------------
+  /** Seed manifest file (default fixtures/seed/manifest.json); its sha256 goes in the replay record. */
+  manifestPath?: string;
+  /** Live: write the replay record cassette `<runId>-inputs` (default true for real live runs). */
+  recordReplay?: boolean;
+  /** Credit budget; replay passes the recorded one (default: env, or the default budget in replay). */
+  creditBudget?: number;
+  /** Replay: more pinned cassette refs to list in the bundle (the replay record). */
+  extraCassettes?: string[];
+  /** unguarded_call_sites for bundle.metrics (the CLI runs the coverage check); default null. */
+  unguardedCallSites?: () => Promise<number | null>;
 }
 
 export interface RunQueueResult {
@@ -181,7 +197,11 @@ export async function runQueue(opts: RunQueueOptions): Promise<RunQueueResult> {
   let tools: RunTools;
   let db: NotaryDb | undefined;
   let gctx: GuardedContext | undefined;
+  let snapshot: StoreSnapshot | null = null;
   const ownDb = guardedRun && !opts.db;
+  // P8: a real live run writes a replay record (inputs, parameters, the store before the run).
+  const record = opts.mode === "live" && opts.recordReplay !== false && !opts.tools && !opts.makeTools;
+  const cassetteDirOrDefault = opts.cassetteDir ?? DEFAULT_CASSETTE_DIR;
   try {
     if (opts.mode === "replay") {
       if (!opts.cassette) throw new Error("replay needs a cassette name (--replay <cassette>)");
@@ -200,6 +220,7 @@ export async function runQueue(opts: RunQueueOptions): Promise<RunQueueResult> {
     }
     if (guardedRun) {
       db = opts.db ?? openDb(opts.dbPath ?? DEFAULT_DB_PATH);
+      if (record) snapshot = snapshotStore(db);
       gctx = loadGuardedContext(db, now);
     }
     const wrap = gctx?.wrap ?? identityWrap;
@@ -214,7 +235,13 @@ export async function runQueue(opts: RunQueueOptions): Promise<RunQueueResult> {
       } else {
         const cassette = loadCassette(cassetteName, opts.cassetteDir === undefined ? {} : { dir: opts.cassetteDir });
         runId = `${cassetteName}-replay-${cassette.contentHash.slice(0, 12)}`;
-        tools = createTools({ mode: "replay", cassettes: [cassette], wrap, ...(opts.cassetteDir === undefined ? {} : { cassetteDir: opts.cassetteDir }) });
+        tools = createTools({
+          mode: "replay",
+          cassettes: [cassette],
+          wrap,
+          ledger: new CreditLedger(opts.creditBudget === undefined ? { env: {} } : { budget: opts.creditBudget }),
+          ...(opts.cassetteDir === undefined ? {} : { cassetteDir: opts.cassetteDir }),
+        });
       }
     } else {
       runId = `run-${opts.variant}-${compactStamp(started)}`;
@@ -225,13 +252,13 @@ export async function runQueue(opts: RunQueueOptions): Promise<RunQueueResult> {
         createTools({
           mode: "live",
           cassette: cassetteName,
-          ledger: new CreditLedger({ env }),
+          ledger: new CreditLedger(opts.creditBudget === undefined ? { env } : { budget: opts.creditBudget }),
           env,
           wrap,
           ...(opts.cassetteDir === undefined ? {} : { cassetteDir: opts.cassetteDir }),
         });
     }
-    manifest = opts.manifest ?? loadManifest();
+    manifest = opts.manifest ?? loadManifest(opts.manifestPath);
   } catch (err) {
     gctx?.unwire();
     if (ownDb) db?.close();
@@ -284,6 +311,30 @@ export async function runQueue(opts: RunQueueOptions): Promise<RunQueueResult> {
       throw err;
     }
 
+    const extraCassettes = [...(opts.extraCassettes ?? [])];
+    if (record) {
+      const manifestFile = opts.manifest ? undefined : (opts.manifestPath ?? DEFAULT_MANIFEST_PATH);
+      saveInputs(
+        `${runId}-inputs`,
+        {
+          version: INPUTS_VERSION,
+          runId,
+          kind: "run",
+          variant: opts.variant,
+          seed: 0,
+          identityRunId: runId,
+          params: { creditBudget: tools.ledger.budget, clientTimeoutMs: opts.clientTimeoutMs ?? DEFAULT_CLIENT_TIMEOUT_MS },
+          files: {
+            queue: pinFile(queuePath),
+            expected: pinFile(expectedPath),
+            ...(manifestFile && existsSync(manifestFile) ? { manifest: pinFile(manifestFile) } : {}),
+          },
+          store: snapshot,
+        },
+        cassetteDirOrDefault,
+      );
+      extraCassettes.push(pinIfPresent(`${runId}-inputs`, cassetteDirOrDefault));
+    }
     return await writeRunBundle({
       opts,
       runId,
@@ -298,6 +349,7 @@ export async function runQueue(opts: RunQueueOptions): Promise<RunQueueResult> {
       exec,
       tools,
       manifest,
+      extraCassettes,
       cassettes: [cassetteName],
       ...(opts.mode === "replay" ? { replayOf: cassetteName } : {}),
       ...(gctx ? { gctx } : {}),
@@ -436,6 +488,8 @@ async function writeRunBundle(a: {
   tools: RunTools;
   manifest: SeedManifest;
   cassettes: string[];
+  /** Already-pinned refs appended after the tool and manifest cassettes. */
+  extraCassettes?: string[];
   replayOf?: string;
   extraDisclosure?: string[];
   gctx?: GuardedContext;
@@ -483,7 +537,8 @@ async function writeRunBundle(a: {
   const manifestCassette = (a.manifest as unknown as { cassette?: unknown }).cassette;
   const status: RunBundle["status"] = exec.stopReason ? "stopped_budget" : "completed";
   const beliefsAfter = a.gctx ? a.gctx.store.list() : [];
-  const bundle = finalizeBundle({
+  const cassetteDir = opts.cassetteDir ?? DEFAULT_CASSETTE_DIR;
+  const draft: UnhashedBundle = {
     runId,
     kind: "run",
     variant: opts.variant,
@@ -509,19 +564,26 @@ async function writeRunBundle(a: {
     credits: { byEndpoint: snap.byEndpoint, total: snap.total, budget: snap.budget },
     metrics: graded.metrics,
     traceLinks,
-    cassettes: [...a.cassettes, ...(typeof manifestCassette === "string" && manifestCassette ? [manifestCassette] : [])],
-  });
+    // P8: every cassette pinned to its content hash, then the replay record.
+    cassettes: [
+      ...[...a.cassettes, ...(typeof manifestCassette === "string" && manifestCassette ? [manifestCassette] : [])].map((c) => pinIfPresent(c, cassetteDir)),
+      ...(a.extraCassettes ?? []),
+    ],
+  };
+  const unguarded = opts.unguardedCallSites ? await opts.unguardedCallSites() : null;
+  const bundle = finalizeBundle({ ...draft, metrics: consolidateMetrics(draft, { unguardedCallSites: unguarded }) });
+  const metrics = bundle.metrics;
 
   const { bundlePath } = await writeBundle(bundle, join(opts.runsDir ?? RUNS_DIR, runId));
   a.runState?.finishRun(runId);
-  emitEvent("run.finished", { runId, variant: opts.variant, status, metrics: graded.metrics, bundlePath });
+  emitEvent("run.finished", { runId, variant: opts.variant, status, metrics, bundlePath });
   const webDir = opts.webBundlesDir === undefined ? WEB_BUNDLES_DIR : opts.webBundlesDir;
   const lines = [
     `run --${opts.variant}: mode=${opts.mode} queue=${queueRel} items=${a.queue.length} status=${status}`,
     `runId: ${runId}  cassette: ${a.cassettes[a.cassettes.length - 1]}`,
     ...(exec.stopReason ? [`STOPPED: ${exec.stopReason}`] : []),
     ...(a.gctx ? [`guards: ${a.gctx.registry.all().filter((g) => g.active).length} active`] : []),
-    ...Object.entries(graded.metrics).map(([k, v]) => `  ${k}: ${v === null ? "null" : v}`),
+    ...Object.entries(metrics).map(([k, v]) => `  ${k}: ${v === null ? "null" : v}`),
     `credits: ${snap.total}/${snap.budget}`,
     `bundle: ${bundlePath}`,
   ];
@@ -529,5 +591,5 @@ async function writeRunBundle(a: {
     const web = await writeBundle(bundle, webDir);
     lines.push(`dashboard copy: ${web.bundlePath}`);
   }
-  return { exitCode: 0, lines, status, runId, bundlePath, metrics: graded.metrics };
+  return { exitCode: 0, lines, status, runId, bundlePath, metrics };
 }

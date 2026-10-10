@@ -163,6 +163,12 @@ export class NotaryDb {
     this.db.close();
   }
 
+  /** Re-read the probe sequence after rows were inserted directly (replay restores a store snapshot). */
+  syncSeq(): void {
+    const row = this.db.prepare("SELECT COALESCE(MAX(seq), 0) AS s FROM probes").get() as Row | undefined;
+    this.seq = Number(row?.s ?? 0);
+  }
+
   // ------------------------------------------------------------------ anomalies / hypotheses
 
   saveAnomalies(runId: string, anomalies: readonly Anomaly[]): void {

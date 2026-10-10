@@ -12,7 +12,7 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 - [x] **P5 · Beliefs and adversary** — beta-binomial store, lifecycle incl. `unlearned`, adversary (`bedrock` + `session`), evidence-validity check
 - [x] **P6 · Guards, gated queue, recovery** — guard compiler, `guarded()` clients, required-beliefs gating, evidence packs, `--resume`, local API + SSE
 - [x] **P7 · Transfer, drift, coverage** — `--priors-from`, drift fixture, `notary guards coverage`
-- [ ] **P8 · Replay and evaluation** — `notary replay`, noise floor, metrics, `docs/EVALUATION.md`, `export/TOOLS.md`
+- [x] **P8 · Replay and evaluation** — `notary replay`, noise floor, metrics, `docs/EVALUATION.md`, `export/TOOLS.md`
 - [ ] **P9 · Self-audit and README** — `docs/AUDIT.md`, `README.md`, `docs/ARCHITECTURE.md`
 - [ ] **P10 · Business plan, final runs, recording** — `docs/BUSINESS.md`, final bundles, demo footage
 
@@ -56,4 +56,7 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 - [ ] BLOCKED: Dodo notarize with vs without priors — needs a Crustdata notarize bundle and live keys (`BLOCKED: no notarize bundle for crustdata`).
 - [ ] BLOCKED: real drift fixture — no real cassette to derive it from.
 - [ ] Unverified: `entire` coverage backend (Entire not installed).
-- [ ] Carry to P8: `notarize --replay` mints a new runId, so recorded probe tags may not match on replay.
+- [x] Carry to P8: replay identity fixed (probe tags derive from the recorded runId).
+
+**P8 (Oct 10).** `notary replay` (keyless, loud on miss/tamper, exact metric comparison; reproduces probes/verdicts/beliefs/metrics on test cassettes), consolidated metrics (null when not computable), `eval noise-floor`, `notary export` → `export/TOOLS.md`, `export/guards.json`, generated `docs/EVALUATION.md`. Today export finds 0 real bundles; its only numbers are keyless checks it ran: 468 tests passed, 0 unguarded call sites. `replay` today: `BLOCKED: no recorded live runs to replay`, exit 3. 468 tests pass.
+- [ ] BLOCKED: headline numbers, noise floor and fresh-clone replay match — no recorded live runs (needs all API keys). Fresh-clone install + tests: see `scripts/fresh-clone-check.mjs`.

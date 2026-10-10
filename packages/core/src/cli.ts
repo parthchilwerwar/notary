@@ -60,7 +60,22 @@ export function buildProgram(): Command {
         const { initTracing, shutdownTracing } = await import("./trace/index.js");
         if (!opts.reconOnly) {
           // Full loop: recon -> checker -> hypotheses -> probes -> beliefs -> evidence check -> adversary.
-          const { notarize } = await import("./reflect/notarize.js");
+          const { notarize, recordedRunId } = await import("./reflect/notarize.js");
+          const { unguardedCallSitesMetric } = await import("./eval/metrics.js");
+          if (opts.replay && !opts.priorsFrom) {
+            // P8: a recorded live run replays exactly (its own probe ids/tags, model answers and store
+            // snapshot, no keys) through `notary replay`; older cassettes fall back to the P7 path.
+            const { RUNS_DIR } = await import("./checker/notarize.js");
+            const recorded = recordedRunId(RUNS_DIR, opts.tool);
+            if (recorded) {
+              const { runReplay } = await import("./replay/index.js");
+              console.log(`notarize --replay: replaying recorded run ${recorded} (same as: notary replay --bundle ${recorded})`);
+              const result = await runReplay({ bundle: recorded, unguardedCallSites: unguardedCallSitesMetric });
+              for (const line of result.lines) (result.exitCode === 0 ? console.log : console.error)(line);
+              process.exitCode = result.exitCode;
+              return;
+            }
+          }
           await initTracing({ serviceName: "notary" });
           try {
             const result = await notarize({
@@ -69,6 +84,7 @@ export function buildProgram(): Command {
               adversary: opts.adversary ?? "bedrock",
               ...(opts.priorsFrom ? { priorsFrom: opts.priorsFrom } : {}),
               ...(opts.priorsBundle ? { priorsBundle: opts.priorsBundle } : {}),
+              unguardedCallSites: unguardedCallSitesMetric,
             });
             for (const line of result.lines) (result.exitCode === 0 ? console.log : console.error)(line);
             if (result.exitCode !== 0) process.exitCode = result.exitCode;
@@ -89,7 +105,8 @@ export function buildProgram(): Command {
               return;
             }
           }
-          const result = await reconOnly({ tool: opts.tool, replay: opts.replay === true });
+          const { unguardedCallSitesMetric } = await import("./eval/metrics.js");
+          const result = await reconOnly({ tool: opts.tool, replay: opts.replay === true, unguardedCallSites: unguardedCallSitesMetric });
           for (const line of result.lines) (result.exitCode === 0 ? console.log : console.error)(line);
           if (result.exitCode !== 0) process.exitCode = result.exitCode;
         } finally {
@@ -111,6 +128,7 @@ export function buildProgram(): Command {
       if (!opts.resume && !opts.queue) throw new Error("run needs --queue <file> (or --resume)");
       if (opts.run && !opts.resume) throw new Error("--run <runId> is only used with --resume");
       const { runQueue } = await import("./queue/run.js");
+      const { unguardedCallSitesMetric } = await import("./eval/metrics.js");
       const { initTracing, shutdownTracing } = await import("./trace/index.js");
       const replay = opts.replay !== undefined;
       if (!replay) await initTracing({ serviceName: "notary" });
@@ -122,6 +140,7 @@ export function buildProgram(): Command {
           ...(replay ? { cassette: opts.replay! } : {}),
           ...(opts.resume ? { resume: true } : {}),
           ...(opts.run ? { runId: opts.run } : {}),
+          unguardedCallSites: unguardedCallSitesMetric,
         });
         for (const line of result.lines) (result.exitCode === 0 ? console.log : console.error)(line);
         if (result.exitCode !== 0) process.exitCode = result.exitCode;
@@ -134,16 +153,74 @@ export function buildProgram(): Command {
     .command("replay")
     .description("Re-run from cassettes with no keys and verify headline metrics")
     .option("--bundle <id>", "bundle id to replay")
-    .action(() => notImplemented("replay", "P8"));
+    .option("--drift <fixture>", "replay a drift fixture's source run, then the drift: belief trajectory and retired guards")
+    .action(async (opts: { bundle?: string; drift?: string }) => {
+      // No .env, no keys, no tracing export: replay reads nothing from the environment (see main()).
+      const { runReplay } = await import("./replay/index.js");
+      const { unguardedCallSitesMetric } = await import("./eval/metrics.js");
+      const result = await runReplay({
+        ...(opts.bundle ? { bundle: opts.bundle } : {}),
+        ...(opts.drift ? { drift: opts.drift } : {}),
+        unguardedCallSites: unguardedCallSitesMetric,
+      });
+      for (const line of result.lines) (result.exitCode === 0 ? console.log : console.error)(line);
+      process.exitCode = result.exitCode;
+    });
+
+  program
+    .command("eval")
+    .description("Evaluation commands")
+    .command("noise-floor")
+    .description("Run the guarded queue N times and record each metric's run-to-run spread as its noise floor")
+    .requiredOption("--queue <file>", "queue fixture to run")
+    .option("--runs <n>", "number of runs", "3")
+    .option("--replay", "replay the newest recorded live guarded run of this queue instead (no keys)")
+    .action(async (opts: { queue: string; runs: string; replay?: boolean }) => {
+      const runs = Number(opts.runs);
+      if (!Number.isInteger(runs) || runs < 2) throw new Error(`--runs must be an integer >= 2, got ${JSON.stringify(opts.runs)}`);
+      const { runNoiseFloor } = await import("./eval/noise-floor.js");
+      const { unguardedCallSitesMetric } = await import("./eval/metrics.js");
+      const { resolveInputPath } = await import("./queue/run.js");
+      const { initTracing, shutdownTracing } = await import("./trace/index.js");
+      if (!opts.replay) await initTracing({ serviceName: "notary" });
+      try {
+        const result = await runNoiseFloor({
+          queueFile: resolveInputPath(opts.queue),
+          runs,
+          ...(opts.replay ? { replay: true, env: {} } : {}),
+          unguardedCallSites: unguardedCallSitesMetric,
+        });
+        for (const line of result.lines) (result.exitCode === 0 ? console.log : console.error)(line);
+        process.exitCode = result.exitCode;
+      } finally {
+        if (!opts.replay) await shutdownTracing();
+      }
+    });
 
   program
     .command("export")
     .description("Write TOOLS.md, guards.json and the latest bundles")
     .option("--sample", "write a synthetic SAMPLE bundle (for dashboard development) to packages/web/public/bundles/")
-    .option("--out <dir>", "with --sample: write to this directory instead")
+    .option("--out <dir>", "dashboard bundles directory to write to instead of packages/web/public/bundles/")
     .option("--seed <n>", "with --sample: PRNG seed", "42")
-    .action(async (opts: { sample?: boolean; out?: string; seed: string }) => {
-      if (!opts.sample) notImplemented("export", "P8");
+    .option("--runs-dir <dir>", "read real bundles from this directory instead of packages/core/runs/")
+    .option("--root <dir>", "write export/ and docs/EVALUATION.md under this directory instead of the repo root")
+    .option("--no-checks", "skip running `pnpm test` and `guards coverage` for EVALUATION.md")
+    .action(async (opts: { sample?: boolean; out?: string; seed: string; runsDir?: string; root?: string; checks: boolean }) => {
+      if (!opts.sample) {
+        const { runExport } = await import("./export/index.js");
+        const { join, resolve } = await import("node:path");
+        // pnpm runs scripts from packages/core; resolve relative paths against where the user ran it.
+        const at = (p: string): string => resolve(process.env.INIT_CWD ?? process.cwd(), p);
+        const result = await runExport({
+          ...(opts.runsDir ? { runsDir: at(opts.runsDir) } : {}),
+          ...(opts.root ? { exportDir: join(at(opts.root), "export"), docsDir: join(at(opts.root), "docs") } : {}),
+          ...(opts.out ? { webBundlesDir: at(opts.out) } : {}),
+          ...(opts.checks ? {} : { checks: null }),
+        });
+        for (const line of result.lines) console.log(line);
+        return;
+      }
       const seed = Number(opts.seed);
       if (!Number.isInteger(seed)) throw new Error(`--seed must be an integer, got ${JSON.stringify(opts.seed)}`);
       const { buildSampleBundle, writeBundle } = await import("./bundle/index.js");
@@ -201,8 +278,16 @@ export function buildProgram(): Command {
   return program;
 }
 
+/** Commands that must run with no keys: they never load .env (P8: replay reads nothing for credentials). */
+export function isKeylessInvocation(argv: readonly string[]): boolean {
+  const args = argv.slice(2);
+  const cmd = args.find((a) => !a.startsWith("-"));
+  if (cmd === "replay") return true;
+  return cmd === "eval" && args.includes("--replay");
+}
+
 async function main(): Promise<void> {
-  loadEnv();
+  if (!isKeylessInvocation(process.argv)) loadEnv();
   try {
     await buildProgram().parseAsync(process.argv);
   } catch (err) {

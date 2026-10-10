@@ -15,7 +15,8 @@ import type { ReviewOutcome } from "./types.js";
 export const ADVERSARY_MAX_TOKENS = 1500;
 
 function mustPropagate(err: unknown): boolean {
-  return isBlocked(err) || (err instanceof Error && err.name === "ModelConfigError");
+  // A replay cassette miss is never a "failed review": the replay diverged and must fail loudly (P8).
+  return isBlocked(err) || (err instanceof Error && (err.name === "ModelConfigError" || err.name === "CassetteMissError"));
 }
 
 export async function reviewWithBedrock(args: {

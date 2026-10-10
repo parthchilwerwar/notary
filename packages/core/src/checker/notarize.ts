@@ -5,12 +5,17 @@
  * Replay runIds are derived from the cassette's content hash, so two replays of the same cassette
  * write the same runId and print identical summaries (anomalies sorted by id).
  */
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { canonicalJson, finalizeBundle, writeBundle } from "../bundle/index.js";
+import type { UnhashedBundle } from "../bundle/index.js";
+import { consolidateMetrics } from "../eval/metrics.js";
+import { INPUTS_VERSION, saveInputs } from "../replay/inputs.js";
+import { pinIfPresent } from "../replay/pins.js";
 import type { ContractEntry } from "../contracts/types.js";
 import type { RunBundle, Tool } from "../schema/index.js";
-import { TestModeLockError, isBlocked } from "../tools/index.js";
+import { DEFAULT_CASSETTE_DIR, TestModeLockError, computeContentHash, isBlocked, loadCassette, saveCassette } from "../tools/index.js";
 import type { CreditLedger } from "../tools/index.js";
 import { runRecon } from "./recon.js";
 import type { ReconResult } from "./recon.js";
@@ -29,6 +34,18 @@ export interface ReconOnlyOptions {
   sleep?: (ms: number) => Promise<void>;
   /** Clock for live runIds and bundle timestamps. */
   now?: () => Date;
+  // ---- P8 replay -----------------------------------------------------------------------------
+  /** Live: record into `<runId>-recon` (+ the `recon-<tool>` alias) and write the replay record (default true). */
+  recordReplay?: boolean;
+  /** Replay: the cassette to serve (default recon-<tool>). */
+  reconCassette?: string;
+  /** Bundle runId override and the run this one reproduces (notary replay). */
+  runId?: string;
+  replayOf?: string;
+  /** Replay: more pinned refs to list in the bundle (the replay record). */
+  extraCassettes?: string[];
+  /** unguarded_call_sites for bundle.metrics; default null. */
+  unguardedCallSites?: () => Promise<number | null>;
 }
 
 export interface ReconOnlyResult {
@@ -72,12 +89,18 @@ export async function reconOnly(opts: ReconOnlyOptions): Promise<ReconOnlyResult
   const now = opts.now ?? (() => new Date());
   const mode = opts.replay ? "replay" : "live";
   const started = now();
+  const cassetteDir = opts.cassetteDir ?? DEFAULT_CASSETTE_DIR;
+  // P8: a live run records into its own cassette so this exact run stays replayable.
+  const record = mode === "live" && opts.recordReplay !== false;
+  const liveRunId = mode === "live" ? (opts.runId ?? `recon-${opts.tool}-${compactStamp(started)}`) : undefined;
+  const cassetteName = record ? `${liveRunId}-recon` : (opts.reconCassette ?? `recon-${opts.tool}`);
 
   let recon: ReconResult;
   try {
     recon = await runRecon({
       tool: opts.tool,
       mode,
+      cassetteName,
       ...(opts.cassetteDir === undefined ? {} : { cassetteDir: opts.cassetteDir }),
       ...(opts.entries === undefined ? {} : { entries: opts.entries }),
       ...(opts.ledger === undefined ? {} : { ledger: opts.ledger }),
@@ -92,18 +115,44 @@ export async function reconOnly(opts: ReconOnlyOptions): Promise<ReconOnlyResult
     throw err;
   }
 
-  const runId =
-    mode === "replay"
-      ? `recon-${opts.tool}-replay-${recon.cassetteHash.slice(0, 12)}`
-      : `recon-${opts.tool}-${compactStamp(started)}`;
+  const runId = opts.runId ?? liveRunId ?? `recon-${opts.tool}-replay-${recon.cassetteHash.slice(0, 12)}`;
+  let cassettes: string[];
+  if (record) {
+    if (!existsSync(join(cassetteDir, `${cassetteName}.json`))) {
+      saveCassette({ name: cassetteName, tool: opts.tool, createdAt: started.toISOString(), exchanges: [], contentHash: computeContentHash([]) }, cassetteDir);
+    }
+    // `recon-<tool>` stays the "latest recording" alias that `--recon-only --replay` serves.
+    saveCassette({ ...loadCassette(cassetteName, { dir: cassetteDir }), name: `recon-${opts.tool}` }, cassetteDir);
+    saveInputs(
+      `${runId}-inputs`,
+      {
+        version: INPUTS_VERSION,
+        runId,
+        kind: "notarize",
+        variant: "notarize",
+        tool: opts.tool,
+        seed: 0,
+        identityRunId: runId,
+        reconOnly: true,
+        params: { creditBudget: recon.budget },
+        files: {},
+        store: null,
+      },
+      cassetteDir,
+    );
+    cassettes = [cassetteName, `${runId}-inputs`].map((n) => pinIfPresent(n, cassetteDir));
+  } else {
+    cassettes = [pinIfPresent(recon.cassetteName, cassetteDir), ...(opts.extraCassettes ?? [])];
+  }
   const status: RunBundle["status"] = recon.stoppedReason ? "stopped_budget" : "completed";
   const disclosure = [
     "Recon-only notarize run: anomalies come from the deterministic contract checker; no hypotheses, probes or beliefs yet.",
   ];
   if (mode === "replay") disclosure.push(`Replayed from cassette ${recon.cassetteName} (sha ${recon.cassetteHash.slice(0, 12)}); no network calls.`);
+  if (opts.replayOf) disclosure.push(`Replay of ${opts.replayOf}.`);
   if (opts.tool === "dodo") disclosure.push("Dodo Payments test mode only.");
 
-  const bundle = finalizeBundle({
+  const draft: UnhashedBundle = {
     runId,
     kind: "notarize",
     variant: "notarize",
@@ -116,6 +165,7 @@ export async function reconOnly(opts: ReconOnlyOptions): Promise<ReconOnlyResult
     ...(recon.stoppedReason ? { stopReason: recon.stoppedReason } : {}),
     seed: 0,
     tool: opts.tool,
+    ...(opts.replayOf ? { replayOf: opts.replayOf } : {}),
     queue: [],
     decisions: [],
     claims: recon.entries.map((e) => e.claim),
@@ -134,7 +184,12 @@ export async function reconOnly(opts: ReconOnlyOptions): Promise<ReconOnlyResult
       skippedSteps: recon.steps.filter((s) => s.status !== "ran").length,
     },
     traceLinks: {},
-    cassettes: [recon.cassetteName],
+    cassettes,
+  };
+  const unguarded = opts.unguardedCallSites ? await opts.unguardedCallSites() : null;
+  const bundle = finalizeBundle({
+    ...draft,
+    metrics: consolidateMetrics(draft, { checkedClaimIds: recon.observations.map((o) => o.claimId), unguardedCallSites: unguarded }),
   });
 
   const dir = join(opts.runsDir ?? RUNS_DIR, runId);

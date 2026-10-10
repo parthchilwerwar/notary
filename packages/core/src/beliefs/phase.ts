@@ -178,6 +178,8 @@ export async function runBeliefsPhase(opts: BeliefsPhaseOptions): Promise<Belief
         ...(opts.llm ? { llm: opts.llm } : {}),
       });
     } catch (err) {
+      // P8: a replay cassette miss means the replay diverged; never record it as a failed review.
+      if (err instanceof Error && err.name === "CassetteMissError") throw err;
       if (isBlocked(err)) {
         adversaryBlocked = err.message;
         store.applyAdversary(b.id, null, adversaryBlocked);

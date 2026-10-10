@@ -23,10 +23,12 @@
  *   probes_to_candidate_{without,with}_priors_<claimId> per claim; null if never reached
  *   candidates_{without,with}_priors, probes_{without,with}_priors, priors_strength
  */
-import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { canonicalJson, verifyBundle } from "../bundle/hash.js";
+import { canonicalJson } from "../bundle/hash.js";
 import { finalizeBundle, writeBundle } from "../bundle/index.js";
+import type { UnhashedBundle } from "../bundle/index.js";
+import { consolidateMetrics } from "../eval/metrics.js";
+import { pinIfPresent } from "../replay/pins.js";
 import { BeliefStore } from "../beliefs/store.js";
 import type { BeliefPrior } from "../beliefs/store.js";
 import {
@@ -54,7 +56,7 @@ import {
 } from "../tools/index.js";
 import { maxProbesPerClaimFromEnv, runProbeLoop } from "./loop.js";
 import type { ClaimOutcome } from "./loop.js";
-import { SEEDED_QUEUE_PATH, preflight, probePaymentPool, rawReplayProbeIo } from "./notarize.js";
+import { SEEDED_QUEUE_PATH, preflight, probePaymentPool, rawReplayProbeIo, recordedRunId } from "./notarize.js";
 import { BurstCounter, SimplePaymentPool } from "./templates/index.js";
 import type { PaymentPool, ProbeIo, ProbeTemplateModule } from "./templates/index.js";
 
@@ -271,27 +273,7 @@ function otherTool(t: Tool): Tool {
   return t === "dodo" ? "crustdata" : "dodo";
 }
 
-/** runId of the newest LIVE notarize bundle of `tool` that recorded `probes-<tool>` (for tag alignment). */
-export function recordedRunId(runsDir: string, tool: Tool): string | undefined {
-  if (!existsSync(runsDir)) return undefined;
-  let best: { runId: string; at: string } | undefined;
-  for (const dir of readdirSync(runsDir).sort()) {
-    const file = join(runsDir, dir, `${dir}.json`);
-    if (!existsSync(file)) continue;
-    let v;
-    try {
-      v = verifyBundle(JSON.parse(readFileSync(file, "utf8")));
-    } catch {
-      continue;
-    }
-    if (!v.ok) continue;
-    const b = v.bundle;
-    if (b.kind !== "notarize" || b.tool !== tool || b.mode !== "live" || !b.cassettes.includes(`probes-${tool}`)) continue;
-    const at = b.finishedAt ?? b.startedAt;
-    if (!best || at > best.at) best = { runId: b.runId, at };
-  }
-  return best?.runId;
-}
+export { recordedRunId } from "./notarize.js";
 
 export async function comparePriors(opts: ComparePriorsOptions): Promise<ComparePriorsResult> {
   const env = opts.env ?? process.env;
@@ -356,7 +338,7 @@ export async function comparePriors(opts: ComparePriorsOptions): Promise<Compare
     if (!recorded) disclosure.push(`No live ${tool} notarize bundle found: probe tags use ${loopRunId}, which may not match the recording.`);
     if (failed) disclosure.push(`An arm stopped early: ${failed}`);
     const ma = llm as LlmLike & { meter?: UsageMeter };
-    const bundle = finalizeBundle({
+    const draft: UnhashedBundle = {
       runId,
       kind: "notarize",
       variant: "notarize",
@@ -384,8 +366,10 @@ export async function comparePriors(opts: ComparePriorsOptions): Promise<Compare
       credits: { byEndpoint: arm.ledger.byEndpoint, total: arm.ledger.total, budget: arm.ledger.budget },
       metrics: { ...compare.metrics, priors_strength: strength },
       traceLinks: {},
-      cassettes: [`recon-${tool}`, `probes-${tool}`],
-    });
+      cassettes: [pinIfPresent(`recon-${tool}`, cassetteDir), pinIfPresent(`probes-${tool}`, cassetteDir)],
+    };
+    // P8: every TDD metric (src/eval/metrics.ts); probes_to_candidate_with/_without_priors are kept.
+    const bundle = finalizeBundle({ ...draft, metrics: consolidateMetrics(draft, { checkedClaimIds: recon.observations.map((o) => o.claimId) }) });
     const { bundlePath } = await writeBundle(bundle, join(runsDir, runId));
     const lines = [...compare.lines, `bundle: ${bundlePath}`];
     return { exitCode: failed ? 1 : 0, lines, status, runId, bundlePath, compare };
