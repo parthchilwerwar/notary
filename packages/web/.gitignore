@@ -4,3 +4,4 @@ dist/
 .pnpm-store/
 .npm-cache/
 screenshots/
+registry-stage/

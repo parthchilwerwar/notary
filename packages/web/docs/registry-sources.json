@@ -1,0 +1,44 @@
+[
+  {
+    "name": "block-hero-3",
+    "url": "https://uiable.com/r/block-hero-3.json",
+    "files": "src/components/uiable/blocks/hero/hero-3/hero-3.tsx",
+    "dependencies": ["embla-carousel-autoplay", "framer-motion"],
+    "registryDependencies": ["@uiable/button", "@uiable/carousel"]
+  },
+  {
+    "name": "block-bento-5",
+    "url": "https://uiable.com/r/block-bento-5.json",
+    "files": "src/components/uiable/blocks/bento/bento-5/bento-5.tsx",
+    "dependencies": ["@tabler/icons-react", "lucide-react", "recharts"],
+    "registryDependencies": ["@uiable/button", "@uiable/card", "@uiable/chart"]
+  },
+  {
+    "name": "block-process-1",
+    "url": "https://uiable.com/r/block-process-1.json",
+    "files": "src/components/uiable/blocks/process/process-1/process-1.tsx",
+    "dependencies": ["lucide-react"],
+    "registryDependencies": null
+  },
+  {
+    "name": "block-statistics-1",
+    "url": "https://uiable.com/r/block-statistics-1.json",
+    "files": "src/components/uiable/blocks/statistics/statistics-1/statistics-1.tsx",
+    "dependencies": ["framer-motion", "lucide-react"],
+    "registryDependencies": ["@uiable/button"]
+  },
+  {
+    "name": "block-cta-1",
+    "url": "https://uiable.com/r/block-cta-1.json",
+    "files": "src/components/uiable/blocks/cta/cta-1/cta-1.tsx",
+    "dependencies": ["lucide-react"],
+    "registryDependencies": ["@uiable/badge", "@uiable/button", "@uiable/card"]
+  },
+  {
+    "name": "block-footer-2",
+    "url": "https://uiable.com/r/block-footer-2.json",
+    "files": "src/components/uiable/blocks/footer/footer-2/footer-2.tsx",
+    "dependencies": ["framer-motion", "lucide-react"],
+    "registryDependencies": null
+  }
+]

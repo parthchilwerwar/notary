@@ -1,6 +1,6 @@
 # Dashboard phases
 
-One phase per Codex session, per the root AGENTS.md. U4 is the current phase, as requested by the user. U2 live mode and U3 deployment remain scheduled separately.
+One phase per Codex session, per the root AGENTS.md. U5 is the current phase, as requested by the user. U2 live mode and U3 deployment remain scheduled separately.
 
 ## U1 — Shell, Queue and Beliefs
 
@@ -55,3 +55,15 @@ not complete U2's live API/SSE work or U3's deployment. The user explicitly
 allows JSON-backed economics content in U4; the absent plan remains pending.
 Visual artifacts are in ignored `screenshots/U4` and can be regenerated with
 `npm run check:visual`. Only web changes are included in the U4 commit.
+
+## U5 — Landing page
+
+- [x] Landing at `/`; React Router dashboard and deep links at `/app`.
+- [x] Vercel SPA rewrite for dashboard paths, preserving public assets.
+- [x] Browse 21st.dev, inspect and install six UIAble components using the pinned shadcn CLI and registry URLs.
+- [x] Adapt hero, bento, process steps, results strip, CTA and footer to Notary's shared design system.
+- [x] Tool role/status from public evidence; verified fixture/live results with strict cohort separation and fixture disclosure.
+- [x] Publisher MIT notice, registry source URLs and adaptation credits in docs/CREDITS.md within packages/web.
+- [x] New runtime and development dependencies pinned to exact versions.
+- [x] Production build, 19 tests, 32 screenshot combinations, tamper rejection, live precedence, pending tools and route refresh checks.
+- [x] Commit `U5: landing page`.

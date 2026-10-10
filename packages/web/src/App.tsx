@@ -16,6 +16,8 @@ import { Evidence } from "./Evidence";
 import { Empty, Status } from "./components";
 import { comparable } from "./analytics";
 import { date, label, loadCatalog } from "./data";
+import { Link, useLocation, useNavigate } from "react-router";
+import { useTheme } from "./useTheme";
 
 const screens = [
   {
@@ -57,19 +59,21 @@ const screens = [
 type Screen = (typeof screens)[number]["id"];
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>(
-    () => screens.find((s) => `#${s.id}` === location.hash)?.id ?? "overview",
-  );
+  const location = useLocation();
+  const go = useNavigate();
+  const screen: Screen =
+    screens.find((s) => `/app/${s.id}` === location.pathname)?.id ?? "overview";
   const [all, setAll] = useState<RunBundle[]>([]);
-  const [selected, setSelected] = useState("");
-  const [baseline, setBaseline] = useState("");
+  const [selected, setSelected] = useState(
+    () => new URLSearchParams(location.search).get("run") ?? "",
+  );
+  const [baseline, setBaseline] = useState(
+    () => new URLSearchParams(location.search).get("baseline") ?? "",
+  );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [reload, setReload] = useState(0);
-  const [dark, setDark] = useState(false);
-  useEffect(() => {
-    document.documentElement.dataset.theme = dark ? "dark" : "light";
-  }, [dark]);
+  const [dark, setDark] = useTheme();
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
@@ -112,8 +116,7 @@ export default function App() {
     candidates.find((b) => b.kind === bundle?.kind) ??
     candidates[0];
   function navigate(id: Screen) {
-    setScreen(id);
-    location.hash = id;
+    go(id === "overview" ? "/app" : `/app/${id}`);
     if (id === "probes" && bundle && !bundle.probes.length) {
       const source = all.find((b) => comparable(bundle, b) && b.probes.length);
       if (source) {
@@ -152,19 +155,12 @@ export default function App() {
         </div>
       )}
       <header className="topbar">
-        <a
-          className="brand"
-          href="#overview"
-          onClick={(e) => {
-            e.preventDefault();
-            navigate("overview");
-          }}
-        >
+        <Link className="brand" to="/">
           <span className="brand-mark">
             <ShieldCheck size={23} aria-hidden="true" />
           </span>
           Notary<span className="brand-period">.</span>
-        </a>
+        </Link>
         <nav aria-label="Dashboard screens">
           {screens.map((s) => (
             <Button

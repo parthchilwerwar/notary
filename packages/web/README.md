@@ -84,3 +84,27 @@ U4 review fixed insight footer contrast, blank zero-value plots and responsive
 card/control spacing. Full-page screenshots and detail views were reviewed at
 both widths and themes; the overview, queue and experiment cards were also
 inspected at readable scale.
+
+## U5 landing and routing
+
+The landing page is `/`; the dashboard is `/app`. Screens use real React Router
+paths such as `/app/beliefs` and `/app/comparison`, including direct loads and
+refreshes. Theme preference persists across page navigation. The Vercel project
+root must be `packages/web`: its vercel.json builds dist and rewrites dashboard
+paths to index.html, leaving public bundle/evidence assets as files. This phase
+configures routing; it does not publish a deployment.
+
+The landing contains the requested hero, problem bento, numbered process,
+required tools, results, CTA and footer. Its stats are verified bundle values.
+Any live bundle switches result selection to the live cohort; missing live queue
+sides remain pending. Fixture results carry the persistent AGENTS.md banner and
+the planted-quirks disclosure. Tool status and purpose are read from the evidence
+file. License notices, original registry URLs and adaptation details are in
+`docs/CREDITS.md`.
+
+`npm run check:visual` now saves U5 captures to `screenshots/U5`. It includes
+landing plus all dashboard pages at both widths and themes, and checks navigation,
+deep-link refreshes, theme persistence, missing tool receipts, live result
+precedence and visible tamper rejection. The first visual review corrected filled
+CTA foreground contrast in both themes. The numbered process and hero anecdote
+are user-requested structural/content numbers; measured statistics stay file-backed.
