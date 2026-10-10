@@ -14,40 +14,13 @@
  *
  * Browser-safe module.
  */
-import { z } from "zod";
-import { Sha256HexSchema, ToolSchema } from "../schema/common.js";
+import { CertificateReportSchema } from "../schema/certificate.js";
+import type { CertificateReport, ReportCounts, SourceBundle } from "../schema/certificate.js";
 import type { CertificateSet, ToolCertificates } from "./certificates.js";
-import { SourceBundleSchema } from "./certificates.js";
 
-export const ReportCountsSchema = z
-  .object({
-    claimsTotal: z.number().int().nonnegative(),
-    certified: z.number().int().nonnegative(),
-    matchesDocs: z.number().int().nonnegative(),
-    contradictsDocs: z.number().int().nonnegative(),
-    unproven: z.number().int().nonnegative(),
-    revoked: z.number().int().nonnegative(),
-  })
-  .strict();
-
-export const CertificateReportSchema = z
-  .object({
-    generatedBy: z.string(),
-    sample: z.boolean(),
-    /** Fixture scenario (one simulated world), absent for real data. */
-    scenario: z.string().optional(),
-    disclosure: z.array(z.string()),
-    header: z.string(),
-    sourceBundles: z.array(SourceBundleSchema),
-    tools: z.array(z.object({ tool: ToolSchema, header: z.string(), counts: ReportCountsSchema, file: z.string() }).strict()),
-    overall: ReportCountsSchema,
-    /** sha256 of each per-tool file's canonical JSON, so the report pins exactly what it counted. */
-    toolFileHashes: z.record(z.string(), Sha256HexSchema),
-  })
-  .strict();
-
-export type ReportCounts = z.infer<typeof ReportCountsSchema>;
-export type CertificateReport = z.infer<typeof CertificateReportSchema>;
+// The zod schemas live in src/schema/certificate.ts (browser-safe, shared with packages/web).
+export { CertificateReportSchema, FixtureIndexSchema, ReportCountsSchema } from "../schema/certificate.js";
+export type { CertificateReport, FixtureIndex, ReportCounts } from "../schema/certificate.js";
 
 export function countsFor(t: ToolCertificates): ReportCounts {
   const active = t.certificates.filter((c) => c.status === "active");
@@ -79,7 +52,7 @@ function sum(all: readonly ReportCounts[]): ReportCounts {
 }
 
 export function buildReport(set: CertificateSet, fileHashes: Record<string, string>, fileFor: (tool: string) => string): CertificateReport {
-  const seen = new Map<string, z.infer<typeof SourceBundleSchema>>();
+  const seen = new Map<string, SourceBundle>();
   for (const t of set.tools) for (const s of t.sourceBundles) seen.set(s.runId, s);
   const sourceBundles = [...seen.values()].sort((a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt) || (a.runId < b.runId ? -1 : 1));
   const tools = set.tools.map((t) => ({ tool: t.tool, header: t.header, counts: countsFor(t), file: fileFor(t.tool) }));
@@ -159,26 +132,3 @@ export function renderReportMd(report: CertificateReport, set: CertificateSet, o
   const text = shift ? out.map((l) => (/^#+ /.test(l) ? `${shift}${l}` : l)) : out;
   return `${text.join("\n").trimEnd()}\n`;
 }
-
-/** packages/web/public/certificates/fixture/index.json: the fixture scenarios (separate simulated worlds). */
-export const FixtureIndexSchema = z
-  .object({
-    generatedBy: z.string(),
-    sample: z.literal(true),
-    disclosure: z.array(z.string()),
-    note: z.string(),
-    scenarios: z.array(
-      z
-        .object({
-          scenario: z.string(),
-          report: z.string(),
-          files: z.array(z.string()),
-          sourceBundles: z.array(z.string()),
-          overall: ReportCountsSchema,
-        })
-        .strict(),
-    ),
-  })
-  .strict();
-
-export type FixtureIndex = z.infer<typeof FixtureIndexSchema>;

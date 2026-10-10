@@ -16,45 +16,15 @@
  */
 import { z } from "zod";
 import { canonicalJson, sha256Hex } from "../bundle/hash.js";
-import { BeliefStatusSchema } from "../schema/belief.js";
-import { GuardKindSchema } from "../schema/guard.js";
-import { Sha256HexSchema, ToolSchema } from "../schema/common.js";
+import { RevocationSchema } from "../schema/certificate.js";
+import type { RetiredGuard, Revocation } from "../schema/certificate.js";
 import type { Guard } from "../schema/index.js";
 import type { Issuance, LedgerEvent, ToolLedger } from "./ledger.js";
 import { eventsOf, revocationId } from "./ledger.js";
 
-export const SourceRefSchema = z.object({ runId: z.string(), contentHash: Sha256HexSchema }).strict();
-
-export const RetiredGuardSchema = z
-  .object({ id: z.string(), kind: GuardKindSchema, operation: z.string(), retiredAt: z.iso.datetime() })
-  .strict();
-
-export const RevocationSchema = z
-  .object({
-    id: z.string().regex(/^rev-[0-9a-f]{16}$/),
-    certificateId: z.string().regex(/^cert-[0-9a-f]{16}$/),
-    tool: ToolSchema,
-    claimId: z.string(),
-    beliefId: z.string(),
-    revokedAt: z.iso.datetime(),
-    from: z.literal("notarized"),
-    to: BeliefStatusSchema,
-    reason: z.string(),
-    alpha: z.number().positive(),
-    beta: z.number().positive(),
-    confidence: z.number().min(0).max(1),
-    triggerProbeIds: z.array(z.string()),
-    triggerTraceIds: z.array(z.string()),
-    guardsRetired: z.array(RetiredGuardSchema),
-    sourceBundle: SourceRefSchema,
-    sample: z.boolean(),
-    disclosure: z.array(z.string()),
-    sha256: Sha256HexSchema,
-  })
-  .strict();
-
-export type Revocation = z.infer<typeof RevocationSchema>;
-export type RetiredGuard = z.infer<typeof RetiredGuardSchema>;
+// The zod schemas live in src/schema/certificate.ts (browser-safe, shared with packages/web).
+export { RetiredGuardSchema, RevocationSchema, SourceRefSchema } from "../schema/certificate.js";
+export type { RetiredGuard, Revocation } from "../schema/certificate.js";
 
 /** sha256 hex of canonicalJson(value without its `sha256` field). */
 export function sealOf(value: Record<string, unknown>): string {

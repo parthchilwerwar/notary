@@ -25,14 +25,12 @@ import { z } from "zod";
 import { COUNT_TEMPLATES, requestSteps, valuesAtPath } from "../beliefs/params.js";
 import { allContracts } from "../contracts/index.js";
 import { narrowedScopeText, parseScope } from "../guards/compiler.js";
-import { AdversaryBackendSchema, AdversaryVerdictSchema, BeliefStatusSchema } from "../schema/belief.js";
-import { BundleKindSchema, RunModeSchema } from "../schema/bundle.js";
-import { DefectClassSchema, ExpectRuleSchema, ProbeTemplateSchema, Sha256HexSchema, ToolSchema } from "../schema/common.js";
-import { ProbeVerdictSchema } from "../schema/probe.js";
+import { CertificateSchema, NoCertificateSchema, ToolCertificatesSchema } from "../schema/certificate.js";
+import type { Certificate, CertificateScope, NoCertificate, SourceBundle, ToolCertificates } from "../schema/certificate.js";
 import type { Belief, Claim, DefectClass, ExpectRule, Probe, RunBundle, Tool } from "../schema/index.js";
 import type { Issuance, ToolLedger } from "./ledger.js";
 import { buildLedger, eventsOf, issuances } from "./ledger.js";
-import { RevocationSchema, SourceRefSchema, buildRevocations, sealOf } from "./revocations.js";
+import { buildRevocations, sealOf } from "./revocations.js";
 
 export const CERTIFICATES_GENERATED_BY = "pnpm notary export --certificates";
 export const CERTIFICATES_FIXTURE_GENERATED_BY = "pnpm notary export --certificates --fixture";
@@ -41,154 +39,26 @@ export const MATCHES_DOCS = "matches docs";
 export const TOOLS: readonly Tool[] = ["crustdata", "dodo"];
 
 // ------------------------------------------------------------------------------------- schemas
+// The zod schemas live in src/schema/certificate.ts (browser-safe, shared with packages/web).
 
-export const CertificateEvidenceSchema = z
-  .object({
-    probeId: z.string(),
-    traceId: z.string(),
-    spanId: z.string().optional(),
-    traceUrl: z.string().optional(),
-    /** Absent only when no source bundle carries the probe record. */
-    template: ProbeTemplateSchema.optional(),
-    verdict: ProbeVerdictSchema.optional(),
-    /** FR-10 evidence check result, as recorded on the belief. */
-    valid: z.boolean().optional(),
-    /** The probe's recorded observation in words. */
-    observed: z.string().optional(),
-  })
-  .strict();
-
-export const CertificateScopeSchema = z
-  .object({
-    text: z.string(),
-    asProbed: z
-      .object({
-        operations: z.array(z.string()),
-        currencies: z.array(z.string()),
-        param: z.string(),
-        values: z.array(z.string()),
-        probes: z.number().int().nonnegative(),
-      })
-      .strict(),
-    narrowed: z
-      .object({
-        text: z.string(),
-        /** Machine-checkable form (guards/compiler parseScope); null = not machine-checkable, guards block. */
-        parsed: z.object({ currency: z.array(z.string()) }).strict().nullable(),
-      })
-      .strict()
-      .nullable(),
-  })
-  .strict();
-
-export const CertificateSchema = z
-  .object({
-    id: z.string().regex(/^cert-[0-9a-f]{16}$/),
-    status: z.enum(["active", "revoked"]),
-    /** Pointer to the revocation when status is "revoked". */
-    revocation: z.object({ id: z.string(), revokedAt: z.iso.datetime() }).strict().optional(),
-    tool: ToolSchema,
-    claimId: z.string(),
-    beliefId: z.string(),
-    claim: z
-      .object({ operation: z.string(), param: z.string(), endpoint: z.string().optional(), expect: ExpectRuleSchema })
-      .strict(),
-    docText: z.string(),
-    docUrl: z.string(),
-    side: z.enum(["honored", "violated"]),
-    defectClass: DefectClassSchema.optional(),
-    verdictKind: z.enum(["matches_docs", "contradicts_docs"]),
-    verdict: z.string(),
-    docsSay: z.string(),
-    observed: z.string(),
-    scope: CertificateScopeSchema,
-    issuedAt: z.iso.datetime(),
-    /** "event": issuedAt is the `→ notarized` belief event; "snapshot": no source carries that event, issuedAt is the belief's updatedAt. */
-    issuedFrom: z.enum(["event", "snapshot"]),
-    evidence: z.array(CertificateEvidenceSchema),
-    adversary: z
-      .object({
-        verdict: AdversaryVerdictSchema,
-        reason: z.string(),
-        model: z.string(),
-        backend: AdversaryBackendSchema.optional(),
-        reviewedAt: z.iso.datetime().optional(),
-      })
-      .strict()
-      .nullable(),
-    confidence: z.number().min(0).max(1),
-    alpha: z.number().positive(),
-    beta: z.number().positive(),
-    sourceBundle: SourceRefSchema,
-    sample: z.boolean(),
-    disclosure: z.array(z.string()),
-    sha256: Sha256HexSchema,
-  })
-  .strict();
-
-export const NoCertificateKindSchema = z.enum([
-  "abstained",
-  "downgraded",
-  "refuted",
-  "candidate_unreviewed",
-  "undecided",
-  "never_probed",
-  "revoked",
-  "not_tested",
-]);
-
-export const NoCertificateSchema = z
-  .object({
-    tool: ToolSchema,
-    claimId: z.string(),
-    /** Belief status, or "not_tested" when no source has a belief for the claim. */
-    status: z.union([BeliefStatusSchema, z.literal("not_tested")]),
-    kind: NoCertificateKindSchema,
-    reason: z.string(),
-    confidence: z.number().min(0).max(1).optional(),
-    alpha: z.number().positive().optional(),
-    beta: z.number().positive().optional(),
-    sourceBundle: SourceRefSchema.optional(),
-    sample: z.boolean(),
-  })
-  .strict();
-
-export const SourceBundleSchema = z
-  .object({
-    runId: z.string(),
-    contentHash: Sha256HexSchema,
-    kind: BundleKindSchema,
-    mode: RunModeSchema,
-    startedAt: z.iso.datetime(),
-    sample: z.boolean(),
-  })
-  .strict();
-
-export const ToolCertificatesSchema = z
-  .object({
-    tool: ToolSchema,
-    generatedBy: z.string(),
-    sample: z.boolean(),
-    /** Fixture scenario (one simulated world), absent for real data. */
-    scenario: z.string().optional(),
-    disclosure: z.array(z.string()),
-    /** One line stating where the data came from ("no real runs yet" when there is none). */
-    header: z.string(),
-    sourceBundles: z.array(SourceBundleSchema),
-    ignoredBundles: z.array(z.object({ runId: z.string(), reason: z.string() }).strict()),
-    certificates: z.array(CertificateSchema),
-    noCertificates: z.array(NoCertificateSchema),
-    revocations: z.array(RevocationSchema),
-  })
-  .strict();
-
-export type Certificate = z.infer<typeof CertificateSchema>;
-export type CertificateEvidence = z.infer<typeof CertificateEvidenceSchema>;
-export type CertificateScope = z.infer<typeof CertificateScopeSchema>;
-export type NoCertificate = z.infer<typeof NoCertificateSchema>;
-export type NoCertificateKind = z.infer<typeof NoCertificateKindSchema>;
-export type SourceBundle = z.infer<typeof SourceBundleSchema>;
-export type ToolCertificates = z.infer<typeof ToolCertificatesSchema>;
+export {
+  CertificateEvidenceSchema,
+  CertificateSchema,
+  CertificateScopeSchema,
+  NoCertificateKindSchema,
+  NoCertificateSchema,
+  SourceBundleSchema,
+  ToolCertificatesSchema,
+} from "../schema/certificate.js";
+export type {
+  Certificate,
+  CertificateEvidence,
+  CertificateScope,
+  NoCertificate,
+  NoCertificateKind,
+  SourceBundle,
+  ToolCertificates,
+} from "../schema/certificate.js";
 
 // ------------------------------------------------------------------------------- docs in words
 

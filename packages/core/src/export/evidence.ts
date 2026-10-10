@@ -15,7 +15,8 @@ import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { findOnPath } from "../beliefs/evidence.js";
 import { readDoctorRecord, type DoctorRecord } from "../trace/doctor.js";
-import { exportedTraceIds, resolveTraceLinkTemplate, traceLinkFor, type TemplateSource } from "../trace/links.js";
+import { resolveTraceLinkTemplate, traceLinkFor, type TemplateSource } from "../trace/links.js";
+import { collectBundles } from "./collect.js";
 
 export const EVIDENCE_PATH = fileURLToPath(new URL("../../../web/public/evidence/evidence.json", import.meta.url));
 
@@ -71,7 +72,7 @@ export interface EvidenceFacts {
   doctor?: DoctorRecord | undefined;
   /** Trace link template, if one is configured. */
   traceTemplate: TemplateSource;
-  /** Traces marked exported in runs/<id>/spans.jsonl (notarize / run commands that ran with tracing on). */
+  /** Traces marked exported in the spans.jsonl of FINISHED real runs (exportedRunTraceIds). */
   exportedRunTraces: number;
   neatlogsCliOnPath: boolean;
   entire: { onPath: boolean; checkpointRefs: string[] };
@@ -97,6 +98,39 @@ export function entireCheckpointRefs(repoRoot: string = REPO_ROOT): string[] {
   }
 }
 
+/**
+ * Trace ids marked `exported: true` in runs/<dir>/spans.jsonl, counted only for FINISHED real runs:
+ * the dir must hold a hash-verified, non-sample bundle (export/collect.ts collectBundles). A run still
+ * in progress (spans are appended as it goes; its bundle is written at the end), a sample or fixture
+ * run, or a stray spans file does not count. Counting every spans.jsonl let any keyed CLI run in
+ * progress elsewhere on the machine (.env carries a real NEATLOGS_API_KEY, so its spans are marked
+ * exported) change these facts mid-way, racing test/publish.test.ts's committed-file check.
+ */
+export function exportedRunTraceIds(runsDir: string = CORE_RUNS_DIR): Set<string> {
+  const out = new Set<string>();
+  if (!existsSync(runsDir)) return out;
+  for (const { file } of collectBundles(runsDir).bundles) {
+    const spans = join(runsDir, dirname(file), "spans.jsonl");
+    if (!existsSync(spans)) continue;
+    let text: string;
+    try {
+      text = readFileSync(spans, "utf8");
+    } catch {
+      continue;
+    }
+    for (const line of text.split(/\r?\n/)) {
+      if (!line.includes('"exported":true')) continue;
+      try {
+        const rec = JSON.parse(line) as { traceId?: unknown; exported?: unknown };
+        if (rec.exported === true && typeof rec.traceId === "string") out.add(rec.traceId.toLowerCase());
+      } catch {
+        // skip malformed lines
+      }
+    }
+  }
+  return out;
+}
+
 export function gatherEvidenceFacts(
   opts: { env?: NodeJS.ProcessEnv; repoRoot?: string; runsDir?: string; doctorRecordPath?: string; configPath?: string } = {},
 ): EvidenceFacts {
@@ -106,7 +140,7 @@ export function gatherEvidenceFacts(
   return {
     doctor: readDoctorRecord(opts.doctorRecordPath),
     traceTemplate: resolveTraceLinkTemplate({ env, ...(opts.configPath ? { configPath: opts.configPath } : {}) }),
-    exportedRunTraces: exportedTraceIds(opts.runsDir ?? CORE_RUNS_DIR).size,
+    exportedRunTraces: exportedRunTraceIds(opts.runsDir ?? CORE_RUNS_DIR).size,
     neatlogsCliOnPath: findOnPath("neatlogs-cli", env) !== undefined,
     entire: { onPath: entireOnPath, checkpointRefs: entireOnPath ? entireCheckpointRefs(root) : [] },
     businessPlan: existsSync(join(root, "docs", "BUSINESS.md")),
