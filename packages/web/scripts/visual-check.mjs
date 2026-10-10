@@ -42,7 +42,7 @@ const allPages = [
   { path: `/app/revocation-demo${q(guarded.runId)}`, h1: "Revocation", detail: ".revocation-sequence" },
   { path: `/app/queue${q(guarded.runId)}`, h1: "Queue", detail: ".request" },
   { path: `/app/queue/${enc(decision.id)}${q(guarded.runId)}`, h1: decision.requestId, detail: ".detail-card", record: true },
-  { path: `/app/approvals${q(guarded.runId)}`, h1: "Approval desk", detail: ".table-card, .empty" },
+  { path: `/app/approvals${q(guarded.runId)}`, h1: "Approval desk", detail: ".desk-item, .empty" },
   { path: `/app/ask${q(guarded.runId)}`, h1: "Ask Notary", detail: ".answer-card, .empty" },
   { path: `/app/economics${q(guarded.runId)}`, h1: "Economics", detail: ".economics-grid" },
   { path: `/app/evidence${q(guarded.runId)}`, h1: "Evidence", detail: ".tool-grid" },

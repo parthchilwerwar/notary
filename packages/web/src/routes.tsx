@@ -1,8 +1,6 @@
 // THE route table for /app. Sidebar, breadcrumbs, document titles, the command palette and the
 // router all read it. To build a page in a later phase, replace its `element` here; to add a
 // page, add a row (and a `group` if it belongs in the sidebar).
-import { AskPage } from "./components/ask/AskPage";
-import { MissionControlPage } from "./pages/mission-control/MissionControlPage";
 import type { ComponentType, ReactElement } from "react";
 import { matchPath } from "react-router";
 import { SquaresFourIcon as SquaresFour } from "@phosphor-icons/react/dist/csr/SquaresFour";
@@ -18,6 +16,7 @@ import { CurrencyDollarIcon as CurrencyDollar } from "@phosphor-icons/react/dist
 import { ReceiptIcon as Receipt } from "@phosphor-icons/react/dist/csr/Receipt";
 import { ScalesIcon as Scales } from "@phosphor-icons/react/dist/csr/Scales";
 import { ProhibitIcon as Prohibit } from "@phosphor-icons/react/dist/csr/Prohibit";
+import { MissionControlPage } from "./pages/mission-control/MissionControlPage";
 import {
   OverviewPage,
   ProbeDetailPage,
@@ -34,11 +33,12 @@ import {
   ReportsPage,
   RevocationDemoPage,
 } from "./pages/trust";
+import { ApprovalsPage } from "./pages/approvals";
 import {
-  ApprovalsPage,
   DecisionDetailPage,
   QueuePage,
 } from "./pages/act";
+import { AskPage } from "./components/ask/AskPage";
 import { EconomicsPage, EvidencePage } from "./pages/business";
 
 export type NavGroup = "Monitor" | "Trust" | "Act" | "Business";
