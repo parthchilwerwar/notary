@@ -6,7 +6,10 @@ import type { Claim } from "../schema/index.js";
  * Expect-rule semantics. The checker evaluates `claim.expect` over the exchanges associated with
  * the claim: the exchanges its recon steps produced, or, for queue/probe traffic, every exchange
  * whose op equals `claim.operation`. Field paths are dotted with `[]` for "each element", e.g.
- * `items[].amount`. Only 2xx exchanges are inspected unless the rule says otherwise.
+ * `items[].amount`. Only 2xx exchanges are inspected unless the rule says otherwise. A 2xx response
+ * in which the path a rule reads resolves to nothing is UNOBSERVABLE for the claim (no anomaly, and
+ * not evidence that it holds; see checkClaimDetailed in src/checker/check.ts), except for
+ * fieldPresent, where absence is the violation.
  *
  * - maxItems {max}: the response list (the body if it is an array, else the first array among
  *   body.items | data | results | companies | records) has length <= max. `claim.param` names the

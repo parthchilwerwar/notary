@@ -13,7 +13,12 @@
  * Predictions by class:
  *   honored -> doc_type; silent_coercion -> numeric_string | float | formatted_string;
  *   mislabelled_semantics -> other_type.
- * Uninformative: no non-null value at the field in either variant (null-only is allowed by the doc).
+ * Uninformative: no non-null value at the field in either variant (null-only is allowed by the doc),
+ * or the claim's field path is ABSENT from a variant's 2xx reads (the path expands to locations but
+ * none exists, e.g. `headcount.total` against a response carrying `headcount.count`): a path that
+ * doesn't match the real response says nothing about the claim, so it can never read as doc_type.
+ * Present-but-null is present (it is skipped as a value, as before). An empty list is nothing to
+ * inspect, not absent.
  * Instrument: the values read must differ between treatment and control (different subjects);
  * identical values mean both reads hit the same record.
  *
@@ -191,8 +196,15 @@ export const typeEdge: ProbeTemplateModule = {
     const valuesOf = (variant: "treatment" | "control") => {
       const reads = pick(exchanges, variant, "read").filter((ex) => is2xx(ex));
       const values: unknown[] = [];
-      for (const ex of reads) for (const h of resolvePath(ex.responseBody, field)) if (h.found) values.push(h.value ?? null);
-      return { reads: reads.length, values };
+      let misses = 0;
+      for (const ex of reads) {
+        for (const h of resolvePath(ex.responseBody, field)) {
+          if (h.found) values.push(h.value ?? null);
+          else misses += 1;
+        }
+      }
+      // Absent: the path pointed somewhere in this variant's reads and resolved nowhere.
+      return { reads: reads.length, values, absent: misses > 0 && values.length === 0 };
     };
     const t = valuesOf("treatment");
     const c = valuesOf("control");
@@ -200,7 +212,9 @@ export const typeEdge: ProbeTemplateModule = {
     const classes = [...new Set(nonNull.map((v) => classifyValue(type, v)))];
     let outcome: string | null = null;
     let note: string | undefined;
+    const absentIn = [t.absent ? "treatment" : null, c.absent ? "control" : null].filter((v): v is string => v !== null);
     if (t.reads === 0 || c.reads === 0) note = "a read failed";
+    else if (absentIn.length > 0) note = `claim path ${field} absent in the ${absentIn.join(" and ")} response: uninformative, not honored`;
     else if (nonNull.length === 0) note = `no non-null value at ${field}`;
     else outcome = PRIORITY.find((p) => classes.includes(p)) ?? "doc_type";
     return {
@@ -209,6 +223,7 @@ export const typeEdge: ProbeTemplateModule = {
       control: { values: c.values.slice(0, 10), count: c.values.length },
       instrument: outcome === null ? null : { treatment: t.values, control: c.values },
       ...(note ? { note } : {}),
+      ...(absentIn.length > 0 ? { missingPaths: [field] } : {}),
     };
   },
 

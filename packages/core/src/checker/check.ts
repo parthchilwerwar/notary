@@ -7,6 +7,18 @@
  *   (type, fieldPresent) reports them together in one anomaly.
  * - A value that is missing is not a `type` violation (that is `fieldPresent`'s job); `null` is
  *   present for `fieldPresent`.
+ * - OBSERVED vs UNOBSERVABLE (checkClaimDetailed). An exchange is "observed" for a claim when the
+ *   rule could actually read what it judges. For rules that read a response path (`type`, `unit`'s
+ *   echoed field and sent request path, `idempotentOnRetry`'s id, `consistentWithin`'s created id,
+ *   `maxItems`' response list), a 2xx response in which that path resolves to NOTHING (no found
+ *   hit at all) is UNOBSERVABLE for the claim: no anomaly, and it is recorded in `unobservable`
+ *   with the path. It never counts as evidence that the claim holds: "checked with no anomaly"
+ *   means honored only when `observed > 0`. A path that resolves in some elements and not others
+ *   (`items[].amount` with one item lacking it) is observed on the elements that have it.
+ *   `fieldPresent` is different: absence IS its violation, so a 2xx response with at least one
+ *   location to inspect is always observed. Present-but-null is PRESENT everywhere (observed):
+ *   `type` judges `null` against the documented type exactly as before (a violation unless the
+ *   type admits `null`), and `fieldPresent` accepts it.
  * - `type` accepts a `|` union ("string|null"); `iso-datetime` is an ISO-8601 date-time string
  *   with an optional timezone. An unknown type name throws (a broken contract, not an anomaly).
  * - `unit` pairs sent and echoed values by position when both paths expand to the same number of
@@ -28,6 +40,21 @@ import { containsValue, resolvePath, valuesAt } from "./path.js";
 export interface Observation {
   claimId: string;
   exchange: Exchange;
+}
+
+/** A 2xx exchange in which the path a claim's rule reads resolved to nothing. */
+export interface UnobservableExchange {
+  exchangeId: string;
+  path: string;
+}
+
+/** checkClaimDetailed: the anomalies plus how many exchanges the rule could actually read. */
+export interface ClaimCheck {
+  anomalies: Anomaly[];
+  /** Exchanges the rule actually judged (see the header). 0 = the claim was NOT observed. */
+  observed: number;
+  /** 2xx exchanges where the rule's path resolved to nothing (no anomaly, not evidence). */
+  unobservable: UnobservableExchange[];
 }
 
 /** How many offending values one anomaly lists before truncating (the count is always exact). */
@@ -146,14 +173,34 @@ function limited<T>(items: T[]): { items: T[]; count: number; truncated: boolean
 // Rules
 
 export function checkClaim(claim: Claim, exchanges: Exchange[]): Anomaly[] {
+  return checkClaimDetailed(claim, exchanges).anomalies;
+}
+
+/** The response list's location, for unobservable records of `maxItems`. */
+const LIST_PATH = `(response list: body array or ${LIST_KEYS.join("|")})`;
+
+export function checkClaimDetailed(claim: Claim, exchanges: Exchange[]): ClaimCheck {
   const rule = claim.expect;
   const out: Anomaly[] = [];
+  let observed = 0;
+  const unobservable: UnobservableExchange[] = [];
+  const unobserved = (ex: Exchange, path: string): void => {
+    unobservable.push({ exchangeId: ex.requestHash, path });
+  };
 
   switch (rule.kind) {
     case "maxItems": {
       for (const ex of exchanges) {
-        if (!is2xx(ex)) continue;
+        if (!is2xx(ex)) {
+          // A refusal of a request above max is the limit being enforced: an observation.
+          const asked = ex.status === 0 ? null : requestedSize(ex, claim.param);
+          if (asked !== null && asked > rule.max) observed += 1;
+          continue;
+        }
         const found = responseList(ex.responseBody);
+        const askedAbove = (requestedSize(ex, claim.param) ?? -Infinity) > rule.max;
+        if (found || askedAbove) observed += 1;
+        else unobserved(ex, LIST_PATH);
         if (found && found.list.length > rule.max) {
           out.push(
             anomaly(
@@ -185,7 +232,13 @@ export function checkClaim(claim: Claim, exchanges: Exchange[]): Anomaly[] {
       const matches = typeMatcher(rule.type);
       for (const ex of exchanges) {
         if (!is2xx(ex)) continue;
-        const bad = resolvePath(ex.responseBody, rule.field)
+        const hits = resolvePath(ex.responseBody, rule.field);
+        if (!hits.some((h) => h.found)) {
+          unobserved(ex, rule.field);
+          continue;
+        }
+        observed += 1;
+        const bad = hits
           .filter((h) => h.found && !matches(h.value))
           .map((h) => ({ path: h.path, type: typeOf(h.value), value: h.value ?? null }));
         if (bad.length === 0) continue;
@@ -208,7 +261,15 @@ export function checkClaim(claim: Claim, exchanges: Exchange[]): Anomaly[] {
         if (!is2xx(ex)) continue;
         const sent = resolvePath(ex.requestBody, claim.param).filter((h) => h.found);
         const echoed = resolvePath(ex.responseBody, rule.field).filter((h) => h.found);
-        if (sent.length === 0 || sent.length !== echoed.length) continue;
+        if (sent.length === 0) {
+          unobserved(ex, `request:${claim.param}`);
+          continue;
+        }
+        if (echoed.length === 0 || sent.length !== echoed.length) {
+          unobserved(ex, rule.field);
+          continue;
+        }
+        observed += 1;
         sent.forEach((s, i) => {
           const e = echoed[i]!;
           if (sameValue(s.value, e.value)) return;
@@ -232,6 +293,7 @@ export function checkClaim(claim: Claim, exchanges: Exchange[]): Anomaly[] {
     case "statusOnError": {
       for (const ex of exchanges) {
         if (ex.status === 0) continue;
+        observed += 1;
         if (ex.status !== rule.status) {
           out.push(anomaly(claim, ex, "statusOnError", { status: ex.status }, { status: rule.status }));
         }
@@ -244,11 +306,16 @@ export function checkClaim(claim: Claim, exchanges: Exchange[]): Anomaly[] {
       for (const ex of exchanges) {
         if (!is2xx(ex)) continue;
         const id = claim.param === "" ? ex.responseBody : valuesAt(ex.responseBody, claim.param)[0];
-        if (id === undefined) continue;
+        if (id === undefined) {
+          unobserved(ex, claim.param);
+          continue;
+        }
         if (!firstId.has(ex.requestHash)) {
           firstId.set(ex.requestHash, id);
           continue;
         }
+        // Only a retry compared against the first response observes the rule.
+        observed += 1;
         const first = firstId.get(ex.requestHash);
         if (!sameValue(first, id)) {
           out.push(
@@ -267,6 +334,8 @@ export function checkClaim(claim: Claim, exchanges: Exchange[]): Anomaly[] {
 
     case "errorOnUnknownParam": {
       for (const ex of exchanges) {
+        if (ex.status === 0) continue;
+        observed += 1;
         if (!is2xx(ex)) continue;
         out.push(
           anomaly(
@@ -284,7 +353,10 @@ export function checkClaim(claim: Claim, exchanges: Exchange[]): Anomaly[] {
     case "fieldPresent": {
       for (const ex of exchanges) {
         if (!is2xx(ex)) continue;
-        const missing = resolvePath(ex.responseBody, rule.field)
+        const hits = resolvePath(ex.responseBody, rule.field);
+        // Absence IS the violation here; only an empty `[]` expansion leaves nothing to inspect.
+        if (hits.length > 0) observed += 1;
+        const missing = hits
           .filter((h) => !h.found)
           .map((h) => h.path);
         if (missing.length === 0) continue;
@@ -306,7 +378,10 @@ export function checkClaim(claim: Claim, exchanges: Exchange[]): Anomaly[] {
       const [write, ...reads] = exchanges;
       if (!write || !is2xx(write)) break;
       const id = valuesAt(write.responseBody, claim.param)[0];
-      if (id === undefined || id === null) break;
+      if (id === undefined || id === null) {
+        unobserved(write, claim.param);
+        break;
+      }
       const writeAt = Date.parse(write.recordedAt);
       if (Number.isNaN(writeAt)) break;
       for (const ex of reads) {
@@ -315,6 +390,7 @@ export function checkClaim(claim: Claim, exchanges: Exchange[]): Anomaly[] {
         if (Number.isNaN(readAt)) continue;
         const afterMs = readAt - writeAt;
         if (afterMs < rule.ms) continue;
+        observed += 1;
         if (containsValue(ex.responseBody, id)) continue;
         out.push(
           anomaly(
@@ -335,7 +411,7 @@ export function checkClaim(claim: Claim, exchanges: Exchange[]): Anomaly[] {
     }
   }
 
-  return dedupe(out);
+  return { anomalies: dedupe(out), observed, unobservable };
 }
 
 function dedupe(anomalies: Anomaly[]): Anomaly[] {
@@ -349,6 +425,13 @@ function dedupe(anomalies: Anomaly[]): Anomaly[] {
  * order), then exchange order within the observations. Observations for unknown claims are ignored.
  */
 export function checkAll(entries: ContractEntry[], observations: Observation[]): Anomaly[] {
+  const out: Anomaly[] = [];
+  for (const c of checkAllDetailed(entries, observations)) out.push(...c.anomalies);
+  return dedupe(out);
+}
+
+/** checkAll per claim (same order), with each claim's observed count and unobservable exchanges. */
+export function checkAllDetailed(entries: ContractEntry[], observations: Observation[]): Array<ClaimCheck & { claimId: string }> {
   const byClaim = new Map<string, Exchange[]>();
   for (const o of observations) {
     const list = byClaim.get(o.claimId) ?? [];
@@ -358,9 +441,18 @@ export function checkAll(entries: ContractEntry[], observations: Observation[]):
   const claims = [...new Map(entries.map((e) => [e.claim.id, e.claim])).values()].sort((a, b) =>
     a.id < b.id ? -1 : a.id > b.id ? 1 : 0,
   );
-  const out: Anomaly[] = [];
-  for (const claim of claims) out.push(...checkClaim(claim, byClaim.get(claim.id) ?? []));
-  return dedupe(out);
+  return claims.map((claim) => ({ claimId: claim.id, ...checkClaimDetailed(claim, byClaim.get(claim.id) ?? []) }));
+}
+
+/**
+ * Claims the checker actually OBSERVED (observed > 0) on these observations, sorted. This, not
+ * "had an observation", is what may stand for "checked with no anomaly -> honored" (belief
+ * precision's ground truth): a claim whose field path never resolved was not checked at all.
+ */
+export function observedClaimIds(entries: ContractEntry[], observations: Observation[]): string[] {
+  return checkAllDetailed(entries, observations)
+    .filter((c) => c.observed > 0)
+    .map((c) => c.claimId);
 }
 
 /**

@@ -11,7 +11,8 @@
  *   honored -> same_set; silent_truncation / eventual_consistency -> mismatch;
  *   mislabelled_semantics -> overlap.
  * Uninformative: the control holds no more than one walked page (PAGE_SIZE items) — paging was
- * never exercised — or a read failed.
+ * never exercised — or a read failed. A 2xx read without a response list is recorded in
+ * `missingPaths` ("(response list)"): no list, nothing to count, never "same_set".
  * Instrument: the treatment's first page (size PAGE_SIZE) and the control (size PAGES*PAGE_SIZE)
  * must have different lengths once the set is larger than one page; equal lengths mean the size
  * parameter isn't reaching the API.
@@ -97,6 +98,7 @@ export const paginationCompleteness: ProbeTemplateModule = {
     const pageIds = pageExchanges.map((ex) => (is2xx(ex) ? idsOf(ex.responseBody, op) : null));
     const controlIds = is2xx(all) ? idsOf(all!.responseBody, op) : null;
     const control = { status: all?.status ?? null, count: controlIds?.length ?? null };
+    const listAbsent = [...pageExchanges, ...(all ? [all] : [])].some((ex) => is2xx(ex) && responseList(ex.responseBody) === null);
 
     let outcome: string | null = null;
     let note: string | undefined;
@@ -119,6 +121,7 @@ export const paginationCompleteness: ProbeTemplateModule = {
       control,
       instrument: outcome === null ? null : { treatment: firstPageLength, control: controlIds!.length },
       ...(note ? { note } : {}),
+      ...(listAbsent ? { missingPaths: ["(response list)"] } : {}),
     };
   },
 

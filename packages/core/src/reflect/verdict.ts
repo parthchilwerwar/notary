@@ -81,7 +81,10 @@ export function judge(template: ProbeTemplateModule, design: ProbeDesign, observ
   const ids = Object.keys(design.predictions).sort();
   const matches: Record<string, boolean> = {};
   for (const id of ids) matches[id] = template.matches(design.predictions[id]!, observation);
-  const result = decideVerdict({ hypothesisIds: ids, matches, informative: template.informative(observation), instrument: observation.instrument });
+  // A claim path absent from the real response makes the observation uninformative, whatever the
+  // template's own informative() says (it can never stand for "honored").
+  const informative = template.informative(observation) && !observation.missingPaths?.length;
+  const result = decideVerdict({ hypothesisIds: ids, matches, informative, instrument: observation.instrument });
   // A hypothesis this template makes no prediction for (outcomes ["*"]) matches every observation.
   // It must never be CONFIRMED by elimination: "confirmed" needs the observation to match the
   // hypothesis's own prediction (found by `notary demo --fixture`; see test/demo.test.ts).

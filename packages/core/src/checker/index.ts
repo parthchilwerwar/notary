@@ -1,5 +1,5 @@
-export { anomalyId, checkAll, checkClaim, observationsByOperation } from "./check.js";
-export type { Observation } from "./check.js";
+export { anomalyId, checkAll, checkAllDetailed, checkClaim, checkClaimDetailed, observationsByOperation, observedClaimIds } from "./check.js";
+export type { ClaimCheck, Observation, UnobservableExchange } from "./check.js";
 export { containsValue, formatPath, parsePath, resolvePath, valuesAt } from "./path.js";
 export type { PathHit, PathSegment } from "./path.js";
 export { DEFAULT_MAX_DELAY_MS, DEFAULT_MAX_REPEAT, argsFor, resolveRefs, runRecon } from "./recon.js";

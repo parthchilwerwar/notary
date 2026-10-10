@@ -11,7 +11,8 @@
  *   never   no read
  * Predictions by class:
  *   honored -> within; eventual_consistency -> after; mislabelled_semantics -> never.
- * Uninformative: the write returned no id, or a read failed.
+ * Uninformative: the write returned no id (a 2xx write whose id path is absent is recorded in
+ * `missingPaths`), or a read failed.
  * Instrument: "the refund exists" must read differently before the write (control: its id in the
  * payment) and after it (treatment: direct getRefund found it). Equal readings mean the write
  * never landed, so a "never" would say nothing about refunds[].
@@ -21,7 +22,7 @@
  * The precheck reads refunds[] after both kinds of refund, so both kinds are exercised.
  */
 import { containsValue } from "../../checker/path.js";
-import { executeVariants, finishDesign, first, firstValue, informativeOutcome, is2xx, matchesOutcome, predictionsFor } from "./common.js";
+import { executeVariants, finishDesign, first, firstValue, informativeOutcome, is2xx, matchesOutcome, pathAbsent, predictionsFor } from "./common.js";
 import type { ClassTable } from "./common.js";
 import type { ProbeObservation, ProbeStep, ProbeTemplateModule } from "./types.js";
 
@@ -100,6 +101,7 @@ export const writeThenRead: ProbeTemplateModule = {
     const idPath = String(design.params.idPath ?? "refund_id");
     const write = first(exchanges, "treatment", "write");
     const id = is2xx(write) ? firstValue(write!.responseBody, idPath) : undefined;
+    const idAbsent = is2xx(write) && pathAbsent(write!.responseBody, idPath);
     const tags = ["read_now", "read_window", "read_late"] as const;
     const reads = tags.map((t) => first(exchanges, "treatment", t));
     const before = first(exchanges, "control", "before");
@@ -110,7 +112,7 @@ export const writeThenRead: ProbeTemplateModule = {
 
     let outcome: string | null = null;
     let note: string | undefined;
-    if (id === undefined || id === null) note = "the write returned no id";
+    if (id === undefined || id === null) note = idAbsent ? `the write returned no id (claim path ${idPath} absent)` : "the write returned no id";
     else if (seen.some((s) => s === null) || !is2xx(before)) note = "a read failed";
     else if (seen[0] || seen[1]) outcome = "within";
     else if (seen[2]) outcome = "after";
@@ -124,6 +126,7 @@ export const writeThenRead: ProbeTemplateModule = {
       control: { existsBefore },
       instrument: outcome === null ? null : { treatment: existsAfter, control: existsBefore },
       ...(note ? { note } : {}),
+      ...(idAbsent ? { missingPaths: [idPath] } : {}),
     };
   },
 

@@ -12,7 +12,8 @@
  *   honored -> rejected; silent_truncation -> clamped; silent_coercion -> reduced;
  *   undocumented_flag / mislabelled_semantics -> over_limit.
  * Uninformative ("a sweep that saw nothing"): treatment 2xx but the data set can't fill a page of
- * max (control at max returned fewer than max), or no usable response.
+ * max (control at max returned fewer than max), or no usable response. A 2xx at max+1 without a
+ * response list is recorded in `missingPaths` ("(response list)").
  * Instrument: the control at size 1 and the treatment at max+1 must read differently
  * (status + list length); if they read the same, the size parameter isn't reaching the API.
  */
@@ -129,6 +130,7 @@ export const boundarySweep: ProbeTemplateModule = {
       control: { one, atMax },
       instrument: outcome === null ? null : { treatment: over, control: one },
       ...(note ? { note } : {}),
+      ...(over.status !== null && over.status >= 200 && over.status < 300 && over.length === null ? { missingPaths: ["(response list)"] } : {}),
     };
   },
 

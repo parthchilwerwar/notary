@@ -11,7 +11,10 @@
  *   mislabelled_semantics-> other          (the field echoes something else)
  * Instrument: control and treatment echoes must differ (A != B); equal echoes mean the read-back
  * does not reflect what was sent.
- * Uninformative: either variant lacks a 2xx write with numeric sent and echoed amounts.
+ * Uninformative: either variant lacks a 2xx write with numeric sent and echoed amounts; in
+ * particular when the claim's echoed field path (or the sent request path) is ABSENT from a 2xx
+ * write (recorded in `missingPaths`): a path that doesn't match the real response never reads as
+ * "equal".
  */
 import type { Claim, Hypothesis } from "../../schema/index.js";
 import {
@@ -25,6 +28,7 @@ import {
   informativeOutcome,
   is2xx,
   matchesOutcome,
+  pathAbsent,
   predictionsFor,
 } from "./common.js";
 import type { ClassTable } from "./common.js";
@@ -150,9 +154,12 @@ export const unitRoundtrip: ProbeTemplateModule = {
 
   observe(exchanges: readonly TaggedExchange[], design, claim): ProbeObservation {
     const echoPath = claim.expect.kind === "unit" ? claim.expect.field : "";
+    const missing = new Set<string>();
     const read = (variant: "treatment" | "control") => {
       const ex = first(exchanges, variant, "write");
       if (!is2xx(ex)) return { status: ex?.status ?? null, sent: null, echoed: null };
+      if (pathAbsent(ex!.requestBody, claim.param)) missing.add(`request:${claim.param}`);
+      if (pathAbsent(ex!.responseBody, echoPath)) missing.add(echoPath);
       return {
         status: ex!.status,
         sent: asNumber(firstValue(ex!.requestBody, claim.param)),
@@ -162,7 +169,7 @@ export const unitRoundtrip: ProbeTemplateModule = {
     const treatment = read("treatment");
     const control = read("control");
     // Both variants must read back a number: without the control there is no instrument check.
-    const ok = treatment.sent !== null && treatment.echoed !== null && control.echoed !== null;
+    const ok = missing.size === 0 && treatment.sent !== null && treatment.echoed !== null && control.echoed !== null;
     const outcome = ok ? classifyRatio(treatment.sent!, treatment.echoed!) : null;
     const ratio = ok && treatment.sent !== 0 ? treatment.echoed! / treatment.sent! : null;
     return {
@@ -170,7 +177,15 @@ export const unitRoundtrip: ProbeTemplateModule = {
       treatment: { ...treatment, ratio },
       control,
       instrument: ok ? { treatment: treatment.echoed, control: control.echoed } : null,
-      ...(ok ? {} : { note: "treatment or control has no 2xx write with a numeric sent and echoed amount" }),
+      ...(ok
+        ? {}
+        : {
+            note:
+              missing.size > 0
+                ? `claim path(s) ${[...missing].sort().join(", ")} absent in a 2xx write: uninformative, not honored`
+                : "treatment or control has no 2xx write with a numeric sent and echoed amount",
+          }),
+      ...(missing.size > 0 ? { missingPaths: [...missing].sort() } : {}),
     };
   },
 

@@ -12,7 +12,7 @@ import type { RunBundle } from "../schema/index.js";
 import type { CheckResult } from "./checks.js";
 import { classify, latest, order, type SkippedBundle } from "./collect.js";
 import { commandFor, PRODUCE } from "./commands.js";
-import { compareExact } from "../eval/metrics.js";
+import { BELIEF_PRECISION_DISCLOSURE, compareExact } from "../eval/metrics.js";
 import { compareValues, directionOf } from "./compare.js";
 
 // --- table helpers ---------------------------------------------------------------------------
@@ -125,12 +125,12 @@ function prdRows(bundles: readonly RunBundle[]): string[][] {
     return `${base}; target ${nv > 0 && gv === 0 ? "met" : "NOT met"}`;
   });
 
-  // 2. Belief precision
+  // 2. Belief precision (AUDIT A-14: the note is printed next to the row whatever the value)
   const bp = latest(bundles, (b) => "belief_precision" in b.metrics);
   rows.push(
     bp
-      ? ["Belief precision", "≥ 0.8, false beliefs = 0", ...metricCells(bundles, bp, "belief_precision", directionNote(bp, "belief_precision"))]
-      : ["Belief precision", "≥ 0.8, false beliefs = 0", ...absent(`no bundle reports ${code("belief_precision")}; needs notarized beliefs`, PRODUCE.notarize("crustdata"))],
+      ? ["Belief precision", "≥ 0.8, false beliefs = 0", ...metricCells(bundles, bp, "belief_precision", withBpNote(directionNote(bp, "belief_precision")))]
+      : ["Belief precision", "≥ 0.8, false beliefs = 0", ...absent(`no bundle reports ${code("belief_precision")}; needs notarized beliefs`, PRODUCE.notarize("crustdata")).slice(0, -1), withBpNote("—")],
   );
   const fb = latest(bundles, (b) => "beliefs_false" in b.metrics);
   if (fb) rows.push(["False beliefs", "≥ 0.8, false beliefs = 0", ...metricCells(bundles, fb, "beliefs_false", "—")]);
@@ -200,6 +200,14 @@ function prdRows(bundles: readonly RunBundle[]): string[][] {
   return rows;
 }
 
+/** AUDIT A-14: belief_precision's note always carries the same-recording disclosure. */
+function withBpNote(note: string): string {
+  // Same text as the bundle disclosure, identifiers in backticks (the table rule: no bare numbers
+  // outside bundle values, and "A-14" is an identifier, not a number).
+  const disclosure = `Note: ${BELIEF_PRECISION_DISCLOSURE.replace("belief_precision", code("belief_precision")).replace("docs/AUDIT.md A-14", code("docs/AUDIT.md A-14"))}`;
+  return note === "—" || note === "" ? disclosure : `${note}; ${disclosure}`;
+}
+
 function directionNote(b: RunBundle, key: string): string {
   const v = b.metrics[key];
   return v === null || v === undefined ? "—" : `${directionOf(key)} is better; no earlier value to compare with`;
@@ -237,7 +245,14 @@ function bundleSection(bundles: readonly RunBundle[], b: RunBundle): string[] {
   const keys = Object.keys(b.metrics);
   const out = [`### ${code(b.runId)} — ${b.kind} / ${b.variant}${b.tool ? ` / ${b.tool}` : ""} (${b.mode}, ${b.status})`, ""];
   if (keys.length === 0) return [...out, "This bundle has no metrics.", ""];
-  const rows = keys.map((k) => [code(k), valueText(b, k), code(b.runId), code(commandFor(b)), floorText(floorFor(bundles, b, k)), comparisonFor(bundles, b, k)]);
+  const rows = keys.map((k) => [
+    code(k),
+    valueText(b, k),
+    code(b.runId),
+    code(commandFor(b)),
+    floorText(floorFor(bundles, b, k)),
+    k === "belief_precision" ? withBpNote(comparisonFor(bundles, b, k)) : comparisonFor(bundles, b, k),
+  ]);
   return [...out, ...table(METRIC_HEADER, rows), ""];
 }
 

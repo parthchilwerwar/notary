@@ -27,7 +27,7 @@ import { join } from "node:path";
 import { canonicalJson } from "../bundle/hash.js";
 import { finalizeBundle, writeBundle } from "../bundle/index.js";
 import type { UnhashedBundle } from "../bundle/index.js";
-import { consolidateMetrics } from "../eval/metrics.js";
+import { consolidateMetrics, withMetricDisclosures } from "../eval/metrics.js";
 import { pinIfPresent } from "../replay/pins.js";
 import { BeliefStore } from "../beliefs/store.js";
 import type { BeliefPrior } from "../beliefs/store.js";
@@ -40,6 +40,7 @@ import {
   transferPriors,
 } from "../beliefs/priors.js";
 import { RUNS_DIR } from "../checker/notarize.js";
+import { observedClaimIds } from "../checker/check.js";
 import { runRecon } from "../checker/recon.js";
 import type { ContractEntry } from "../contracts/types.js";
 import type { CompleteRequest, CompleteResult, LlmLike, UsageMeter } from "../llm/index.js";
@@ -373,7 +374,7 @@ export async function comparePriors(opts: ComparePriorsOptions): Promise<Compare
       cassettes: [pinIfPresent(`recon-${tool}`, cassetteDir), pinIfPresent(`probes-${tool}`, cassetteDir)],
     };
     // P8: every TDD metric (src/eval/metrics.ts); probes_to_candidate_with/_without_priors are kept.
-    const bundle = finalizeBundle({ ...draft, metrics: consolidateMetrics(draft, { checkedClaimIds: recon.observations.map((o) => o.claimId) }) });
+    const bundle = finalizeBundle(withMetricDisclosures({ ...draft, metrics: consolidateMetrics(draft, { checkedClaimIds: observedClaimIds(recon.entries, recon.observations) }) }));
     const { bundlePath } = await writeBundle(bundle, join(runsDir, runId));
     const lines = [...compare.lines, `bundle: ${bundlePath}`];
     return { exitCode: failed ? 1 : 0, lines, status, runId, bundlePath, compare };

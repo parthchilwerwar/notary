@@ -36,11 +36,12 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { finalizeBundle, verifyBundle, writeBundle } from "../bundle/index.js";
 import type { UnhashedBundle } from "../bundle/index.js";
-import { consolidateMetrics } from "../eval/metrics.js";
+import { consolidateMetrics, withMetricDisclosures } from "../eval/metrics.js";
 import { cassetteNames, pinIfPresent } from "../replay/pins.js";
 import { INPUTS_VERSION, saveInputs, snapshotStore } from "../replay/inputs.js";
 import { RecordingLlm } from "../replay/llm-cassette.js";
 import { RUNS_DIR } from "../checker/notarize.js";
+import { observedClaimIds } from "../checker/check.js";
 import { runRecon } from "../checker/recon.js";
 import type { ReconResult } from "../checker/recon.js";
 import { LlmClient, ModelConfigError } from "../llm/index.js";
@@ -721,10 +722,12 @@ async function writeNotarizeBundle(a: {
     cassettes: a.cassettes,
   };
   // P8: every TDD metric (src/eval/metrics.ts); belief precision's ground truth = the checker's verdicts on this run's recon.
-  const bundle = finalizeBundle({
-    ...draft,
-    metrics: consolidateMetrics(draft, { checkedClaimIds: recon.observations.map((o) => o.claimId), unguardedCallSites: a.unguardedCallSites }),
-  });
+  const bundle = finalizeBundle(
+    withMetricDisclosures({
+      ...draft,
+      metrics: consolidateMetrics(draft, { checkedClaimIds: observedClaimIds(recon.entries, recon.observations), unguardedCallSites: a.unguardedCallSites }),
+    }),
+  );
   const dir = join(a.opts.runsDir ?? RUNS_DIR, runId);
   const { bundlePath } = await writeBundle(bundle, dir);
 

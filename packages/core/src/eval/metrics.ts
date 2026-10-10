@@ -12,7 +12,9 @@
  *                         grader (queue runs); null for notarize bundles
  *   beliefs_<status>      count of beliefs.after per status (hypothesis, candidate, notarized,
  *                         refuted, abstained, unlearned); null for the naive variant (no store)
- *   belief_precision      see beliefPrecision below; with beliefs_false and belief_precision_n
+ *   belief_precision      see beliefPrecision below; with beliefs_false and belief_precision_n.
+ *                         NOT independent: ground truth is the checker on the same recording
+ *                         (AUDIT A-14); withMetricDisclosures adds BELIEF_PRECISION_DISCLOSURE
  *   unguarded_call_sites  `notary guards coverage --json` → unguarded_call_sites, tsc backend; null
  *                         when the caller did not run the check
  *   credits_total, credits_<endpoint>   Crustdata credits charged (the run's ledger)
@@ -65,9 +67,11 @@ export interface GroundTruthSides {
  * Ground truth for belief precision, ONLY from recorded evidence the deterministic checker judged
  * (never from a model, never from the belief's own probes):
  *   violated — the bundle has an anomaly for the claim (the recorded wire contradicted the doc);
- *   honored  — the claim had at least one recorded, checked recon observation and no anomaly.
- * `checkedClaimIds` (claims with ≥ 1 checked observation) is needed for the honored side; without
- * it only the violated side is known.
+ *   honored  — the checker actually OBSERVED the claim (checkClaimDetailed observed > 0) on
+ *              recorded recon traffic and found no anomaly. A claim whose field path never
+ *              resolved in any 2xx response was not checked and is NOT ground truth.
+ * `checkedClaimIds` must be the OBSERVED claims (src/checker observedClaimIds), not every claim
+ * that merely had an exchange; without it only the violated side is known.
  */
 export function checkerGroundTruth(anomalies: RunBundle["anomalies"], checkedClaimIds?: Iterable<string>): GroundTruthSides {
   const out: GroundTruthSides = {};
@@ -97,13 +101,29 @@ export function beliefPrecision(beliefs: readonly Belief[], truth: GroundTruthSi
 }
 
 export interface ConsolidateContext {
-  /** Claims the checker judged on recorded recon observations (notarize); see checkerGroundTruth. */
+  /** Claims the checker OBSERVED (observed > 0) on recorded recon traffic (notarize; src/checker observedClaimIds); see checkerGroundTruth. */
   checkedClaimIds?: Iterable<string>;
   /** unguarded_call_sites from the coverage check; null/undefined = not run. */
   unguardedCallSites?: number | null;
 }
 
 const round9 = (x: number): number => Math.round(x * 1e9) / 1e9;
+
+/**
+ * AUDIT A-14: belief_precision's ground truth is the deterministic checker on the SAME recording
+ * the probes chased, so it measures recon/probe agreement, not independent precision. The key
+ * stays `belief_precision` (packages/web reads it); every bundle that reports a non-null value
+ * carries this disclosure, and docs/EVALUATION.md prints it next to the metric row.
+ */
+export const BELIEF_PRECISION_DISCLOSURE =
+  "belief_precision is measured against the deterministic checker on the SAME recording (not an independent ground truth); see docs/AUDIT.md A-14";
+
+/** The bundle with every metric disclosure it needs appended to `disclosure` (idempotent). */
+export function withMetricDisclosures<T extends { disclosure: string[]; metrics: Metrics }>(bundle: T): T {
+  const needs = bundle.metrics.belief_precision !== null && bundle.metrics.belief_precision !== undefined;
+  if (!needs || bundle.disclosure.includes(BELIEF_PRECISION_DISCLOSURE)) return bundle;
+  return { ...bundle, disclosure: [...bundle.disclosure, BELIEF_PRECISION_DISCLOSURE] };
+}
 
 /** bundle.metrics with every consolidated key filled in (existing keys are kept). */
 export function consolidateMetrics(bundle: BundleLike, ctx: ConsolidateContext = {}): Metrics {

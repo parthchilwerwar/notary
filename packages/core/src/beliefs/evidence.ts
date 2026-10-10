@@ -11,8 +11,9 @@
  *   5. the probe actually VARIED the claim's parameter (see params.ts `paramVariation`: treatment
  *      vs control values at claim.param, or count/exercise for templates whose variable is the
  *      repeat count / the input record),
- *   6. the observation was informative: verdict confirmed, a non-null observed outcome, and the
- *      span's notary.verdict (when present) agrees.
+ *   6. the observation was informative: verdict confirmed, a non-null observed outcome, no claim
+ *      field path absent from the response (observed.missingPaths empty), and the span's
+ *      notary.verdict (when present) agrees.
  * Any failure → that evidence is invalid (the store marks valid:false and reverts the belief to
  * hypothesis).
  *
@@ -39,6 +40,12 @@ export interface EvidenceCheck extends EvidenceVerdict {
 function attr(span: SpanRecord, key: string): string | undefined {
   const v = span.attrs?.[key];
   return v === undefined ? undefined : String(v);
+}
+
+function missingPathsOf(observed: unknown): string[] {
+  if (typeof observed !== "object" || observed === null || !("missingPaths" in observed)) return [];
+  const v = (observed as { missingPaths: unknown }).missingPaths;
+  return Array.isArray(v) ? v.map(String) : [];
 }
 
 function outcomeOf(observed: unknown): unknown {
@@ -95,6 +102,8 @@ export function checkEvidence(input: {
       if (probe.verdict !== "confirmed") failures.push(`uninformative: verdict ${probe.verdict ?? "(none)"}`);
       const outcome = outcomeOf(probe.observed);
       if (outcome === null || outcome === undefined) failures.push("uninformative: no observed outcome");
+      const missing = missingPathsOf(probe.observed);
+      if (missing.length) failures.push(`uninformative: claim path(s) absent from the response (${missing.join(", ")})`);
     }
 
     return {

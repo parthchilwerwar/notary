@@ -21,7 +21,7 @@ import { emitEvent } from "../api/bus.js";
 import { BeliefStore, beliefIdFor } from "../beliefs/store.js";
 import { finalizeBundle, writeBundle } from "../bundle/index.js";
 import type { UnhashedBundle } from "../bundle/index.js";
-import { consolidateMetrics } from "../eval/metrics.js";
+import { consolidateMetrics, withMetricDisclosures } from "../eval/metrics.js";
 import { INPUTS_VERSION, pinFile, saveInputs, snapshotStore } from "../replay/inputs.js";
 import type { StoreSnapshot } from "../replay/inputs.js";
 import { pinIfPresent } from "../replay/pins.js";
@@ -575,7 +575,7 @@ async function writeRunBundle(a: {
     ],
   };
   const unguarded = opts.unguardedCallSites ? await opts.unguardedCallSites() : null;
-  const bundle = finalizeBundle({ ...draft, metrics: consolidateMetrics(draft, { unguardedCallSites: unguarded }) });
+  const bundle = finalizeBundle(withMetricDisclosures({ ...draft, metrics: consolidateMetrics(draft, { unguardedCallSites: unguarded }) }));
   const metrics = bundle.metrics;
 
   const { bundlePath } = await writeBundle(bundle, join(opts.runsDir ?? RUNS_DIR, runId));

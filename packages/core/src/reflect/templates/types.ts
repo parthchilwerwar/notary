@@ -78,6 +78,13 @@ export interface ProbeObservation {
   instrument: { treatment: unknown; control: unknown } | null;
   /** Why the observation is uninformative, when it is. */
   note?: string;
+  /**
+   * Claim field paths (response paths; "request:<path>" for a sent value) that resolved to NOTHING
+   * in a 2xx response this observation needed. Non-empty => the observation is UNINFORMATIVE
+   * (outcome null; judge() enforces it whatever the template says) and never valid evidence: a
+   * path that doesn't match the real response can't show the claim honored.
+   */
+  missingPaths?: string[];
 }
 
 /**

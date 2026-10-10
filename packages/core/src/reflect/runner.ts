@@ -141,7 +141,13 @@ export async function runProbe(opts: RunProbeOptions): Promise<RunProbeResult> {
       const calls = Math.max(exchanges.length, callsAfter - callsBefore);
       const costCredits = Math.max(0, Math.round((ledger.total - creditsBefore) * 1e6) / 1e6);
       const observed = observation
-        ? { outcome: observation.outcome, ...observation.treatment, ...(observation.note ? { note: observation.note } : {}), reason: verdict.reason }
+        ? {
+            outcome: observation.outcome,
+            ...observation.treatment,
+            ...(observation.note ? { note: observation.note } : {}),
+            ...(observation.missingPaths?.length ? { missingPaths: [...observation.missingPaths] } : {}),
+            reason: verdict.reason,
+          }
         : { outcome: null, error: errorText(rethrow ?? stoppedReason), reason: verdict.reason };
       const controlObserved = observation ? observation.control : undefined;
 

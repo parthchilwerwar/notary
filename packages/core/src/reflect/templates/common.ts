@@ -1,7 +1,7 @@
 /** Shared helpers for probe templates: predictions, step execution, cost estimates, tool adapter. */
 import { canonicalJson } from "../../bundle/hash.js";
 import { resolveRefs, argsFor } from "../../checker/recon.js";
-import { valuesAt } from "../../checker/path.js";
+import { resolvePath, valuesAt } from "../../checker/path.js";
 import { contractEntryById } from "../../contracts/index.js";
 import type { ContractEntry } from "../../contracts/types.js";
 import type { Claim, DefectClass, Hypothesis } from "../../schema/index.js";
@@ -49,7 +49,17 @@ export function matchesOutcome(prediction: PredictedObservation, observation: Pr
 }
 
 export function informativeOutcome(observation: ProbeObservation): boolean {
-  return observation.outcome !== null;
+  return observation.outcome !== null && !observation.missingPaths?.length;
+}
+
+/**
+ * True when `path` is ABSENT from `body`: it expands to at least one location and none was found.
+ * An empty `[]` expansion (an empty list) is "nothing to inspect", not absent. Present-but-null is
+ * present.
+ */
+export function pathAbsent(body: unknown, path: string): boolean {
+  const hits = resolvePath(body, path);
+  return hits.length > 0 && !hits.some((h) => h.found);
 }
 
 export function is2xx(ex: Exchange | undefined): boolean {

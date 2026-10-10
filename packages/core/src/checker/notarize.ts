@@ -10,13 +10,14 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { canonicalJson, finalizeBundle, writeBundle } from "../bundle/index.js";
 import type { UnhashedBundle } from "../bundle/index.js";
-import { consolidateMetrics } from "../eval/metrics.js";
+import { consolidateMetrics, withMetricDisclosures } from "../eval/metrics.js";
 import { INPUTS_VERSION, saveInputs } from "../replay/inputs.js";
 import { pinIfPresent } from "../replay/pins.js";
 import type { ContractEntry } from "../contracts/types.js";
 import type { RunBundle, Tool } from "../schema/index.js";
 import { DEFAULT_CASSETTE_DIR, TestModeLockError, computeContentHash, isBlocked, loadCassette, saveCassette } from "../tools/index.js";
 import type { CreditLedger } from "../tools/index.js";
+import { checkAllDetailed, observedClaimIds } from "./check.js";
 import { runRecon } from "./recon.js";
 import type { ReconResult } from "./recon.js";
 
@@ -77,6 +78,12 @@ export function formatReconSummary(r: ReconResult, extra: { runId: string; bundl
   const notRun = r.steps.filter((s) => s.status !== "ran");
   for (const s of notRun) lines.push(`step ${s.status}: ${s.claimId}#${s.stepIndex} ${s.op} — ${s.reason ?? ""}`);
   const sorted = [...r.anomalies].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  // A claim whose field path never resolved was not checked: say so, never let it read as honored.
+  for (const c of checkAllDetailed(r.entries, r.observations)) {
+    if (c.observed > 0 || c.unobservable.length === 0) continue;
+    const paths = [...new Set(c.unobservable.map((u) => u.path))].sort().join(", ");
+    lines.push(`not observed: ${c.claimId} — path absent in ${c.unobservable.length} 2xx exchange(s) (${paths}); no anomaly, not honored`);
+  }
   lines.push(`anomalies: ${sorted.length}`);
   for (const a of sorted) {
     lines.push(`${a.id}  ${a.claimId}  observed=${canonicalJson(a.observed ?? null)}  expected=${canonicalJson(a.expected ?? null)}`);
@@ -187,10 +194,12 @@ export async function reconOnly(opts: ReconOnlyOptions): Promise<ReconOnlyResult
     cassettes,
   };
   const unguarded = opts.unguardedCallSites ? await opts.unguardedCallSites() : null;
-  const bundle = finalizeBundle({
-    ...draft,
-    metrics: consolidateMetrics(draft, { checkedClaimIds: recon.observations.map((o) => o.claimId), unguardedCallSites: unguarded }),
-  });
+  const bundle = finalizeBundle(
+    withMetricDisclosures({
+      ...draft,
+      metrics: consolidateMetrics(draft, { checkedClaimIds: observedClaimIds(recon.entries, recon.observations), unguardedCallSites: unguarded }),
+    }),
+  );
 
   const dir = join(opts.runsDir ?? RUNS_DIR, runId);
   const { bundlePath } = await writeBundle(bundle, dir);
