@@ -14,7 +14,7 @@ export type DoctorReport = {
 
 export async function runDoctor(): Promise<DoctorReport> {
   const notes: string[] = [];
-  const tracing = await initTracing({ serviceName: "notary" });
+  const tracing = await initTracing({ serviceName: "doctor" });
 
   if (!tracing.enabled) {
     notes.push(`tracing disabled: ${tracing.reason ?? "unknown reason"}; no span sent`);

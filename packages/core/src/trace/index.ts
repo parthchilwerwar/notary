@@ -56,6 +56,11 @@
  * initial attributes plus any set later through `onSpan`'s setter, with the same secret masking
  * as exported spans. Sink write failures never break the traced work.
  *
+ * Entry points: each CLI command inits with its own `workflowName` (notarize, recon, queue-run,
+ * noise-floor, doctor) and roots its work under `withWorkflow`. Bedrock calls are captured by the
+ * SDK's `wrapBedrock` (via `traceBedrockClient`); the manual "notary.llm" span around each call is
+ * a CHAIN that only adds role and USD, so each model call yields exactly one LLM span.
+ *
  * Secrets: no env var value is ever put into an attribute by this module. As a backstop, a
  * global `mask` scrubs the value of any secret-looking env var (…KEY, …TOKEN, …SECRET, …PASSWORD)
  * from every exported span and log, and attribute keys that look like credentials are dropped.
@@ -335,6 +340,49 @@ export async function withSpan<T>(
       finish(e);
       throw e;
     }
+  }
+}
+
+/**
+ * Root one CLI entry point under a neatlogs WORKFLOW span named `name`, so every span the command
+ * opens lands in one trace. Export-only: nothing is written to the local span sink (the root sits
+ * outside any run's spans.jsonl). Pass-through when tracing is off; an SDK failure before `fn`
+ * starts runs `fn` untraced, and errors from `fn` are rethrown unchanged.
+ */
+export async function withWorkflow<T>(name: string, fn: () => Promise<T> | T): Promise<T> {
+  const mod = sdk;
+  if (!mod) return await fn();
+  let started = false;
+  let finished = false;
+  let result: T | undefined;
+  try {
+    return await mod.trace<T>(
+      { name, kind: "WORKFLOW", attributes: safeAttrs(runId ? { "notary.runId": runId } : {}) },
+      async () => {
+        started = true;
+        result = await fn();
+        finished = true;
+        return result;
+      },
+    );
+  } catch (err) {
+    if (finished) return result as T;
+    if (started) throw err;
+    return await fn();
+  }
+}
+
+/**
+ * Wrap a BedrockRuntimeClient with the SDK's `wrapBedrock`, which emits one LLM span per
+ * Converse/InvokeModel call (model, messages, completion, token usage). Returns the client
+ * unchanged when tracing is off or wrapping fails. Exported spans pass through the secret mask.
+ */
+export function traceBedrockClient<T extends object>(client: T): T {
+  if (!sdk) return client;
+  try {
+    return sdk.wrapBedrock(client);
+  } catch {
+    return client;
   }
 }
 

@@ -57,7 +57,7 @@ export function buildProgram(): Command {
           if (result.exitCode !== 0) process.exitCode = result.exitCode;
           return;
         }
-        const { initTracing, shutdownTracing } = await import("./trace/index.js");
+        const { initTracing, shutdownTracing, withWorkflow } = await import("./trace/index.js");
         if (!opts.reconOnly) {
           // Full loop: recon -> checker -> hypotheses -> probes -> beliefs -> evidence check -> adversary.
           const { notarize, recordedRunId } = await import("./reflect/notarize.js");
@@ -76,16 +76,16 @@ export function buildProgram(): Command {
               return;
             }
           }
-          await initTracing({ serviceName: "notary" });
+          await initTracing({ serviceName: "notarize" });
           try {
-            const result = await notarize({
+            const result = await withWorkflow(`notarize.${opts.tool}`, () => notarize({
               tool: opts.tool,
               replay: opts.replay === true,
               adversary: opts.adversary ?? "bedrock",
               ...(opts.priorsFrom ? { priorsFrom: opts.priorsFrom } : {}),
               ...(opts.priorsBundle ? { priorsBundle: opts.priorsBundle } : {}),
               unguardedCallSites: unguardedCallSitesMetric,
-            });
+            }));
             for (const line of result.lines) (result.exitCode === 0 ? console.log : console.error)(line);
             if (result.exitCode !== 0) process.exitCode = result.exitCode;
           } finally {
@@ -95,7 +95,7 @@ export function buildProgram(): Command {
         }
         const { reconOnly } = await import("./checker/notarize.js");
         // Replay touches no network at all, tracing export included.
-        if (!opts.replay) await initTracing({ serviceName: "notary" });
+        if (!opts.replay) await initTracing({ serviceName: "recon" });
         try {
           if (opts.replay) {
             const { DEFAULT_CASSETTE_DIR, listCassettes } = await import("./tools/index.js");
@@ -106,7 +106,9 @@ export function buildProgram(): Command {
             }
           }
           const { unguardedCallSitesMetric } = await import("./eval/metrics.js");
-          const result = await reconOnly({ tool: opts.tool, replay: opts.replay === true, unguardedCallSites: unguardedCallSitesMetric });
+          const result = await withWorkflow(`recon.${opts.tool}`, () =>
+            reconOnly({ tool: opts.tool, replay: opts.replay === true, unguardedCallSites: unguardedCallSitesMetric }),
+          );
           for (const line of result.lines) (result.exitCode === 0 ? console.log : console.error)(line);
           if (result.exitCode !== 0) process.exitCode = result.exitCode;
         } finally {
@@ -129,19 +131,20 @@ export function buildProgram(): Command {
       if (opts.run && !opts.resume) throw new Error("--run <runId> is only used with --resume");
       const { runQueue } = await import("./queue/run.js");
       const { unguardedCallSitesMetric } = await import("./eval/metrics.js");
-      const { initTracing, shutdownTracing } = await import("./trace/index.js");
+      const { initTracing, shutdownTracing, withWorkflow } = await import("./trace/index.js");
       const replay = opts.replay !== undefined;
-      if (!replay) await initTracing({ serviceName: "notary" });
+      if (!replay) await initTracing({ serviceName: "queue-run" });
       try {
-        const result = await runQueue({
+        const variant = opts.naive ? "naive" : "guarded";
+        const result = await withWorkflow(`queue-run.${variant}`, () => runQueue({
           ...(opts.queue ? { queueFile: opts.queue } : {}),
-          variant: opts.naive ? "naive" : "guarded",
+          variant,
           mode: replay ? "replay" : "live",
           ...(replay ? { cassette: opts.replay! } : {}),
           ...(opts.resume ? { resume: true } : {}),
           ...(opts.run ? { runId: opts.run } : {}),
           unguardedCallSites: unguardedCallSitesMetric,
-        });
+        }));
         for (const line of result.lines) (result.exitCode === 0 ? console.log : console.error)(line);
         if (result.exitCode !== 0) process.exitCode = result.exitCode;
       } finally {
@@ -181,15 +184,15 @@ export function buildProgram(): Command {
       const { runNoiseFloor } = await import("./eval/noise-floor.js");
       const { unguardedCallSitesMetric } = await import("./eval/metrics.js");
       const { resolveInputPath } = await import("./queue/run.js");
-      const { initTracing, shutdownTracing } = await import("./trace/index.js");
-      if (!opts.replay) await initTracing({ serviceName: "notary" });
+      const { initTracing, shutdownTracing, withWorkflow } = await import("./trace/index.js");
+      if (!opts.replay) await initTracing({ serviceName: "noise-floor" });
       try {
-        const result = await runNoiseFloor({
+        const result = await withWorkflow("noise-floor", () => runNoiseFloor({
           queueFile: resolveInputPath(opts.queue),
           runs,
           ...(opts.replay ? { replay: true, env: {} } : {}),
           unguardedCallSites: unguardedCallSitesMetric,
-        });
+        }));
         for (const line of result.lines) (result.exitCode === 0 ? console.log : console.error)(line);
         process.exitCode = result.exitCode;
       } finally {

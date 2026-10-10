@@ -12,14 +12,15 @@
  * module never reads, passes or logs a credential. If the chain finds none, the SDK's
  * CredentialsProviderError is rethrown as the BLOCKED error.
  *
- * Every call opens a neatlogs span "notary.llm" with role, model id, token counts and USD. Prompts
- * are never put in span attributes. Usage accumulates per role in a UsageMeter, whose snapshot is
+ * Every call opens a neatlogs span "notary.llm" (CHAIN) with role, model id, token counts and USD;
+ * prompts are never put in its attributes. Under it, the SDK's wrapBedrock emits the LLM span,
+ * which does carry the (already secret-scrubbed) messages and completion. Usage accumulates per role in a UsageMeter, whose snapshot is
  * the bundle's `usageByRole`.
  */
 import type { ConverseCommandInput, ConverseCommandOutput } from "@aws-sdk/client-bedrock-runtime";
 import type { Role, UsageByRole } from "../schema/index.js";
 import { MissingCredentialError } from "../tools/errors.js";
-import { withSpan } from "../trace/index.js";
+import { traceBedrockClient, withSpan } from "../trace/index.js";
 import { costUsd, resolvePrice } from "./pricing.js";
 import { ROLES, requireModel, resolveModels } from "./roles.js";
 import type { ModelRoster } from "./roles.js";
@@ -114,7 +115,8 @@ export function bedrockTransport(region: string): ConverseTransport {
   return async (input) => {
     if (!client || !ConverseCommandCtor) {
       const sdk = await import("@aws-sdk/client-bedrock-runtime");
-      client = new sdk.BedrockRuntimeClient({ region }) as unknown as typeof client;
+      // wrapBedrock (when tracing is on) emits the LLM span with messages, completion and usage.
+      client = traceBedrockClient(new sdk.BedrockRuntimeClient({ region })) as unknown as typeof client;
       ConverseCommandCtor = sdk.ConverseCommand;
     }
     return (await client!.send(new ConverseCommandCtor!(input))) as ConverseCommandOutput;
@@ -198,7 +200,8 @@ export class LlmClient implements LlmLike {
         }
         return { text, inputTokens, outputTokens, usd, modelId, stopReason };
       },
-      { kind: "LLM", onSpan: (_ids, set) => (setAttr = set) },
+      // CHAIN, not LLM: the wrapped Bedrock client emits the LLM child span (no double capture).
+      { kind: "CHAIN", onSpan: (_ids, set) => (setAttr = set) },
     );
   }
 }

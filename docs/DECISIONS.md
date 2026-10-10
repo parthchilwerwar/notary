@@ -158,3 +158,9 @@ Where the docs and reality disagree, or a choice the docs leave open. Newest pha
 | 88 | Grader and wallet credits | Ground truth includes wallet ledgers; credits are graded for wrong_unit and duplicate; metrics null when a ledger can't be read | A ×100 credit was graded safe |
 | 89 | `expected.json` q07 | Final action corrected to "no new refund" (`expectedStatus: denied`) for an already-refunded payment; policy outcome kept as `policyAction`. Corrected before any live run | The old entry graded the only safe action as wrong |
 | 90 | Adversary "narrow" | Scope compiles into `guard.rule.scope` (e.g. `{currency: ["USD"]}`); out-of-scope or undeterminable calls are blocked; unparseable scope → block. Scope text like "USD only: …" is accepted only when the explanation adds no number/currency/restriction (heuristic). Narrowed *honored* beliefs still compile no guard (known gap) | Narrow was silently ignored |
+
+## Session 4
+
+| # | Docs say | Reality / decision | Why |
+| --- | --- | --- | --- |
+| 91 | neatlogs spans (TDD Integrations) | Each CLI entry point inits its own `workflowName` (notarize, recon, queue-run, noise-floor, doctor) and roots its work under a WORKFLOW span (`withWorkflow`). Bedrock clients are wrapped with the SDK's `wrapBedrock`, which emits one LLM span per call **including the (already secret-scrubbed) messages and completion**; the manual `notary.llm` span became a CHAIN adding role + USD. Pass-through when tracing is off | From the separate "Neatlogs tracing setup" session; reviewed and committed on its own |

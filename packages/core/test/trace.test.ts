@@ -1,5 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { flushTracing, initTracing, traceLog, tracingEnabled, withSpan } from "../src/trace/index.js";
+import {
+  flushTracing,
+  initTracing,
+  traceBedrockClient,
+  traceLog,
+  tracingEnabled,
+  withSpan,
+  withWorkflow,
+} from "../src/trace/index.js";
 import { runDoctor } from "../src/trace/doctor.js";
 
 describe("tracing with NEATLOGS_API_KEY unset", () => {
@@ -53,5 +61,17 @@ describe("tracing with NEATLOGS_API_KEY unset", () => {
     expect(report.spanId).toBeUndefined();
     expect(report.traceId).toBeUndefined();
     expect(report.notes.join(" ")).toContain("NEATLOGS_API_KEY not set");
+  });
+});
+
+describe("entry-point helpers with tracing off", () => {
+  it("withWorkflow passes the result and errors through", async () => {
+    expect(await withWorkflow("test.workflow", async () => 42)).toBe(42);
+    await expect(withWorkflow("test.workflow", () => Promise.reject(new Error("boom")))).rejects.toThrow("boom");
+  });
+
+  it("traceBedrockClient returns the same client", () => {
+    const client = { send: async () => ({}) };
+    expect(traceBedrockClient(client)).toBe(client);
   });
 });
