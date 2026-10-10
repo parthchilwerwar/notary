@@ -1,6 +1,7 @@
 // THE route table for /app. Sidebar, breadcrumbs, document titles, the command palette and the
 // router all read it. To build a page in a later phase, replace its `element` here; to add a
 // page, add a row (and a `group` if it belongs in the sidebar).
+import { AskPage } from "./components/ask/AskPage";
 import { MissionControlPage } from "./pages/mission-control/MissionControlPage";
 import type { ComponentType, ReactElement } from "react";
 import { matchPath } from "react-router";
@@ -35,7 +36,6 @@ import {
 } from "./pages/trust";
 import {
   ApprovalsPage,
-  AskPage,
   DecisionDetailPage,
   QueuePage,
 } from "./pages/act";

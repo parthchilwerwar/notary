@@ -16,6 +16,7 @@ import {
 import { NAV_GROUPS, matchAppRoute, routeById, routes, type AppRoute } from "../../routes";
 import { useData } from "../../state/DataProvider";
 import { MODE_LABEL, heldCount, withRun } from "../../state/data-mode";
+import { ASK_KEYSHORTCUTS, ASK_SHORTCUT_LABEL, useAsk } from "../ask";
 
 /** Badge counts from the current data world; undefined while unknown (never a placeholder 0). */
 export function useBadges(): Record<"held" | "revocations", number | undefined> {
@@ -41,6 +42,7 @@ export function AppSidebar() {
   const { selectedRunId, mode, source, evidence } = useData();
   const { setOpenMobile, isMobile } = useSidebar();
   const badges = useBadges();
+  const ask = useAsk();
   const active = activeNavId(pathname);
   const neatlogs =
     evidence.status === "ready"
@@ -77,7 +79,25 @@ export function AppSidebar() {
                         <Link
                           to={withRun(r.path, selectedRunId)}
                           aria-current={active === r.id ? "page" : undefined}
-                          onClick={() => isMobile && setOpenMobile(false)}
+                          onClick={(e) => {
+                            if (isMobile) setOpenMobile(false);
+                            // "Ask Notary" opens the panel; modified clicks (new tab) and the
+                            // full page itself keep the link to /app/ask.
+                            if (
+                              r.id === "ask" &&
+                              active !== "ask" &&
+                              e.button === 0 &&
+                              !(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)
+                            ) {
+                              e.preventDefault();
+                              ask.setOpen(true);
+                            }
+                          }}
+                          {...(r.id === "ask" ? {
+                            "aria-haspopup": "dialog" as const,
+                            "aria-keyshortcuts": ASK_KEYSHORTCUTS,
+                            title: `Open the Ask Notary panel (${ASK_SHORTCUT_LABEL})`,
+                          } : {})}
                         >
                           <r.icon size={18} aria-hidden="true" />
                           <span className="sidebar-label">{r.title}</span>

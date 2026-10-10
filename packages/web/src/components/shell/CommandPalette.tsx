@@ -5,6 +5,8 @@ import { MagnifyingGlassIcon as MagnifyingGlass } from "@phosphor-icons/react/di
 import { useData } from "../../state/DataProvider";
 import { paletteEntries, withRun } from "../../state/data-mode";
 import { routes } from "../../routes";
+import { ASK_SHORTCUT_LABEL, useAsk } from "../ask";
+import { ChatCircleTextIcon as ChatCircleText } from "@phosphor-icons/react/dist/csr/ChatCircleText";
 
 /** Pages that can be opened without a record id (no `:param`). */
 export const paletteRoutes = () => routes.filter((r) => !r.path.includes(":"));
@@ -24,6 +26,16 @@ export function CommandPalette({
   const { bundle, certificates, selectedRunId } = useData();
   const [search, setSearch] = useState("");
   const input = useRef<HTMLInputElement>(null);
+  const ask = useAsk();
+  // One overlay at a time: opening Ask (Ctrl+J) closes the palette, and opening the palette closes Ask.
+  useEffect(() => {
+    if (ask.open) onOpenChange(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ask.open]);
+  useEffect(() => {
+    if (open) ask.setOpen(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
   const records = useMemo(
     () =>
       paletteEntries(
@@ -90,6 +102,19 @@ export function CommandPalette({
           </div>
           <Command.List>
             <Command.Empty>No page or record matches.</Command.Empty>
+            <Command.Group heading="Ask">
+              <Command.Item
+                value="ask notary panel question answer explain why held"
+                onSelect={() => {
+                  onOpenChange(false);
+                  ask.setOpen(true);
+                }}
+              >
+                <ChatCircleText size={16} aria-hidden="true" />
+                <span>Open the Ask Notary panel</span>
+                <small>{ASK_SHORTCUT_LABEL}</small>
+              </Command.Item>
+            </Command.Group>
             <Command.Group heading="Pages">
               {paletteRoutes().map((r) => (
                 <Command.Item

@@ -8,6 +8,7 @@ import { MagnifyingGlassIcon as MagnifyingGlass } from "@phosphor-icons/react/di
 import { ShieldCheckIcon as ShieldCheck } from "@phosphor-icons/react/dist/csr/ShieldCheck";
 import { ArrowsClockwiseIcon as Reload } from "@phosphor-icons/react/dist/csr/ArrowsClockwise";
 import { CaretRightIcon as CaretRight } from "@phosphor-icons/react/dist/csr/CaretRight";
+import { ChatCircleTextIcon as ChatCircleText } from "@phosphor-icons/react/dist/csr/ChatCircleText";
 import {
   SidebarInset,
   SidebarProvider,
@@ -20,6 +21,7 @@ import { EmptyState, ErrorState, LoadingState } from "../ui/states";
 import { AppSidebar } from "./AppSidebar";
 import { CommandPalette } from "./CommandPalette";
 import { RunPicker } from "./RunPicker";
+import { ASK_KEYSHORTCUTS, ASK_SHORTCUT_LABEL, AskProvider, AskSheet, useAsk } from "../ask";
 import { useTheme } from "../../useTheme";
 import { useData } from "../../state/DataProvider";
 import { LiveToasts } from "../../state/live";
@@ -60,6 +62,7 @@ function TopBar({
 }) {
   const crumbs = useCrumbs();
   const { selectedRunId } = useData();
+  const ask = useAsk();
   return (
     <header className="app-topbar">
       <SidebarTrigger />
@@ -88,6 +91,18 @@ function TopBar({
           <MagnifyingGlass size={16} aria-hidden="true" />
           <span className="palette-trigger-text">Search</span>
           <kbd>Ctrl K</kbd>
+        </button>
+        <button
+          type="button"
+          className="palette-trigger"
+          onClick={() => ask.setOpen(true)}
+          aria-haspopup="dialog"
+          aria-keyshortcuts={ASK_KEYSHORTCUTS}
+          aria-label={`Ask Notary (${ASK_SHORTCUT_LABEL})`}
+        >
+          <ChatCircleText size={16} aria-hidden="true" />
+          <span className="palette-trigger-text">Ask</span>
+          <kbd>{ASK_SHORTCUT_LABEL}</kbd>
         </button>
         <button
           type="button"
@@ -202,6 +217,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     window.scrollTo(0, 0);
   }, [pathname]);
   return (
+    <AskProvider>
     <SidebarProvider>
       <a className="skip" href="#main">
         Skip to content
@@ -228,8 +244,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
       </SidebarInset>
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+      <AskSheet />
       <Toaster theme={dark ? "dark" : "light"} position="bottom-right" />
       <LiveToasts />
     </SidebarProvider>
+    </AskProvider>
   );
 }
