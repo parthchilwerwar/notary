@@ -44,3 +44,19 @@ describe("pending public exports", () => {
     ).rejects.toThrow();
   });
 });
+
+describe("invalid JSON is a plain-language error", () => {
+  it("names the file and withholds it", async () => {
+    reply(new Response("{oops", { headers: { "content-type": "application/json" } }));
+    await expect(readOptionalJSON("certificates/report.json")).rejects.toThrow(
+      "certificates/report.json is not valid JSON. Data withheld.",
+    );
+  });
+  it("does the same for the tool evidence file", async () => {
+    const { loadEvidence } = await import("../src/landing-data");
+    reply(new Response("{oops", { headers: { "content-type": "application/json" } }));
+    await expect(loadEvidence()).rejects.toThrow("evidence/evidence.json is not valid JSON. Data withheld.");
+    reply(new Response('[{"name":1}]', { headers: { "content-type": "application/json" } }));
+    await expect(loadEvidence()).rejects.toThrow("does not match the evidence schema");
+  });
+});

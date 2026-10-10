@@ -251,7 +251,7 @@ export function WorldNote({ world }: { world: CertificateWorld }) {
 
 export function CountsRow({ counts }: { counts: ReportCounts }) {
   return (
-    <div className="kpi-grid">
+    <div className="kpi-grid counts-row">
       <KpiCard label="Claims" value={number(counts.claimsTotal)} />
       <KpiCard
         label="Certified"
@@ -303,7 +303,7 @@ export function CertificatesView({
           <h2>Certificates</h2>
           <p>
             Behavior certified within the scope it was probed. Missing proof
-            never receives a seal.
+            never receives a seal. <SealCount certificates={world.certificates} />
           </p>
         </div>
         {world.certificates.length ? (
@@ -323,6 +323,28 @@ export function CertificatesView({
   );
 }
 
+/** "9 active · 1 revoked": counted from the certificate records shown below. */
+function SealCount({ certificates }: { certificates: CertificateRecord[] }) {
+  if (!certificates.length) return null;
+  const revoked = certificates.filter((c) => c.status === "revoked").length;
+  const active = certificates.length - revoked;
+  return (
+    <>
+      {number(active)} active
+      {revoked > 0 && <> · {number(revoked)} revoked, kept on record</>}.
+    </>
+  );
+}
+
+/** The recorded reason, without repeating the status pill beside it. */
+export function reasonText(row: Pick<NoCertificate, "kind" | "reason">): string {
+  const kind = label(row.kind).toLowerCase();
+  const reason = row.reason.trim();
+  if (reason.toLowerCase() === kind) return "";
+  const prefix = `${kind}: `;
+  return reason.toLowerCase().startsWith(prefix) ? reason.slice(prefix.length) : reason;
+}
+
 export function NoCertificateTable({ rows }: { rows: NoCertificate[] }) {
   if (!rows.length) return null;
   return (
@@ -333,26 +355,29 @@ export function NoCertificateTable({ rows }: { rows: NoCertificate[] }) {
       </div>
       <Card className="table-card">
         <div className="table-scroll">
-          <table className="data-table">
+          <table className="data-table cert-table">
             <thead>
               <tr>
                 <th>Claim</th>
                 <th>Tool</th>
                 <th>Why</th>
-                <th>P(holds)</th>
+                <th className="num">P(holds)</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((row) => (
                 <tr key={`${row.tool}-${row.claimId}`}>
-                  <td>
+                  <td data-label="Claim">
                     <code>{row.claimId}</code>
                   </td>
-                  <td>{row.tool}</td>
-                  <td>
-                    <StatusPill value={row.kind} /> <span>{row.reason}</span>
+                  <td data-label="Tool">{row.tool}</td>
+                  <td data-label="Why">
+                    <span>
+                      <StatusPill value={row.kind} />
+                      {reasonText(row) && <span className="why"> {reasonText(row)}</span>}
+                    </span>
                   </td>
-                  <td>
+                  <td className="num" data-label="P(holds)">
                     {row.confidence === undefined
                       ? "Not tested"
                       : percent(row.confidence)}
@@ -456,7 +481,7 @@ export function CertificateDetail({
         </div>
         <Card className="table-card">
           <div className="table-scroll">
-            <table className="data-table">
+            <table className="data-table cert-table">
               <thead>
                 <tr>
                   <th>Probe</th>
@@ -468,22 +493,20 @@ export function CertificateDetail({
               <tbody>
                 {certificate.evidence.map((e) => (
                   <tr key={e.probeId}>
-                    <td>
+                    <td data-label="Probe">
                       <ProbeChip
                         probeId={e.probeId}
                         bundles={bundles}
                         sample={certificate.sample}
                       />
                     </td>
-                    <td>{e.template ? label(e.template) : "Not recorded"}</td>
-                    <td>
-                      {e.verdict ? (
-                        <StatusPill value={e.verdict} />
-                      ) : (
-                        "Not recorded"
-                      )}
+                    <td data-label="Template">{e.template ? label(e.template) : "Not recorded"}</td>
+                    <td data-label="Verdict">
+                      <span>
+                        {e.verdict ? <StatusPill value={e.verdict} /> : "Not recorded"}
+                      </span>
                     </td>
-                    <td>{e.observed ?? "Not recorded"}</td>
+                    <td data-label="Observed">{e.observed ?? "Not recorded"}</td>
                   </tr>
                 ))}
               </tbody>

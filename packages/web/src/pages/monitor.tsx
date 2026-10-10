@@ -16,7 +16,7 @@ import {
   StatusPill,
 } from "../components/ui";
 import { useData } from "../state/DataProvider";
-import { recordPath, withRun } from "../state/data-mode";
+import { recordPath, scenarioKey, withRun } from "../state/data-mode";
 import { date, label, number, percent } from "../data";
 import { RecordNotFound, useBundle, useRunPath } from "./shared";
 import type { BundleIndexEntry, RunBundle } from "../../../core/src/schema";
@@ -83,7 +83,10 @@ function RunTable({
                 <td>
                   {r.kind} / {r.variant}
                 </td>
-                <td>{r.mode}</td>
+                {/* Fixture runs record mode "live" against simulated APIs; never show that bare. */}
+                <td title={`Recorded mode: ${r.mode}`}>
+                  {r.sample ? `fixture · ${r.mode}` : r.mode}
+                </td>
                 <td>
                   <StatusPill value={r.status} />
                 </td>
@@ -178,7 +181,7 @@ export function RunDetailPage() {
           )
         }
       />
-      <div className="kpi-grid">
+      <div className="kpi-grid kpi-grid-3">
         <KpiCard label="Decisions" value={number(run.decisions.length)} />
         <KpiCard label="Probes" value={number(run.probes.length)} />
         <KpiCard
@@ -262,9 +265,11 @@ export function RunDetailPage() {
 export function ProbesPage() {
   const bundle = useBundle();
   const { bundles } = useData();
-  const withProbes = bundles.filter(
-    (b) => b.sample === bundle.sample && b.probes.length,
-  );
+  // Same cohort only; runs from the selected run's own fixture scenario first.
+  const own = (b: RunBundle) => scenarioKey(b.runId) === scenarioKey(bundle.runId);
+  const withProbes = bundles
+    .filter((b) => b.sample === bundle.sample && b.probes.length)
+    .sort((a, b) => Number(own(b)) - Number(own(a)));
   return (
     <>
       <PageHeader

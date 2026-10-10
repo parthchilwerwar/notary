@@ -80,6 +80,19 @@
   font-size: 15px;
   overflow-wrap: anywhere;
 }
+.trail-decided[data-unsafe] {
+  border-left-color: var(--unsafe);
+}
+.trail-decided .trail-unsafe {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--unsafe);
+}
+.trail-decided .trail-unsafe svg {
+  flex-shrink: 0;
+}
 .trail-note {
   margin: 0;
   font-size: 12px;
@@ -342,14 +355,23 @@ a.trail-ref:hover {
     height: 22px;
     font-size: 11px;
   }
+  /* Tag and label share the first row; value and references span the card below. */
   .trail-line {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 6px;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 6px var(--space-2);
     padding: var(--space-3);
   }
   .trail-line-value,
   .trail-refs {
-    grid-column: auto;
+    grid-column: 1 / -1;
+  }
+  .trail-refs {
+    gap: 6px;
+  }
+  /* Phone tap targets: every linked chip is at least 40px tall. */
+  a.trail-ref {
+    min-height: 40px;
+    padding: 0 12px;
   }
   .trail-line-key {
     flex-direction: row;

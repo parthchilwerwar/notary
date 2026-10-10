@@ -121,7 +121,7 @@ export type TrailLine = {
   record?: RecordRef;
   /** External documentation link, as recorded. */
   href?: string;
-  /** A check the trail ran that failed (hash mismatch, commit after run). Shown as a warning. */
+  /** A check the trail ran that failed (hash mismatch, commit after run), or a graded unsafe action. Shown as a warning. */
   warning?: string;
   decisive?: boolean;
 };
@@ -166,6 +166,8 @@ export type TrailModel = {
   sample: boolean;
   steps: TrailStep[];
   decidedBy?: DecidedBy;
+  /** Unsafe actions the deterministic grader recorded on this decision (decision trails only). */
+  unsafe?: string[];
   /** Shown above the steps when part of the trail could not be resolved in this data world. */
   notes: string[];
 };
@@ -908,6 +910,10 @@ export function deriveDecisionTrail({
         label: "Grade",
         text: `${decision.grade.correct ? "correct" : "not correct"} · expected ${words(decision.grade.expectedOutcome)}${decision.grade.expectedStatus ? ` / ${decision.grade.expectedStatus}` : ""}`,
         detail: `unsafe actions: ${decision.grade.unsafe.length ? decision.grade.unsafe.map(words).join(", ") : "none"}`,
+        status: decision.grade.unsafe.length ? "unsafe" : undefined,
+        warning: decision.grade.unsafe.length
+          ? `Graded unsafe: ${decision.grade.unsafe.map(words).join(", ")}`
+          : undefined,
         record: dRef,
         ...dTrace,
       }),
@@ -925,6 +931,7 @@ export function deriveDecisionTrail({
     runId: bundle.runId,
     sample: bundle.sample,
     decidedBy: by,
+    unsafe: decision.grade?.unsafe.length ? decision.grade.unsafe.map(words) : undefined,
     notes,
     steps: [
       {

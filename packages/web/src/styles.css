@@ -19,6 +19,8 @@
   --color-blue: var(--blue);
   --color-safe: var(--safe);
   --color-unsafe: var(--unsafe);
+  --color-destructive: var(--unsafe);
+  --color-destructive-foreground: var(--surface);
   --color-surface: var(--surface);
   --color-canvas: var(--canvas);
   --color-line: var(--line);
@@ -65,15 +67,17 @@
   --canvas: #f3f3ef;
   --surface: #fff;
   --fg: #24292f;
-  --muted: #636b73;
+  --muted: #5f676f;
   --line: #e3e5e3;
+  /* Boundary of form controls (inputs, selects): at least 3:1 against surface and canvas. */
+  --control-line: #868d94;
   --hover: #f0f1ee;
-  --blue: #3269d5;
+  --blue: #2d62cb;
   --blue-soft: #edf3ff;
   --primary: #24292f;
   --primary-fg: #fff;
   --hatch-bg: #e8edf5;
-  --hatch-line: #a9b6cc;
+  --hatch-line: #7d8da8;
   --safe: #176940;
   --safe-bg: #e6f3eb;
   --unsafe: #a93433;
@@ -87,6 +91,7 @@
   --fg: #eef0f1;
   --muted: #a6afb8;
   --line: #363d44;
+  --control-line: #78818a;
   --hover: #292f35;
   --blue: #88acff;
   --blue-soft: #273750;
@@ -125,12 +130,16 @@ button,
 summary {
   cursor: pointer;
 }
-a {
-  color: var(--blue);
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
+/* Base link style lives in the base layer so component utilities (e.g. a primary
+   <Button asChild><Link>, text-primary-foreground) override it. */
+@layer base {
+  a {
+    color: var(--blue);
+    text-decoration: none;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
 }
 button:focus-visible,
 a:focus-visible,
@@ -237,7 +246,7 @@ h1 {
   margin: 8px 0 12px;
 }
 select {
-  border: 1px solid var(--line);
+  border: 1px solid var(--control-line);
   background: var(--surface);
   color: var(--fg);
   border-radius: 99px;
@@ -462,14 +471,11 @@ select {
   border-radius: 4px;
   overflow: hidden;
 }
+/* Single focus series: solid fill. Hatching is reserved for comparison series. */
 .segmented-track > span {
   height: 100%;
   display: flex;
-  background: repeating-linear-gradient(
-    125deg,
-    var(--hatch-bg) 0 4px,
-    var(--hatch-line) 4px 5px
-  );
+  background: var(--blue);
 }
 .segmented-track i {
   flex: 1;
@@ -621,16 +627,18 @@ select {
   align-items: center;
   gap: 8px;
   color: var(--muted);
-  border: 1px solid var(--line);
+  border: 1px solid var(--control-line);
   background: var(--surface);
   border-radius: 99px;
-  padding: 12px 16px;
+  padding: 0 16px;
+  min-height: 44px;
 }
 .search input {
   background: none;
   border: 0;
   color: var(--fg);
   width: 208px;
+  height: 42px;
   font-size: 12px;
   outline: none;
 }
@@ -1705,4 +1713,28 @@ meter::-moz-meter-bar {
 }
 .certificate-card.revoked .certificate-seal svg {
   border-color: var(--unsafe);
+}
+
+/* Six-KPI rows (run detail): three across, two on tablets and phones. */
+.kpi-grid.kpi-grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 1200px) {
+  .kpi-grid.kpi-grid-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 767px) {
+  .trace-columns a.trace {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+  }
+}
+@media (max-width: 700px) {
+  .record-chip {
+    min-height: 40px;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
 }

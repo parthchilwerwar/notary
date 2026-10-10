@@ -18,10 +18,10 @@ import { Button } from "../ui/button";
 import { FixtureBanner } from "../ui/fixture-banner";
 import { StatusPill } from "../ui/status-pill";
 import { EmptyState, ErrorState, LoadingState } from "../ui/states";
-import { AppSidebar } from "./AppSidebar";
+import { AppSidebar, dataStatusLabel } from "./AppSidebar";
 import { CommandPalette } from "./CommandPalette";
 import { RunPicker } from "./RunPicker";
-import { ASK_KEYSHORTCUTS, ASK_SHORTCUT_LABEL, AskProvider, AskSheet, useAsk } from "../ask";
+import { ASK_KEYSHORTCUTS, ASK_SHORTCUT_LABEL, AskProvider, AskSheet, MOD_KEY_LABEL, useAsk } from "../ask";
 import { useTheme } from "../../useTheme";
 import { useData } from "../../state/DataProvider";
 import { LiveToasts } from "../../state/live";
@@ -86,11 +86,13 @@ function TopBar({
           type="button"
           className="palette-trigger"
           onClick={onPalette}
-          aria-label="Open command palette (Ctrl+K)"
+          aria-haspopup="dialog"
+          aria-keyshortcuts="Control+K Meta+K"
+          aria-label={`Open command palette (${MOD_KEY_LABEL} K)`}
         >
           <MagnifyingGlass size={16} aria-hidden="true" />
           <span className="palette-trigger-text">Search</span>
-          <kbd>Ctrl K</kbd>
+          <kbd>{MOD_KEY_LABEL} K</kbd>
         </button>
         <button
           type="button"
@@ -206,7 +208,7 @@ function Gate({ children }: { children: ReactNode }) {
 export function AppShell({ children }: { children: ReactNode }) {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [dark, setDark] = useTheme();
-  const { bundle, mode } = useData();
+  const { bundle, mode, loading, error } = useData();
   const { pathname } = useLocation();
   const match = matchAppRoute(pathname);
   useEffect(() => {
@@ -238,7 +240,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           <footer className="page-footer">
             <span>Notary · Evidence before action.</span>
             <span>
-              {MODE_LABEL[mode]} data · Browser-verified integrity
+              {bundle
+                ? `${MODE_LABEL[mode]} data`
+                : `Data: ${dataStatusLabel({ bundle, loading, error, mode }).toLowerCase()}`}{" "}
+              · Browser-verified integrity
             </span>
           </footer>
         </main>

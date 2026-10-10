@@ -132,6 +132,31 @@
 .desk-trail > summary {
   cursor: pointer;
   color: var(--muted);
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  list-style: none;
+}
+.desk-trail > summary::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 5px 0 5px 7px;
+  border-color: transparent transparent transparent currentColor;
+  transition: transform 120ms;
+}
+.desk-trail[open] > summary::before {
+  transform: rotate(90deg);
+}
+.desk-trail > summary::-webkit-details-marker {
+  display: none;
+}
+.desk-trail > summary:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+  border-radius: 8px;
 }
 .desk-trail[open] > summary {
   margin-bottom: var(--space-3);
@@ -192,7 +217,8 @@
   min-width: 0;
   height: 40px;
   padding: 0 var(--space-4);
-  border: 1px solid var(--line);
+  /* Inputs need a 3:1 boundary (WCAG 1.4.11); the hairline token is decorative only. */
+  border: 1px solid color-mix(in srgb, var(--muted) 80%, var(--surface));
   border-radius: 12px;
   background: var(--canvas);
   color: var(--fg);
@@ -275,7 +301,18 @@ textarea.approval-input {
   opacity: 0.9;
 }
 
+@media (max-width: 700px) {
+  .desk-evidence a.record-chip {
+    min-height: 40px;
+    padding: 0 12px;
+  }
+}
 @media (max-width: 600px) {
+  .desk-evidence a.trace,
+  .desk-facts a.trace {
+    min-height: 40px;
+    align-items: center;
+  }
   .desk-item {
     padding: var(--space-4);
   }

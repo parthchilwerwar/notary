@@ -1,76 +1,123 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { MoonIcon as Moon } from "@phosphor-icons/react/dist/csr/Moon";
 import { SunIcon as Sun } from "@phosphor-icons/react/dist/csr/Sun";
 import { ShieldCheckIcon as ShieldCheck } from "@phosphor-icons/react/dist/csr/ShieldCheck";
-import type { RunBundle } from "../../core/src/schema";
+import type { CertificateReport, RunBundle, TimelineFile } from "../../core/src/schema";
 import { Button } from "./components/ui/button";
-import { Card } from "./components/ui/card";
 import { Hero } from "./components/landing/Hero";
-import { ProblemBento } from "./components/landing/ProblemBento";
+import { DoubleRefund } from "./components/landing/DoubleRefund";
 import { ProcessSteps } from "./components/landing/ProcessSteps";
-import { ResultsStrip } from "./components/landing/ResultsStrip";
+import { MissionReplay } from "./components/landing/MissionReplay";
+import { RequiredTools } from "./components/landing/RequiredTools";
+import { Results } from "./components/landing/Results";
 import { FinalCTA } from "./components/landing/FinalCTA";
 import { LandingFooter } from "./components/landing/LandingFooter";
 import { useTheme } from "./useTheme";
-import { loadCatalog, safeLink } from "./data";
-import { loadEvidence, landingResults } from "./landing-data";
+import { loadCatalog } from "./data";
+import { loadCertificateWorld } from "./state/certificates";
+import type { EvidenceEntry } from "./state/DataProvider";
+import {
+  fixturePair,
+  landingResults,
+  loadEvidence,
+  loadReplay,
+  realRuns,
+  replayRunIds,
+} from "./landing-data";
+import { unsafeDecisionIds } from "./pages/mission-control/model";
 import "./landing.css";
+
+const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
 export default function Landing() {
   const [dark, setDark] = useTheme();
   const [all, setAll] = useState<RunBundle[]>([]);
-  const [tools, setTools] = useState<Awaited<ReturnType<typeof loadEvidence>>>(
-    [],
-  );
   const [bundleError, setBundleError] = useState("");
-  const [toolError, setToolError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [tools, setTools] = useState<EvidenceEntry[]>([]);
+  const [toolError, setToolError] = useState("");
+  const [toolsLoading, setToolsLoading] = useState(true);
+  const [timelines, setTimelines] = useState<TimelineFile[]>([]);
+  const [replayError, setReplayError] = useState("");
+  const [replayLoading, setReplayLoading] = useState(true);
+  const [fixtureReport, setFixtureReport] = useState<{ scenario?: string; report: CertificateReport }>();
+  const [realReport, setRealReport] = useState<CertificateReport>();
+  const [certError, setCertError] = useState("");
+
   useEffect(() => {
+    document.title = "Notary — certificates for API behavior";
     const controller = new AbortController();
-    loadCatalog(controller.signal)
-      .then((b) => {
-        if (!controller.signal.aborted) {
-          setAll(b);
-          setLoading(false);
-        }
+    const { signal } = controller;
+    const live = () => !signal.aborted;
+    loadCatalog(signal)
+      .then(async (bundles) => {
+        if (!live()) return;
+        setAll(bundles);
+        setLoading(false);
+        await Promise.all([
+          loadReplay(bundles, signal)
+            .then((files) => live() && setTimelines(files))
+            .catch((e) => live() && setReplayError(message(e)))
+            .finally(() => live() && setReplayLoading(false)),
+          // The fixture certificate scenario whose sources include this world's notarize runs.
+          loadCertificateWorld(
+            true,
+            replayRunIds(bundles)[0],
+            signal,
+          )
+            .then(
+              (w) =>
+                live() &&
+                w &&
+                setFixtureReport({ scenario: w.scenario, report: w.report }),
+            )
+            .catch((e) => live() && setCertError(message(e))),
+          loadCertificateWorld(false, undefined, signal)
+            .then((w) => live() && w && setRealReport(w.report))
+            .catch((e) => live() && setCertError(message(e))),
+        ]);
       })
       .catch((e) => {
-        if (!controller.signal.aborted) {
-          setBundleError(e.message);
-          setLoading(false);
-        }
+        if (!live()) return;
+        setBundleError(message(e));
+        setLoading(false);
+        setReplayLoading(false);
       });
-    loadEvidence(controller.signal)
-      .then((entries) => {
-        if (!controller.signal.aborted) setTools(entries);
-      })
-      .catch((e) => {
-        if (!controller.signal.aborted) setToolError(e.message);
-      });
+    loadEvidence(signal)
+      .then((entries) => live() && setTools(entries))
+      .catch((e) => live() && setToolError(message(e)))
+      .finally(() => live() && setToolsLoading(false));
     return () => controller.abort();
   }, []);
-  const results = landingResults(all);
-  const hasResults = !!(results.naive || results.guarded);
-  const fixture = results.sample && hasResults;
+
+  const fixture = fixturePair(all);
+  const real = landingResults(all.filter((b) => !b.sample));
+  const realCounts = realRuns(all);
+  const unsafe = useMemo(() => {
+    const ids = new Set<string>();
+    for (const f of timelines) {
+      const b = all.find((x) => x.runId === f.runId);
+      if (b) for (const id of unsafeDecisionIds(b)) ids.add(id);
+    }
+    return ids;
+  }, [timelines, all]);
+
   return (
     <div className="landing">
       <a className="skip" href="#landing-main">
         Skip to content
       </a>
-      {fixture && (
-        <div className="fixture-banner" role="note">
-          <ShieldCheck size={18} aria-hidden="true" />
-          <span>Fixture data — simulated APIs, not a live run</span>
-        </div>
-      )}
       <header className="landing-header">
-        <Link className="brand" to="/">
+        <Link className="brand" to="/" aria-label="Notary home">
           <ShieldCheck size={23} aria-hidden="true" />
           Notary<span className="brand-period">.</span>
         </Link>
-        <nav aria-label="Landing navigation">
+        <nav aria-label="Landing sections">
           <a href="#problem">The problem</a>
           <a href="#how-it-works">How it works</a>
+          <a href="#replay">Replay</a>
+          <a href="#required-tools">Tools</a>
           <a href="#results">Results</a>
         </nav>
         <div className="landing-header-actions">
@@ -89,117 +136,29 @@ export default function Landing() {
       </header>
       <main id="landing-main">
         <Hero />
-        <ProblemBento />
+        <DoubleRefund
+          naive={fixture.naive}
+          guarded={fixture.guarded}
+          loading={loading}
+          error={bundleError}
+        />
         <ProcessSteps />
-        <section id="required-tools" className="landing-section">
-          <div className="chapter-heading">
-            <span className="eyebrow">Required tools</span>
-            <h2>Evidence needs a paper trail.</h2>
-            <p>
-              Tool roles and integration status come from the published evidence
-              file.
-            </p>
-          </div>
-          {toolError && (
-            <p role="alert" className="landing-data-error">
-              {toolError} Tool status remains Pending.
-            </p>
-          )}
-          <div className="landing-tools">
-            {["neatlogs", "Entire", "cfo.ai"].map((name) => {
-              const tool = tools.find(
-                (t) => t.name.toLowerCase() === name.toLowerCase(),
-              );
-              return (
-                <Card className="landing-tool" key={name}>
-                  <div className="tool-title">
-                    <h3>{name}</h3>
-                    <span
-                      className={`tool-status ${tool?.status === "live" ? "recorded" : ""}`}
-                    >
-                      {tool?.status ?? "Pending"}
-                    </span>
-                  </div>
-                  <p>{tool?.purpose ?? "Pending"}</p>
-                  {tool?.notes && (
-                    <details className="record-details">
-                      <summary>Evidence and limitations</summary>
-                      <p>{tool.notes}</p>
-                    </details>
-                  )}
-                  <div className="tool-links">
-                    {tool?.links.map(
-                      (link) =>
-                        safeLink(link.url) && (
-                          <a
-                            key={link.url}
-                            href={safeLink(link.url)}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            {link.label} ↗
-                          </a>
-                        ),
-                    )}
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        </section>
-        <section id="results" className="landing-section">
-          <div className="chapter-heading">
-            <span className="eyebrow">Results</span>
-            <h2>Naive vs guarded. Read the receipts.</h2>
-            <p>
-              Naive and guarded outcomes, directly from browser-verified
-              bundles.
-            </p>
-          </div>
-          {fixture && (
-            <p className="landing-fixture-label">
-              Fixture data — simulated APIs with planted quirks
-            </p>
-          )}
-          {loading ? (
-            <div className="result-state" role="status">
-              Verifying result bundles…
-            </div>
-          ) : bundleError ? (
-            <div className="result-state" role="alert">
-              <h3>Results unavailable</h3>
-              <p>{bundleError}</p>
-            </div>
-          ) : !hasResults ? (
-            <div className="result-state">
-              <h3>
-                {results.sample
-                  ? "Results pending"
-                  : "Live queue results pending"}
-              </h3>
-              <p>
-                Publish naive and guarded queue bundles to compare their
-                outcomes.
-              </p>
-            </div>
-          ) : (
-            <>
-              <p className="cohort-label">
-                {results.sample ? "Fixture comparison" : "Recorded live runs"}
-                {(!results.naive || !results.guarded) &&
-                  " · counterpart pending"}
-              </p>
-              <ResultsStrip naive={results.naive} guarded={results.guarded} />
-              <Button variant="outline" asChild>
-                <Link
-                  to={`/app/runs?run=${encodeURIComponent((results.guarded ?? results.naive)!.runId)}${results.naive && results.guarded ? `&baseline=${encodeURIComponent(results.naive.runId)}` : ""}`}
-                >
-                  Inspect the run comparison
-                </Link>
-              </Button>
-            </>
-          )}
-        </section>
+        <MissionReplay
+          files={timelines}
+          unsafe={unsafe}
+          loading={loading || replayLoading}
+          error={bundleError || replayError}
+        />
+        <RequiredTools tools={tools} error={toolError} loading={toolsLoading} />
+        <Results
+          loading={loading}
+          error={bundleError}
+          fixture={fixture}
+          real={{ ...realCounts, naive: real.naive, guarded: real.guarded }}
+          fixtureReport={fixtureReport}
+          realReport={realReport}
+          certError={certError}
+        />
         <FinalCTA />
         <LandingFooter />
       </main>

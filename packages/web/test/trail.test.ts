@@ -52,6 +52,9 @@ function world(runId: string): CertificateWorld {
   };
 }
 
+/** Derives a trail for every decision of a run; CPU-bound, so it gets room when the machine is busy. */
+const HEAVY = { timeout: 30_000 };
+
 const allLines = (m: TrailModel): TrailLine[] =>
   m.steps.flatMap((s) => [...s.lines, ...s.groups.flatMap((g) => g.lines)]);
 
@@ -184,7 +187,7 @@ describe("DecisionTrail derivation", () => {
     expect(rev.detail).not.toContain("after this decision ran");
   });
 
-  it("Verified lines never repeat the adversary's own words", () => {
+  it("Verified lines never repeat the adversary's own words", HEAVY, () => {
     for (const b of bundles.filter((x) => x.kind === "run")) {
       const w = world(b.runId);
       const reasons = [...b.beliefs.after, ...bundles.flatMap((x) => x.beliefs.after)]
@@ -236,7 +239,7 @@ describe("DecisionTrail derivation", () => {
     expect(line.decisive).toBe(false);
   });
 
-  it("every line of every decision has exactly one tag; verified lines carry the record's trace id", () => {
+  it("every line of every decision has exactly one tag; verified lines carry the record's trace id", HEAVY, () => {
     for (const b of bundles.filter((x) => x.kind === "run")) {
       const w = world(b.runId);
       for (const d of b.decisions) {
@@ -321,6 +324,38 @@ describe("CertificateTrail derivation", () => {
             expect(l.record.runId.startsWith("demo-change-api-")).toBe(
               w.scenario === "change-api",
             );
+      }
+  });
+});
+
+describe("graded unsafe actions", () => {
+  it("the naive run's unsafe decisions carry a red Grade line and a model-level flag, matching the run metric", HEAVY, () => {
+    const naive = byId("demo-run-naive");
+    let flagged = 0;
+    for (const d of naive.decisions) {
+      const t = deriveDecisionTrail({ bundle: naive, decisionId: d.id, bundles, world: world(naive.runId) })!;
+      const grade = t.steps[4].lines.find((l) => l.source === "grade")!;
+      const unsafe = d.grade?.unsafe ?? [];
+      if (unsafe.length) {
+        flagged += unsafe.length;
+        expect(grade.status).toBe("unsafe");
+        expect(grade.tag).toBe("verified");
+        expect(grade.warning).toContain(unsafe[0]!.replaceAll("_", " "));
+        expect(t.unsafe).toEqual(unsafe.map((u) => u.replaceAll("_", " ")));
+      } else {
+        expect(grade.status).toBeUndefined();
+        expect(grade.warning).toBeUndefined();
+        expect(t.unsafe).toBeUndefined();
+      }
+    }
+    expect(flagged).toBe(naive.metrics.unsafe_actions_total);
+  });
+
+  it("guarded runs have no unsafe flags", HEAVY, () => {
+    for (const b of [byId("demo-run-guarded"), changeApi])
+      for (const d of b.decisions) {
+        const t = deriveDecisionTrail({ bundle: b, decisionId: d.id, bundles, world: world(b.runId) })!;
+        expect(t.unsafe).toBeUndefined();
       }
   });
 });

@@ -10,7 +10,7 @@ import { matchAppRoute, routeById } from "../../routes";
  * Switching runs on a record page returns to that record's list, since record ids are per run.
  */
 export function RunPicker() {
-  const { runGroups, selectedRunId, loading } = useData();
+  const { runGroups, selectedRunId, loading, error } = useData();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const onChange = (runId: string) => {
@@ -34,7 +34,7 @@ export function RunPicker() {
         onChange={(e) => onChange(e.target.value)}
       >
         {empty && (
-          <option value="">{loading ? "Loading runs…" : "No runs published"}</option>
+          <option value="">{loading ? "Loading runs…" : error ? "Runs withheld" : "No runs published"}</option>
         )}
         {runGroups.map((group) => (
           <optgroup key={group.kind} label={group.label}>

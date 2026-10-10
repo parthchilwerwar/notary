@@ -43,10 +43,11 @@ Machine-readable copy for the dashboard: [packages/web/public/evidence/evidence.
 - Certificates: `notary export --certificates` → `export/REPORT.md` (real: 0 bundles, all claims "not tested"); fixture reports under `packages/web/public/certificates/fixture/<scenario>/`.
 - `docs/EVALUATION.md` is generated from real bundles only: **0 real bundles today**, so every PRD headline metric is "not measured yet".
 
-## v2 — Agent Control Center (in progress)
+## v2 — Agent Control Center (V0–V5 shipped)
 
 - V1 core support shipped: run timelines, deterministic explain engine (`explain.json`), local `POST /api/ask` and `GET/POST /api/approvals` (localhost + per-session token, Dodo test mode only), browser-safe certificate schemas. 780 core tests pass.
 - V2–V4 dashboard shipped (Claude Code now owns `packages/web`): app shell with ⌘K palette and record URLs, Mission control (five-stage graph, event feed, budget meters, live SSE / fixture replay), decision trail with "Model said" / "Verified" tags, Ask Notary (⌘J, cited answers), Approval desk (typed-amount confirm, local test mode only). 138 web tests.
+- V5: landing page at `/`, full screenshot review (1440/390, light/dark) with contrast and state fixes, Vercel config (not deployed yet). Tests: 780 core + 152 web.
 - Blocked on keys: Ask answers (Bedrock executor model), live approvals (Dodo test key + real held items).
 
 ## Dashboard data (JSON only)

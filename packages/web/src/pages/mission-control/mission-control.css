@@ -521,6 +521,30 @@
   .replay-scrub {
     flex-basis: 100%;
   }
+  /* Phone: every transport control and feed link is at least a 40px tap target. */
+  .replay-buttons > button {
+    min-height: 40px;
+  }
+  .speed-group button {
+    height: 40px;
+    min-width: 44px;
+  }
+  .replay-scrub input {
+    height: 40px;
+    margin: 0;
+  }
+  .filter-chip {
+    min-height: 40px;
+  }
+  .feed-links {
+    gap: 0 16px;
+  }
+  .feed-record,
+  .feed-trace {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .stage-graph .react-flow__edge.animated path {
@@ -532,4 +556,8 @@
   .stage-node {
     transition: none;
   }
+}
+
+.mc-nowrap {
+  white-space: nowrap;
 }

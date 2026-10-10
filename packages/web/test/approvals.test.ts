@@ -305,7 +305,8 @@ describe("local API calls (mocked fetch)", () => {
   });
 });
 
-describe("rendered desk", () => {
+// Renders full decision trails (hundreds of lines) in jsdom: CPU-bound, so allow for a busy machine.
+describe("rendered desk", { timeout: 30_000 }, () => {
   async function renderPage(source: "api" | "static", bundle: RunBundle, others: RunBundle[] = []) {
     mockData.current = { source, bundles: [bundle, ...others], bundle, selectedRunId: bundle.runId };
     const { ApprovalsPage } = await import("../src/pages/approvals");

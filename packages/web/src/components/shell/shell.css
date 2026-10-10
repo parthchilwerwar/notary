@@ -4,10 +4,15 @@
   min-height: 100vh;
   width: 100%;
 }
+/* Desktop: the sidebar is fixed to the viewport (full height, never scrolls with content); the
+   inset reserves its width. Below 768px it is an off-canvas drawer instead. */
 .sidebar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  bottom: 0;
+  left: 0;
   height: 100vh;
+  height: 100dvh;
   flex-shrink: 0;
   width: var(--sidebar-width);
   display: flex;
@@ -207,6 +212,13 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
+  transition: margin-left 180ms ease;
+}
+.sidebar-wrapper[data-mobile="false"] > .sidebar-inset {
+  margin-left: var(--sidebar-width);
+}
+.sidebar-wrapper[data-mobile="false"][data-state="collapsed"] > .sidebar-inset {
+  margin-left: var(--sidebar-width-icon);
 }
 .app-topbar {
   position: sticky;
@@ -217,7 +229,7 @@
   align-items: center;
   gap: var(--space-3);
   padding: 0 var(--space-8);
-  background: color-mix(in srgb, var(--canvas) 92%, transparent);
+  background: var(--canvas);
   backdrop-filter: none;
   border-bottom: 1px solid var(--line);
 }
@@ -448,4 +460,65 @@ kbd {
   .app-main {
     padding: var(--space-5) var(--space-4) var(--space-4);
   }
+}
+
+/* Drawer close button (mobile only; the top-bar trigger sits under the open drawer). */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.sidebar-close {
+  display: none;
+}
+.sidebar.mobile .sidebar-close {
+  display: inline-flex;
+}
+
+/* Phone: 40px minimum tap targets in the shell. */
+@media (max-width: 767px) {
+  .icon-button,
+  .palette-trigger {
+    width: 40px;
+    height: 40px;
+  }
+  .run-picker .select-control select {
+    min-height: 40px;
+  }
+  .sidebar.mobile .sidebar-menu-button {
+    height: 44px;
+  }
+  .run-receipt .disclosures > summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+  }
+  .table-scroll td a {
+    display: inline-block;
+    padding: 11px 0;
+  }
+}
+@media (max-width: 767px) {
+  .breadcrumb a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 var(--space-2);
+  }
+}
+
+/* The sidebar column's colour and edge also paint on the wrapper, so the column runs the full
+   document height even where a fixed element is not repainted (full-page captures, print). */
+.sidebar-wrapper[data-mobile="false"] {
+  --sidebar-current: var(--sidebar-width);
+  background: linear-gradient(
+    to right,
+    var(--sidebar-bg) 0 calc(var(--sidebar-current) - 1px),
+    var(--line) calc(var(--sidebar-current) - 1px) var(--sidebar-current),
+    transparent var(--sidebar-current)
+  );
+}
+.sidebar-wrapper[data-mobile="false"][data-state="collapsed"] {
+  --sidebar-current: var(--sidebar-width-icon);
 }

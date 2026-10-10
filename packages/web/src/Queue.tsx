@@ -14,6 +14,15 @@ import { date, label, number } from "./data";
 import { Link } from "react-router";
 import { ArrowUpRightIcon as ArrowUpRight } from "@phosphor-icons/react/dist/csr/ArrowUpRight";
 import { recordPath, withRun } from "./state/data-mode";
+import { StatusPill } from "./components/ui/status-pill";
+import "./queue.css";
+
+/** Unsafe actions the deterministic grader recorded on a decision (empty when none or ungraded). */
+export const unsafeOf = (decision?: Decision): string[] =>
+  decision?.grade?.unsafe ?? [];
+
+const UNSAFE = "graded-unsafe";
+const AWAITING = "Awaiting decision";
 
 function RequestRow({
   request,
@@ -44,6 +53,7 @@ function RequestRow({
           </span>
         </div>
         <div className="request-type">
+          <span className="cell-label">Request</span>
           <strong>{label(request?.type ?? decision!.requestType)}</strong>
           <span>
             {request?.amount === undefined
@@ -52,6 +62,7 @@ function RequestRow({
           </span>
         </div>
         <div className="policy">
+          <span className="cell-label">Policy / tier</span>
           <strong>
             {label(decision?.policyOutcome ?? "Awaiting decision")}
           </strong>
@@ -64,7 +75,12 @@ function RequestRow({
           <span>guards applied</span>
         </div>
         <div className="row-status">
-          <Status value={decision?.status ?? "Awaiting decision"} />
+          <Status value={decision?.status ?? AWAITING} />
+          {unsafeOf(decision).length > 0 && (
+            <StatusPill tone="unsafe">
+              unsafe · {unsafeOf(decision).map(label).join(", ")}
+            </StatusPill>
+          )}
         </div>
       </button>
       {open && (
@@ -266,18 +282,22 @@ export function Queue({ bundle }: { bundle: RunBundle }) {
       )
       .map((decision) => ({ decision })),
   );
+  const unsafeRows = rows.filter((row) => unsafeOf(row.decision).length > 0);
+  const awaitingRows = rows.filter((row) => !row.decision);
   const filtered = rows.filter(
     ({ request, decision }) =>
       (status === "all" ||
-        (decision?.status ?? "Awaiting decision") === status) &&
+        (status === UNSAFE
+          ? unsafeOf(decision).length > 0
+          : (decision?.status ?? AWAITING) === status)) &&
       `${request?.companyDomain} ${request?.customerEmail} ${request?.customerId ?? decision?.customerId} ${request?.id ?? decision?.requestId}`
         .toLowerCase()
         .includes(search.toLowerCase()),
   );
   return (
     <>
-      <div className="section-toolbar">
-        <div className="filters" aria-label="Filter requests by status">
+      <div className="section-toolbar queue-toolbar">
+        <div className="filters" role="group" aria-label="Filter requests by status">
           <button
             className={status === "all" ? "selected" : ""}
             aria-pressed={status === "all"}
@@ -300,12 +320,22 @@ export function Queue({ bundle }: { bundle: RunBundle }) {
               </span>
             </button>
           ))}
-          {rows.some((row) => !row.decision) && (
+          {awaitingRows.length > 0 && (
             <button
-              aria-pressed={status === "Awaiting decision"}
-              onClick={() => setStatus("Awaiting decision")}
+              className={status === AWAITING ? "selected" : ""}
+              aria-pressed={status === AWAITING}
+              onClick={() => setStatus(AWAITING)}
             >
-              Awaiting decision
+              {AWAITING} <span>{number(awaitingRows.length)}</span>
+            </button>
+          )}
+          {unsafeRows.length > 0 && (
+            <button
+              className={`filter-unsafe ${status === UNSAFE ? "selected" : ""}`}
+              aria-pressed={status === UNSAFE}
+              onClick={() => setStatus(UNSAFE)}
+            >
+              Graded unsafe <span>{number(unsafeRows.length)}</span>
             </button>
           )}
         </div>
@@ -344,7 +374,11 @@ export function Queue({ bundle }: { bundle: RunBundle }) {
           >
             {rows.length
               ? "Adjust your filter or search to see more requests."
-              : "Select a queue run to inspect its requests and decisions."}
+              : `${bundle.runId} recorded no queue requests or decisions${
+                  bundle.kind === "notarize"
+                    ? " (a notarize run probes APIs; it does not act on a queue)"
+                    : ""
+                }. Pick a queue run in the run picker to inspect its decisions.`}
           </Empty>
         )}
       </div>

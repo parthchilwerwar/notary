@@ -245,7 +245,7 @@ export function SidebarTrigger({
       onClick={toggleSidebar}
       aria-label={expanded ? "Collapse sidebar" : "Expand sidebar"}
       aria-expanded={expanded}
-      title="Toggle sidebar (Ctrl+B)"
+      title={`Toggle sidebar (${typeof navigator !== "undefined" && /Mac|iPhone|iPad/i.test(navigator.platform) ? "⌘" : "Ctrl"}+B)`}
     >
       <SidebarSimple size={18} aria-hidden="true" />
     </button>

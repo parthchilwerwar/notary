@@ -256,7 +256,9 @@ export function RevocationDemoPage() {
       ) : (
         <>
           <p className="world-note">
-            {state.world.report.header}
+            {state.world.report.header} This replay always uses fixture scenario "
+            {state.world.scenario}", the published scenario that records a revocation,
+            whichever run is selected; its links open that scenario's runs.
           </p>
           <RevocationSteps
             key={replay}

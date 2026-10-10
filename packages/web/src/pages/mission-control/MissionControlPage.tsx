@@ -5,7 +5,7 @@
 // Every number on screen is a count of, or a value carried by, the events shown so far.
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { MotionConfig } from "motion/react";
-import type { TimelineStage } from "../../../../core/src/schema";
+import type { RunBundle, TimelineStage } from "../../../../core/src/schema";
 import {
   Card,
   EmptyState,
@@ -104,9 +104,9 @@ export function MissionControlPage() {
     <StatusPill tone={live === "open" ? "safe" : "neutral"}>
       Live · {LIVE_TEXT[live ?? "connecting"]}
     </StatusPill>
-  ) : (
+  ) : load.status === "ready" ? (
     <StatusPill tone="info">{replayLabel}</StatusPill>
-  );
+  ) : null;
   const statusChip =
     load.status !== "ready" ? null : finished ? (
       <StatusPill value={finished}>Run {finished.replaceAll("_", " ")}</StatusPill>
@@ -130,7 +130,7 @@ export function MissionControlPage() {
           </>
         }
       />
-      <Body load={load} local={local} runId={bundle.runId} sample={bundle.sample}>
+      <Body load={load} local={local} bundle={bundle}>
         {replaying && (
           <ReplayControls replay={replay} current={visible.at(-1)} label={replayLabel} />
         )}
@@ -191,16 +191,15 @@ export function MissionControlPage() {
 function Body({
   load,
   local,
-  runId,
-  sample,
+  bundle,
   children,
 }: {
   load: TimelineLoad;
   local: boolean;
-  runId: string;
-  sample: boolean;
+  bundle: Pick<RunBundle, "runId" | "sample" | "kind">;
   children: ReactNode;
 }) {
+  const { runId, sample } = bundle;
   if (load.status === "loading")
     return (
       <LoadingState title="Loading the run timeline…">
@@ -211,12 +210,23 @@ function Body({
     return <ErrorState title="Timeline withheld">{load.error}</ErrorState>;
   if (load.status === "missing")
     return (
-      <EmptyState title={`No timeline published for ${runId}`}>
+      <EmptyState
+        title={
+          <>
+            No timeline published for <span className="mc-nowrap">{runId}</span>
+          </>
+        }
+      >
         {local ? (
           <>
             The local API has no timeline for this run. Every run writes{" "}
             <code>runs/{runId}/timeline.jsonl</code>; runs recorded before timelines existed have
             none. <code>pnpm notary export</code> publishes one next to each real bundle.
+          </>
+        ) : bundle.kind === "sample" ? (
+          <>
+            {runId} is a synthetic sample bundle (<code>pnpm notary export --sample</code>), which
+            records no timeline. Select a fixture demo run to replay one.
           </>
         ) : sample ? (
           <>

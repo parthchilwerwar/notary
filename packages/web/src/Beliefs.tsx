@@ -1,3 +1,4 @@
+import "./record-pages.css";
 import { SelectControl } from "./components/SelectControl";
 import { FunnelIcon as Funnel } from "@phosphor-icons/react/dist/csr/Funnel";
 import { useState } from "react";

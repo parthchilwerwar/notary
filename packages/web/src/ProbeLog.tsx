@@ -1,3 +1,4 @@
+import "./record-pages.css";
 import { SelectControl } from "./components/SelectControl";
 import { FlaskIcon as Flask } from "@phosphor-icons/react/dist/csr/Flask";
 import { useState } from "react";

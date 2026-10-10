@@ -186,8 +186,23 @@ function ItemShell({
   );
 }
 
+/** Model notes mark commands with backticks (`notary serve`); render those as code, never as raw ticks. */
+export function NoteText({ text }: { text: string }) {
+  return (
+    <>
+      {text.split("`").map((part, i) =>
+        i % 2 ? <code key={i}>{part}</code> : part,
+      )}
+    </>
+  );
+}
+
 function GateNote({ gate }: { gate: Gate }) {
-  return gate.allowed ? null : <p className="desk-gate">{gate.reason}</p>;
+  return gate.allowed ? null : (
+    <p className="desk-gate">
+      <NoteText text={gate.reason} />
+    </p>
+  );
 }
 
 export function PendingItem({
@@ -384,7 +399,11 @@ export function HistoryItem({ row, openTrail }: { row: HistoryRow; openTrail?: b
         />
       }
       pills={<StatusPill value={decision.status} />}
-      footer={<p className="desk-gate">{row.note}</p>}
+      footer={
+        <p className="desk-gate">
+          <NoteText text={row.note} />
+        </p>
+      }
     >
       <dl className="desk-facts">
         <div>

@@ -1,0 +1,57 @@
+/* Page-level polish for the Probe log, Beliefs, Economics and Evidence pages (V5).
+   Tokens and shared primitives stay in styles.css. */
+
+/* Committed hypotheses quote raw observations (JSON without spaces): wrap them inside the card. */
+.hypothesis h4 {
+  overflow-wrap: anywhere;
+}
+
+/* Economics: the signed difference reads as words, and the plan state as plain copy. */
+.kpi-value .kpi-unit {
+  font-size: 0.4em;
+  margin-left: 0.25em;
+  color: var(--muted);
+  letter-spacing: 0;
+}
+.economics-plan-state {
+  font-size: 13px;
+  color: var(--muted);
+}
+.economics-plan-state code {
+  font-size: 12px;
+}
+
+@media (max-width: 700px) {
+  /* 40px tap targets for record links, filters and disclosures on phones. */
+  .probe-timeline .record-chip,
+  .belief-grid .record-chip,
+  .detail-single .record-chip,
+  .probe-timeline .record-link-row > a,
+  .belief-grid .record-link-row > a,
+  .detail-single .record-link-row > a,
+  .analytics-card .record-link-row > a {
+    min-height: 40px;
+  }
+  .belief-card blockquote a,
+  .tool-links a,
+  .probe-timeline a.trace,
+  .belief-grid a.trace,
+  .detail-single a.trace,
+  .analytics-card a.trace {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+  }
+  .belief-card blockquote a {
+    margin-top: 4px;
+  }
+  .section-toolbar .filters button {
+    min-height: 40px;
+  }
+  .probe-timeline .record-details > summary,
+  .analytics-card .record-details > summary,
+  .belief-details > summary,
+  .tool-grid .record-details > summary {
+    padding-block: 12px;
+  }
+}

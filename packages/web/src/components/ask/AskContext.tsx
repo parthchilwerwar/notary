@@ -27,7 +27,16 @@ export function useAsk(): AskState {
   return ctx;
 }
 
-export const ASK_SHORTCUT_LABEL = "Ctrl J";
+/** Apple platforms show ⌘ in key hints; everything else shows Ctrl. Both keys always work. */
+export const IS_APPLE_PLATFORM =
+  typeof navigator !== "undefined" &&
+  /Mac|iPhone|iPad|iPod/i.test(
+    (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform ||
+      navigator.platform ||
+      navigator.userAgent,
+  );
+export const MOD_KEY_LABEL = IS_APPLE_PLATFORM ? "⌘" : "Ctrl";
+export const ASK_SHORTCUT_LABEL = `${MOD_KEY_LABEL} J`;
 export const ASK_KEYSHORTCUTS = "Control+J Meta+J";
 
 export function isAskShortcut(e: Pick<KeyboardEvent, "key" | "metaKey" | "ctrlKey" | "altKey" | "shiftKey">): boolean {

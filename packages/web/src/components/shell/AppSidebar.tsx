@@ -1,5 +1,7 @@
+import { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router";
 import { ShieldCheckIcon as ShieldCheck } from "@phosphor-icons/react/dist/csr/ShieldCheck";
+import { XIcon as X } from "@phosphor-icons/react/dist/csr/X";
 import {
   Sidebar,
   SidebarContent,
@@ -15,7 +17,7 @@ import {
 } from "../ui/sidebar";
 import { NAV_GROUPS, matchAppRoute, routeById, routes, type AppRoute } from "../../routes";
 import { useData } from "../../state/DataProvider";
-import { MODE_LABEL, heldCount, withRun } from "../../state/data-mode";
+import { MODE_LABEL, heldCount, withRun, type DataMode } from "../../state/data-mode";
 import { ASK_KEYSHORTCUTS, ASK_SHORTCUT_LABEL, useAsk } from "../ask";
 
 /** Badge counts from the current data world; undefined while unknown (never a placeholder 0). */
@@ -30,6 +32,24 @@ export function useBadges(): Record<"held" | "revocations", number | undefined> 
   };
 }
 
+/** Data-mode label; never claims a mode before a verified run is selected. */
+export function dataStatusLabel({
+  bundle,
+  loading,
+  error,
+  mode,
+}: {
+  bundle?: unknown;
+  loading: boolean;
+  error?: string;
+  mode: DataMode;
+}): string {
+  if (bundle) return MODE_LABEL[mode];
+  if (loading) return "Verifying…";
+  if (error) return "Withheld";
+  return "None published";
+}
+
 function activeNavId(pathname: string): string | undefined {
   let route: AppRoute | undefined = matchAppRoute(pathname)?.route;
   // Record pages highlight their list page; walk up until a sidebar entry.
@@ -39,8 +59,19 @@ function activeNavId(pathname: string): string | undefined {
 
 export function AppSidebar() {
   const { pathname } = useLocation();
-  const { selectedRunId, mode, source, evidence } = useData();
-  const { setOpenMobile, isMobile } = useSidebar();
+  const { selectedRunId, mode, source, evidence, bundle, loading, error } = useData();
+  const dataStatus = dataStatusLabel({ bundle, loading, error, mode });
+  const { setOpenMobile, openMobile, isMobile } = useSidebar();
+  const closeRef = useRef<HTMLButtonElement>(null);
+  // Opening the drawer moves focus into it; closing returns focus to the top-bar trigger.
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    if (!isMobile) return;
+    if (openMobile) closeRef.current?.focus();
+    else if (wasOpen.current)
+      document.querySelector<HTMLButtonElement>(".app-topbar .sidebar-trigger")?.focus();
+    wasOpen.current = openMobile;
+  }, [openMobile, isMobile]);
   const badges = useBadges();
   const ask = useAsk();
   const active = activeNavId(pathname);
@@ -59,6 +90,17 @@ export function AppSidebar() {
             Notary<span className="brand-period">.</span>
           </span>
         </Link>
+        {isMobile && (
+          <button
+            type="button"
+            ref={closeRef}
+            className="icon-button sidebar-close"
+            aria-label="Close navigation"
+            onClick={() => setOpenMobile(false)}
+          >
+            <X size={18} aria-hidden="true" />
+          </button>
+        )}
       </SidebarHeader>
       <SidebarContent>
         {NAV_GROUPS.map((group) => (
@@ -120,9 +162,9 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <div className="sidebar-status" title={source === "api" ? "Local notary serve reachable at /api/bundles" : "Static published files"}>
-          <span className={`mode-dot mode-${mode}`} aria-hidden="true" />
+          <span className={`mode-dot ${bundle ? `mode-${mode}` : "mode-pending"}`} aria-hidden="true" />
           <span className="sidebar-label">
-            <span className="sidebar-status-key">Data</span> {MODE_LABEL[mode]}
+            <span className="sidebar-status-key">Data</span> {dataStatus}
             {source === "api" && mode === "fixture" && " · API connected"}
           </span>
         </div>

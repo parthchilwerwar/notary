@@ -20,14 +20,14 @@ export function EconomicsPage() {
 }
 
 export function EvidencePage() {
-  const { bundles, evidence } = useData();
+  const { bundles, bundle, evidence } = useData();
   return (
     <>
       <PageHeader
         title="Evidence"
         description="Receipts behind the demonstration: required tools, then the fixture demo."
       />
-      <Evidence all={bundles} evidence={evidence} />
+      <Evidence all={bundles} evidence={evidence} selected={bundle} />
     </>
   );
 }

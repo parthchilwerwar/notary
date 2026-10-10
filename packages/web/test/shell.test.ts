@@ -285,3 +285,33 @@ describe("data source resolution", () => {
     await expect(probeLocalApi()).rejects.toThrow("shared schema");
   });
 });
+
+describe("local API probe gating", () => {
+  afterEach(() => vi.unstubAllGlobals());
+  it("only probes where a loopback-only `notary serve` could answer", async () => {
+    const { canReachLocalApi } = await import("../src/data");
+    expect(canReachLocalApi("127.0.0.1", "")).toBe(true);
+    expect(canReachLocalApi("localhost", "")).toBe(true);
+    expect(canReachLocalApi("[::1]", "")).toBe(true);
+    expect(canReachLocalApi("notary.localhost", "")).toBe(true);
+    expect(canReachLocalApi("notary.vercel.app", "")).toBe(false);
+    expect(canReachLocalApi("notary.vercel.app", "http://127.0.0.1:8787")).toBe(true);
+    expect(canReachLocalApi(undefined, "")).toBe(true);
+  });
+  it("skips the /api request on a hosted origin and loads static files", async () => {
+    vi.stubGlobal("location", { hostname: "notary.example.com" });
+    const fetch = vi.fn(async (url: string) => {
+      if (url.includes("/api/")) throw new Error("hosted pages must not probe /api");
+      if (url.endsWith("bundles/index.json"))
+        return new Response(JSON.stringify(read("bundles/index.json")), { headers: { "content-type": "application/json" } });
+      if (url.endsWith("bundles/sample-42.json"))
+        return new Response(JSON.stringify(read("bundles/sample-42.json")), { headers: { "content-type": "application/json" } });
+      return new Response("", { status: 404 });
+    });
+    vi.stubGlobal("fetch", fetch);
+    expect(await probeLocalApi()).toBeNull();
+    const world = await loadDataWorld();
+    expect(world.source).toBe("static");
+    expect(fetch.mock.calls.some(([u]) => String(u).includes("/api/"))).toBe(false);
+  });
+});

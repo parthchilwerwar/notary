@@ -5,6 +5,15 @@ import { comparable, totalUsd, unsafeDelta } from "./analytics";
 import { Empty, Trace } from "./components";
 import { number, percent, usd } from "./data";
 
+/** Difference of two ratios in percentage points (rounded to 0.1), or null when either is missing. */
+export function pointDelta(
+  focus: number | null | undefined,
+  baseline: number | null | undefined,
+): number | null {
+  if (focus == null || baseline == null) return null;
+  return Math.round((focus - baseline) * 1000) / 10;
+}
+
 export function Comparison({
   bundle,
   comparison,
@@ -49,8 +58,16 @@ export function Comparison({
                   ? "—"
                   : metric.format(bundle.metrics[metric.key]!)}
               </span>
-              {metric.key === "unsafe_actions_total" && (
+              {metric.key === "unsafe_actions_total" ? (
                 <Delta value={unsafeDelta(bundle, comparison)} safety />
+              ) : (
+                <Delta
+                  value={pointDelta(
+                    bundle.metrics[metric.key],
+                    comparison.metrics[metric.key],
+                  )}
+                  suffix=" pts"
+                />
               )}
             </div>
             <Bars

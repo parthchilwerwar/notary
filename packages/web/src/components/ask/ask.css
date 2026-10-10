@@ -71,9 +71,14 @@
     display: none;
   }
   .ask-sheet-full {
-    width: 36px;
+    width: 40px;
+    height: 40px;
     padding: 0;
     justify-content: center;
+  }
+  .ask-sheet-head .ask-sheet-close {
+    width: 40px;
+    height: 40px;
   }
   .ask-sheet-body {
     padding: var(--space-4);
@@ -145,7 +150,8 @@
 .ask-local input {
   width: 100%;
   min-width: 0;
-  border: 1px solid var(--line);
+  /* 3:1 input boundary (WCAG 1.4.11); --line is a decorative hairline. */
+  border: 1px solid color-mix(in srgb, var(--muted) 80%, var(--surface));
   border-radius: 14px;
   background: var(--surface);
   color: var(--fg);
@@ -166,7 +172,7 @@
 }
 .ask-input-row input {
   flex: 1;
-  height: 36px;
+  height: 40px;
   border-radius: var(--radius-control);
 }
 .ask-local-actions {
@@ -256,6 +262,7 @@
 }
 .ask-question {
   width: 100%;
+  min-height: 40px;
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -293,6 +300,7 @@
   outline-offset: 1px;
 }
 .ask-back {
+  min-height: 40px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -324,6 +332,7 @@
   overflow-wrap: anywhere;
 }
 .ask-answer-text {
+  max-width: 76ch;
   font-size: 14px;
   line-height: 1.7;
   overflow-wrap: anywhere;
@@ -389,5 +398,13 @@
   }
   .ask-page .ask-back {
     display: none;
+  }
+}
+
+/* Phone tap targets: linked citation chips are at least 40px tall. */
+@media (max-width: 700px) {
+  .ask a.record-chip {
+    min-height: 40px;
+    padding: 0 12px;
   }
 }

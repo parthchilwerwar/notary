@@ -1,17 +1,29 @@
+import "./record-pages.css";
 import type { RunBundle } from "../../core/src/schema";
 import { Panel } from "./Overview";
 import { Comparison } from "./Comparison";
 import { safeLink } from "./data";
 import { FixtureBanner } from "./components/ui/fixture-banner";
 import { StatusPill } from "./components/ui/status-pill";
+import { EmptyState, ErrorState, LoadingState } from "./components/ui/states";
 import type { EvidenceEntry, Loadable } from "./state/DataProvider";
 import { scenarioKey } from "./state/data-mode";
 
-/** Naive and guarded fixture queue runs from the same simulated world (shared runId prefix). */
-export function fixturePair(all: RunBundle[]) {
+/**
+ * Naive and guarded fixture queue runs from the same simulated world (shared runId prefix).
+ * The selected run's own scenario comes first, so the page never shows a different world's
+ * comparison when the selected run has one.
+ */
+export function fixturePair(all: RunBundle[], prefer?: RunBundle) {
+  const preferKey = prefer?.sample ? scenarioKey(prefer.runId) : undefined;
   const runs = all
     .filter((b) => b.sample && b.kind === "run")
-    .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+    .sort(
+      (a, b) =>
+        Number(scenarioKey(b.runId) === preferKey) -
+          Number(scenarioKey(a.runId) === preferKey) ||
+        b.startedAt.localeCompare(a.startedAt),
+    );
   for (const guarded of runs.filter((b) => b.variant === "guarded")) {
     const naive = runs.find(
       (b) =>
@@ -26,12 +38,15 @@ export function fixturePair(all: RunBundle[]) {
 export function Evidence({
   all,
   evidence,
+  selected,
 }: {
   all: RunBundle[];
   evidence: Loadable<EvidenceEntry[]>;
+  /** The selected run; its fixture scenario is preferred for the demo comparison. */
+  selected?: RunBundle;
 }) {
   const entries = evidence.status === "ready" ? evidence.data : [];
-  const pair = fixturePair(all);
+  const pair = fixturePair(all, selected);
   return (
     <>
       <section className="evidence-section">
@@ -41,11 +56,20 @@ export function Evidence({
             Integration receipts. Status comes from the published evidence file.
           </p>
         </div>
-        {evidence.status === "error" && (
-          <p role="alert" className="error-copy">
+        {evidence.status === "loading" ? (
+          <LoadingState title="Loading integration receipts…">
+            Reading the published evidence file.
+          </LoadingState>
+        ) : evidence.status === "error" ? (
+          <ErrorState title="Integration receipts withheld">
             {evidence.error}
-          </p>
-        )}
+          </ErrorState>
+        ) : evidence.status === "missing" ? (
+          <EmptyState title="No evidence file published">
+            Integration receipts are published to <code>evidence/evidence.json</code>{" "}
+            by <code>pnpm notary export --evidence</code>.
+          </EmptyState>
+        ) : (
         <div className="tool-grid">
           {["neatlogs", "Entire", "cfo.ai"].map((name) => {
             const entry = entries.find(
@@ -86,6 +110,7 @@ export function Evidence({
             );
           })}
         </div>
+        )}
       </section>
       <section className="evidence-section">
         <div className="section-heading">
@@ -95,6 +120,14 @@ export function Evidence({
         {pair ? (
           <>
             <FixtureBanner variant="inline" />
+            <p className="world-note">
+              Scenario {scenarioKey(pair.guarded.runId)}: {pair.guarded.runId} against{" "}
+              {pair.naive.runId}
+              {selected?.sample && scenarioKey(selected.runId) !== scenarioKey(pair.guarded.runId)
+                ? ` (the selected run ${selected.runId} has no naive/guarded pair of its own)`
+                : ""}
+              .
+            </p>
             <Comparison bundle={pair.guarded} comparison={pair.naive} />
           </>
         ) : (

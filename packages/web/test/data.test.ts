@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { BundleIndexSchema } from "../../core/src/schema/bundle";
-import { loadBundle, loadIndex, safeLink, validateBundle } from "../src/data";
+import { loadBundle, loadFixtureEntries, loadIndex, safeLink, validateBundle } from "../src/data";
 
 const fixture = JSON.parse(
   readFileSync(
@@ -104,5 +104,19 @@ describe("bundle trust boundary", () => {
     );
     expect(safeLink("javascript:alert(1)")).toBeUndefined();
     expect(safeLink("//unknown.example")).toBeUndefined();
+  });
+});
+
+describe("unreadable data is a visible, plain-language error", () => {
+  it("names a bundle that is not valid JSON and withholds it", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{not json")));
+    await expect(loadBundle(entries[0])).rejects.toThrow("is not valid JSON. Data withheld.");
+  });
+  it("rejects a fixture index that is not JSON or not the shared schema", async () => {
+    const json = { "content-type": "application/json" };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{not json", { headers: json })));
+    await expect(loadFixtureEntries()).rejects.toThrow("not valid JSON");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response('[{"runId":1}]', { headers: json })));
+    await expect(loadFixtureEntries()).rejects.toThrow("shared Notary schema");
   });
 });

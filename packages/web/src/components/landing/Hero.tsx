@@ -31,7 +31,7 @@ export function Hero() {
       </div>
       <Card className="hero-proof">
         <div className="proof-top">
-          <span>From a claim to a certificate</span>
+          <h2 className="proof-title">From a claim to a certificate</h2>
           <span className="proof-dot" />
         </div>
         <div className="proof-flow">
@@ -57,7 +57,7 @@ export function Hero() {
             >
               <span className="proof-marker" aria-hidden="true" />
               <div>
-                <h2>{step.title}</h2>
+                <h3>{step.title}</h3>
                 <p>{step.note}</p>
               </div>
             </div>

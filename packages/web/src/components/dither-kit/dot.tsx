@@ -10,7 +10,7 @@ function dotPaint(variant: DotVariant, seed: Seed) {
   switch (variant) {
     case "colored-border":
       return {
-        fill: "var(--card, #0b0b0c)",
+        fill: "var(--surface)",
         stroke: rgb(seed.line),
         strokeWidth: 1.5,
       };
@@ -18,7 +18,7 @@ function dotPaint(variant: DotVariant, seed: Seed) {
       return { fill: rgb(seed.star), stroke: rgb(seed.line), strokeWidth: 1 };
     default:
       return {
-        fill: "var(--card, #0b0b0c)",
+        fill: "var(--surface)",
         stroke: rgb(seed.star, 0.8),
         strokeWidth: 1,
       };

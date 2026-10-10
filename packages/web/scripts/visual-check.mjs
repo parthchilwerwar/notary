@@ -83,7 +83,7 @@ try {
     page.on("pageerror", (e) => errors.push(e.message));
     if (!quick) {
       await page.goto(base);
-      await expect(page.locator(".results-strip")).toBeVisible();
+      await expect(page.locator(".results-stack")).toBeVisible();
       await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
       await settle(page);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);

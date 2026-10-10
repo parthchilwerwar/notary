@@ -34,22 +34,29 @@ export function timelineUrls(bundle: Pick<RunBundle, "runId" | "sample">, local:
 }
 
 /** JSON body, or null for "not published" (404, or the dev server's HTML fallback). */
-async function fetchJson(url: string, signal: AbortSignal): Promise<unknown | null> {
+async function fetchJson(url: string, signal: AbortSignal, local: boolean): Promise<unknown | null> {
   const response = await fetch(url, { signal, cache: "no-store", headers: { accept: "application/json" } });
   if (response.status === 404) return null;
   const type = response.headers.get("content-type") ?? "";
   if (response.ok && !type.includes("json")) return null;
   if (!response.ok) {
-    let message = `Unable to load the timeline (${response.status}).`;
-    try {
-      const body = (await response.json()) as { error?: unknown };
-      if (typeof body?.error === "string") message = `The local API refused the timeline: ${body.error}.`;
-    } catch {
-      // Keep the status message.
+    let message = `Unable to load the ${local ? "" : "published "}timeline (${response.status}). Data withheld.`;
+    // Only the local API answers with a JSON { error } body worth quoting.
+    if (local) {
+      try {
+        const body = (await response.json()) as { error?: unknown };
+        if (typeof body?.error === "string") message = `The local API refused the timeline: ${body.error}.`;
+      } catch {
+        // Keep the status message.
+      }
     }
     throw new Error(message);
   }
-  return response.json();
+  try {
+    return await response.json();
+  } catch {
+    throw new Error("The published timeline is not valid JSON. Data withheld.");
+  }
 }
 
 /**
@@ -78,7 +85,7 @@ export function useRunTimeline(
     setLoad((prev) => (prev.status === "ready" && prev.file.runId === runId ? prev : { status: "loading" }));
     (async () => {
       for (const url of urls) {
-        const raw = await fetchJson(url, controller.signal);
+        const raw = await fetchJson(url, controller.signal, local);
         if (raw === null) continue;
         const checked = checkTimeline(raw, bundle);
         return checked.ok

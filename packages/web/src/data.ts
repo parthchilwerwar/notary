@@ -47,7 +47,12 @@ async function readJson(path: string, signal?: AbortSignal): Promise<unknown> {
     throw new Error(
       `Unable to load ${path}: ${response.statusText || "request failed"}.`,
     );
-  return response.json();
+  try {
+    return await response.json();
+  } catch (e) {
+    if ((e as Error).name === "AbortError") throw e;
+    throw new Error(`${path} is not valid JSON. Data withheld.`);
+  }
 }
 
 export async function loadIndex(
@@ -123,7 +128,19 @@ export async function loadFixtureEntries(
   if (response.headers.get("x-notary-hash-mismatch") === "1")
     throw new Error("Fixture index hash mismatch. Data withheld.");
   if (response.ok && response.headers.get("content-type")?.includes("json")) {
-    const fixtures = BundleIndexSchema.parse(await response.json());
+    let raw: unknown;
+    try {
+      raw = await response.json();
+    } catch (e) {
+      if ((e as Error).name === "AbortError") throw e;
+      throw new Error("The fixture index is not valid JSON. Data withheld.");
+    }
+    const parsed = BundleIndexSchema.safeParse(raw);
+    if (!parsed.success)
+      throw new Error(
+        "The fixture index does not match the shared Notary schema. Data withheld.",
+      );
+    const fixtures = parsed.data;
     if (fixtures.some((entry) => !entry.sample))
       throw new Error(
         "Fixture directory contains a live bundle. Data withheld.",
@@ -160,6 +177,23 @@ export const API_BASE: string = String(
   import.meta.env.VITE_NOTARY_API ?? "",
 ).replace(/\/$/, "");
 
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
+
+/**
+ * Whether a local `notary serve` could answer at all. `notary serve` only accepts loopback
+ * requests, so a page served from any other host (the hosted site) cannot reach it through a
+ * same-origin /api: skip the probe there instead of logging a 404 on every visit. An explicit
+ * VITE_NOTARY_API always probes. Hostless contexts (tests) probe.
+ */
+export function canReachLocalApi(
+  hostname: string | undefined = globalThis.location?.hostname,
+  base: string = API_BASE,
+): boolean {
+  if (base) return true;
+  if (!hostname) return true;
+  return LOOPBACK_HOSTS.has(hostname) || hostname.endsWith(".localhost");
+}
+
 /**
  * Index from a local `notary serve` at /api/bundles, or null when no API answers with JSON
  * (static hosting, server not running, timeout). A JSON answer that fails the shared schema is
@@ -169,6 +203,7 @@ export async function probeLocalApi(
   signal?: AbortSignal,
   timeoutMs = 1500,
 ): Promise<BundleIndexEntry[] | null> {
+  if (!canReachLocalApi()) return null;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   const forward = () => controller.abort();

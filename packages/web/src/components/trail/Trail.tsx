@@ -106,9 +106,19 @@ function TrailView({
         </div>
       </header>
       {model.decidedBy && (
-        <div className="trail-decided" data-kind={model.decidedBy.kind}>
+        <div
+          className="trail-decided"
+          data-kind={model.decidedBy.kind}
+          data-unsafe={model.unsafe?.length ? "true" : undefined}
+        >
           <span className="eyebrow">Decided by</span>
           <p>{model.decidedBy.text}</p>
+          {model.unsafe?.length ? (
+            <p className="trail-unsafe">
+              <Warning size={16} aria-hidden="true" />
+              Graded unsafe by the deterministic grader: {model.unsafe.join(", ")}.
+            </p>
+          ) : null}
         </div>
       )}
       {model.notes.map((n) => (
@@ -161,12 +171,7 @@ function TrailView({
                   </summary>
                   <ul className="trail-lines">
                     {g.lines.map((l, j) => (
-                      <LineView
-                      key={`${l.key}-${j}`}
-                      line={l}
-                      prev={step.lines[j - 1]}
-                      self={self}
-                    />
+                      <LineView key={`${l.key}-${j}`} line={l} prev={g.lines[j - 1]} self={self} />
                     ))}
                   </ul>
                 </details>
