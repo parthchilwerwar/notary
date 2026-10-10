@@ -1,0 +1,27 @@
+[
+  {
+    "name": "neatlogs",
+    "purpose": "The neatlogs TypeScript SDK (1.1.26) wraps every queue item, recon step, probe and model call in a span via withSpan; probe spans carry the prediction committed before the call, and Bedrock calls are captured with the SDK's wrapBedrock. Every span is also written to runs/<runId>/spans.jsonl, which the evidence checks read.",
+    "status": "live",
+    "links": [
+      { "label": "neatlogs TypeScript SDK (source)", "url": "https://github.com/neatlogs/neatlogs-typescript" }
+    ],
+    "notes": "Status \"live\" covers SDK export only: on Oct 10, with NEATLOGS_API_KEY set, `pnpm notary doctor` flushed one real span and the SDK reported the flush as successful (trace 8e4a01d2811652fa2e8c4e4334642137, span 1518e64a727d8bac; DECISIONS #93). That smoke span is the only one exported so far: no notarize or run spans have reached neatlogs, because those commands have not run live. The trace has not been read back, since neatlogs-cli is not installed and the neatlogs trace URL format is unknown, so there is no trace link. Bundle traceLinks point to local spans.jsonl receipts."
+  },
+  {
+    "name": "Entire",
+    "purpose": "`notary guards coverage --backend entire` shells out to `entire graph neighbors` to find every caller of a money-moving tool method and fails on any unguarded call site. The adversary's session backend commits each verdict file, so Entire would checkpoint each review next to its belief.",
+    "status": "pending",
+    "links": [
+      { "label": "Entire docs: entire graph command reference (DECISIONS #61)", "url": "https://docs.entire.io/cli-reference/graph" }
+    ],
+    "notes": "The Entire CLI is not installed on the build machine: there is no `entire enable` and no checkpoints, and guard coverage runs on the tsc fallback backend. The entire backend is implemented but unverified, and the session adversary backend has not run live. The project repo (github.com/parthchilwerwar/notary) is private, so there is no public checkpoint history yet."
+  },
+  {
+    "name": "cfo.ai",
+    "purpose": "Business plan: pricing per monitored API contract, COGS from bundle credits and tokens, the cost of incidents prevented, and runway.",
+    "status": "pending",
+    "links": [],
+    "notes": "Not started. Planned for P10 as a manual step that produces docs/BUSINESS.md and packages/web/public/economics.json; neither exists yet."
+  }
+]

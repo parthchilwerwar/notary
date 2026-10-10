@@ -272,12 +272,22 @@ export function buildProgram(): Command {
     .command("demo")
     .description("Run the whole pipeline end to end on FIXTURE data (simulated APIs and model doubles; no keys, no network)")
     .option("--fixture", "required: use the in-process fixture API and model doubles (the only demo mode)")
-    .action(async (opts: { fixture?: boolean }) => {
+    .option("--publish", "also copy the fixture bundles to packages/web/public/bundles/fixture/ (own index.json; never the real index)")
+    .action(async (opts: { fixture?: boolean; publish?: boolean }) => {
       if (!opts.fixture) throw new Error("notary demo needs --fixture (there is no live demo: live runs are `notarize` and `run`)");
       const { runFixtureDemo } = await import("./demo/index.js");
       const result = await runFixtureDemo();
       for (const line of result.lines) console.log(line);
       process.exitCode = result.exitCode;
+      if (!opts.publish) return;
+      if (result.exitCode !== 0) {
+        console.error("notary demo --publish: not publishing; the demo finished with problems (see above)");
+        return;
+      }
+      const { publishFixtureBundles } = await import("./demo/publish.js");
+      const { DEFAULT_PATHS } = await import("./export/index.js");
+      const published = await publishFixtureBundles(result.bundles, { webBundlesDir: DEFAULT_PATHS.webBundlesDir });
+      for (const line of published.lines) console.log(line);
     });
 
   program

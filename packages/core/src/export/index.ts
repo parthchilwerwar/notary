@@ -8,9 +8,9 @@
  */
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { basename, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { writeBundle } from "../bundle/index.js";
+import { FIXTURE_BUNDLES_SUBDIR, writeBundle } from "../bundle/index.js";
 import { BundleIndexSchema } from "../schema/bundle.js";
 import type { RunBundle } from "../schema/index.js";
 import type { ChecksRunner, CheckResult } from "./checks.js";
@@ -78,6 +78,10 @@ export async function runExport(opts: ExportOptions = {}): Promise<ExportResult>
   const exportDir = opts.exportDir ?? DEFAULT_PATHS.exportDir;
   const docsDir = opts.docsDir ?? DEFAULT_PATHS.docsDir;
   const webDir = opts.webBundlesDir === undefined ? DEFAULT_PATHS.webBundlesDir : opts.webBundlesDir;
+  // Real bundles never go into the fixture-demo directory (bundles/fixture/, its own index.json).
+  if (webDir !== null && basename(resolve(webDir)) === FIXTURE_BUNDLES_SUBDIR) {
+    throw new Error(`notary export: refusing to write real bundles into the fixture-demo directory ${webDir}`);
+  }
   const generatedAt = (opts.now ?? (() => new Date()))().toISOString();
 
   const { bundles: collected, skipped, excluded } = collectBundles(runsDir);

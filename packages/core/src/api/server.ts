@@ -6,6 +6,9 @@
 //                         belief.changed, run.finished) with Last-Event-ID replay
 //
 // Read-only: there are no write endpoints. CORS is limited to loopback dashboard dev origins.
+// Only each bundle directory's own index.json is read; subdirectories of public/bundles are NOT
+// scanned, so the fixture-demo bundles in public/bundles/fixture/ (own index) are never merged
+// into the list. Under runs/, every immediate subdirectory is a bundle dir (runs/<runId>/).
 import { existsSync, readdirSync, statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join, relative, resolve, isAbsolute } from "node:path";

@@ -16,6 +16,13 @@ export {
 } from "./hash.js";
 export { buildSampleBundle } from "./sample.js";
 
+/**
+ * Subdirectory of packages/web/public/bundles/ that holds ONLY fixture-demo bundles
+ * (`notary demo --fixture --publish`), with its own index.json. Real bundles live in the parent
+ * directory and its index.json; the two are never mixed (`notary export` refuses to write here).
+ */
+export const FIXTURE_BUNDLES_SUBDIR = "fixture";
+
 const SAFE_RUN_ID = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const SECRET_ENV_RE = /(KEY|TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIAL)/i;
 

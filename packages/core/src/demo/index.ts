@@ -18,6 +18,8 @@
  * packages/core/runs/demo/ (gitignored): bundles in runs/demo/<runId>/ (runId prefixed `demo-`,
  * `sample: true`, FIXTURE DATA disclosure), cassettes in runs/demo/cassettes/ (`fixture: true`), a
  * separate store runs/demo/notary.sqlite. Nothing is written to fixtures/cassettes or packages/web.
+ * Only `--publish` (src/demo/publish.ts, after the demo finishes cleanly) copies the bundles,
+ * unchanged, into packages/web/public/bundles/fixture/ with their own index.json.
  */
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";

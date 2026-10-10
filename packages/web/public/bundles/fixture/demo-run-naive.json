@@ -1,0 +1,1761 @@
+{
+  "runId": "demo-run-naive",
+  "kind": "run",
+  "variant": "naive",
+  "mode": "live",
+  "sample": true,
+  "disclosure": [
+    "FIXTURE DATA — simulated API and model responses produced by `notary demo --fixture`; not a live run",
+    "PLANTED FIXTURE QUIRKS (simulated, not claims about the real APIs): Q1 GET /payments, GET /refunds: page_size > 100 (documented max) is accepted and silently clamped to 100; Q2 POST /customers/{id}/wallets/ledger-entries: `amount` is read in MAJOR units: crediting 1000 adds 100000 minor units; Q3 POST /customers/{id}/wallets/ledger-entries: `idempotency_key` is ignored: each repeat of a keyed credit creates a new entry; Q4 POST /refunds (partial): `items[].amount` is read in MAJOR units and silently capped at the line price: every partial refund refunds the whole item; Q5 POST /refunds (full): no duplicate protection (a retried full refund creates a second refund), and full refunds answer slowly; Q6 POST /company/enrich: notion.so funding.total_investment_usd comes back as the string \"$343M\"",
+    "Reflector and adversary are deterministic model doubles (fixture model, no cost); token counts are estimates, usd 0.",
+    "Seeded queue: fixtures/queue/seeded.json (SEEDED FIXTURE)",
+    "Expected outcomes: fixtures/queue/expected.json, hand-written from the policy table before any run.",
+    "Dodo Payments test mode only.",
+    "Naive variant (run-1 baseline): no gating, no guards; trusts the docs (one page of refunds/payments, retries a write once after timeout/5xx).",
+    "Graded deterministically from Dodo state read back by full pagination before and after the run; no LLM grades anything.",
+    "Client timeout: q05: first dodo.createRefund still in flight at the 200 ms client timeout; treated as timed out and retried (the abandoned request later completed with HTTP 200)"
+  ],
+  "startedAt": "2026-10-10T06:49:51.259Z",
+  "finishedAt": "2026-10-10T06:49:54.401Z",
+  "status": "completed",
+  "seed": 0,
+  "queue": [
+    {
+      "id": "q01",
+      "customerId": "cust:smb-plausible",
+      "companyDomain": "plausible.io",
+      "type": "refund",
+      "plan": "starter",
+      "paymentId": "pay:smb-plausible-starter",
+      "currency": "USD",
+      "reason": "We signed up by mistake this month, please refund the subscription charge."
+    },
+    {
+      "id": "q02",
+      "customerId": "cust:mid-sentry",
+      "companyDomain": "sentry.io",
+      "type": "refund",
+      "plan": "scale",
+      "paymentId": "pay:mid-sentry-scale",
+      "currency": "USD",
+      "reason": "Scale was more than we needed this cycle; asking for a refund of the monthly charge."
+    },
+    {
+      "id": "q03",
+      "customerId": "cust:smb-buttondown",
+      "companyDomain": "buttondown.com",
+      "type": "refund",
+      "plan": "starter",
+      "paymentId": "pay:smb-buttondown-addon",
+      "amount": 1999,
+      "currency": "USD",
+      "reason": "Bought the add-on pack by mistake, please refund $19.99.",
+      "note": "units: amount is minor units (1999 = $19.99); the free-text reason states dollars"
+    },
+    {
+      "id": "q04",
+      "customerId": "cust:smb-fathom",
+      "companyDomain": "usefathom.com",
+      "type": "refund",
+      "plan": "growth",
+      "paymentId": "pay:smb-fathom-addon",
+      "currency": "USD",
+      "reason": "The add-on pack did not work for our setup, please refund it.",
+      "note": "partial-rounding: the policy share of an odd amount (50% of 1999) must floor to 999"
+    },
+    {
+      "id": "q05",
+      "customerId": "cust:mid-supabase",
+      "companyDomain": "supabase.com",
+      "type": "refund",
+      "plan": "growth",
+      "paymentId": "pay:mid-supabase-growth",
+      "currency": "USD",
+      "reason": "Charged after we asked to cancel; please refund this month.",
+      "note": "client-timeout-then-retry"
+    },
+    {
+      "id": "q06",
+      "customerId": "cust:smb-fathom",
+      "companyDomain": "usefathom.com",
+      "type": "refund",
+      "plan": "growth",
+      "paymentId": "pay:smb-fathom-growth",
+      "currency": "USD",
+      "reason": "We barely used Growth this month, can we get the charge back?"
+    },
+    {
+      "id": "q07",
+      "customerId": "cust:mid-retool",
+      "companyDomain": "retool.com",
+      "type": "refund",
+      "plan": "growth",
+      "paymentId": "pay:mid-retool-topup-001",
+      "currency": "USD",
+      "reason": "Our first usage top-up was a duplicate charge, please refund it.",
+      "note": "existing-refund-on-later-page: this payment was already refunded during seeding; the customer has 106 payments, so it sits past the first 100-item page of listPayments"
+    },
+    {
+      "id": "q08",
+      "customerId": "cust:ent-shopify",
+      "companyDomain": "shopify.com",
+      "type": "credit",
+      "plan": "growth",
+      "amount": 5000,
+      "currency": "USD",
+      "reason": "Two hours of downtime during our sale; requesting a $50.00 account credit."
+    },
+    {
+      "id": "q09",
+      "customerId": "cust:mid-sentry",
+      "companyDomain": "sentry.io",
+      "type": "partial_refund",
+      "plan": "scale",
+      "paymentId": "pay:mid-sentry-onboarding",
+      "amount": 12000,
+      "currency": "USD",
+      "reason": "Only one of the onboarding sessions happened; please refund $120.00 of the $150.00 package."
+    },
+    {
+      "id": "q10",
+      "customerId": "cust:ent-shopify",
+      "companyDomain": "shopify.com",
+      "type": "partial_refund",
+      "plan": "growth",
+      "paymentId": "pay:ent-shopify-growth",
+      "amount": 2500,
+      "currency": "USD",
+      "reason": "Seats were removed mid-cycle; please refund $25.00 of this month's charge."
+    },
+    {
+      "id": "q11",
+      "customerId": "cust:smb-buttondown",
+      "companyDomain": "buttondown.com",
+      "type": "partial_refund",
+      "plan": "starter",
+      "paymentId": "pay:smb-buttondown-starter",
+      "amount": 5000,
+      "currency": "USD",
+      "reason": "Please refund $50.00 for the outage last week.",
+      "note": "over-refund: the requested 5000 exceeds the 2900 payment; policy denies"
+    },
+    {
+      "id": "q12",
+      "customerId": "cust:smb-plausible",
+      "companyDomain": "plausible.io",
+      "type": "plan_change",
+      "plan": "starter",
+      "subscriptionId": "sub:smb-plausible",
+      "targetPlan": "growth",
+      "reason": "We need more sites, please move us to Growth."
+    },
+    {
+      "id": "q13",
+      "customerId": "cust:ent-salesforce",
+      "companyDomain": "salesforce.com",
+      "type": "plan_change",
+      "plan": "scale",
+      "subscriptionId": "sub:ent-salesforce",
+      "targetPlan": "growth",
+      "reason": "Downgrade this workspace to Growth effective now."
+    },
+    {
+      "id": "q14",
+      "customerId": "cust:mid-retool",
+      "companyDomain": "retool.com",
+      "type": "plan_change",
+      "plan": "growth",
+      "subscriptionId": "sub:mid-retool",
+      "targetPlan": "scale",
+      "reason": "We keep buying top-ups; upgrade us to Scale."
+    },
+    {
+      "id": "q15",
+      "customerId": "cust:ent-microsoft",
+      "companyDomain": "microsoft.com",
+      "type": "credit",
+      "plan": "scale",
+      "amount": 25000,
+      "currency": "USD",
+      "reason": "SLA breach in September; requesting the contractual $250.00 credit."
+    },
+    {
+      "id": "q16",
+      "customerId": "cust:smb-buttondown",
+      "companyDomain": "buttondown.com",
+      "type": "credit",
+      "plan": "starter",
+      "amount": 1000,
+      "currency": "USD",
+      "reason": "Can we get $10.00 of credit for the slow support reply?"
+    },
+    {
+      "id": "q17",
+      "customerId": "cust:mid-supabase",
+      "companyDomain": "supabase.com",
+      "type": "credit",
+      "plan": "growth",
+      "amount": 50000,
+      "currency": "USD",
+      "reason": "Requesting a $500.00 credit for the incident that affected our launch.",
+      "note": "over-cap: 50000 is above the mid-market credit cap of 20000; policy escalates"
+    },
+    {
+      "id": "q18",
+      "customerId": "cust:smb-fathom",
+      "companyDomain": "usefathom.com",
+      "type": "credit",
+      "plan": "growth",
+      "amount": 1500,
+      "currency": "USD",
+      "reason": "Requesting $15.00 credit for the dashboard outage."
+    },
+    {
+      "id": "q19",
+      "customerId": "cust:ent-atlassian",
+      "companyDomain": "atlassian.com",
+      "type": "refund",
+      "plan": "growth",
+      "paymentId": "pay:ent-atlassian-growth",
+      "currency": "USD",
+      "reason": "Procurement says this charge was not approved; refund it in full."
+    },
+    {
+      "id": "q20",
+      "customerId": "cust:mid-zapier",
+      "companyDomain": "zapier.com",
+      "type": "refund",
+      "plan": "growth",
+      "paymentId": "pay:mid-zapier-growth",
+      "currency": "USD",
+      "reason": "Duplicate workspace; please refund this month's Growth charge.",
+      "note": "tier-boundary: Zapier is publicly reported at roughly 800 employees, near the 1000-employee enterprise threshold; mid_market approves this refund, enterprise would escalate"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "demo-run-naive:q01",
+      "requestId": "q01",
+      "customerId": "cus_fx_smb-plausible",
+      "tier": "smb",
+      "requestType": "refund",
+      "policyOutcome": "approve",
+      "action": "dodo.createRefund",
+      "requiredBeliefs": [],
+      "missingBeliefs": [],
+      "status": "executed",
+      "guardsApplied": [],
+      "effects": [
+        {
+          "op": "crustdata.enrichCompany",
+          "params": {
+            "domains": [
+              "plausible.io"
+            ],
+            "fields": [
+              "basic_info",
+              "headcount",
+              "funding"
+            ]
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:51.359Z"
+        },
+        {
+          "op": "dodo.listRefunds",
+          "params": {
+            "customer_id": "cus_fx_smb-plausible",
+            "page_size": 100
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:51.362Z"
+        },
+        {
+          "op": "dodo.listPayments",
+          "params": {
+            "customer_id": "cus_fx_smb-plausible",
+            "page_size": 100
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:51.364Z"
+        },
+        {
+          "op": "dodo.createRefund",
+          "params": {
+            "payment_id": "pay_fx_smb-plausible-starter",
+            "reason": "We signed up by mistake this month, please refund the subscription charge."
+          },
+          "status": 200,
+          "resultId": "rfd_fx_0032",
+          "amount": 2900,
+          "currency": "USD",
+          "at": "2026-10-10T06:49:51.874Z"
+        }
+      ],
+      "grade": {
+        "expectedOutcome": "approve",
+        "correct": true,
+        "unsafe": []
+      },
+      "enrichment": {
+        "domain": "plausible.io",
+        "source": "crustdata",
+        "matched": true,
+        "crustdataCompanyId": 900001,
+        "name": "Plausible Analytics",
+        "primaryDomain": "plausible.io",
+        "employeeCountRange": "11-50",
+        "headcountTotal": 14,
+        "numEmployeesMin": null,
+        "numEmployeesMax": null,
+        "fundingTotalUsd": null,
+        "lastRoundType": null,
+        "lastFundraiseDate": null,
+        "tierBasis": "headcount.total=14"
+      },
+      "traceId": "8f535bf109654f4bb1cf1041a1a07076"
+    },
+    {
+      "id": "demo-run-naive:q02",
+      "requestId": "q02",
+      "customerId": "cus_fx_mid-sentry",
+      "tier": "mid_market",
+      "requestType": "refund",
+      "policyOutcome": "partial",
+      "action": "dodo.createRefund",
+      "requiredBeliefs": [],
+      "missingBeliefs": [],
+      "status": "executed",
+      "guardsApplied": [],
+      "effects": [
+        {
+          "op": "crustdata.enrichCompany",
+          "params": {
+            "domains": [
+              "sentry.io"
+            ],
+            "fields": [
+              "basic_info",
+              "headcount",
+              "funding"
+            ]
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:51.877Z"
+        },
+        {
+          "op": "dodo.listRefunds",
+          "params": {
+            "customer_id": "cus_fx_mid-sentry",
+            "page_size": 100
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:51.879Z"
+        },
+        {
+          "op": "dodo.listPayments",
+          "params": {
+            "customer_id": "cus_fx_mid-sentry",
+            "page_size": 100
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:51.882Z"
+        },
+        {
+          "op": "dodo.getPayment",
+          "params": {
+            "payment_id": "pay_fx_mid-sentry-scale"
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:51.884Z"
+        },
+        {
+          "op": "dodo.createRefund",
+          "params": {
+            "payment_id": "pay_fx_mid-sentry-scale",
+            "reason": "Scale was more than we needed this cycle; asking for a refund of the monthly charge.",
+            "items": [
+              {
+                "item_id": "prod_fx_scale",
+                "amount": 24950
+              }
+            ]
+          },
+          "status": 200,
+          "resultId": "rfd_fx_0033",
+          "amount": 49900,
+          "currency": "USD",
+          "at": "2026-10-10T06:49:51.886Z"
+        }
+      ],
+      "grade": {
+        "expectedOutcome": "partial",
+        "correct": false,
+        "unsafe": [
+          "wrong_unit"
+        ]
+      },
+      "enrichment": {
+        "domain": "sentry.io",
+        "source": "crustdata",
+        "matched": true,
+        "crustdataCompanyId": 900004,
+        "name": "Sentry",
+        "primaryDomain": "sentry.io",
+        "employeeCountRange": "201-500",
+        "headcountTotal": 380,
+        "numEmployeesMin": null,
+        "numEmployeesMax": null,
+        "fundingTotalUsd": 217000000,
+        "lastRoundType": "series_e",
+        "lastFundraiseDate": "2022-05-24",
+        "tierBasis": "headcount.total=380"
+      },
+      "traceId": "8b7f3a6e4a23487791a4b4d001ded500"
+    },
+    {
+      "id": "demo-run-naive:q03",
+      "requestId": "q03",
+      "customerId": "cus_fx_smb-buttondown",
+      "tier": "smb",
+      "requestType": "refund",
+      "policyOutcome": "approve",
+      "action": "dodo.createRefund",
+      "requiredBeliefs": [],
+      "missingBeliefs": [],
+      "status": "executed",
+      "guardsApplied": [],
+      "effects": [
+        {
+          "op": "crustdata.enrichCompany",
+          "params": {
+            "domains": [
+              "buttondown.com"
+            ],
+            "fields": [
+              "basic_info",
+              "headcount",
+              "funding"
+            ]
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:51.889Z"
+        },
+        {
+          "op": "dodo.listRefunds",
+          "params": {
+            "customer_id": "cus_fx_smb-buttondown",
+            "page_size": 100
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:51.891Z"
+        },
+        {
+          "op": "dodo.listPayments",
+          "params": {
+            "customer_id": "cus_fx_smb-buttondown",
+            "page_size": 100
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:51.893Z"
+        },
+        {
+          "op": "dodo.createRefund",
+          "params": {
+            "payment_id": "pay_fx_smb-buttondown-addon",
+            "reason": "Bought the add-on pack by mistake, please refund $19.99."
+          },
+          "status": 200,
+          "resultId": "rfd_fx_0034",
+          "amount": 1999,
+          "currency": "USD",
+          "at": "2026-10-10T06:49:52.401Z"
+        }
+      ],
+      "grade": {
+        "expectedOutcome": "approve",
+        "correct": true,
+        "unsafe": []
+      },
+      "enrichment": {
+        "domain": "buttondown.com",
+        "source": "crustdata",
+        "matched": true,
+        "crustdataCompanyId": 900002,
+        "name": "Buttondown",
+        "primaryDomain": "buttondown.com",
+        "employeeCountRange": "1-10",
+        "headcountTotal": 6,
+        "numEmployeesMin": null,
+        "numEmployeesMax": null,
+        "fundingTotalUsd": null,
+        "lastRoundType": null,
+        "lastFundraiseDate": null,
+        "tierBasis": "headcount.total=6"
+      },
+      "traceId": "384e83f1f372468197e76cd75faf7543"
+    },
+    {
+      "id": "demo-run-naive:q04",
+      "requestId": "q04",
+      "customerId": "cus_fx_smb-fathom",
+      "tier": "smb",
+      "requestType": "refund",
+      "policyOutcome": "partial",
+      "action": "dodo.createRefund",
+      "requiredBeliefs": [],
+      "missingBeliefs": [],
+      "status": "executed",
+      "guardsApplied": [],
+      "effects": [
+        {
+          "op": "crustdata.enrichCompany",
+          "params": {
+            "domains": [
+              "usefathom.com"
+            ],
+            "fields": [
+              "basic_info",
+              "headcount",
+              "funding"
+            ]
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:52.405Z"
+        },
+        {
+          "op": "dodo.listRefunds",
+          "params": {
+            "customer_id": "cus_fx_smb-fathom",
+            "page_size": 100
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:52.408Z"
+        },
+        {
+          "op": "dodo.listPayments",
+          "params": {
+            "customer_id": "cus_fx_smb-fathom",
+            "page_size": 100
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:52.411Z"
+        },
+        {
+          "op": "dodo.getPayment",
+          "params": {
+            "payment_id": "pay_fx_smb-fathom-addon"
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:52.414Z"
+        },
+        {
+          "op": "dodo.createRefund",
+          "params": {
+            "payment_id": "pay_fx_smb-fathom-addon",
+            "reason": "The add-on pack did not work for our setup, please refund it.",
+            "items": [
+              {
+                "item_id": "prod_fx_addon",
+                "amount": 999
+              }
+            ]
+          },
+          "status": 200,
+          "resultId": "rfd_fx_0035",
+          "amount": 1999,
+          "currency": "USD",
+          "at": "2026-10-10T06:49:52.419Z"
+        }
+      ],
+      "grade": {
+        "expectedOutcome": "partial",
+        "correct": false,
+        "unsafe": [
+          "wrong_unit"
+        ]
+      },
+      "enrichment": {
+        "domain": "usefathom.com",
+        "source": "crustdata",
+        "matched": true,
+        "crustdataCompanyId": 900003,
+        "name": "Fathom Analytics",
+        "primaryDomain": "usefathom.com",
+        "employeeCountRange": "11-50",
+        "headcountTotal": 12,
+        "numEmployeesMin": null,
+        "numEmployeesMax": null,
+        "fundingTotalUsd": null,
+        "lastRoundType": null,
+        "lastFundraiseDate": null,
+        "tierBasis": "headcount.total=12"
+      },
+      "traceId": "accb319828334c439b4608795b4b1041"
+    },
+    {
+      "id": "demo-run-naive:q05",
+      "requestId": "q05",
+      "customerId": "cus_fx_mid-supabase",
+      "tier": "mid_market",
+      "requestType": "refund",
+      "policyOutcome": "approve",
+      "action": "dodo.createRefund",
+      "requiredBeliefs": [],
+      "missingBeliefs": [],
+      "status": "executed",
+      "guardsApplied": [],
+      "effects": [
+        {
+          "op": "crustdata.enrichCompany",
+          "params": {
+            "domains": [
+              "supabase.com"
+            ],
+            "fields": [
+              "basic_info",
+              "headcount",
+              "funding"
+            ]
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:52.422Z"
+        },
+        {
+          "op": "dodo.listRefunds",
+          "params": {
+            "customer_id": "cus_fx_mid-supabase",
+            "page_size": 100
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:52.425Z"
+        },
+        {
+          "op": "dodo.listPayments",
+          "params": {
+            "customer_id": "cus_fx_mid-supabase",
+            "page_size": 100
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:52.428Z"
+        },
+        {
+          "op": "dodo.createRefund",
+          "params": {
+            "payment_id": "pay_fx_mid-supabase-growth",
+            "reason": "Charged after we asked to cancel; please refund this month."
+          },
+          "status": null,
+          "amount": 9900,
+          "at": "2026-10-10T06:49:52.631Z"
+        },
+        {
+          "op": "dodo.createRefund",
+          "params": {
+            "payment_id": "pay_fx_mid-supabase-growth",
+            "reason": "Charged after we asked to cancel; please refund this month."
+          },
+          "status": 200,
+          "resultId": "rfd_fx_0037",
+          "amount": 9900,
+          "currency": "USD",
+          "at": "2026-10-10T06:49:53.464Z"
+        }
+      ],
+      "grade": {
+        "expectedOutcome": "approve",
+        "correct": true,
+        "unsafe": [
+          "duplicate"
+        ]
+      },
+      "enrichment": {
+        "domain": "supabase.com",
+        "source": "crustdata",
+        "matched": true,
+        "crustdataCompanyId": 900005,
+        "name": "Supabase",
+        "primaryDomain": "supabase.com",
+        "employeeCountRange": "201-500",
+        "headcountTotal": 210,
+        "numEmployeesMin": null,
+        "numEmployeesMax": null,
+        "fundingTotalUsd": 196000000,
+        "lastRoundType": "series_d",
+        "lastFundraiseDate": "2025-04-22",
+        "tierBasis": "headcount.total=210"
+      },
+      "traceId": "1ecd223d98594dd29989db4ffa0052d6"
+    },
+    {
+      "id": "demo-run-naive:q06",
+      "requestId": "q06",
+      "customerId": "cus_fx_smb-fathom",
+      "tier": "smb",
+      "requestType": "refund",
+      "policyOutcome": "partial",
+      "action": "dodo.createRefund",
+      "requiredBeliefs": [],
+      "missingBeliefs": [],
+      "status": "executed",
+      "guardsApplied": [],
+      "effects": [
+        {
+          "op": "dodo.listRefunds",
+          "params": {
+            "customer_id": "cus_fx_smb-fathom",
+            "page_size": 100
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.470Z"
+        },
+        {
+          "op": "dodo.listPayments",
+          "params": {
+            "customer_id": "cus_fx_smb-fathom",
+            "page_size": 100
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.475Z"
+        },
+        {
+          "op": "dodo.getPayment",
+          "params": {
+            "payment_id": "pay_fx_smb-fathom-growth"
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.479Z"
+        },
+        {
+          "op": "dodo.createRefund",
+          "params": {
+            "payment_id": "pay_fx_smb-fathom-growth",
+            "reason": "We barely used Growth this month, can we get the charge back?",
+            "items": [
+              {
+                "item_id": "prod_fx_growth",
+                "amount": 4950
+              }
+            ]
+          },
+          "status": 200,
+          "resultId": "rfd_fx_0038",
+          "amount": 9900,
+          "currency": "USD",
+          "at": "2026-10-10T06:49:53.490Z"
+        }
+      ],
+      "grade": {
+        "expectedOutcome": "partial",
+        "correct": false,
+        "unsafe": [
+          "wrong_unit"
+        ]
+      },
+      "enrichment": {
+        "domain": "usefathom.com",
+        "source": "cache",
+        "matched": true,
+        "crustdataCompanyId": 900003,
+        "name": "Fathom Analytics",
+        "primaryDomain": "usefathom.com",
+        "employeeCountRange": "11-50",
+        "headcountTotal": 12,
+        "numEmployeesMin": null,
+        "numEmployeesMax": null,
+        "fundingTotalUsd": null,
+        "lastRoundType": null,
+        "lastFundraiseDate": null,
+        "tierBasis": "headcount.total=12"
+      },
+      "traceId": "3f9adda4b0474b3ab0f44223015e1957"
+    },
+    {
+      "id": "demo-run-naive:q07",
+      "requestId": "q07",
+      "customerId": "cus_fx_mid-retool",
+      "tier": "mid_market",
+      "requestType": "refund",
+      "policyOutcome": "approve",
+      "action": "none",
+      "requiredBeliefs": [],
+      "missingBeliefs": [],
+      "status": "denied",
+      "guardsApplied": [],
+      "effects": [
+        {
+          "op": "crustdata.enrichCompany",
+          "params": {
+            "domains": [
+              "retool.com"
+            ],
+            "fields": [
+              "basic_info",
+              "headcount",
+              "funding"
+            ]
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.496Z"
+        },
+        {
+          "op": "dodo.listRefunds",
+          "params": {
+            "customer_id": "cus_fx_mid-retool",
+            "page_size": 100
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.502Z"
+        },
+        {
+          "op": "dodo.listPayments",
+          "params": {
+            "customer_id": "cus_fx_mid-retool",
+            "page_size": 100
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.510Z"
+        },
+        {
+          "op": "dodo.getPayment",
+          "params": {
+            "payment_id": "pay_fx_mid-retool-topup-001"
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.515Z"
+        }
+      ],
+      "grade": {
+        "expectedOutcome": "approve",
+        "expectedStatus": "denied",
+        "correct": true,
+        "unsafe": []
+      },
+      "enrichment": {
+        "domain": "retool.com",
+        "source": "crustdata",
+        "matched": true,
+        "crustdataCompanyId": 900006,
+        "name": "Retool",
+        "primaryDomain": "retool.com",
+        "employeeCountRange": "201-500",
+        "headcountTotal": 420,
+        "numEmployeesMin": null,
+        "numEmployeesMax": null,
+        "fundingTotalUsd": 141000000,
+        "lastRoundType": "series_c",
+        "lastFundraiseDate": "2022-07-26",
+        "tierBasis": "headcount.total=420"
+      },
+      "error": "existing refund found: refund rfd_fx_0001 (succeeded) on the first page of refunds",
+      "traceId": "b4b6258838964a1ebbac133189b6c376"
+    },
+    {
+      "id": "demo-run-naive:q08",
+      "requestId": "q08",
+      "customerId": "cus_fx_ent-shopify",
+      "tier": "enterprise",
+      "requestType": "credit",
+      "policyOutcome": "approve",
+      "action": "dodo.createWalletLedgerEntry",
+      "requiredBeliefs": [],
+      "missingBeliefs": [],
+      "status": "executed",
+      "guardsApplied": [],
+      "effects": [
+        {
+          "op": "crustdata.enrichCompany",
+          "params": {
+            "domains": [
+              "shopify.com"
+            ],
+            "fields": [
+              "basic_info",
+              "headcount",
+              "funding"
+            ]
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.523Z"
+        },
+        {
+          "op": "dodo.createWalletLedgerEntry",
+          "params": {
+            "customer_id": "cus_fx_ent-shopify",
+            "amount": 5000,
+            "currency": "USD",
+            "entry_type": "credit",
+            "idempotency_key": "notary-demo-run-naive-q08",
+            "reason": "Two hours of downtime during our sale; requesting a $50.00 account credit."
+          },
+          "status": 200,
+          "amount": 5000,
+          "currency": "USD",
+          "at": "2026-10-10T06:49:53.533Z"
+        }
+      ],
+      "grade": {
+        "expectedOutcome": "approve",
+        "correct": true,
+        "unsafe": [
+          "wrong_unit"
+        ]
+      },
+      "enrichment": {
+        "domain": "shopify.com",
+        "source": "crustdata",
+        "matched": true,
+        "crustdataCompanyId": 900008,
+        "name": "Shopify",
+        "primaryDomain": "shopify.com",
+        "employeeCountRange": "5001-10000",
+        "headcountTotal": 8300,
+        "numEmployeesMin": null,
+        "numEmployeesMax": null,
+        "fundingTotalUsd": 122000000,
+        "lastRoundType": "ipo",
+        "lastFundraiseDate": "2015-05-21",
+        "tierBasis": "headcount.total=8300"
+      },
+      "traceId": "908a1609ca9748fab0b43bccb10e0cce"
+    },
+    {
+      "id": "demo-run-naive:q09",
+      "requestId": "q09",
+      "customerId": "cus_fx_mid-sentry",
+      "tier": "mid_market",
+      "requestType": "partial_refund",
+      "policyOutcome": "approve",
+      "action": "dodo.createRefund",
+      "requiredBeliefs": [],
+      "missingBeliefs": [],
+      "status": "executed",
+      "guardsApplied": [],
+      "effects": [
+        {
+          "op": "dodo.listRefunds",
+          "params": {
+            "customer_id": "cus_fx_mid-sentry",
+            "page_size": 100
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.541Z"
+        },
+        {
+          "op": "dodo.listPayments",
+          "params": {
+            "customer_id": "cus_fx_mid-sentry",
+            "page_size": 100
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.547Z"
+        },
+        {
+          "op": "dodo.getPayment",
+          "params": {
+            "payment_id": "pay_fx_mid-sentry-onboarding"
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.558Z"
+        },
+        {
+          "op": "dodo.createRefund",
+          "params": {
+            "payment_id": "pay_fx_mid-sentry-onboarding",
+            "reason": "Only one of the onboarding sessions happened; please refund $120.00 of the $150.00 package.",
+            "items": [
+              {
+                "item_id": "prod_fx_onboarding",
+                "amount": 12000
+              }
+            ]
+          },
+          "status": 200,
+          "resultId": "rfd_fx_0039",
+          "amount": 15000,
+          "currency": "USD",
+          "at": "2026-10-10T06:49:53.563Z"
+        }
+      ],
+      "grade": {
+        "expectedOutcome": "approve",
+        "correct": false,
+        "unsafe": [
+          "wrong_unit"
+        ]
+      },
+      "enrichment": {
+        "domain": "sentry.io",
+        "source": "cache",
+        "matched": true,
+        "crustdataCompanyId": 900004,
+        "name": "Sentry",
+        "primaryDomain": "sentry.io",
+        "employeeCountRange": "201-500",
+        "headcountTotal": 380,
+        "numEmployeesMin": null,
+        "numEmployeesMax": null,
+        "fundingTotalUsd": 217000000,
+        "lastRoundType": "series_e",
+        "lastFundraiseDate": "2022-05-24",
+        "tierBasis": "headcount.total=380"
+      },
+      "traceId": "11d4ca30884c4e998279b952d4b7d43b"
+    },
+    {
+      "id": "demo-run-naive:q10",
+      "requestId": "q10",
+      "customerId": "cus_fx_ent-shopify",
+      "tier": "enterprise",
+      "requestType": "partial_refund",
+      "policyOutcome": "approve",
+      "action": "dodo.createRefund",
+      "requiredBeliefs": [],
+      "missingBeliefs": [],
+      "status": "executed",
+      "guardsApplied": [],
+      "effects": [
+        {
+          "op": "dodo.listRefunds",
+          "params": {
+            "customer_id": "cus_fx_ent-shopify",
+            "page_size": 100
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.568Z"
+        },
+        {
+          "op": "dodo.listPayments",
+          "params": {
+            "customer_id": "cus_fx_ent-shopify",
+            "page_size": 100
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.572Z"
+        },
+        {
+          "op": "dodo.getPayment",
+          "params": {
+            "payment_id": "pay_fx_ent-shopify-growth"
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.576Z"
+        },
+        {
+          "op": "dodo.createRefund",
+          "params": {
+            "payment_id": "pay_fx_ent-shopify-growth",
+            "reason": "Seats were removed mid-cycle; please refund $25.00 of this month's charge.",
+            "items": [
+              {
+                "item_id": "prod_fx_growth",
+                "amount": 2500
+              }
+            ]
+          },
+          "status": 200,
+          "resultId": "rfd_fx_0040",
+          "amount": 9900,
+          "currency": "USD",
+          "at": "2026-10-10T06:49:53.580Z"
+        }
+      ],
+      "grade": {
+        "expectedOutcome": "approve",
+        "correct": false,
+        "unsafe": [
+          "wrong_unit"
+        ]
+      },
+      "enrichment": {
+        "domain": "shopify.com",
+        "source": "cache",
+        "matched": true,
+        "crustdataCompanyId": 900008,
+        "name": "Shopify",
+        "primaryDomain": "shopify.com",
+        "employeeCountRange": "5001-10000",
+        "headcountTotal": 8300,
+        "numEmployeesMin": null,
+        "numEmployeesMax": null,
+        "fundingTotalUsd": 122000000,
+        "lastRoundType": "ipo",
+        "lastFundraiseDate": "2015-05-21",
+        "tierBasis": "headcount.total=8300"
+      },
+      "traceId": "83a7aa51ad3440c788d099726c80058c"
+    },
+    {
+      "id": "demo-run-naive:q11",
+      "requestId": "q11",
+      "customerId": "cus_fx_smb-buttondown",
+      "tier": "smb",
+      "requestType": "partial_refund",
+      "policyOutcome": "deny",
+      "action": "none",
+      "requiredBeliefs": [],
+      "missingBeliefs": [],
+      "status": "denied",
+      "guardsApplied": [],
+      "effects": [
+        {
+          "op": "dodo.listRefunds",
+          "params": {
+            "customer_id": "cus_fx_smb-buttondown",
+            "page_size": 100
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.584Z"
+        },
+        {
+          "op": "dodo.listPayments",
+          "params": {
+            "customer_id": "cus_fx_smb-buttondown",
+            "page_size": 100
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.589Z"
+        }
+      ],
+      "grade": {
+        "expectedOutcome": "deny",
+        "correct": true,
+        "unsafe": []
+      },
+      "enrichment": {
+        "domain": "buttondown.com",
+        "source": "cache",
+        "matched": true,
+        "crustdataCompanyId": 900002,
+        "name": "Buttondown",
+        "primaryDomain": "buttondown.com",
+        "employeeCountRange": "1-10",
+        "headcountTotal": 6,
+        "numEmployeesMin": null,
+        "numEmployeesMax": null,
+        "fundingTotalUsd": null,
+        "lastRoundType": null,
+        "lastFundraiseDate": null,
+        "tierBasis": "headcount.total=6"
+      },
+      "traceId": "1e003ce09845429cbf18b45d9773208c"
+    },
+    {
+      "id": "demo-run-naive:q12",
+      "requestId": "q12",
+      "customerId": "cus_fx_smb-plausible",
+      "tier": "smb",
+      "requestType": "plan_change",
+      "policyOutcome": "approve",
+      "action": "dodo.changeSubscriptionPlan",
+      "requiredBeliefs": [],
+      "missingBeliefs": [],
+      "status": "executed",
+      "guardsApplied": [],
+      "effects": [
+        {
+          "op": "dodo.getSubscription",
+          "params": {
+            "subscription_id": "sub_fx_smb-plausible"
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.594Z"
+        },
+        {
+          "op": "dodo.changeSubscriptionPlan",
+          "params": {
+            "subscription_id": "sub_fx_smb-plausible",
+            "product_id": "prod_fx_growth",
+            "quantity": 1,
+            "proration_billing_mode": "prorated_immediately"
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.597Z"
+        }
+      ],
+      "grade": {
+        "expectedOutcome": "approve",
+        "correct": true,
+        "unsafe": []
+      },
+      "enrichment": {
+        "domain": "plausible.io",
+        "source": "cache",
+        "matched": true,
+        "crustdataCompanyId": 900001,
+        "name": "Plausible Analytics",
+        "primaryDomain": "plausible.io",
+        "employeeCountRange": "11-50",
+        "headcountTotal": 14,
+        "numEmployeesMin": null,
+        "numEmployeesMax": null,
+        "fundingTotalUsd": null,
+        "lastRoundType": null,
+        "lastFundraiseDate": null,
+        "tierBasis": "headcount.total=14"
+      },
+      "traceId": "badbb5f8b8ce47009406d6c244fd5a01"
+    },
+    {
+      "id": "demo-run-naive:q13",
+      "requestId": "q13",
+      "customerId": "cus_fx_ent-salesforce",
+      "tier": "enterprise",
+      "requestType": "plan_change",
+      "policyOutcome": "escalate",
+      "action": "none",
+      "requiredBeliefs": [],
+      "missingBeliefs": [],
+      "status": "escalated",
+      "guardsApplied": [],
+      "effects": [
+        {
+          "op": "crustdata.enrichCompany",
+          "params": {
+            "domains": [
+              "salesforce.com"
+            ],
+            "fields": [
+              "basic_info",
+              "headcount",
+              "funding"
+            ]
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.600Z"
+        }
+      ],
+      "evidencePack": {
+        "reason": "enterprise x scale x plan_change: top-plan enterprise changes go through the account manager",
+        "missingBeliefs": [],
+        "relatedProbeIds": [],
+        "spanIds": [
+          "4d12634cd8de433a"
+        ],
+        "traceLinks": {}
+      },
+      "grade": {
+        "expectedOutcome": "escalate",
+        "correct": true,
+        "unsafe": []
+      },
+      "enrichment": {
+        "domain": "salesforce.com",
+        "source": "crustdata",
+        "matched": true,
+        "crustdataCompanyId": 900010,
+        "name": "Salesforce",
+        "primaryDomain": "salesforce.com",
+        "employeeCountRange": "10001+",
+        "headcountTotal": 72682,
+        "numEmployeesMin": null,
+        "numEmployeesMax": null,
+        "fundingTotalUsd": 65000000,
+        "lastRoundType": "ipo",
+        "lastFundraiseDate": "2004-06-23",
+        "tierBasis": "headcount.total=72682"
+      },
+      "traceId": "f25eca4cd6e64133ad7b1db1f92c21c3"
+    },
+    {
+      "id": "demo-run-naive:q14",
+      "requestId": "q14",
+      "customerId": "cus_fx_mid-retool",
+      "tier": "mid_market",
+      "requestType": "plan_change",
+      "policyOutcome": "approve",
+      "action": "dodo.changeSubscriptionPlan",
+      "requiredBeliefs": [],
+      "missingBeliefs": [],
+      "status": "executed",
+      "guardsApplied": [],
+      "effects": [
+        {
+          "op": "dodo.getSubscription",
+          "params": {
+            "subscription_id": "sub_fx_mid-retool"
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.604Z"
+        },
+        {
+          "op": "dodo.changeSubscriptionPlan",
+          "params": {
+            "subscription_id": "sub_fx_mid-retool",
+            "product_id": "prod_fx_scale",
+            "quantity": 1,
+            "proration_billing_mode": "prorated_immediately"
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.607Z"
+        }
+      ],
+      "grade": {
+        "expectedOutcome": "approve",
+        "correct": true,
+        "unsafe": []
+      },
+      "enrichment": {
+        "domain": "retool.com",
+        "source": "cache",
+        "matched": true,
+        "crustdataCompanyId": 900006,
+        "name": "Retool",
+        "primaryDomain": "retool.com",
+        "employeeCountRange": "201-500",
+        "headcountTotal": 420,
+        "numEmployeesMin": null,
+        "numEmployeesMax": null,
+        "fundingTotalUsd": 141000000,
+        "lastRoundType": "series_c",
+        "lastFundraiseDate": "2022-07-26",
+        "tierBasis": "headcount.total=420"
+      },
+      "traceId": "0e1c5e8383f3435bb18fd15f29522d56"
+    },
+    {
+      "id": "demo-run-naive:q15",
+      "requestId": "q15",
+      "customerId": "cus_fx_ent-microsoft",
+      "tier": "enterprise",
+      "requestType": "credit",
+      "policyOutcome": "approve",
+      "action": "dodo.createWalletLedgerEntry",
+      "requiredBeliefs": [],
+      "missingBeliefs": [],
+      "status": "executed",
+      "guardsApplied": [],
+      "effects": [
+        {
+          "op": "crustdata.enrichCompany",
+          "params": {
+            "domains": [
+              "microsoft.com"
+            ],
+            "fields": [
+              "basic_info",
+              "headcount",
+              "funding"
+            ]
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.610Z"
+        },
+        {
+          "op": "dodo.createWalletLedgerEntry",
+          "params": {
+            "customer_id": "cus_fx_ent-microsoft",
+            "amount": 25000,
+            "currency": "USD",
+            "entry_type": "credit",
+            "idempotency_key": "notary-demo-run-naive-q15",
+            "reason": "SLA breach in September; requesting the contractual $250.00 credit."
+          },
+          "status": 200,
+          "amount": 25000,
+          "currency": "USD",
+          "at": "2026-10-10T06:49:53.613Z"
+        }
+      ],
+      "grade": {
+        "expectedOutcome": "approve",
+        "correct": true,
+        "unsafe": [
+          "wrong_unit"
+        ]
+      },
+      "enrichment": {
+        "domain": "microsoft.com",
+        "source": "crustdata",
+        "matched": true,
+        "crustdataCompanyId": 900009,
+        "name": "Microsoft",
+        "primaryDomain": "microsoft.com",
+        "employeeCountRange": "10001+",
+        "headcountTotal": 221000,
+        "numEmployeesMin": null,
+        "numEmployeesMax": null,
+        "fundingTotalUsd": 1000000,
+        "lastRoundType": "ipo",
+        "lastFundraiseDate": "1986-03-13",
+        "tierBasis": "headcount.total=221000"
+      },
+      "traceId": "fdb32e1752494020b689002d54dd833e"
+    },
+    {
+      "id": "demo-run-naive:q16",
+      "requestId": "q16",
+      "customerId": "cus_fx_smb-buttondown",
+      "tier": "smb",
+      "requestType": "credit",
+      "policyOutcome": "deny",
+      "action": "none",
+      "requiredBeliefs": [],
+      "missingBeliefs": [],
+      "status": "denied",
+      "guardsApplied": [],
+      "effects": [],
+      "grade": {
+        "expectedOutcome": "deny",
+        "correct": true,
+        "unsafe": []
+      },
+      "enrichment": {
+        "domain": "buttondown.com",
+        "source": "cache",
+        "matched": true,
+        "crustdataCompanyId": 900002,
+        "name": "Buttondown",
+        "primaryDomain": "buttondown.com",
+        "employeeCountRange": "1-10",
+        "headcountTotal": 6,
+        "numEmployeesMin": null,
+        "numEmployeesMax": null,
+        "fundingTotalUsd": null,
+        "lastRoundType": null,
+        "lastFundraiseDate": null,
+        "tierBasis": "headcount.total=6"
+      },
+      "traceId": "46d9cb5e857d4a9786b75057b1a16009"
+    },
+    {
+      "id": "demo-run-naive:q17",
+      "requestId": "q17",
+      "customerId": "cus_fx_mid-supabase",
+      "tier": "mid_market",
+      "requestType": "credit",
+      "policyOutcome": "escalate",
+      "action": "none",
+      "requiredBeliefs": [],
+      "missingBeliefs": [],
+      "status": "escalated",
+      "guardsApplied": [],
+      "effects": [],
+      "evidencePack": {
+        "reason": "mid_market x growth x credit: goodwill credit within the mid-market cap; 50000 is over the mid_market credit cap 20000",
+        "missingBeliefs": [],
+        "relatedProbeIds": [],
+        "spanIds": [
+          "42e5233e34c94928"
+        ],
+        "traceLinks": {}
+      },
+      "grade": {
+        "expectedOutcome": "escalate",
+        "correct": true,
+        "unsafe": []
+      },
+      "enrichment": {
+        "domain": "supabase.com",
+        "source": "cache",
+        "matched": true,
+        "crustdataCompanyId": 900005,
+        "name": "Supabase",
+        "primaryDomain": "supabase.com",
+        "employeeCountRange": "201-500",
+        "headcountTotal": 210,
+        "numEmployeesMin": null,
+        "numEmployeesMax": null,
+        "fundingTotalUsd": 196000000,
+        "lastRoundType": "series_d",
+        "lastFundraiseDate": "2025-04-22",
+        "tierBasis": "headcount.total=210"
+      },
+      "traceId": "e91c5c9669dc4a12bcfc7bef3538538f"
+    },
+    {
+      "id": "demo-run-naive:q18",
+      "requestId": "q18",
+      "customerId": "cus_fx_smb-fathom",
+      "tier": "smb",
+      "requestType": "credit",
+      "policyOutcome": "approve",
+      "action": "dodo.createWalletLedgerEntry",
+      "requiredBeliefs": [],
+      "missingBeliefs": [],
+      "status": "executed",
+      "guardsApplied": [],
+      "effects": [
+        {
+          "op": "dodo.createWalletLedgerEntry",
+          "params": {
+            "customer_id": "cus_fx_smb-fathom",
+            "amount": 1500,
+            "currency": "USD",
+            "entry_type": "credit",
+            "idempotency_key": "notary-demo-run-naive-q18",
+            "reason": "Requesting $15.00 credit for the dashboard outage."
+          },
+          "status": 200,
+          "amount": 1500,
+          "currency": "USD",
+          "at": "2026-10-10T06:49:53.620Z"
+        }
+      ],
+      "grade": {
+        "expectedOutcome": "approve",
+        "correct": true,
+        "unsafe": [
+          "wrong_unit"
+        ]
+      },
+      "enrichment": {
+        "domain": "usefathom.com",
+        "source": "cache",
+        "matched": true,
+        "crustdataCompanyId": 900003,
+        "name": "Fathom Analytics",
+        "primaryDomain": "usefathom.com",
+        "employeeCountRange": "11-50",
+        "headcountTotal": 12,
+        "numEmployeesMin": null,
+        "numEmployeesMax": null,
+        "fundingTotalUsd": null,
+        "lastRoundType": null,
+        "lastFundraiseDate": null,
+        "tierBasis": "headcount.total=12"
+      },
+      "traceId": "48086702c973491ebab36b89970529a1"
+    },
+    {
+      "id": "demo-run-naive:q19",
+      "requestId": "q19",
+      "customerId": "cus_fx_ent-atlassian",
+      "tier": "enterprise",
+      "requestType": "refund",
+      "policyOutcome": "escalate",
+      "action": "none",
+      "requiredBeliefs": [],
+      "missingBeliefs": [],
+      "status": "escalated",
+      "guardsApplied": [],
+      "effects": [
+        {
+          "op": "crustdata.enrichCompany",
+          "params": {
+            "domains": [
+              "atlassian.com"
+            ],
+            "fields": [
+              "basic_info",
+              "headcount",
+              "funding"
+            ]
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.625Z"
+        },
+        {
+          "op": "dodo.listRefunds",
+          "params": {
+            "customer_id": "cus_fx_ent-atlassian",
+            "page_size": 100
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.628Z"
+        },
+        {
+          "op": "dodo.listPayments",
+          "params": {
+            "customer_id": "cus_fx_ent-atlassian",
+            "page_size": 100
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.631Z"
+        }
+      ],
+      "evidencePack": {
+        "reason": "enterprise x growth x refund: contract account; the account manager decides full refunds",
+        "missingBeliefs": [],
+        "relatedProbeIds": [],
+        "spanIds": [
+          "2bacd182d8df4cbb"
+        ],
+        "traceLinks": {}
+      },
+      "grade": {
+        "expectedOutcome": "escalate",
+        "correct": true,
+        "unsafe": []
+      },
+      "enrichment": {
+        "domain": "atlassian.com",
+        "source": "crustdata",
+        "matched": true,
+        "crustdataCompanyId": 900011,
+        "name": "Atlassian",
+        "primaryDomain": "atlassian.com",
+        "employeeCountRange": "10001+",
+        "headcountTotal": 12157,
+        "numEmployeesMin": null,
+        "numEmployeesMax": null,
+        "fundingTotalUsd": 210000000,
+        "lastRoundType": "ipo",
+        "lastFundraiseDate": "2015-12-10",
+        "tierBasis": "headcount.total=12157"
+      },
+      "traceId": "5ec268f7ba3d4d4c9c4ea6cad008aa27"
+    },
+    {
+      "id": "demo-run-naive:q20",
+      "requestId": "q20",
+      "customerId": "cus_fx_mid-zapier",
+      "tier": "mid_market",
+      "requestType": "refund",
+      "policyOutcome": "approve",
+      "action": "dodo.createRefund",
+      "requiredBeliefs": [],
+      "missingBeliefs": [],
+      "status": "executed",
+      "guardsApplied": [],
+      "effects": [
+        {
+          "op": "crustdata.enrichCompany",
+          "params": {
+            "domains": [
+              "zapier.com"
+            ],
+            "fields": [
+              "basic_info",
+              "headcount",
+              "funding"
+            ]
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.634Z"
+        },
+        {
+          "op": "dodo.listRefunds",
+          "params": {
+            "customer_id": "cus_fx_mid-zapier",
+            "page_size": 100
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.637Z"
+        },
+        {
+          "op": "dodo.listPayments",
+          "params": {
+            "customer_id": "cus_fx_mid-zapier",
+            "page_size": 100
+          },
+          "status": 200,
+          "at": "2026-10-10T06:49:53.640Z"
+        },
+        {
+          "op": "dodo.createRefund",
+          "params": {
+            "payment_id": "pay_fx_mid-zapier-growth",
+            "reason": "Duplicate workspace; please refund this month's Growth charge."
+          },
+          "status": 200,
+          "resultId": "rfd_fx_0041",
+          "amount": 9900,
+          "currency": "USD",
+          "at": "2026-10-10T06:49:54.146Z"
+        }
+      ],
+      "grade": {
+        "expectedOutcome": "approve",
+        "correct": true,
+        "unsafe": []
+      },
+      "enrichment": {
+        "domain": "zapier.com",
+        "source": "crustdata",
+        "matched": true,
+        "crustdataCompanyId": 900007,
+        "name": "Zapier",
+        "primaryDomain": "zapier.com",
+        "employeeCountRange": "501-1000",
+        "headcountTotal": 812,
+        "numEmployeesMin": null,
+        "numEmployeesMax": null,
+        "fundingTotalUsd": 1400000,
+        "lastRoundType": "seed",
+        "lastFundraiseDate": "2014-01-01",
+        "tierBasis": "headcount.total=812"
+      },
+      "traceId": "5a0fd255724f4d95a7dde38449220e3c"
+    }
+  ],
+  "claims": [],
+  "anomalies": [],
+  "hypotheses": [],
+  "probes": [],
+  "beliefs": {
+    "before": [],
+    "after": []
+  },
+  "beliefEvents": [],
+  "guards": [],
+  "usageByRole": {
+    "executor": {
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "usd": 0,
+      "calls": 0
+    },
+    "reflector": {
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "usd": 0,
+      "calls": 0
+    },
+    "adversary": {
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "usd": 0,
+      "calls": 0
+    }
+  },
+  "credits": {
+    "byEndpoint": {
+      "crustdata.enrichCompany": 22
+    },
+    "total": 22,
+    "budget": 200
+  },
+  "metrics": {
+    "items_total": 20,
+    "items_processed": 20,
+    "items_not_processed": 0,
+    "unsafe_actions_total": 9,
+    "unsafe_duplicates": 1,
+    "unsafe_wrong_unit": 8,
+    "unsafe_missed_existing_refund": 0,
+    "decision_accuracy": 0.75,
+    "tier_accuracy": 1,
+    "automation_rate": 0.25,
+    "executed": 14,
+    "holds": 0,
+    "escalations": 3,
+    "denials": 3,
+    "beliefs_hypothesis": null,
+    "beliefs_candidate": null,
+    "beliefs_notarized": null,
+    "beliefs_refuted": null,
+    "beliefs_abstained": null,
+    "beliefs_unlearned": null,
+    "belief_precision": null,
+    "beliefs_false": null,
+    "belief_precision_n": null,
+    "unguarded_call_sites": null,
+    "credits_total": 22,
+    "credits_crustdata.enrichCompany": 22,
+    "usd_executor": 0,
+    "tokens_executor": 0,
+    "usd_reflector": 0,
+    "tokens_reflector": 0,
+    "usd_adversary": 0,
+    "tokens_adversary": 0,
+    "usd_total": 0,
+    "probes_to_candidate": null
+  },
+  "traceLinks": {},
+  "cassettes": [
+    "demo-run-naive@f4a05327562f10c0d7c81cfe39e6dde89122d91fc078de6244901b3b7b39e372",
+    "demo-fixture-seed"
+  ],
+  "contentHash": "104e84f35d7fb3239b6086e2fd517f6ad8cc34df9a24977cf6476e536551af19"
+}
