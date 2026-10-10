@@ -5,12 +5,26 @@
  * Endpoints and costs: docs/ENDPOINTS.md. Every call reserves its estimated credits from the
  * ledger first (BudgetExceededError stops it before any I/O), then settles the actual charge from
  * the `X-Credits-Used` response header, falling back to the documented list price.
+ *
+ * Rate limit: every live request waits for the process-wide Crustdata limiter (15/min, see
+ * ratelimit.ts; enforced in Recorder.request). A 429 is settled at 0 credits unless the response
+ * carries `X-Credits-Used`, then retried at most CRUSTDATA_MAX_429_RETRIES time(s) after the back-off
+ * the server asked for (Retry-After / x-ratelimit-reset, else one full window); a second 429, or a
+ * back-off over CRUSTDATA_MAX_BACKOFF_MS, throws RateLimitedError. Both exchanges are recorded, so
+ * replay makes the same decision without waiting.
  */
 import { buildUrl, requireEnv } from "./client.js";
 import type { ToolResult } from "./client.js";
-import { CassetteMissError, MissingCredentialError, ToolHttpError } from "./errors.js";
+import { CassetteMissError, MissingCredentialError, RateLimitedError, ToolHttpError } from "./errors.js";
 import type { CreditLedger } from "./ledger.js";
-import type { Recorder } from "./recorder.js";
+import {
+  CRUSTDATA_MAX_429_RETRIES,
+  CRUSTDATA_MAX_BACKOFF_MS,
+  CRUSTDATA_MAX_REQUESTS_PER_WINDOW,
+  CRUSTDATA_RATE_WINDOW_MS,
+  backOffFromHeaders,
+} from "./ratelimit.js";
+import type { RecordedResponse, Recorder } from "./recorder.js";
 
 export const CRUSTDATA_BASE_URL = "https://api.crustdata.com";
 export const CRUSTDATA_API_VERSION = "2025-11-01";
@@ -145,10 +159,33 @@ export class CrustdataClient {
   }
 
   private async call<T>(op: string, method: string, path: string, body: unknown, estimate: number): Promise<ToolResult<T>> {
+    for (let attempt = 1; ; attempt++) {
+      const res = await this.attempt(op, method, path, body, estimate);
+      if (res.status === 429) {
+        const asked = backOffFromHeaders(res.headers, Date.parse(res.exchange.recordedAt));
+        const limit = `limit ${CRUSTDATA_MAX_REQUESTS_PER_WINDOW}/${CRUSTDATA_RATE_WINDOW_MS / 1000}s`;
+        if (attempt > CRUSTDATA_MAX_429_RETRIES) {
+          throw new RateLimitedError(op, res.body, res.exchange.id, attempt, asked, `still limited after waiting out the back-off (${limit}); try again later or lower NOTARY_CRUSTDATA_RPM`);
+        }
+        const waitMs = asked ?? CRUSTDATA_RATE_WINDOW_MS;
+        if (waitMs > CRUSTDATA_MAX_BACKOFF_MS) {
+          throw new RateLimitedError(op, res.body, res.exchange.id, attempt, asked, `server asked for a ${Math.ceil(waitMs / 1000)}s back-off, over the ${CRUSTDATA_MAX_BACKOFF_MS / 1000}s Notary will wait (${limit})`);
+        }
+        // Live: every Crustdata caller in this process pauses until the back-off passes. Replay: no-op.
+        this.recorder.rateLimitBackOff(TOOL, waitMs);
+        continue;
+      }
+      if (res.status < 200 || res.status >= 300) throw new ToolHttpError(op, res.status, res.body, res.exchange.id);
+      return { data: res.body as T, status: res.status, exchangeId: res.exchange.id };
+    }
+  }
+
+  /** One HTTP request: reserve, send, settle. Returns any status; throws only when nothing came back. */
+  private async attempt(op: string, method: string, path: string, body: unknown, estimate: number): Promise<RecordedResponse> {
     this.ledger.reserve(op, estimate);
-    let settled = false;
+    let res: RecordedResponse;
     try {
-      const res = await this.recorder.request({
+      res = await this.recorder.request({
         tool: TOOL,
         op,
         method,
@@ -160,22 +197,19 @@ export class CrustdataClient {
         }),
         credits: creditsFrom(estimate),
       });
-      this.ledger.countCall(op);
-      this.ledger.settle(op, res.exchange.credits ?? estimate);
-      settled = true;
-      if (res.status < 200 || res.status >= 300) throw new ToolHttpError(op, res.status, res.body, res.exchange.id);
-      return { data: res.body as T, status: res.status, exchangeId: res.exchange.id };
     } catch (err) {
-      if (!settled) {
-        if (err instanceof MissingCredentialError || err instanceof CassetteMissError) {
-          this.ledger.release(op); // nothing was sent
-        } else {
-          // Sent but no response (network error): the charge is unknown, so assume the estimate.
-          this.ledger.countCall(op);
-          this.ledger.settle(op, estimate);
-        }
+      if (err instanceof MissingCredentialError || err instanceof CassetteMissError) {
+        this.ledger.release(op); // nothing was sent
+      } else {
+        // Sent but no response (network error): the charge is unknown, so assume the estimate.
+        this.ledger.countCall(op);
+        this.ledger.settle(op, estimate);
       }
       throw err;
     }
+    this.ledger.countCall(op);
+    // A 429 without X-Credits-Used settles 0 (creditsFrom); with the header, what the API says.
+    this.ledger.settle(op, res.exchange.credits ?? (res.status === 429 ? 0 : estimate));
+    return res;
   }
 }

@@ -19,6 +19,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CassetteMissError, TestModeLockError, ToolNetworkError } from "./errors.js";
+import { RateLimitScope, VirtualClock, rateLimitScope, setRateLimitScope } from "./ratelimit.js";
 
 export type RecorderMode = "live" | "replay";
 
@@ -69,6 +70,12 @@ export interface RecorderTransport {
   fetch: FetchLike;
   /** True for simulated traffic: cassettes saved meanwhile are stamped `fixture: true`. */
   fixture: boolean;
+  /**
+   * Rate-limit scope used while this transport is installed. Default: a fresh scope on a
+   * VirtualClock when `fixture` is true (throttle waits are counted, never slept), otherwise the
+   * process scope (real time).
+   */
+  rateLimits?: RateLimitScope;
 }
 
 let transportOverride: RecorderTransport | null = null;
@@ -82,7 +89,10 @@ let transportOverride: RecorderTransport | null = null;
 export function setRecorderTransport(t: RecorderTransport | null): () => void {
   const previous = transportOverride;
   transportOverride = t;
+  const scope = t?.rateLimits ?? (t?.fixture ? new RateLimitScope({ clock: new VirtualClock() }) : null);
+  const restoreScope = scope ? setRateLimitScope(scope) : null;
   return () => {
+    restoreScope?.();
     transportOverride = previous;
   };
 }
@@ -400,6 +410,9 @@ export class Recorder {
       // Credentials are resolved here, before any I/O: a missing key throws without a request.
       const headers = spec.headers?.() ?? {};
       this.occurrences.set(requestHash, occurrence + 1);
+      // Throttle (Crustdata: 15/min) through the PROCESS-WIDE scope, shared by every live Recorder
+      // (recon, probes, queue). Replay never gets here, so it never waits.
+      await rateLimitScope().limiter(spec.tool)?.acquire();
       exchange = await this.live(spec, method, headers, id, requestHash, occurrence);
     }
 
@@ -483,6 +496,15 @@ export class Recorder {
       latencyMs,
       credits: spec.credits ? spec.credits({ status: res.status, headers: rawHeaders }) : null,
     };
+  }
+
+  /**
+   * The server rate-limited `tool` (429) and asked for `ms` of back-off: live mode holds every
+   * caller of the tool in this process until it passes; replay ignores it (nothing waits).
+   */
+  rateLimitBackOff(tool: string, ms: number): void {
+    if (this.mode !== "live") return;
+    rateLimitScope().limiter(tool)?.backOff(ms);
   }
 
   /** The cassette for everything recorded so far. */

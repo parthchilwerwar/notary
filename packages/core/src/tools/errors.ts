@@ -88,6 +88,25 @@ export class ToolHttpError extends Error {
   }
 }
 
+/**
+ * The API kept answering 429 (rate limited) after Notary waited out its requested back-off and
+ * retried (Crustdata: CRUSTDATA_MAX_429_RETRIES), or asked for a back-off longer than Notary will
+ * wait. Still a ToolHttpError (status 429), so callers that branch on HTTP status keep working.
+ */
+export class RateLimitedError extends ToolHttpError {
+  /** HTTP requests made for this call (the original plus retries). */
+  readonly attempts: number;
+  /** The back-off the last 429 asked for (Retry-After / x-ratelimit-reset), null if it named none. */
+  readonly retryAfterMs: number | null;
+  constructor(op: string, body: unknown, exchangeId: string, attempts: number, retryAfterMs: number | null, detail: string) {
+    super(op, 429, body, exchangeId);
+    this.name = "RateLimitedError";
+    this.message = `${op}: HTTP 429 rate limited after ${attempts} request${attempts === 1 ? "" : "s"}; ${detail}`;
+    this.attempts = attempts;
+    this.retryAfterMs = retryAfterMs;
+  }
+}
+
 /** True when the error means "can't proceed without a credential" (the BLOCKED state). */
 export function isBlocked(err: unknown): err is MissingCredentialError {
   return (

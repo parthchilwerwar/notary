@@ -37,6 +37,24 @@ export type {
   RequestSpec,
 } from "./recorder.js";
 export type { ToolResult } from "./client.js";
+export {
+  CRUSTDATA_MAX_429_RETRIES,
+  CRUSTDATA_MAX_BACKOFF_MS,
+  CRUSTDATA_MAX_REQUESTS_PER_WINDOW,
+  CRUSTDATA_RATE_LIMIT_DOC,
+  CRUSTDATA_RATE_WINDOW_MS,
+  CRUSTDATA_RPM_ENV,
+  RateLimitScope,
+  SlidingWindowLimiter,
+  VirtualClock,
+  backOffFromHeaders,
+  crustdataRpmFromEnv,
+  rateLimitScope,
+  realClock,
+  resetRateLimitScope,
+  setRateLimitScope,
+} from "./ratelimit.js";
+export type { Clock, LimiterStats } from "./ratelimit.js";
 export { CRUSTDATA_BASE_URL, CRUSTDATA_API_VERSION, CRUSTDATA_LIST_PRICE } from "./crustdata.js";
 export type {
   CompanyData,
