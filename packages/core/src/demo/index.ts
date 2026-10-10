@@ -247,7 +247,9 @@ function liveStops(env: NodeJS.ProcessEnv): LiveStops {
         return `live: keyless itself (make:drift + replay --drift read a recorded cassette)${blockedAt !== undefined ? `; needs a recorded live notarize run, blocked upstream at Stage ${blockedAt}` : ""}`;
       }
       const mine = own[stage] ?? [];
-      if (mine.length) return `live: BLOCKED at Stage ${stage} — ${mine.join("; ")}`;
+      // Model stages (3 reflector, 6 adversary) point to the doctor that checks them.
+      const fix = stage === 3 || stage === 6 ? ` — set in .env (see .env.example) and run \`pnpm notary doctor --llm\`` : "";
+      if (mine.length) return `live: BLOCKED at Stage ${stage} — ${mine.join("; ")}${fix}`;
       const blockedAt = (upstream[stage] ?? []).find((s) => (own[s] ?? []).length > 0);
       if (blockedAt !== undefined) return `live: nothing of its own to configure; blocked upstream at Stage ${blockedAt}`;
       return `live: requirements present (model keys and AWS credentials are not checked offline; \`pnpm notary doctor --llm\` checks them)`;

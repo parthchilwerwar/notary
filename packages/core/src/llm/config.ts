@@ -21,7 +21,9 @@
  */
 import type { Role } from "../schema/index.js";
 import { MissingCredentialError } from "../tools/errors.js";
-import { MODEL_ENV, ModelConfigError } from "./roles.js";
+import { LLM_FIX_HINT, MODEL_ENV, ModelConfigError } from "./roles.js";
+
+export { LLM_FIX_HINT };
 
 type Env = Record<string, string | undefined>;
 
@@ -33,9 +35,6 @@ export const DEFAULT_LLM_PROVIDER: LlmProvider = "bedrock";
 export const LITELLM_BASE_URL_ENV = "LITELLM_BASE_URL";
 export const LITELLM_API_KEY_ENV = "LITELLM_API_KEY";
 export const AWS_REGION_ENV = "AWS_REGION";
-
-/** What to do about a missing / invalid model setting; appended to every LLM BLOCKED message. */
-export const LLM_FIX_HINT = "set it in .env (see .env.example) and run `pnpm notary doctor --llm`";
 
 function read(env: Env, name: string): string {
   return (env[name] ?? "").trim();
@@ -88,8 +87,20 @@ export function llmMissing(variable: string): MissingCredentialError {
   return new MissingCredentialError(variable, LLM_FIX_HINT);
 }
 
+/** The BLOCKED message for a variable that is set but can never work. */
+export function llmInvalidMessage(variable: string, what: string): string {
+  return `BLOCKED: ${variable} ${what} — fix it in .env (see .env.example) and run \`pnpm notary doctor --llm\``;
+}
+
 function invalid(variable: string, what: string): LlmConfigIssue {
-  return { variable, problem: "invalid", message: `BLOCKED: ${variable} ${what} — fix it in .env (see .env.example) and run \`pnpm notary doctor --llm\`` };
+  return { variable, problem: "invalid", message: llmInvalidMessage(variable, what) };
+}
+
+/** The BLOCKED error for a set-but-unusable model setting (still a MissingCredentialError, so isBlocked() holds). */
+export function llmInvalid(variable: string, what: string): MissingCredentialError {
+  const err = new MissingCredentialError(variable);
+  err.message = llmInvalidMessage(variable, what);
+  return err;
 }
 
 function missing(variable: string): LlmConfigIssue {

@@ -1,4 +1,5 @@
 export {
+  AWS_CREDENTIALS_HINT,
   AWS_CREDENTIALS_LABEL,
   LlmClient,
   UsageMeter,
@@ -18,6 +19,8 @@ export {
   llmBlockedReason,
   llmConfigIssues,
   llmConfigProblem,
+  llmInvalid,
+  llmInvalidMessage,
   llmMissing,
   llmProvider,
   normalizeLiteLlmBaseUrl,

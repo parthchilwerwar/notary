@@ -68,7 +68,7 @@ describe("roles", () => {
     const err = await llm.complete({ role: "reflector", messages: [{ role: "user", content: "hi" }] }).catch((e) => e);
     expect(err).toBeInstanceOf(MissingCredentialError);
     expect(isBlocked(err)).toBe(true);
-    expect((err as Error).message).toBe("BLOCKED: NOTARY_MODEL_REFLECTOR not set");
+    expect((err as Error).message).toBe("BLOCKED: NOTARY_MODEL_REFLECTOR not set — set it in .env (see .env.example) and run `pnpm notary doctor --llm`");
     expect(calls).toHaveLength(1);
   });
 

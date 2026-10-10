@@ -18,7 +18,7 @@
  * `adversary.session`, keyed by belief id), so a headless-session review replays without spawning one.
  */
 import type { ReviewBeliefArgs, ReviewOutcome } from "../adversary/index.js";
-import { UsageMeter } from "../llm/index.js";
+import { LLM_FIX_HINT, UsageMeter } from "../llm/index.js";
 import type { CompleteRequest, CompleteResult, LlmLike } from "../llm/index.js";
 import type { Role } from "../schema/index.js";
 import { CassetteMissError, MissingCredentialError, Redactor, canonicalJson, collectSecrets, computeContentHash } from "../tools/index.js";
@@ -211,8 +211,9 @@ export class ReplayLlm implements LlmLike {
     if (roleModels) {
       this.modelFor = (role) => {
         const m = roleModels[role];
-        if (!m) throw new MissingCredentialError(`NOTARY_MODEL_${role.toUpperCase()}`);
-        if ("blockedVariable" in m) throw new MissingCredentialError(m.blockedVariable);
+        // Same text as the live client (src/llm/roles.ts requireModel), so a BLOCKED role replays identically.
+        if (!m) throw new MissingCredentialError(`NOTARY_MODEL_${role.toUpperCase()}`, LLM_FIX_HINT);
+        if ("blockedVariable" in m) throw new MissingCredentialError(m.blockedVariable, LLM_FIX_HINT);
         return m.modelId;
       };
     }

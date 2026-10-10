@@ -6,8 +6,9 @@
  *   NOTARY_MODEL_ADVERSARY  reviews beliefs; must differ from the reflector (separation of duties)
  *
  * A missing id is not an error until that role is used: `requireModel` then throws the usual
- * BLOCKED error ("BLOCKED: NOTARY_MODEL_REFLECTOR not set"). A roster where reflector and adversary
- * name the same model is invalid config and is rejected as soon as it is resolved.
+ * BLOCKED error ("BLOCKED: NOTARY_MODEL_REFLECTOR not set — set it in .env (see .env.example) and
+ * run `pnpm notary doctor --llm`"). A roster where reflector and adversary name the same model is
+ * invalid config and is rejected as soon as it is resolved.
  */
 import type { Role } from "../schema/index.js";
 import { MissingCredentialError } from "../tools/errors.js";
@@ -21,6 +22,9 @@ export const MODEL_ENV: Record<Role, string> = {
 };
 
 export type ModelRoster = Record<Role, string | undefined>;
+
+/** What to do about a missing / invalid model setting; appended to every LLM BLOCKED message. */
+export const LLM_FIX_HINT = "set it in .env (see .env.example) and run `pnpm notary doctor --llm`";
 
 type Env = Record<string, string | undefined>;
 
@@ -54,7 +58,8 @@ export function resolveModels(env: Env = process.env): ModelRoster {
   if (roster.reflector && roster.adversary && baseModelId(roster.reflector) === baseModelId(roster.adversary)) {
     throw new ModelConfigError(
       `Separation of duties: ${MODEL_ENV.reflector} and ${MODEL_ENV.adversary} must name different models ` +
-        `(both are "${roster.reflector}"). The model that proposes a belief may never review it.`,
+        `(both are "${roster.reflector}"). The model that proposes a belief may never review it. ` +
+        `Set ${MODEL_ENV.adversary} to a different model and run \`pnpm notary doctor --llm\`.`,
     );
   }
   return roster;
@@ -63,6 +68,6 @@ export function resolveModels(env: Env = process.env): ModelRoster {
 /** The model id for `role`, or the BLOCKED error naming the env var to set. */
 export function requireModel(roster: ModelRoster, role: Role): string {
   const id = roster[role];
-  if (!id) throw new MissingCredentialError(MODEL_ENV[role]);
+  if (!id) throw new MissingCredentialError(MODEL_ENV[role], LLM_FIX_HINT);
   return id;
 }

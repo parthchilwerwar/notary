@@ -259,7 +259,7 @@ function bundleSection(bundles: readonly RunBundle[], b: RunBundle): string[] {
 // --- blocked -----------------------------------------------------------------------------------
 
 const BOTH_TOOLS = "CRUSTDATA_API_KEY, DODO_PAYMENTS_API_KEY (test mode), a seeded Dodo test world (`seed:dodo` plus human test checkouts)";
-const MODELS = "NOTARY_MODEL_REFLECTOR, NOTARY_MODEL_ADVERSARY and AWS credentials for Bedrock";
+const MODELS = "NOTARY_MODEL_REFLECTOR, NOTARY_MODEL_ADVERSARY and a model provider (LiteLLM: LITELLM_BASE_URL + LITELLM_API_KEY, or Bedrock: AWS_REGION + AWS credentials; check with `pnpm notary doctor --llm`)";
 
 function blockedRows(bundles: readonly RunBundle[], driftFixtures: readonly string[]): string[][] {
   const rows: string[][] = [];

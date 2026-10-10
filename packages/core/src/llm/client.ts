@@ -38,7 +38,7 @@ import { traceBedrockClient, withSpan } from "../trace/index.js";
 import { costUsd, resolvePrice } from "./pricing.js";
 import { ROLES, requireModel, resolveModels } from "./roles.js";
 import type { ModelRoster } from "./roles.js";
-import { AWS_REGION_ENV, LITELLM_API_KEY_ENV, LITELLM_BASE_URL_ENV, llmMissing, llmProvider, normalizeLiteLlmBaseUrl } from "./config.js";
+import { AWS_REGION_ENV, LITELLM_API_KEY_ENV, LITELLM_BASE_URL_ENV, llmInvalid, llmMissing, llmProvider, normalizeLiteLlmBaseUrl } from "./config.js";
 import type { LlmProvider } from "./config.js";
 import { liteLlmTransport, stopReasonFromFinish } from "./litellm.js";
 import type { ChatRequest, ChatTransport } from "./litellm.js";
@@ -75,6 +75,9 @@ export type ConverseTransport = (input: ConverseCommandInput) => Promise<Convers
 const CREDENTIAL_ERROR_NAMES = new Set(["CredentialsProviderError", "TokenProviderError"]);
 
 export const AWS_CREDENTIALS_LABEL = "AWS credentials (env keys or AWS_PROFILE/SSO)";
+/** Fix for missing AWS credentials (Bedrock only; LiteLLM never needs them). */
+export const AWS_CREDENTIALS_HINT =
+  "set AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY (or AWS_PROFILE) in .env (see .env.example), or switch to NOTARY_LLM_PROVIDER=litellm, and run `pnpm notary doctor --llm`";
 
 export function isAwsCredentialError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
@@ -211,9 +214,7 @@ export class LlmClient implements LlmLike {
     const rawBase = (this.env[LITELLM_BASE_URL_ENV] ?? "").trim();
     if (!rawBase) throw llmMissing(LITELLM_BASE_URL_ENV);
     const baseUrl = normalizeLiteLlmBaseUrl(rawBase);
-    if (!baseUrl) {
-      throw new MissingCredentialError(`${LITELLM_BASE_URL_ENV} (an http(s) URL)`, "fix it in .env (see .env.example) and run `pnpm notary doctor --llm`");
-    }
+    if (!baseUrl) throw llmInvalid(LITELLM_BASE_URL_ENV, "is not an http(s) URL");
     const apiKey = (this.env[LITELLM_API_KEY_ENV] ?? "").trim();
     if (!apiKey) throw llmMissing(LITELLM_API_KEY_ENV);
     this.chatTransport = liteLlmTransport({ baseUrl, apiKey });
@@ -257,7 +258,7 @@ export class LlmClient implements LlmLike {
       try {
         out = await transport(input);
       } catch (err) {
-        if (isAwsCredentialError(err)) throw new MissingCredentialError(AWS_CREDENTIALS_LABEL);
+        if (isAwsCredentialError(err)) throw new MissingCredentialError(AWS_CREDENTIALS_LABEL, AWS_CREDENTIALS_HINT);
         throw err;
       }
       const blocks = out.output && "message" in out.output ? (out.output.message?.content ?? []) : [];
