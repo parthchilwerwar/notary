@@ -18,7 +18,7 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 
 ## Codex — `packages/web`
 
-- [ ] **U1 · Dashboard shell** — layout, run picker, Queue and Beliefs screens
+- [x] **U1 · Dashboard shell** (Codex, `cb98891`) — layout, run picker, Queue and Beliefs screens
 - [ ] **U2 · Probe log, runs comparison, live mode**
 - [ ] **U3 · Economics screen, polish, deploy**
 
@@ -88,4 +88,4 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 - [x] Step 5: A-14 belief_precision disclosure (#97).
 - [x] Step 6: A-11 resolved against the official start (Luma + Oct 9 email: 12:00 AM IST Oct 10); first commit 02:49:08 IST; website's 12:30 PM disclosed (#72, AUDIT, hackathon.md).
 - [x] Step 7: `demo --fixture --publish` → `packages/web/public/bundles/fixture/`; `packages/web/public/evidence/evidence.json` (#98). Entire docs vs adapter flag mismatch noted (#99).
-- [ ] Codex's in-progress dashboard (`packages/web/src`, tests, Vite config, root `AGENTS.md`, root `pnpm-lock.yaml`) is uncommitted and owned by Codex — not touched.
+- [x] Codex committed U1 (dashboard shell with Queue and Beliefs) as `cb98891`; Claude Code did not touch `packages/web` UI code.
