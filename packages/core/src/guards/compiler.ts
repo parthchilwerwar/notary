@@ -26,6 +26,11 @@
  *                        -> require_param `email`.
  *   anything else        block with the reason (silent_coercion, mislabelled_semantics,
  *                        eventual_consistency, rate_limit, expiry have no safe transform here).
+ *
+ * Narrowed scope: a belief notarized through an adversary `narrow` holds only inside its scope. A
+ * currency scope ("USD only") is compiled into `rule.scope = { currency: ["USD"] }` on every non-block
+ * guard; guarded() applies the guard inside it and refuses outside it (unverified there). A scope that
+ * doesn't parse into such a condition compiles to block on each op, with the scope in the reason.
  */
 import { canonicalJson, sha256Hex } from "../bundle/hash.js";
 import { GuardSchema } from "../schema/index.js";
@@ -233,6 +238,100 @@ export function specsFor(b: Belief, claim: Claim, probesById: ReadonlyMap<string
   }
 }
 
+// ------------------------------------------------------------------------------------ scope
+
+/** ISO 4217 codes a narrowed scope may name. ("ALL", the lek, is left out: it reads as "all".) */
+export const SCOPE_CURRENCIES: ReadonlySet<string> = new Set([
+  "USD", "EUR", "GBP", "INR", "JPY", "CAD", "AUD", "NZD", "CHF", "CNY", "HKD", "SGD", "SEK", "NOK", "DKK", "PLN",
+  "CZK", "HUF", "RON", "BGN", "ILS", "TRY", "AED", "SAR", "QAR", "KWD", "BHD", "ZAR", "NGN", "KES", "EGP", "BRL",
+  "MXN", "ARS", "CLP", "COP", "PEN", "KRW", "TWD", "THB", "IDR", "MYR", "PHP", "VND", "PKR", "BDT", "LKR", "UAH",
+]);
+
+/** Words a currency scope may contain besides the codes ("USD only", "only EUR and GBP refunds"). */
+const SCOPE_FILLER: ReadonlySet<string> = new Set([
+  "only", "in", "for", "and", "or", "the", "currency", "currencies", "denominated", "payment", "payments", "refund",
+  "refunds", "credit", "credits", "charge", "charges", "transaction", "transactions", "amount", "amounts", "wallet", "wallets",
+]);
+
+/** Machine-checkable form of a narrowed scope. Only currency scopes are understood. */
+export interface GuardScope {
+  currency: string[];
+}
+
+/** The scope text an adversary `narrow` left on a belief (the store falls back to the reason), else null. */
+export function narrowedScopeText(b: Belief): string | null {
+  if (b.adversary?.verdict !== "narrow") return null;
+  const text = (b.adversary.scope ?? b.adversary.reason).trim();
+  return text === "" ? null : text;
+}
+
+/** Words that would make a rationale after "<condition>:" a further restriction (then: unparseable). */
+const RESTRICTION_MARKERS: ReadonlySet<string> = new Set([
+  "only", "except", "excluding", "exclude", "unless", "if", "when", "where", "while", "under", "over", "below", "above",
+  "between", "before", "after", "less", "more", "than", "least", "most", "up", "limited", "restricted", "but", "for",
+  "on", "in", "from", "to", "within", "per", "via", "by", "not", "no", "without",
+]);
+
+function parseCondition(text: string): GuardScope | null {
+  const currency = new Set<string>();
+  for (const raw of text.split(/[\s,;/&+()-]+/)) {
+    const tok = raw.replace(/[.!]+$/, "");
+    if (tok === "") continue;
+    if (/^[A-Z]{3}$/.test(tok) && SCOPE_CURRENCIES.has(tok)) currency.add(tok);
+    else if (!SCOPE_FILLER.has(tok.toLowerCase())) return null;
+  }
+  return currency.size === 0 ? null : { currency: [...currency].sort() };
+}
+
+/** A tail after "<condition>:" counts as rationale only if it cannot add a restriction (conservative). */
+function isRationale(tail: string, head: GuardScope): boolean {
+  if (/\d/.test(tail)) return false;
+  for (const raw of tail.split(/[^A-Za-z0-9_.]+/)) {
+    const tok = raw.replace(/\.+$/, "");
+    if (tok === "") continue;
+    if (RESTRICTION_MARKERS.has(tok.toLowerCase())) return false;
+    if (/^[A-Z]{3}$/.test(tok) && SCOPE_CURRENCIES.has(tok) && !head.currency.includes(tok)) return false;
+  }
+  return true;
+}
+
+/**
+ * Parse a narrowed scope into a condition guarded() can check, or null. Deliberately strict: the
+ * condition may contain only upper-case ISO currency codes and filler words ("USD only", "only EUR and
+ * GBP refunds"). A "<condition>: <rationale>" form is accepted when the rationale has no number, no
+ * other currency and no restricting word (for/on/under/except/...); otherwise it might narrow further,
+ * so the whole scope is not machine-checkable. Anything else returns null.
+ */
+export function parseScope(text: string): GuardScope | null {
+  const colon = text.indexOf(":");
+  if (colon === -1) return parseCondition(text);
+  const head = parseCondition(text.slice(0, colon));
+  return head && isRationale(text.slice(colon + 1), head) ? head : null;
+}
+
+/**
+ * Apply a belief's narrowed scope to its specs: each non-block spec carries `rule.scope` (guarded()
+ * applies it inside the scope and refuses outside it, where the behavior is unverified); an
+ * unparseable scope turns every op into a block. Block specs already refuse everywhere.
+ */
+export function scopeSpecs(b: Belief, claim: Claim, specs: GuardSpec[]): GuardSpec[] {
+  const text = narrowedScopeText(b);
+  if (text === null) return specs;
+  const scope = parseScope(text);
+  if (!scope) {
+    const ops = [...new Set(specs.map((s) => s.operation))];
+    return ops.map((op) =>
+      block(op, `${claim.id}: the adversary narrowed this belief to "${text}", which is not a machine-checkable scope; behavior is unverified, so refuse`),
+    );
+  }
+  const label = `currency ${scope.currency.join("/")}`;
+  return specs.map((s) =>
+    s.kind === "block"
+      ? s
+      : { ...s, rule: { ...s.rule, scope }, reason: `${s.reason} [narrowed scope: ${label}; outside it the behavior is unverified, so refuse]` },
+  );
+}
+
 /** Compile every notarized, violated belief into guards (all active). */
 export function compileGuards(input: CompileInput): Guard[] {
   const now = (input.now ?? (() => new Date()))().toISOString();
@@ -243,7 +342,7 @@ export function compileGuards(input: CompileInput): Guard[] {
     const claim = input.claimFor(b.claimId);
     if (!claim) continue;
     const cls: DefectClass = b.class && b.class !== "honored" ? b.class : "mislabelled_semantics";
-    for (const s of specsFor(b, claim, probesById)) {
+    for (const s of scopeSpecs(b, claim, specsFor(b, claim, probesById))) {
       const id = guardId(b.id, s.operation, s.kind, s.rule);
       out.set(
         id,

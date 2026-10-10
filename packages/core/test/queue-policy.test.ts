@@ -44,6 +44,11 @@ const ExpectedSchema = z.array(
     expectedOutcome: z.enum(["approve", "partial", "deny", "escalate"]),
     expectedAction: z.enum(["dodo.createRefund", "dodo.changeSubscriptionPlan", "dodo.createWalletLedgerEntry", "none"]),
     expectedAmount: z.number().int().nonnegative().optional(),
+    // Set when the correct final action differs from what the policy table alone says (q07).
+    expectedStatus: z.enum(["executed", "held", "escalated", "denied"]).optional(),
+    policyAction: z.enum(["dodo.createRefund", "dodo.changeSubscriptionPlan", "dodo.createWalletLedgerEntry", "none"]).optional(),
+    policyAmount: z.number().int().nonnegative().optional(),
+    note: z.string().optional(),
     tierSource: z.string().startsWith("public knowledge: "),
   }),
 );
@@ -241,12 +246,29 @@ describe("expected.json", () => {
         ...(q.amount === undefined ? {} : { amount: q.amount }),
         ...(paymentAmount === undefined ? {} : { paymentAmount }),
       });
+      // The table's own action/amount: policyAction/policyAmount where the final action differs.
+      const override = e.expectedStatus !== undefined;
       expect({ id: e.requestId, outcome: d.outcome, action: d.action, amount: d.refundAmount }).toEqual({
         id: e.requestId,
         outcome: e.expectedOutcome,
-        action: e.expectedAction,
-        amount: e.expectedAmount,
+        action: override ? e.policyAction : e.expectedAction,
+        amount: override ? e.policyAmount : e.expectedAmount,
       });
+    }
+  });
+
+  it("q07: the policy approves, but the payment was refunded during seeding, so the correct final action is no new refund", () => {
+    const e = expected.find((x) => x.requestId === "q07")!;
+    const q = queue.find((x) => x.id === "q07")!;
+    expect(e).toMatchObject({ expectedOutcome: "approve", expectedStatus: "denied", expectedAction: "none", policyAction: "dodo.createRefund" });
+    expect(e.expectedAmount).toBeUndefined();
+    expect(e.note).toMatch(/already refunded during seeding/);
+    // The pre-existing refund the note cites really is in the seed plan.
+    expect(SEED_PLAN.existingRefunds).toContain(parseRef(q.paymentId!).handle);
+    // Only entries whose final action differs from the table carry an override.
+    for (const x of expected.filter((y) => y.expectedStatus !== undefined)) {
+      expect(x.policyAction, x.requestId).toBeDefined();
+      expect(x.note, x.requestId).toBeDefined();
     }
   });
 

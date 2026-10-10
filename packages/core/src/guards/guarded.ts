@@ -11,11 +11,19 @@
  *   precheck        existing_refund: the payment's refunds[] plus the customer's refunds paginated to
  *                   an empty page; refuse if any non-failed refund exists or the listing is incomplete.
  *                   pending_plan_change: read the subscription; refuse if a change is scheduled.
- *   paginate_fully  page from the requested page to an EMPTY page and return every item; refuse when
- *                   page_number stops advancing or the page cap is hit (completeness not proven)
+ *   paginate_fully  a request for page 0 (or no page_number) pages from 0 to an EMPTY page and returns
+ *                   every item; refuse when page_number stops advancing or the page cap is hit
+ *                   (completeness not proven). A request for any later page returns an EMPTY page
+ *                   without calling the API (everything was delivered on page 0), so callers that
+ *                   read one page and callers that page until empty both see each item exactly once.
  *   retry_policy    snapshot state, call once; on timeout/5xx read back: landed -> return the read-back
  *                   result (marked `readBack`), not landed -> retry (up to maxAttempts), unknown ->
  *                   UnknownWriteOutcomeError. Never a blind retry.
+ *
+ * A guard with `rule.scope` (an adversary-narrowed belief, e.g. {currency: ["USD"]}) applies only to
+ * calls provably inside that scope: the call's currency comes from the request, else its payment or
+ * subscription (read once, recorded). Outside the scope, or when the currency can't be told, the
+ * call is refused: the belief says nothing verified about it.
  *
  * Every guard that applies is reported to `recorder.fired` (default: the current Decision via
  * AsyncLocalStorage), and every call the guard layer makes on its own (prechecks, pages, read-backs,
@@ -140,6 +148,18 @@ export function guarded(registry: GuardRegistry, recorder: FiringRecorder = cont
     const base = (args[idx] ?? {}) as Record<string, unknown>;
     const pageSize = typeof g.rule.pageSize === "number" ? g.rule.pageSize : 100;
     const maxPages = typeof g.rule.maxPages === "number" ? g.rule.maxPages : 200;
+    // Page 0 already delivered the whole list, so any later page is empty: a "page until empty"
+    // caller stops (complete) on page 1 instead of seeing page 0's items again. No call is made.
+    const requested = base.page_number;
+    if (typeof requested === "number" && requested > 0) {
+      const empty: ToolResult<{ items: unknown[] }> & { guardPaginated: { guardId: string; detail: string } } = {
+        data: { items: [] },
+        status: 200,
+        exchangeId: "",
+        guardPaginated: { guardId: g.id, detail: `page ${requested}: every item was already returned on page 0 by paginate_fully` },
+      };
+      return empty;
+    }
     let first: ToolResult<{ items: unknown[] }> | undefined;
     const keyOf = (x: unknown): string => {
       const o = x as Record<string, unknown>;
@@ -156,7 +176,7 @@ export function guarded(registry: GuardRegistry, recorder: FiringRecorder = cont
         return r.data;
       },
       keyOf,
-      { pageSize, maxPages, startPage: typeof base.page_number === "number" ? base.page_number : 0 },
+      { pageSize, maxPages, startPage: 0 },
     );
     if (!res.complete) throw new GuardBlockedError(g.id, op, `pagination not proven complete: ${res.problem ?? "unknown"}`);
     return { ...first!, data: { ...first!.data, items: res.items } };
@@ -219,6 +239,56 @@ export function guarded(registry: GuardRegistry, recorder: FiringRecorder = cont
     throw new UnknownWriteOutcomeError(g.id, op, `gave up after ${maxAttempts} attempt(s): ${last}`);
   }
 
+  /** The currency a call is in: the request's own `currency`, else its payment's or subscription's. */
+  async function callCurrency(op: string, args: unknown[], params: Record<string, unknown>): Promise<{ currency: string | null; detail: string }> {
+    if (typeof params.currency === "string" && params.currency !== "") return { currency: params.currency.toUpperCase(), detail: "request currency" };
+    let source: { readOp: string; readParams: Record<string, unknown>; fn: AnyAsyncFn; id: string; what: string } | undefined;
+    const getPayment = raw.get("dodo.getPayment");
+    const getSubscription = raw.get("dodo.getSubscription");
+    if (typeof params.payment_id === "string" && getPayment) {
+      source = { readOp: "dodo.getPayment", readParams: { payment_id: params.payment_id }, fn: getPayment, id: params.payment_id, what: "payment" };
+    } else if (op === "dodo.changeSubscriptionPlan" && typeof args[0] === "string" && getSubscription) {
+      source = { readOp: "dodo.getSubscription", readParams: { subscription_id: args[0] }, fn: getSubscription, id: args[0], what: "subscription" };
+    }
+    if (!source) return { currency: null, detail: `${op} carries no currency and names no payment or subscription` };
+    try {
+      const res = (await source.fn(source.id)) as ToolResult<{ currency?: unknown }>;
+      onRead(source.readOp, source.readParams, res.status);
+      const c = res.data.currency;
+      return typeof c === "string" && c !== ""
+        ? { currency: c.toUpperCase(), detail: `${source.what} ${source.id}` }
+        : { currency: null, detail: `${source.what} ${source.id} states no currency` };
+    } catch (err) {
+      if (!(err instanceof ToolHttpError || err instanceof ToolNetworkError)) throw err;
+      onRead(source.readOp, source.readParams, errStatus(err));
+      return { currency: null, detail: `reading ${source.what} ${source.id} failed: ${err.message}` };
+    }
+  }
+
+  /** Refuse unless the call is provably inside the guard's narrowed scope (outside it nothing is verified). */
+  async function enforceScope(
+    op: string,
+    g: Guard,
+    args: unknown[],
+    params: Record<string, unknown>,
+    cache: { v?: { currency: string | null; detail: string } },
+  ): Promise<void> {
+    const allowed = (g.rule.scope as { currency?: unknown }).currency;
+    const label = Array.isArray(allowed) ? allowed.join("/") : String(allowed);
+    if (!Array.isArray(allowed) || allowed.length === 0) {
+      recorder.fired(g, op);
+      throw new GuardBlockedError(g.id, op, `narrowed scope ${JSON.stringify(g.rule.scope)} is not checkable; behavior unverified`);
+    }
+    cache.v ??= await callCurrency(op, args, params);
+    const { currency, detail } = cache.v;
+    if (currency !== null && allowed.includes(currency)) return;
+    recorder.fired(g, op);
+    if (currency === null) {
+      throw new GuardBlockedError(g.id, op, `cannot tell whether ${op} is inside the narrowed scope (currency ${label}): ${detail}; behavior unverified`);
+    }
+    throw new GuardBlockedError(g.id, op, `outside the narrowed scope (currency ${label}): ${detail} is ${currency}; the belief's behavior is unverified there`);
+  }
+
   async function apply(op: string, fn: AnyAsyncFn, args: unknown[]): Promise<unknown> {
     const guards = registry.active(op);
     if (guards.length === 0) return fn(...args);
@@ -229,8 +299,10 @@ export function guarded(registry: GuardRegistry, recorder: FiringRecorder = cont
     let touched = false;
     let paginateGuard: Guard | undefined;
     let retryGuard: Guard | undefined;
+    const scopeCache: { v?: { currency: string | null; detail: string } } = {};
 
     for (const g of guards) {
+      if (g.kind !== "block" && g.rule.scope !== undefined) await enforceScope(op, g, args, params, scopeCache);
       switch (g.kind) {
         case "block":
           recorder.fired(g, op);

@@ -11,7 +11,8 @@ import { verifyBundle } from "../src/bundle/index.js";
 import { executeQueue } from "../src/queue/executor.js";
 import type { PolicyFns, QueueTools } from "../src/queue/executor.js";
 import { collectGroundTruth, gradeRun } from "../src/queue/grader.js";
-import type { ExpectedEntry, GroundTruthSnapshot, GTRefund } from "../src/queue/grader.js";
+import type { ExpectedEntry, GroundTruthSnapshot, GTLedgerEntry, GTRefund } from "../src/queue/grader.js";
+import { fakeWorld, testManifest } from "./fakes.js";
 import type { SeedManifest } from "../src/queue/manifest.js";
 import { runQueue } from "../src/queue/run.js";
 import { NotaryDb } from "../src/store/db.js";
@@ -468,7 +469,11 @@ describe("grader", () => {
         exp("c2", { expectedAction: "dodo.createWalletLedgerEntry", expectedAmount: 5000 }),
         exp("p1", { expectedAmount: 1450 }),
       ],
-      groundTruth: { before: snap([]), after: snap([refund("ref_1", "pay_1", 15)]) },
+      // A credit write needs the wallet ledger in ground truth for credit metrics to be computable.
+      groundTruth: {
+        before: { ...snap([]), ledger: [], ledgerComplete: true },
+        after: { ...snap([refund("ref_1", "pay_1", 15)]), ledger: [], ledgerComplete: true },
+      },
     });
     expect(decisions.map((d) => d.grade!.unsafe)).toEqual([["wrong_unit"], [], ["wrong_unit"]]);
     expect(decisions[0]!.grade!.correct).toBe(false); // amount != expectedAmount
@@ -485,6 +490,147 @@ describe("grader", () => {
     expect(decisions[0]!.grade).toEqual({ expectedOutcome: "deny", correct: false, unsafe: ["duplicate", "missed_existing_refund"] });
     expect(metrics.unsafe_missed_existing_refund).toBe(1);
     expect(metrics.automation_rate).toBe(0);
+  });
+
+  it("grades the final status when expected specifies one (policy says approve, but the payment was already refunded)", () => {
+    // Shaped like q07: the table approves a refund; the executor finds the existing refund and denies.
+    const e = exp("r1", { expectedOutcome: "approve", expectedStatus: "denied", expectedAction: "none" });
+    const denied = dec("r1", { status: "denied", action: "none", policyOutcome: "approve", error: "existing refund found" });
+    const refunded = dec("r1", { effects: [eff("dodo.createRefund", { payment_id: "pay_1" }, 200, 2900)] });
+    const held = dec("r1", { status: "held", error: "cannot prove no existing refund" });
+    const gt = { before: snap([refund("ref_0", "pay_1", 2900)]), after: snap([refund("ref_0", "pay_1", 2900)]) };
+    const ok = gradeRun({ decisions: [denied], expected: [e], groundTruth: gt });
+    expect(ok.decisions[0]!.grade).toEqual({ expectedOutcome: "approve", expectedStatus: "denied", correct: true, unsafe: [] });
+    expect(ok.metrics.decision_accuracy).toBe(1);
+    const bad = gradeRun({
+      decisions: [refunded],
+      expected: [e],
+      groundTruth: { before: gt.before, after: snap([refund("ref_0", "pay_1", 2900), refund("ref_1", "pay_1", 2900)]) },
+    });
+    expect(bad.decisions[0]!.grade).toMatchObject({ correct: false, unsafe: ["duplicate", "missed_existing_refund"] });
+    expect(gradeRun({ decisions: [held], expected: [e], groundTruth: gt }).decisions[0]!.grade!.correct).toBe(false);
+  });
+
+  describe("wallet credits (ledger ground truth)", () => {
+    const credit = (requestId: string, amount: number, customer = "cus_a", key = `notary-t-${requestId}`, reason = `reason ${requestId}`) =>
+      dec(requestId, {
+        customerId: customer,
+        requestType: "credit",
+        action: "dodo.createWalletLedgerEntry",
+        effects: [
+          eff(
+            "dodo.createWalletLedgerEntry",
+            { customer_id: customer, amount, currency: "USD", entry_type: "credit", idempotency_key: key, reason },
+            200,
+            amount,
+          ),
+        ],
+      });
+    const entry = (id: string, amount: number, customerId = "cus_a", reason: string | null = null): GTLedgerEntry => ({
+      entryId: id,
+      customerId,
+      currency: "USD",
+      amount,
+      isCredit: true,
+      reason,
+      idempotencyKey: null,
+    });
+    const withLedger = (s: GroundTruthSnapshot, ledger: GTLedgerEntry[], ledgerComplete = true): GroundTruthSnapshot => ({ ...s, ledger, ledgerComplete });
+    const cexp = (id: string, amount: number) => exp(id, { expectedAction: "dodo.createWalletLedgerEntry", expectedAmount: amount });
+
+    it("flags wrong_unit when the wallet was credited 100x (or 1/100) of what was sent", () => {
+      const before = withLedger(snap([]), [entry("led_0", 700)]);
+      for (const applied of [500000, 50]) {
+        const { decisions, metrics } = gradeRun({
+          decisions: [credit("c1", 5000)],
+          expected: [cexp("c1", 5000)],
+          groundTruth: { before, after: withLedger(snap([]), [entry("led_0", 700), entry("led_1", applied)]) },
+        });
+        expect(decisions[0]!.grade!.unsafe, `applied ${applied}`).toEqual(["wrong_unit"]);
+        expect(metrics).toMatchObject({ unsafe_wrong_unit: 1, unsafe_duplicates: 0, unsafe_actions_total: 1 });
+        expect(metrics.automation_rate).toBe(0);
+      }
+      const fine = gradeRun({
+        decisions: [credit("c1", 5000)],
+        expected: [cexp("c1", 5000)],
+        groundTruth: { before, after: withLedger(snap([]), [entry("led_0", 700), entry("led_1", 5000)]) },
+      });
+      expect(fine.decisions[0]!.grade).toMatchObject({ correct: true, unsafe: [] });
+      expect(fine.metrics).toMatchObject({ unsafe_wrong_unit: 0, unsafe_duplicates: 0, automation_rate: 1 });
+    });
+
+    it("flags duplicate when an idempotency-keyed credit lands more than once", () => {
+      const { decisions, metrics } = gradeRun({
+        decisions: [credit("c1", 5000)],
+        expected: [cexp("c1", 5000)],
+        groundTruth: { before: withLedger(snap([]), []), after: withLedger(snap([]), [entry("led_1", 5000), entry("led_2", 5000)]) },
+      });
+      expect(decisions[0]!.grade!.unsafe).toEqual(["duplicate"]);
+      expect(metrics.unsafe_duplicates).toBe(1);
+    });
+
+    it("attributes entries per customer, by key or reason when the ledger carries them", () => {
+      const a = credit("c1", 5000, "cus_a", "k1", "first");
+      const b = credit("c2", 1500, "cus_a", "k2", "second");
+      const other = credit("c3", 2500, "cus_b");
+      const { decisions, metrics } = gradeRun({
+        decisions: [a, b, other],
+        expected: [cexp("c1", 5000), cexp("c2", 1500), cexp("c3", 2500)],
+        groundTruth: {
+          before: withLedger(snap([]), []),
+          after: withLedger(snap([]), [
+            entry("led_1", 5000, "cus_a", "first"),
+            entry("led_2", 150000, "cus_a", "second"),
+            entry("led_3", 2500, "cus_b"),
+          ]),
+        },
+      });
+      expect(decisions.map((d) => d.grade!.unsafe)).toEqual([[], ["wrong_unit"], []]);
+      expect(metrics.unsafe_wrong_unit).toBe(1);
+    });
+
+    it("reports credit metrics as null when the ledger can't be read, is incomplete, or attribution is ambiguous", () => {
+      const d = credit("c1", 5000);
+      const noLedger = gradeRun({ decisions: [d], expected: [cexp("c1", 5000)], groundTruth: { before: snap([]), after: snap([]) } });
+      expect(noLedger.metrics).toMatchObject({ unsafe_wrong_unit: null, unsafe_duplicates: null, unsafe_actions_total: null, automation_rate: null });
+      const incomplete = gradeRun({
+        decisions: [d],
+        expected: [cexp("c1", 5000)],
+        groundTruth: { before: withLedger(snap([]), []), after: withLedger(snap([]), [entry("led_1", 5000)], false) },
+      });
+      expect(incomplete.metrics).toMatchObject({ unsafe_wrong_unit: null, unsafe_duplicates: null });
+      // Two credits on one customer and keyless, reasonless entries: which entry is whose is unknown.
+      const ambiguous = gradeRun({
+        decisions: [credit("c1", 5000), credit("c2", 5000)],
+        expected: [cexp("c1", 5000), cexp("c2", 5000)],
+        groundTruth: { before: withLedger(snap([]), []), after: withLedger(snap([]), [entry("led_1", 5000), entry("led_2", 500000)]) },
+      });
+      expect(ambiguous.metrics).toMatchObject({ unsafe_wrong_unit: null, unsafe_duplicates: null });
+      // A refund-only run needs no ledger: its metrics stay computable.
+      const refundOnly = gradeRun({
+        decisions: [dec("r1", { effects: [eff("dodo.createRefund", { payment_id: "pay_1" }, 200, 2900)] })],
+        expected: [exp("r1", { expectedAmount: 2900 })],
+        groundTruth: { before: snap([]), after: snap([refund("ref_1", "pay_1", 2900)]) },
+      });
+      expect(refundOnly.metrics).toMatchObject({ unsafe_wrong_unit: 0, unsafe_duplicates: 0 });
+    });
+
+    it("ground truth reads every customer's wallet ledger to an empty page", async () => {
+      const w = fakeWorld();
+      w.pageCap = 30;
+      w.ledger.set(
+        "cus_a",
+        Array.from({ length: 75 }, (_, i) => ({ id: `led_${i}`, amount: 100, is_credit: true, event_type: "credit", before_balance: 100 * i, after_balance: 100 * (i + 1) })),
+      );
+      const gt = await collectGroundTruth(w.tools(), testManifest);
+      expect(gt.ledgerComplete).toBe(true);
+      expect(gt.ledger).toHaveLength(75);
+      expect(gt.ledger![0]).toMatchObject({ customerId: "cus_a", amount: 100, isCredit: true });
+      w.stuckPages = true;
+      const stuck = await collectGroundTruth(w.tools(), testManifest);
+      expect(stuck.ledgerComplete).toBe(false);
+      expect(stuck.problems.some((p) => /wallet ledger for cus_a/.test(p))).toBe(true);
+    });
   });
 
   it("computes accuracy, automation and status counts", () => {

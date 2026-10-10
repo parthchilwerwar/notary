@@ -11,27 +11,49 @@
  *   decision's payment whose amount differs from expectedAmount.
  * - missed_existing_refund: a refund created during this run on a payment that already had a
  *   non-failed refund before the run started.
+ * - wallet credits, from the ledger ground truth: the new credit entries attributed to a decision's
+ *   credit write (same customer and currency; matched by idempotency key, else by reason, when the
+ *   ledger entry carries one) are `wrong_unit` when an applied amount differs from the expected
+ *   minor-unit amount (x100, /100 or anything else), and `duplicate` when more than one entry lands
+ *   for one (idempotency-keyed) credit. An entry that could belong to two decisions makes the
+ *   attribution ambiguous, and the credit checks are then not computable.
  *
- * Ground truth = full pagination of refunds and payments per seeded customer, read until an
- * EMPTY page (not a short page) so a silently capped page size can't truncate it.
+ * Ground truth = full pagination of refunds, payments and wallet ledger entries per seeded
+ * customer, read until an EMPTY page (not a short page) so a silently capped page size can't
+ * truncate it.
  *
- * Metrics that can't be computed are null, never 0.
+ * Metrics that can't be computed are null, never 0: no complete refund ground truth -> duplicates,
+ * missed refunds and automation are null; a run with a credit write but no complete, unambiguous
+ * ledger ground truth -> wrong_unit, duplicates and automation are null too.
  */
 import { z } from "zod";
-import { PolicyOutcomeSchema, TierSchema } from "../schema/index.js";
+import { DecisionStatusSchema, PolicyOutcomeSchema, TierSchema } from "../schema/index.js";
 import type { Decision, DecisionGrade, Effect, QueueRequest, UnsafeAction } from "../schema/index.js";
-import type { DodoTools, PaymentListItem, RefundListItem } from "../tools/index.js";
+import type { DodoTools, PaymentListItem, RefundListItem, WalletLedgerEntry } from "../tools/index.js";
+import { ToolHttpError, ToolNetworkError } from "../tools/index.js";
 import type { SeedManifest } from "./manifest.js";
 
 // ---------------------------------------------------------------------------------------------
 // Expected outcomes (fixtures/queue/expected.json)
 
+/**
+ * One expected outcome. `expectedOutcome` is what the policy table says; `expectedAction` and
+ * `expectedAmount` are the correct FINAL action. They normally agree with the table. When they don't
+ * (q07: the table approves a refund of a payment that was already refunded during seeding, so the
+ * correct final action is no new refund), the entry sets `expectedStatus` (the Decision status the
+ * executor must end in) plus `policyAction` / `policyAmount` (the table's own action, kept so the
+ * fixture test can still re-derive it) and a `note` saying why.
+ */
 export const ExpectedEntrySchema = z.object({
   requestId: z.string(),
   expectedTier: TierSchema,
   expectedOutcome: PolicyOutcomeSchema,
   expectedAction: z.string(),
   expectedAmount: z.number().int().optional(),
+  expectedStatus: DecisionStatusSchema.optional(),
+  policyAction: z.string().optional(),
+  policyAmount: z.number().int().optional(),
+  note: z.string().optional(),
 });
 export const ExpectedFileSchema = z.array(ExpectedEntrySchema);
 export type ExpectedEntry = z.infer<typeof ExpectedEntrySchema>;
@@ -67,13 +89,29 @@ export interface GTPayment {
   refundStatus: string | null;
 }
 
+export interface GTLedgerEntry {
+  entryId: string;
+  customerId: string;
+  currency: string | null;
+  /** Minor units, as the ledger reports them. */
+  amount: number;
+  isCredit: boolean;
+  /** The entry's reason / idempotency key, when the ledger echoes them (null otherwise). */
+  reason: string | null;
+  idempotencyKey: string | null;
+}
+
 export interface GroundTruthSnapshot {
   takenAt: string;
-  /** False when any listing hit the page cap without reaching an empty page. */
+  /** False when any refund or payment listing hit the page cap without reaching an empty page. */
   complete: boolean;
   problems: string[];
   refunds: GTRefund[];
   payments: GTPayment[];
+  /** Wallet ledger entries of every seeded customer; absent when the tools can't list them. */
+  ledger?: GTLedgerEntry[];
+  /** True only when every customer's ledger listing reached an empty page. */
+  ledgerComplete?: boolean;
 }
 
 export interface GroundTruth {
@@ -123,7 +161,7 @@ async function paginateAll<T>(
  * Called once before and once after the run.
  */
 export async function collectGroundTruth(
-  tools: { dodo: Pick<DodoTools, "listRefunds" | "listPayments"> },
+  tools: { dodo: Pick<DodoTools, "listRefunds" | "listPayments"> & Partial<Pick<DodoTools, "listWalletLedgerEntries">> },
   manifest: SeedManifest,
   now: () => Date = () => new Date(),
 ): Promise<GroundTruthSnapshot> {
@@ -131,6 +169,9 @@ export async function collectGroundTruth(
   const payments = new Map<string, GTPayment>();
   const problems: string[] = [];
   let complete = true;
+  const listLedger = tools.dodo.listWalletLedgerEntries;
+  const ledger = new Map<string, GTLedgerEntry>();
+  let ledgerComplete = true;
 
   for (const customerId of manifestCustomerIds(manifest)) {
     const r = await paginateAll<RefundListItem>(
@@ -170,10 +211,49 @@ export async function collectGroundTruth(
         refundStatus: x.refund_status ?? null,
       });
     }
+
+    if (listLedger) {
+      let l: { items: WalletLedgerEntry[]; complete: boolean };
+      let failed: string | undefined;
+      try {
+        l = await paginateAll<WalletLedgerEntry>(
+          async (page_number) => (await listLedger(customerId, { page_size: GT_PAGE_SIZE, page_number })).data,
+          (x) => x.id,
+        );
+      } catch (err) {
+        // A tool answer (e.g. no wallet yet) leaves the ledger unproven; anything else is not ours to hide.
+        if (!(err instanceof ToolHttpError || err instanceof ToolNetworkError)) throw err;
+        l = { items: [], complete: false };
+        failed = err.message;
+      }
+      if (!l.complete) {
+        ledgerComplete = false;
+        problems.push(`wallet ledger for ${customerId}: ${failed ?? "pagination did not reach an empty page"}`);
+      }
+      for (const e of l.items) {
+        const o = e as WalletLedgerEntry & { currency?: unknown; reason?: unknown; idempotency_key?: unknown };
+        ledger.set(e.id, {
+          entryId: e.id,
+          customerId,
+          currency: typeof o.currency === "string" ? o.currency : null,
+          amount: e.amount,
+          isCredit: e.is_credit === true,
+          reason: typeof o.reason === "string" && o.reason !== "" ? o.reason : null,
+          idempotencyKey: typeof o.idempotency_key === "string" && o.idempotency_key !== "" ? o.idempotency_key : null,
+        });
+      }
+    }
   }
 
   const byId = <T>(m: Map<string, T>) => [...m.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([, v]) => v);
-  return { takenAt: now().toISOString(), complete, problems, refunds: byId(refunds), payments: byId(payments) };
+  return {
+    takenAt: now().toISOString(),
+    complete,
+    problems,
+    refunds: byId(refunds),
+    payments: byId(payments),
+    ...(listLedger ? { ledger: byId(ledger), ledgerComplete } : {}),
+  };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -221,6 +301,62 @@ function refundAmount(r: GTRefund, payment: GTPayment | undefined): number | nul
   return null;
 }
 
+interface CreditWrite {
+  customerId: string;
+  currency: string | null;
+  idempotencyKey: string | null;
+  reason: string | null;
+}
+
+/** The wallet credit a decision tried to write (null when it wrote none, or every attempt got a 4xx). */
+function creditWriteOf(d: Decision): CreditWrite | null {
+  const rejected = (s: number | null) => s !== null && s >= 400 && s < 500;
+  const e = d.effects.find((x) => x.op === "dodo.createWalletLedgerEntry" && !rejected(x.status));
+  if (!e) return null;
+  const p = e.params;
+  const str = (v: unknown) => (typeof v === "string" && v !== "" ? v : null);
+  return {
+    customerId: str(p.customer_id) ?? d.customerId,
+    currency: str(p.currency) ?? e.currency ?? null,
+    idempotencyKey: str(p.idempotency_key),
+    reason: str(p.reason),
+  };
+}
+
+/** Could ledger entry `x` be the result of credit write `w`? */
+function entryMatches(x: GTLedgerEntry, w: CreditWrite): boolean {
+  if (!x.isCredit || x.customerId !== w.customerId) return false;
+  if (x.currency !== null && w.currency !== null && x.currency !== w.currency) return false;
+  if (x.idempotencyKey !== null) return x.idempotencyKey === w.idempotencyKey;
+  if (x.reason !== null) return x.reason === w.reason;
+  return true;
+}
+
+/**
+ * New credit entries (after minus before) per credit-writing decision, or null when the ledger
+ * ground truth is missing, incomplete, or an entry could belong to more than one decision.
+ */
+function attributeCredits(
+  decisions: Decision[],
+  before: GroundTruthSnapshot | null,
+  after: GroundTruthSnapshot | null,
+): Map<string, GTLedgerEntry[]> | null {
+  if (!before?.ledger || !after?.ledger || before.ledgerComplete !== true || after.ledgerComplete !== true) return null;
+  const pre = new Set(before.ledger.map((x) => x.entryId));
+  const fresh = after.ledger.filter((x) => !pre.has(x.entryId));
+  const writes = decisions.flatMap((d) => {
+    const w = creditWriteOf(d);
+    return w ? [{ id: d.id, w }] : [];
+  });
+  const out = new Map<string, GTLedgerEntry[]>(writes.map(({ id }) => [id, []]));
+  for (const x of fresh) {
+    const owners = writes.filter(({ w }) => entryMatches(x, w));
+    if (owners.length > 1) return null;
+    if (owners.length === 1) out.get(owners[0]!.id)!.push(x);
+  }
+  return out;
+}
+
 function refundedPaymentIds(d: Decision): string[] {
   const ids = new Set<string>();
   for (const e of d.effects) {
@@ -238,6 +374,9 @@ export function gradeRun(input: GradeRunInput): GradeRunResult {
   const gtUsable = before !== null && after !== null && before.complete && after.complete;
 
   const beforeIds = new Set(before?.refunds.map((r) => r.refundId) ?? []);
+  const creditsWritten = input.decisions.some((d) => creditWriteOf(d) !== null);
+  const credits = creditsWritten ? attributeCredits(input.decisions, before, after) : new Map<string, GTLedgerEntry[]>();
+  const creditsUsable = credits !== null;
   const paymentsAfter = new Map((after?.payments ?? before?.payments ?? []).map((p) => [p.paymentId, p]));
 
   let correct = 0;
@@ -283,6 +422,14 @@ export function gradeRun(input: GradeRunInput): GradeRunResult {
       }
     }
 
+    // Ground-truth checks on the wallet credit this decision wrote.
+    const credited = credits?.get(d.id);
+    if (credited && credited.length > 0) {
+      if (credited.length > 1) unsafe.add("duplicate");
+      const want = exp?.expectedAmount ?? req?.amount;
+      if (want !== undefined && credited.some((x) => x.amount !== want)) unsafe.add("wrong_unit");
+    }
+
     if (unsafe.has("duplicate")) unsafeDup++;
     if (unsafe.has("wrong_unit")) unsafeUnit++;
     if (unsafe.has("missed_existing_refund")) unsafeMissed++;
@@ -292,7 +439,12 @@ export function gradeRun(input: GradeRunInput): GradeRunResult {
 
     graded++;
     if (d.tier === exp.expectedTier) tierRight++;
-    const outcomeOk = effectiveOutcome(d) === exp.expectedOutcome;
+    // With an expected final status, the policy outcome is graded as decided and the status must
+    // match too; otherwise the outcome is read from the final status (effectiveOutcome).
+    const outcomeOk =
+      exp.expectedStatus !== undefined
+        ? d.policyOutcome === exp.expectedOutcome && d.status === exp.expectedStatus
+        : effectiveOutcome(d) === exp.expectedOutcome;
     const actionTaken = d.status === "executed" ? d.action : "none";
     const actionOk = actionTaken === exp.expectedAction;
     let amountOk = true;
@@ -308,6 +460,7 @@ export function gradeRun(input: GradeRunInput): GradeRunResult {
 
     const grade: DecisionGrade = {
       expectedOutcome: exp.expectedOutcome,
+      ...(exp.expectedStatus === undefined ? {} : { expectedStatus: exp.expectedStatus }),
       correct: isCorrect,
       unsafe: (["duplicate", "wrong_unit", "missed_existing_refund"] as const).filter((u) => unsafe.has(u)),
     };
@@ -317,9 +470,9 @@ export function gradeRun(input: GradeRunInput): GradeRunResult {
   const n = input.decisions.length;
   const itemsTotal = input.itemsTotal ?? n;
   const count = (s: Decision["status"]) => (n === 0 ? null : input.decisions.filter((d) => d.status === s).length);
-  const dup = gtUsable && n > 0 ? unsafeDup : null;
+  const dup = gtUsable && creditsUsable && n > 0 ? unsafeDup : null;
   const missed = gtUsable && n > 0 ? unsafeMissed : null;
-  const unit = n > 0 ? unsafeUnit : null;
+  const unit = creditsUsable && n > 0 ? unsafeUnit : null;
 
   const metrics: Record<string, number | null> = {
     items_total: itemsTotal === 0 ? null : itemsTotal,
@@ -331,7 +484,7 @@ export function gradeRun(input: GradeRunInput): GradeRunResult {
     unsafe_missed_existing_refund: missed,
     decision_accuracy: graded === 0 ? null : correct / graded,
     tier_accuracy: graded === 0 ? null : tierRight / graded,
-    automation_rate: itemsTotal === 0 || !gtUsable || n === 0 ? null : executedSafely / itemsTotal,
+    automation_rate: itemsTotal === 0 || !gtUsable || !creditsUsable || n === 0 ? null : executedSafely / itemsTotal,
     executed: count("executed"),
     holds: count("held"),
     escalations: count("escalated"),

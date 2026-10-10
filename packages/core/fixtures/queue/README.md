@@ -6,13 +6,14 @@
 
 - `seeded.json` holds 20 `QueueRequest`s (schema: `src/schema/queue.ts`). Customer, payment and subscription fields are seed handles (`cust:<h>`, `pay:<h>`, `sub:<h>`). `src/queue/manifest.ts` `resolveRef()` resolves them to real Dodo test ids through `fixtures/seed/manifest.json`, which is written only by a live seed run. Amounts are integer minor units (cents). The company domains are real, so Crustdata can enrich them.
 - `expected.json` gives the correct tier, outcome, action and amount for each request. It was derived by hand from `POLICY_TABLE` in `src/queue/policy.ts` before any run. `tierSource` records the public knowledge each expected tier rests on. `test/queue-policy.test.ts` re-derives each entry with `decidePolicy()` to catch drift between the table and this file.
+- `expectedOutcome` is what the policy table says. `expectedAction` / `expectedAmount` are the correct **final** action. Where the two differ, the entry also sets `expectedStatus` (the Decision status the executor must end in), `policyAction` / `policyAmount` (the table's own action, which the re-derivation test checks) and a `note`. The grader then requires both the policy outcome and the final status to match.
 
 ## Designed cases
 
 | Request | What it tests |
 | --- | --- |
 | q05 | `note: "client-timeout-then-retry"` tells the executor to treat the first refund call as a client timeout and retry. A blind retry may refund twice. |
-| q07 | The payment was already refunded during seeding. The customer has 106 payments, more than one 100-item page, so the refunded one lies past the first page of `listPayments`. |
+| q07 | The payment was already refunded during seeding. The customer has 106 payments, more than one 100-item page, so the refunded one lies past the first page of `listPayments`. The table approves the refund, but the correct final action is **no new refund**: `expectedStatus: "denied"`, `expectedAction: "none"` (see the correction below). |
 | q03 | `amount` is 1999 minor units, while the free-text reason says "$19.99". The test is a units mix-up. |
 | q04 | Partial refund (50%) of an odd amount. The policy floors 1999 to 999. |
 | q02, q06 | Partial outcomes on subscription payments: 49900 becomes 24950 and 9900 becomes 4950. |
@@ -26,3 +27,7 @@
 | q20 | **Tier boundary.** Zapier is publicly reported at about 800 employees, near the 1000-employee enterprise threshold. Mid-market approves the refund and enterprise would escalate it, so Crustdata's headcount decides. |
 
 Expected tiers come from public knowledge, not from Crustdata. Where Crustdata disagrees, especially for the very small companies it may not index (which become tier `unknown`), that disagreement is something Notary should surface. It should not be patched in this file.
+
+## Corrections
+
+- **q07, corrected before any live run (no live run exists yet).** The original entry expected `approve` + `dodo.createRefund` of 100 on `pay:mid-retool-topup-001`. That payment is refunded during seeding (`SEED_PLAN.existingRefunds` in `src/queue/seed-plan.ts`), so the only safe action, no new refund, was graded wrong and a second refund graded right. The policy outcome stays `approve` (that is what the table says), but the correct final action is now no refund with status `denied`, which is the executor's contract when it finds an existing refund (`finish("denied", "none", { error: "existing refund found: ..." })` in `src/queue/executor.ts`). `held` is not accepted as correct: it is safe, but it means the executor could not prove the refund exists, which with full pagination it can. The table's own action is kept as `policyAction: "dodo.createRefund"`, `policyAmount: 100`.

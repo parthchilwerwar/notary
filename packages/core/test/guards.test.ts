@@ -11,6 +11,7 @@ import {
   UnknownWriteOutcomeError,
   compileGuards,
   guarded,
+  parseScope,
   isReadBackResult,
   wireRetirement,
   withGuardContext,
@@ -18,7 +19,9 @@ import {
 import type { GuardRunContext } from "../src/guards/index.js";
 import type { Belief, DefectClass, Effect, Guard, Probe } from "../src/schema/index.js";
 import { NotaryDb } from "../src/store/db.js";
-import { FakeDodo, T0, fakeProbe, fakeWorld, notarize, unlearn } from "./fakes.js";
+import { listAll } from "../src/guards/readback.js";
+import { collectGroundTruth } from "../src/queue/grader.js";
+import { FakeDodo, T0, fakeProbe, fakeWorld, notarize, testManifest, unlearn } from "./fakes.js";
 
 const now = () => new Date(T0);
 
@@ -126,6 +129,38 @@ describe("guard compiler", () => {
       expect(g).toMatchObject({ kind: "block", operation: "crustdata.enrichCompany", class: cls });
       expect(g!.reason).toContain(cls);
     }
+  });
+
+  it("an adversary-narrowed scope compiles into rule.scope; an unparseable scope compiles to block", () => {
+    const probes = [unitProbe("u1", 100)];
+    const narrowed = (scope: string | undefined, reason = "evidence covers USD payments only") =>
+      belief("dodo.refund.amount-minor-units", {
+        class: "unit_mismatch",
+        evidence: [{ probeId: "u1", traceId: "t" }],
+        adversary: { verdict: "narrow", reason, model: "test-model", ...(scope === undefined ? {} : { scope }) },
+      });
+    const [g, ...rest] = compile([narrowed("USD only")], probes);
+    expect(rest).toEqual([]);
+    expect(g).toMatchObject({ kind: "transform", rule: { scale: 0.01, scope: { currency: ["USD"] } } });
+    expect(g!.reason).toMatch(/narrowed scope: currency USD/);
+    expect(compile([narrowed("only EUR and GBP refunds")], probes)[0]!.rule.scope).toEqual({ currency: ["EUR", "GBP"] });
+    // Unscoped and scoped compile to different guard ids.
+    expect(compile([narrowed("USD only")], probes)[0]!.id).not.toBe(compile([narrowed("EUR only")], probes)[0]!.id);
+
+    // Not machine-checkable -> block, with the scope in the reason (the store's fallback: no scope, use the reason).
+    for (const b of [narrowed("customers created before 2024"), narrowed(undefined, "only observed on one API key")]) {
+      const gs = compile([b], probes);
+      expect(gs).toHaveLength(1);
+      expect(gs[0]).toMatchObject({ kind: "block", operation: "dodo.createRefund" });
+      expect(gs[0]!.reason).toMatch(/not a machine-checkable scope/);
+    }
+    // "<condition>: <rationale>" parses only when the rationale can't narrow further.
+    expect(parseScope("USD only: dodo.createWalletLedgerEntry was probed with USD amounts; other currencies are untested")).toEqual({ currency: ["USD"] });
+    for (const s of ["USD only: for card payments", "USD only: amounts under 1000", "USD only: EUR was never probed", "usd only", "all currencies"]) {
+      expect(parseScope(s), s).toBeNull();
+    }
+    // An upheld belief is unscoped, as before.
+    expect(compile([belief("dodo.refund.amount-minor-units", { class: "unit_mismatch", evidence: [{ probeId: "u1", traceId: "t" }] })], probes)[0]!.rule.scope).toBeUndefined();
   });
 
   it("honored beliefs and non-notarized beliefs compile no guard", () => {
@@ -297,6 +332,40 @@ describe("guarded()", () => {
     await expect(tools.dodo.listRefunds({ customer_id: "cus_b" })).rejects.toThrow(/page_number not advancing/);
   });
 
+  it("paginate_fully serves both caller styles over >100 items behind a silent page cap", async () => {
+    const w = fakeWorld();
+    w.pageCap = 40; // asked for 100, silently given 40
+    for (let i = 0; i < 230; i++) {
+      w.payments.push({ payment_id: `pay_z${i}`, customer_id: "cus_b", total_amount: 100, product_id: "p" });
+      w.addRefund(`pay_z${i}`);
+    }
+    const { tools } = setup([belief("dodo.refunds.page-size-max-100")], [], w);
+
+    // "Read one page" caller: page 0 (or no page_number) is the whole, proven-complete list.
+    const one = await tools.dodo.listRefunds({ customer_id: "cus_b", page_size: 100 });
+    expect(one.data.items).toHaveLength(230);
+    const zero = await tools.dodo.listRefunds({ customer_id: "cus_b", page_size: 100, page_number: 0 });
+    expect(zero.data.items).toHaveLength(230);
+
+    // "Page until empty" caller (the executor's and read-back's listAll): page 1 is empty, so it
+    // stops complete instead of seeing page 0's items again and reporting pagination stuck.
+    const later = await tools.dodo.listRefunds({ customer_id: "cus_b", page_size: 100, page_number: 1 });
+    expect(later.data.items).toEqual([]);
+    const all = await listAll(
+      async (page_number, page_size) => (await tools.dodo.listRefunds({ customer_id: "cus_b", page_size, page_number })).data,
+      (r) => r.refund_id,
+    );
+    expect(all).toMatchObject({ complete: true });
+    expect(all.items).toHaveLength(230);
+    expect(new Set(all.items.map((r) => r.refund_id)).size).toBe(230);
+
+    // The grader reading ground truth through the same guarded tools.
+    const gt = await collectGroundTruth(tools, { ...testManifest, customers: { b: testManifest.customers.b! } });
+    expect(gt.complete).toBe(true);
+    expect(gt.problems).toEqual([]);
+    expect(gt.refunds).toHaveLength(230);
+  });
+
   it("retry_policy: a 5xx whose write landed is read back, not retried", async () => {
     const w = fakeWorld().fault("dodo.createRefund", { http: 502, after: true });
     const { tools } = setup([belief("dodo.refund.full-retry-no-duplicate", { class: "idempotency_hazard" })], [], w);
@@ -335,6 +404,64 @@ describe("guarded()", () => {
     await expect(create({ payment_id: "pay_1" })).rejects.toBeInstanceOf(UnknownWriteOutcomeError);
     expect(w.count("createRefund")).toBe(1);
     expect(w.refunds.filter((r) => r.payment_id === "pay_1")).toHaveLength(0);
+  });
+
+  it("a narrowed guard applies inside its scope and blocks outside it (behavior unverified there)", async () => {
+    const probes = [unitProbe("u1", 100)];
+    const adversary = { verdict: "narrow" as const, reason: "USD evidence only", scope: "USD only", model: "test-model" };
+    const refundBelief = belief("dodo.refund.amount-minor-units", { class: "unit_mismatch", evidence: [{ probeId: "u1", traceId: "t" }], adversary });
+    const w = fakeWorld();
+    w.payments.push({ payment_id: "pay_eur", customer_id: "cus_a", total_amount: 5000, product_id: "prod_starter" });
+    const methods = w.methods();
+    const getPayment = methods["dodo.getPayment"]!;
+    methods["dodo.getPayment"] = async (id: string) => {
+      const r = (await getPayment(id)) as { data: Record<string, unknown> };
+      return id === "pay_eur" ? { ...r, data: { ...r.data, currency: "EUR" } } : r;
+    };
+    const reg = GuardRegistry.fromGuards(compile([refundBelief], probes));
+    const wrap = guarded(reg);
+    wrap("dodo.getPayment", methods["dodo.getPayment"]!);
+    const create = wrap("dodo.createRefund", methods["dodo.createRefund"]!);
+
+    // In scope (USD payment): the transform applies, and the currency read is on the decision.
+    const c = ctx();
+    await withGuardContext(c, () => create({ payment_id: "pay_1", items: [{ item_id: "prod_starter", amount: 1200 }] }));
+    expect((w.calls.find((x) => x.op === "createRefund")!.args[0] as { items: Array<{ amount: number }> }).items[0]!.amount).toBe(12);
+    expect(c.effects.map((e) => e.op)).toEqual(["dodo.getPayment"]);
+
+    // Out of scope (EUR payment): refused before the write, not silently transformed or skipped.
+    const c2 = ctx();
+    await expect(withGuardContext(c2, () => create({ payment_id: "pay_eur", items: [{ item_id: "prod_starter", amount: 1200 }] }))).rejects.toThrow(
+      /outside the narrowed scope \(currency USD\).*EUR.*unverified/,
+    );
+    expect(w.count("createRefund")).toBe(1);
+    expect(c2.guardsApplied).toEqual([reg.all()[0]!.id]);
+
+    // Wallet credit: the currency is on the request itself.
+    const creditBelief = belief("dodo.wallet.credit-amount-minor-units", {
+      class: "unit_mismatch",
+      evidence: [{ probeId: "u2", traceId: "t" }],
+      adversary,
+    });
+    const { tools, w: w2 } = setup([creditBelief], [unitProbe("u2", 100)]);
+    await tools.dodo.createWalletLedgerEntry("cus_a", { amount: 5000, currency: "USD", entry_type: "credit" });
+    expect(w2.ledger.get("cus_a")![0]!.amount).toBe(50);
+    await expect(tools.dodo.createWalletLedgerEntry("cus_a", { amount: 5000, currency: "INR", entry_type: "credit" })).rejects.toThrow(/outside the narrowed scope/);
+    expect(w2.ledger.get("cus_a")).toHaveLength(1);
+  });
+
+  it("a narrowed guard blocks when the call's currency can't be determined", async () => {
+    const adversary = { verdict: "narrow" as const, reason: "USD only", scope: "USD only", model: "test-model" };
+    const { tools, w } = setup([belief("dodo.refunds.page-size-max-100", { adversary })]);
+    await expect(tools.dodo.listRefunds({ customer_id: "cus_a", page_size: 100 })).rejects.toThrow(/cannot tell whether .* is inside the narrowed scope/);
+    expect(w.count("listRefunds")).toBe(0);
+  });
+
+  it("an unparseable narrowed scope blocks the op outright", async () => {
+    const adversary = { verdict: "narrow" as const, reason: "x", scope: "only on weekdays", model: "test-model" };
+    const { tools, w } = setup([belief("dodo.refunds.page-size-max-100", { adversary })]);
+    await expect(tools.dodo.listRefunds({ customer_id: "cus_a", page_size: 100 })).rejects.toThrow(/not a machine-checkable scope/);
+    expect(w.count("listRefunds")).toBe(0);
   });
 
   it("a retired guard stops applying at once", async () => {
