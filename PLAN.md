@@ -1,136 +1,136 @@
-`# Notary — Plan
-`
-`Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with tests passing and one commit.
-`
-`## Claude Code — `packages/core`
-`
-`- [x] **P0 · Scaffold** — pnpm monorepo, schema stubs, CLI skeleton, neatlogs smoke span, Entire enabled
-`- [x] **P1 · Tool clients, recorder, schema freeze** — Crustdata + Dodo raw clients, cassette recorder with redaction, credit ledger, Dodo test-mode lock, final bundle schema, sample bundle
-`- [x] **P2 · Contracts and deterministic checker** — claims from real docs, checker, recon sweep
-`- [x] **P3 · Seeded world and naive run** — Dodo seed script, seeded queue + expected outcomes, policy table, naive executor, grader, first bundle
-`- [x] **P4 · Reflector and probes** — Bedrock client with roles, batched hypotheses, probe templates, cost-aware scoring, commit-then-run, verdict rules
-`- [x] **P5 · Beliefs and adversary** — beta-binomial store, lifecycle incl. `unlearned`, adversary (`bedrock` + `session`), evidence-validity check
-`- [x] **P6 · Guards, gated queue, recovery** — guard compiler, `guarded()` clients, required-beliefs gating, evidence packs, `--resume`, local API + SSE
-`- [x] **P7 · Transfer, drift, coverage** — `--priors-from`, drift fixture, `notary guards coverage`
-`- [x] **P8 · Replay and evaluation** — `notary replay`, noise floor, metrics, `docs/EVALUATION.md`, `export/TOOLS.md`
-`- [x] **P9 · Self-audit and README** — `docs/AUDIT.md`, `README.md`, `docs/ARCHITECTURE.md`
-`- [ ] **P10 · Business plan, final runs, recording** — `docs/BUSINESS.md`, final bundles, demo footage
-`
-`## Codex — `packages/web`
-`
-`- [x] **U1 · Dashboard shell** (Codex, `cb98891`) — layout, run picker, Queue and Beliefs screens
-`- [ ] **U2 · Probe log, runs comparison, live mode**
-`- [ ] **U3 · Economics screen, polish, deploy**
-`
-`## Gates
-`
-`- [x] Schema freeze (end of P1) — `packages/core/src/schema/bundle.ts`; changes now need user approval
-`- [ ] Feature freeze (Mon 12:00 IST)
-`
-`## Notes
-`
-`**P0 (Oct 10).** Workspace, schema stubs, CLI skeleton (all commands stubbed), `src/trace/` + `notary doctor`, `.env.example`, `CLAUDE.md`, `docs/DECISIONS.md`. 25 tests pass, typecheck clean. Two "done when" items are still open and must close before P1 work starts:
-`- [x] Live test span in neatlogs: closed Oct 10. With the key in `.env`, `pnpm notary doctor` flushed span `notary.doctor` (trace `bf92d825f020148b4478c617f26aa28c`).
-`- [ ] Entire checkpoint: the Entire CLI isn't installed, so this commit has none. Install it and run `entire enable`.
-`
-`**P1 (Oct 10).** Recorder (live/replay, redaction, occurrence-keyed replay), Crustdata + Dodo raw clients behind `createTools({wrap})`, credit ledger, Dodo test-mode lock, frozen bundle schema + content hash, `notary export --sample` → `packages/web/public/bundles/sample-42.json` (validates, hash matches). `pnpm check:secrets` + pre-commit hook. 63 tests pass. Endpoints in `docs/ENDPOINTS.md`.
-`- [ ] BLOCKED: one live recorded call per API — `CRUSTDATA_API_KEY` and `DODO_PAYMENTS_API_KEY` not set (attempt returned `MissingCredentialError`, no network call). No cassettes exist yet.
-`
-`**P2 (Oct 10).** 26 claims from real docs (`src/contracts/`), deterministic checker for all 8 expect rules (`src/checker/`), recon runner with budget/repeat/delay caps, `notarize --recon-only [--replay]`. Determinism verified in unit tests (checkAll twice → identical JSON; replay recon over a test cassette twice → identical anomalies). 116 tests pass.
-`- [ ] BLOCKED: recon on real recorded traffic — `notarize --recon-only` prints `BLOCKED: CRUSTDATA_API_KEY not set` / `DODO_PAYMENTS_API_KEY not set` (exit 3). Once keys exist: run live once, then `--replay` twice and diff.
-`- [ ] BLOCKED: `entire graph` raw-client check (Entire CLI not installed); static-scan test passes instead.
-`
-`**P3 (Oct 10).** Policy table + `tierFromCompany`/`decidePolicy`, seed plan + `scripts/seed-dodo.ts` (`seed:dodo --plan` verified: 6 products, 11 customers, 119 payments, 142 writes, 11 human checkouts), seeded queue (20) + hand-written expected outcomes, naive executor, deterministic grader (duplicates / wrong unit / missed existing refund, accuracy, automation; null when not computable), `notary run --naive`. 166 tests pass.
-`- [ ] BLOCKED: live seed + naive run — `BLOCKED: DODO_PAYMENTS_API_KEY not set` (exit 3). Seeding also needs 11 hosted test-card checkouts by a human (see DECISIONS #28). Then: `pnpm --filter @notary/core seed:dodo`, `pnpm notary run --queue packages/core/fixtures/queue/seeded.json --naive`.
-`
-`**P4 (Oct 10).** Bedrock client (3 roles, temp 0, per-role usage + USD, span per call), one batched fail-safe reflector call, 8 probe templates with control variants, cost-aware score, SQLite commit-then-run with immutable predictions, verdict rules exactly per TDD (each unit-tested), `notarize --tool` runs recon → checker → probe loop. 254 tests pass.
-`- [ ] BLOCKED: live probe loop — `notarize --tool dodo` prints `BLOCKED: DODO_PAYMENTS_API_KEY not set` and `BLOCKED: NOTARY_MODEL_REFLECTOR not set`. Needs Crustdata/Dodo keys, Bedrock model ids + AWS credentials, and a neatlogs key to show the prediction span before the call.
-`
-`**P5 (Oct 10).** Beta-binomial belief store (P(θ>0.5) confidence, append-only events, unlearn on crossing 0.5), probe-until-settled loop (cap 5/claim), local span sink + FR-10 evidence-validity check, adversary with `bedrock` and `session` (headless Claude Code, verdict committed) backends, `notarize --adversary`. 340 tests pass.
-`- [ ] BLOCKED: `notarize --tool crustdata` end to end (no Crustdata key, no reflector/adversary model ids or AWS credentials). No real belief or adversary verdict exists yet.
-`
-`**P6 (Oct 10).** Guard compiler (6 kinds) + registry + `guarded()` passed as createTools' wrap, retire-on-unlearn, required-beliefs gate with evidence packs, guarded `notary run`, per-item SQLite run state + `run --resume` with read-back before retry (crash-and-resume tested with doubles), `notary serve` (Hono, `/api/bundles`, `/api/bundles/:id`, SSE `/api/stream`; checked live with curl). 397 tests pass.
-`- [ ] BLOCKED: guarded run on the seeded queue (zero-unsafe check) and a real kill-and-resume — `BLOCKED: DODO_PAYMENTS_API_KEY not set`; also needs notarized beliefs from a live P5 run.
-`
-`**P7 (Oct 10).** Transfer priors (`--priors-from`, `--compare-priors`), probes-to-candidate metrics, `make:drift` tool + `replayDrift` (un-learning + guard retirement tested on a temp test cassette), `notary guards coverage` — run for real on this repo: **27 sites, 21 guarded, 6 raw-by-design, 0 unguarded, exit 0** (tsc backend). 428 tests pass.
-`- [ ] BLOCKED: Dodo notarize with vs without priors — needs a Crustdata notarize bundle and live keys (`BLOCKED: no notarize bundle for crustdata`).
-`- [ ] BLOCKED: real drift fixture — no real cassette to derive it from.
-`- [ ] Unverified: `entire` coverage backend (Entire not installed).
-`- [x] Carry to P8: replay identity fixed (probe tags derive from the recorded runId).
-`
-`**P8 (Oct 10).** `notary replay` (keyless, loud on miss/tamper, exact metric comparison; reproduces probes/verdicts/beliefs/metrics on test cassettes), consolidated metrics (null when not computable), `eval noise-floor`, `notary export` → `export/TOOLS.md`, `export/guards.json`, generated `docs/EVALUATION.md`. Today export finds 0 real bundles; its only numbers are keyless checks it ran: 468 tests passed, 0 unguarded call sites. `replay` today: `BLOCKED: no recorded live runs to replay`, exit 3. 468 tests pass.
-`- [ ] BLOCKED: headline numbers, noise floor and fresh-clone replay match — no recorded live runs (needs all API keys). Fresh-clone install + tests: see `scripts/fresh-clone-check.mjs`.
-`
-`**P9 (Oct 10).** Hostile audit → `docs/AUDIT.md` (26 findings; 9 fixed with tests), `README.md` (results table links only to generated EVALUATION.md rows), `docs/ARCHITECTURE.md` (as built). Verified: 481+ tests, typecheck, check:secrets, guards coverage 0 unguarded, replay BLOCKED exit 3, export regenerated.
-`- [ ] OPEN (critical, user decision): commits predate the 12:30 IST start — see AUDIT.md / DECISIONS #72.
-`- [ ] Tell Codex: `sample-42.json` was regenerated (metric keys now match real bundles).
-`
-`## Resume here (next session)
-`1. Fill `.env` (Crustdata, Dodo test key, neatlogs key + service token, AWS creds/SSO + 3 model ids); install Entire CLI and `entire enable`.
-`2. `pnpm notary doctor` → real span in neatlogs.
-`3. Follow README "Recording real runs" in order (seed with 11 hosted checkouts → notarize crustdata → notarize dodo --priors-from crustdata → run --naive → run → eval noise-floor → make:drift + replay --drift → export).
-`4. Re-check every BLOCKED line above; update EVALUATION via `pnpm notary export`.
-`
-`## Session 3 — keyless hardening (Oct 10)
-`- [x] Step 1 keyless health check run for real (fresh-clone install, typecheck, 481 tests, check:secrets, coverage 0 unguarded; every CLI command with --help and with no keys; `serve` curl incl. tampered bundle → `x-notary-hash-mismatch: 1`). Two failures found: `doctor` exit 1 not BLOCKED/3 (DECISIONS #73), SSE not cross-process (#74) — both fixed with tests (`test/health-fixes.test.ts`).
-`- [x] Step 2 `notary demo --fixture`: whole pipeline over an in-process fixture API + model doubles (6 planted quirks), all bundles `sample: true` with FIXTURE disclosure in `runs/demo/`, excluded from export/replay/metrics (checked by the demo itself). Fixed on the way: `*`-only hypothesis was 'confirmed' (now inconclusive), unit_mismatch never compiled to a transform guard (read wrong field), `notarize --replay` could pick demo bundles. Surfaced 7 larger bugs → Step 3.
-`- [x] Step 4 open audit findings — fixed A-10 (per-call-site coverage allow-list), A-19 (replay compares records, not just metrics), A-22 (prior strength capped at 2); won't fix A-18/A-20/A-21 (reasons in AUDIT.md); open: A-12/13/15/17/23/24 need keys or installs, A-11/14/16 need a user decision. Totals: 12 fixed, 6 open (keys), 3 open (decision), 3 won't fix, 2 verified.
-`- [x] Step 3 fixes from Steps 1–2: doctor BLOCKED/3, cross-process SSE (#73–74); demo-found pipeline bugs (#79–80); guards/grader (#87–90); notarization coverage — verification probes for documented behavior, probe-only seed customer, 3–5 designs per claim, one re-examination round after a downgrade, no re-promotion on uninformative evidence (#81–86). Fixture demo now: naive 9 unsafe (1 duplicate, 8 wrong unit); guarded 0 unsafe, executes 5 (credits + plan changes), holds 9 refunds on `dodo.payments.page-size-max-100` (genuinely mixed fixture evidence, abstained). 537 tests pass.
-`- [ ] Not committed by this session: neatlogs workflow/wrapBedrock changes in `src/cli.ts`, `src/trace/*`, `src/llm/client.ts`, `test/trace.test.ts` belong to the separate "Neatlogs tracing setup" session.
-`- [x] Fixture-demo determinism flake fixed (token estimate normalized ids/timestamps). Final keyless state: 537 tests pass, typecheck clean, check:secrets clean, coverage 0 unguarded, replay BLOCKED exit 3, export 0 real bundles (demo bundles excluded).
-`
-`## Session 4 (Oct 10)
-`- [x] Step 1: committed the separate session's neatlogs tracing work on its own (withWorkflow roots, wrapBedrock LLM spans; DECISIONS #91).
-`- [x] Step 8: schema + bundle hash confirmed browser-safe; guard test `test/browser-safe.test.ts` (#92).
-`- [x] Step 2: missing field path → uninformative, never honored (#94); `test/missing-path.test.ts`.
-`- [x] Step 3: Crustdata throttled to 15/min across recon, probes, queue (#95); `test/throttle.test.ts`.
-`- [x] Step 4: A-16 drift — consistent op-level rewrite, distinct designs counted once; a fresh Beta(1,4) belief no longer un-learns from its own 3 designs (#96).
-`- [x] Step 5: A-14 belief_precision disclosure (#97).
-`- [x] Step 6: A-11 resolved against the official start (Luma + Oct 9 email: 12:00 AM IST Oct 10); first commit 02:49:08 IST; website's 12:30 PM disclosed (#72, AUDIT, hackathon.md).
-`- [x] Step 7: `demo --fixture --publish` → `packages/web/public/bundles/fixture/`; `packages/web/public/evidence/evidence.json` (#98). Entire docs vs adapter flag mismatch noted (#99).
-`- [x] Codex committed U1 (dashboard shell with Queue and Beliefs) as `cb98891`; Claude Code did not touch `packages/web` UI code.
-`
-`## Session 5 (Oct 10)
-`- [x] Step 1: `notary export --content` → `packages/web/public/content/glossary.json` generated from code (#104); `test/content.test.ts`.
-`- [x] Step 2: honest fixture drift beat — mixed-evidence wallet unit belief Beta(2,6), Stage 11 un-learns on 5 of 6 distinct designs and retires the guard (#100). Compiler now blocks (not transforms) when unit evidence is inconsistent (#101); fixture guarded run now executes 2 and holds 12 (supersedes "executes 5" above), 0 unsafe.
-`- [x] Step 3: Entire backend uses documented `--relation CALLS` flags; UNVERIFIED until a local install (#102).
-`- [ ] Step 4: trace-link machinery built and inactive (#103) — BLOCKED on the user pasting one neatlogs trace URL; then `pnpm notary trace-link --example "<url>" --trace-id <id> && pnpm notary export --evidence`.
-`- [x] Step 5: fixture bundles republished; evidence.json regenerated (unchanged).
-`
-`## Session 6 (Oct 10) — certificates
-`- [x] Steps 1–3: `notary export --certificates [--fixture]` — certificates, revocations, Notarized API Report (`report.json`, `export/REPORT.md`) from data only (#106). Real: 0 bundles → all 26 claims "not tested". Fixture default: 9 certified (5 match, 4 contradict), 17 unproven; change-api: 9 certified, 1 revoked.
-`- [x] Step 4: `demo --fixture --scenario change-api` + re-verification sentinel in guarded runs (#105): API unit switch after q09 → belief un-learns via 5 contrary probes, certificate revoked, guard retired, q10 held.
-`- [x] Step 5: README headline + How it works → Read → Test → Challenge → Certify → Enforce (#107).
-`- [ ] Not verified live: sentinel probe replay/resume against a recorded live run (needs keys).
-`
-`## v2 — Agent Control Center (session 7, Oct 10)
-`
-`Claude Code owns `packages/core` and `packages/web` (Codex out of quota). Phases V0–V5; parallel agents per phase, orchestrator commits.
-`
-`- [x] **V0 · Rules** (`111a5f7`) — CLAUDE.md/AGENTS.md: Claude Code owns web; web rules.
-`- [x] **V1 · Core support** (`0223b39`…`067a179`) — verified: core typecheck clean, **780/780 core tests**, check:secrets clean.
-`  - [x] V1.1 timeline: `runs/<runId>/timeline.jsonl` from every run; fixture timelines published (8); `GET /api/bundles/:id/timeline`.
-`  - [x] V1.2 explain: `notary export --explain` → `explain.json` (0 real, 16 fixture default, 12 change-api answers), byte-identical on rerun.
-`  - [x] V1.3 `POST /api/ask` — curl: keyless → `couldn't answer from the evidence` / `BLOCKED: NOTARY_MODEL_EXECUTOR not set`.
-`  - [x] V1.4 `GET/POST /api/approvals` — curl: no token 401, token 200, spoofed Host 403.
-`  - [x] V1.5 certificates already built (session 6); re-verified exports unchanged; schemas made browser-safe.
-`  - [ ] BLOCKED: Ask answers need `NOTARY_MODEL_EXECUTOR` + AWS credentials.
-`  - [ ] BLOCKED: live approve needs `DODO_PAYMENTS_API_KEY`, a seed manifest and a real guarded run with held items (none exist; pending list is empty). Reject works keylessly (tested with doubles).
-`- [x] **V2 · App shell and design system** — shadcn-API sidebar (Monitor/Trust/Act/Business, held + revocation badges, data mode + neatlogs footer), top bar with run picker (`?run=`), ⌘K palette (cmdk), sonner `notify`, route table `packages/web/src/routes.tsx` with a URL per record, DataProvider (local API first, else static; all bundles hash-verified), certificates validated with the core schema + seals recomputed in browser, every page restyled. Verified: typecheck, **42 web tests**, build, visual check 76 route × viewport × theme combos with no page errors/overflow, deep links via `vite preview`. Pinned: @xyflow/react 12.12.0, cmdk 1.1.1, sonner 2.0.8, recharts 3.10.1, @tanstack/react-virtual 3.14.13 (motion kept at 14.1.0, react-router 8.4.0 already present).
-`- [x] **V3 · Mission control** (`4357c00`) — xyflow five-stage graph with node states from timeline events, virtualized feed (record + trace links, node filter), budget meters (caps null → "no cap configured"), status chip; local SSE + `/api/bundles/:id/timeline`, hosted Fixture/Recorded replay (play/pause/speed/scrub). Verified: 27 tests on the real fixture timelines, screenshots 1440 light / 390 dark mid-replay and finished, SSE stream opened against a real `notary serve`, injected live event toasted, reconnect with lastEventId.
-`- [x] **V4 · Decision trail, Ask Notary, Approval desk** (`e143d73`, `d15ff95`, `f488f45`) — verified: **138 web tests**, typecheck, build.
-`  - [x] V4.1 trail: change-api q10 → decided by revoked `cert-f7310edf899b3e9b`; every line exactly one tag; all 71 fixture prediction hashes recomputed and match.
-`  - [x] V4.2 Ask Notary: ⌘J panel + `/app/ask`; per-world filtering (default 16, change-api 12, real 0); local keyless ask showed `couldn't answer from the evidence` + `BLOCKED: NOTARY_MODEL_EXECUTOR not set` against a real `notary serve`.
-`  - [x] V4.3 Approval desk: hosted read-only; local token flow, 401 handling and honest empty list verified against a real `notary serve`; dialog checked with mocked routes.
-`  - [ ] BLOCKED: real Ask answers (executor model + AWS creds); live approve (Dodo test key, seed manifest, a real guarded run with held items).
-`- [x] **V5 · Polish, evidence, deploy** — landing at `/` (exact hero, double-refund cards from graded fixture records, Read → Test → Challenge → Certify → Enforce, looping labelled fixture replay reusing Mission control's graph, three required tools from evidence.json, real vs fixture results kept apart, GitHub + dashboard buttons); three-way review of every page at 1440/390 × light/dark with route-interception checks of loading/empty/error/tamper states, WCAG AA contrast (token fixes: `--blue`, `--muted`, `--hatch-line`, new `--control-line`), ≥40px tap targets, fixed full-height sidebar, opaque top bar, no hosted `/api` probe, graded-unsafe decisions now visible in Queue/trail. Verified: **780 core + 152 web = 932 tests**, typecheck, build, check:secrets, `visual-check.mjs` 76 combos (no page errors/overflow; tamper rejection, deep links, palette, cohort separation). Vercel configured (root `packages/web`, pnpm 11.7.0, frozen root lockfile) and a clean-copy install+build verified locally.
-`  - [ ] Not deployed: no `vercel deploy` was run (needs the user's Vercel account/login).
-`  - [ ] evidence.json unchanged: no real neatlogs trace URL yet (`notary trace-link`), Entire CLI not installed, no checkpoints.
-`
-`## Session 8 — LiteLLM provider and Ask Notary tracing (Oct 11)
-`
-`- [x] Step 1 diagnosis: `.env` loads for every non-keyless command incl. `serve` (repo root, `cli.ts` loadEnv); BLOCKED was missing config + no LiteLLM backend (DECISIONS #138).
-`- [x] Step 2 LiteLLM provider (`bc7fded`), step 3 `notary doctor --llm` (`12c8a4b`), step 4 BLOCKED messages name the variable + doctor (`c37c9c4`), step 6 prices + `NOTARY_MAX_USD` (`24eee7b`), step 6b model-call rate limiter (`688be67`), step 5 Ask tracing + `NOTARY_ASK_RPM` (see log). Verified: typecheck, **850 core + 152 web tests**, check:secrets; a test runs the real neatlogs SDK against a local fake collector and checks the exported span tree.
-`- [x] `.env` configured: provider litellm, base URL https://litellm.vision.aivar.app/v1, executor claude-haiku, reflector claude-sonnet-4.6, adversary nova-pro.
-`- [ ] BLOCKED step 7 (real verification): `LITELLM_API_KEY` is empty in `.env`. `pnpm notary doctor --llm` today → exit 3, `BLOCKED: LITELLM_API_KEY not set — set it in .env (see .env.example) and run \`pnpm notary doctor --llm\``. Once set: `pnpm notary doctor --llm`, then `pnpm notary serve`, POST /api/ask with the printed token, confirm a cited answer and the trace id in neatlogs.
-`- [ ] Prices for claude-haiku / claude-sonnet-4.6 / nova-pro unknown unless LiteLLM sends `x-litellm-response-cost` or `NOTARY_PRICE_<ROLE>_IN/_OUT` is set.
+# Notary — Plan
+
+Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with tests passing and one commit.
+
+## Claude Code — `packages/core`
+
+- [x] **P0 · Scaffold** — pnpm monorepo, schema stubs, CLI skeleton, neatlogs smoke span, Entire enabled
+- [x] **P1 · Tool clients, recorder, schema freeze** — Crustdata + Dodo raw clients, cassette recorder with redaction, credit ledger, Dodo test-mode lock, final bundle schema, sample bundle
+- [x] **P2 · Contracts and deterministic checker** — claims from real docs, checker, recon sweep
+- [x] **P3 · Seeded world and naive run** — Dodo seed script, seeded queue + expected outcomes, policy table, naive executor, grader, first bundle
+- [x] **P4 · Reflector and probes** — Bedrock client with roles, batched hypotheses, probe templates, cost-aware scoring, commit-then-run, verdict rules
+- [x] **P5 · Beliefs and adversary** — beta-binomial store, lifecycle incl. `unlearned`, adversary (`bedrock` + `session`), evidence-validity check
+- [x] **P6 · Guards, gated queue, recovery** — guard compiler, `guarded()` clients, required-beliefs gating, evidence packs, `--resume`, local API + SSE
+- [x] **P7 · Transfer, drift, coverage** — `--priors-from`, drift fixture, `notary guards coverage`
+- [x] **P8 · Replay and evaluation** — `notary replay`, noise floor, metrics, `docs/EVALUATION.md`, `export/TOOLS.md`
+- [x] **P9 · Self-audit and README** — `docs/AUDIT.md`, `README.md`, `docs/ARCHITECTURE.md`
+- [ ] **P10 · Business plan, final runs, recording** — `docs/BUSINESS.md`, final bundles, demo footage
+
+## Codex — `packages/web`
+
+- [x] **U1 · Dashboard shell** (Codex, `cb98891`) — layout, run picker, Queue and Beliefs screens
+- [ ] **U2 · Probe log, runs comparison, live mode**
+- [ ] **U3 · Economics screen, polish, deploy**
+
+## Gates
+
+- [x] Schema freeze (end of P1) — `packages/core/src/schema/bundle.ts`; changes now need user approval
+- [ ] Feature freeze (Mon 12:00 IST)
+
+## Notes
+
+**P0 (Oct 10).** Workspace, schema stubs, CLI skeleton (all commands stubbed), `src/trace/` + `notary doctor`, `.env.example`, `CLAUDE.md`, `docs/DECISIONS.md`. 25 tests pass, typecheck clean. Two "done when" items are still open and must close before P1 work starts:
+- [x] Live test span in neatlogs: closed Oct 10. With the key in `.env`, `pnpm notary doctor` flushed span `notary.doctor` (trace `bf92d825f020148b4478c617f26aa28c`).
+- [ ] Entire checkpoint: the Entire CLI isn't installed, so this commit has none. Install it and run `entire enable`.
+
+**P1 (Oct 10).** Recorder (live/replay, redaction, occurrence-keyed replay), Crustdata + Dodo raw clients behind `createTools({wrap})`, credit ledger, Dodo test-mode lock, frozen bundle schema + content hash, `notary export --sample` → `packages/web/public/bundles/sample-42.json` (validates, hash matches). `pnpm check:secrets` + pre-commit hook. 63 tests pass. Endpoints in `docs/ENDPOINTS.md`.
+- [ ] BLOCKED: one live recorded call per API — `CRUSTDATA_API_KEY` and `DODO_PAYMENTS_API_KEY` not set (attempt returned `MissingCredentialError`, no network call). No cassettes exist yet.
+
+**P2 (Oct 10).** 26 claims from real docs (`src/contracts/`), deterministic checker for all 8 expect rules (`src/checker/`), recon runner with budget/repeat/delay caps, `notarize --recon-only [--replay]`. Determinism verified in unit tests (checkAll twice → identical JSON; replay recon over a test cassette twice → identical anomalies). 116 tests pass.
+- [ ] BLOCKED: recon on real recorded traffic — `notarize --recon-only` prints `BLOCKED: CRUSTDATA_API_KEY not set` / `DODO_PAYMENTS_API_KEY not set` (exit 3). Once keys exist: run live once, then `--replay` twice and diff.
+- [ ] BLOCKED: `entire graph` raw-client check (Entire CLI not installed); static-scan test passes instead.
+
+**P3 (Oct 10).** Policy table + `tierFromCompany`/`decidePolicy`, seed plan + `scripts/seed-dodo.ts` (`seed:dodo --plan` verified: 6 products, 11 customers, 119 payments, 142 writes, 11 human checkouts), seeded queue (20) + hand-written expected outcomes, naive executor, deterministic grader (duplicates / wrong unit / missed existing refund, accuracy, automation; null when not computable), `notary run --naive`. 166 tests pass.
+- [ ] BLOCKED: live seed + naive run — `BLOCKED: DODO_PAYMENTS_API_KEY not set` (exit 3). Seeding also needs 11 hosted test-card checkouts by a human (see DECISIONS #28). Then: `pnpm --filter @notary/core seed:dodo`, `pnpm notary run --queue packages/core/fixtures/queue/seeded.json --naive`.
+
+**P4 (Oct 10).** Bedrock client (3 roles, temp 0, per-role usage + USD, span per call), one batched fail-safe reflector call, 8 probe templates with control variants, cost-aware score, SQLite commit-then-run with immutable predictions, verdict rules exactly per TDD (each unit-tested), `notarize --tool` runs recon → checker → probe loop. 254 tests pass.
+- [ ] BLOCKED: live probe loop — `notarize --tool dodo` prints `BLOCKED: DODO_PAYMENTS_API_KEY not set` and `BLOCKED: NOTARY_MODEL_REFLECTOR not set`. Needs Crustdata/Dodo keys, Bedrock model ids + AWS credentials, and a neatlogs key to show the prediction span before the call.
+
+**P5 (Oct 10).** Beta-binomial belief store (P(θ>0.5) confidence, append-only events, unlearn on crossing 0.5), probe-until-settled loop (cap 5/claim), local span sink + FR-10 evidence-validity check, adversary with `bedrock` and `session` (headless Claude Code, verdict committed) backends, `notarize --adversary`. 340 tests pass.
+- [ ] BLOCKED: `notarize --tool crustdata` end to end (no Crustdata key, no reflector/adversary model ids or AWS credentials). No real belief or adversary verdict exists yet.
+
+**P6 (Oct 10).** Guard compiler (6 kinds) + registry + `guarded()` passed as createTools' wrap, retire-on-unlearn, required-beliefs gate with evidence packs, guarded `notary run`, per-item SQLite run state + `run --resume` with read-back before retry (crash-and-resume tested with doubles), `notary serve` (Hono, `/api/bundles`, `/api/bundles/:id`, SSE `/api/stream`; checked live with curl). 397 tests pass.
+- [ ] BLOCKED: guarded run on the seeded queue (zero-unsafe check) and a real kill-and-resume — `BLOCKED: DODO_PAYMENTS_API_KEY not set`; also needs notarized beliefs from a live P5 run.
+
+**P7 (Oct 10).** Transfer priors (`--priors-from`, `--compare-priors`), probes-to-candidate metrics, `make:drift` tool + `replayDrift` (un-learning + guard retirement tested on a temp test cassette), `notary guards coverage` — run for real on this repo: **27 sites, 21 guarded, 6 raw-by-design, 0 unguarded, exit 0** (tsc backend). 428 tests pass.
+- [ ] BLOCKED: Dodo notarize with vs without priors — needs a Crustdata notarize bundle and live keys (`BLOCKED: no notarize bundle for crustdata`).
+- [ ] BLOCKED: real drift fixture — no real cassette to derive it from.
+- [ ] Unverified: `entire` coverage backend (Entire not installed).
+- [x] Carry to P8: replay identity fixed (probe tags derive from the recorded runId).
+
+**P8 (Oct 10).** `notary replay` (keyless, loud on miss/tamper, exact metric comparison; reproduces probes/verdicts/beliefs/metrics on test cassettes), consolidated metrics (null when not computable), `eval noise-floor`, `notary export` → `export/TOOLS.md`, `export/guards.json`, generated `docs/EVALUATION.md`. Today export finds 0 real bundles; its only numbers are keyless checks it ran: 468 tests passed, 0 unguarded call sites. `replay` today: `BLOCKED: no recorded live runs to replay`, exit 3. 468 tests pass.
+- [ ] BLOCKED: headline numbers, noise floor and fresh-clone replay match — no recorded live runs (needs all API keys). Fresh-clone install + tests: see `scripts/fresh-clone-check.mjs`.
+
+**P9 (Oct 10).** Hostile audit → `docs/AUDIT.md` (26 findings; 9 fixed with tests), `README.md` (results table links only to generated EVALUATION.md rows), `docs/ARCHITECTURE.md` (as built). Verified: 481+ tests, typecheck, check:secrets, guards coverage 0 unguarded, replay BLOCKED exit 3, export regenerated.
+- [ ] OPEN (critical, user decision): commits predate the 12:30 IST start — see AUDIT.md / DECISIONS #72.
+- [ ] Tell Codex: `sample-42.json` was regenerated (metric keys now match real bundles).
+
+## Resume here (next session)
+1. Fill `.env` (Crustdata, Dodo test key, neatlogs key + service token, AWS creds/SSO + 3 model ids); install Entire CLI and `entire enable`.
+2. `pnpm notary doctor` → real span in neatlogs.
+3. Follow README "Recording real runs" in order (seed with 11 hosted checkouts → notarize crustdata → notarize dodo --priors-from crustdata → run --naive → run → eval noise-floor → make:drift + replay --drift → export).
+4. Re-check every BLOCKED line above; update EVALUATION via `pnpm notary export`.
+
+## Session 3 — keyless hardening (Oct 10)
+- [x] Step 1 keyless health check run for real (fresh-clone install, typecheck, 481 tests, check:secrets, coverage 0 unguarded; every CLI command with --help and with no keys; `serve` curl incl. tampered bundle → `x-notary-hash-mismatch: 1`). Two failures found: `doctor` exit 1 not BLOCKED/3 (DECISIONS #73), SSE not cross-process (#74) — both fixed with tests (`test/health-fixes.test.ts`).
+- [x] Step 2 `notary demo --fixture`: whole pipeline over an in-process fixture API + model doubles (6 planted quirks), all bundles `sample: true` with FIXTURE disclosure in `runs/demo/`, excluded from export/replay/metrics (checked by the demo itself). Fixed on the way: `*`-only hypothesis was 'confirmed' (now inconclusive), unit_mismatch never compiled to a transform guard (read wrong field), `notarize --replay` could pick demo bundles. Surfaced 7 larger bugs → Step 3.
+- [x] Step 4 open audit findings — fixed A-10 (per-call-site coverage allow-list), A-19 (replay compares records, not just metrics), A-22 (prior strength capped at 2); won't fix A-18/A-20/A-21 (reasons in AUDIT.md); open: A-12/13/15/17/23/24 need keys or installs, A-11/14/16 need a user decision. Totals: 12 fixed, 6 open (keys), 3 open (decision), 3 won't fix, 2 verified.
+- [x] Step 3 fixes from Steps 1–2: doctor BLOCKED/3, cross-process SSE (#73–74); demo-found pipeline bugs (#79–80); guards/grader (#87–90); notarization coverage — verification probes for documented behavior, probe-only seed customer, 3–5 designs per claim, one re-examination round after a downgrade, no re-promotion on uninformative evidence (#81–86). Fixture demo now: naive 9 unsafe (1 duplicate, 8 wrong unit); guarded 0 unsafe, executes 5 (credits + plan changes), holds 9 refunds on `dodo.payments.page-size-max-100` (genuinely mixed fixture evidence, abstained). 537 tests pass.
+- [ ] Not committed by this session: neatlogs workflow/wrapBedrock changes in `src/cli.ts`, `src/trace/*`, `src/llm/client.ts`, `test/trace.test.ts` belong to the separate "Neatlogs tracing setup" session.
+- [x] Fixture-demo determinism flake fixed (token estimate normalized ids/timestamps). Final keyless state: 537 tests pass, typecheck clean, check:secrets clean, coverage 0 unguarded, replay BLOCKED exit 3, export 0 real bundles (demo bundles excluded).
+
+## Session 4 (Oct 10)
+- [x] Step 1: committed the separate session's neatlogs tracing work on its own (withWorkflow roots, wrapBedrock LLM spans; DECISIONS #91).
+- [x] Step 8: schema + bundle hash confirmed browser-safe; guard test `test/browser-safe.test.ts` (#92).
+- [x] Step 2: missing field path → uninformative, never honored (#94); `test/missing-path.test.ts`.
+- [x] Step 3: Crustdata throttled to 15/min across recon, probes, queue (#95); `test/throttle.test.ts`.
+- [x] Step 4: A-16 drift — consistent op-level rewrite, distinct designs counted once; a fresh Beta(1,4) belief no longer un-learns from its own 3 designs (#96).
+- [x] Step 5: A-14 belief_precision disclosure (#97).
+- [x] Step 6: A-11 resolved against the official start (Luma + Oct 9 email: 12:00 AM IST Oct 10); first commit 02:49:08 IST; website's 12:30 PM disclosed (#72, AUDIT, hackathon.md).
+- [x] Step 7: `demo --fixture --publish` → `packages/web/public/bundles/fixture/`; `packages/web/public/evidence/evidence.json` (#98). Entire docs vs adapter flag mismatch noted (#99).
+- [x] Codex committed U1 (dashboard shell with Queue and Beliefs) as `cb98891`; Claude Code did not touch `packages/web` UI code.
+
+## Session 5 (Oct 10)
+- [x] Step 1: `notary export --content` → `packages/web/public/content/glossary.json` generated from code (#104); `test/content.test.ts`.
+- [x] Step 2: honest fixture drift beat — mixed-evidence wallet unit belief Beta(2,6), Stage 11 un-learns on 5 of 6 distinct designs and retires the guard (#100). Compiler now blocks (not transforms) when unit evidence is inconsistent (#101); fixture guarded run now executes 2 and holds 12 (supersedes "executes 5" above), 0 unsafe.
+- [x] Step 3: Entire backend uses documented `--relation CALLS` flags; UNVERIFIED until a local install (#102).
+- [ ] Step 4: trace-link machinery built and inactive (#103) — BLOCKED on the user pasting one neatlogs trace URL; then `pnpm notary trace-link --example "<url>" --trace-id <id> && pnpm notary export --evidence`.
+- [x] Step 5: fixture bundles republished; evidence.json regenerated (unchanged).
+
+## Session 6 (Oct 10) — certificates
+- [x] Steps 1–3: `notary export --certificates [--fixture]` — certificates, revocations, Notarized API Report (`report.json`, `export/REPORT.md`) from data only (#106). Real: 0 bundles → all 26 claims "not tested". Fixture default: 9 certified (5 match, 4 contradict), 17 unproven; change-api: 9 certified, 1 revoked.
+- [x] Step 4: `demo --fixture --scenario change-api` + re-verification sentinel in guarded runs (#105): API unit switch after q09 → belief un-learns via 5 contrary probes, certificate revoked, guard retired, q10 held.
+- [x] Step 5: README headline + How it works → Read → Test → Challenge → Certify → Enforce (#107).
+- [ ] Not verified live: sentinel probe replay/resume against a recorded live run (needs keys).
+
+## v2 — Agent Control Center (session 7, Oct 10)
+
+Claude Code owns `packages/core` and `packages/web` (Codex out of quota). Phases V0–V5; parallel agents per phase, orchestrator commits.
+
+- [x] **V0 · Rules** (`111a5f7`) — CLAUDE.md/AGENTS.md: Claude Code owns web; web rules.
+- [x] **V1 · Core support** (`0223b39`…`067a179`) — verified: core typecheck clean, **780/780 core tests**, check:secrets clean.
+  - [x] V1.1 timeline: `runs/<runId>/timeline.jsonl` from every run; fixture timelines published (8); `GET /api/bundles/:id/timeline`.
+  - [x] V1.2 explain: `notary export --explain` → `explain.json` (0 real, 16 fixture default, 12 change-api answers), byte-identical on rerun.
+  - [x] V1.3 `POST /api/ask` — curl: keyless → `couldn't answer from the evidence` / `BLOCKED: NOTARY_MODEL_EXECUTOR not set`.
+  - [x] V1.4 `GET/POST /api/approvals` — curl: no token 401, token 200, spoofed Host 403.
+  - [x] V1.5 certificates already built (session 6); re-verified exports unchanged; schemas made browser-safe.
+  - [ ] BLOCKED: Ask answers need `NOTARY_MODEL_EXECUTOR` + AWS credentials.
+  - [ ] BLOCKED: live approve needs `DODO_PAYMENTS_API_KEY`, a seed manifest and a real guarded run with held items (none exist; pending list is empty). Reject works keylessly (tested with doubles).
+- [x] **V2 · App shell and design system** — shadcn-API sidebar (Monitor/Trust/Act/Business, held + revocation badges, data mode + neatlogs footer), top bar with run picker (`?run=`), ⌘K palette (cmdk), sonner `notify`, route table `packages/web/src/routes.tsx` with a URL per record, DataProvider (local API first, else static; all bundles hash-verified), certificates validated with the core schema + seals recomputed in browser, every page restyled. Verified: typecheck, **42 web tests**, build, visual check 76 route × viewport × theme combos with no page errors/overflow, deep links via `vite preview`. Pinned: @xyflow/react 12.12.0, cmdk 1.1.1, sonner 2.0.8, recharts 3.10.1, @tanstack/react-virtual 3.14.13 (motion kept at 14.1.0, react-router 8.4.0 already present).
+- [x] **V3 · Mission control** (`4357c00`) — xyflow five-stage graph with node states from timeline events, virtualized feed (record + trace links, node filter), budget meters (caps null → "no cap configured"), status chip; local SSE + `/api/bundles/:id/timeline`, hosted Fixture/Recorded replay (play/pause/speed/scrub). Verified: 27 tests on the real fixture timelines, screenshots 1440 light / 390 dark mid-replay and finished, SSE stream opened against a real `notary serve`, injected live event toasted, reconnect with lastEventId.
+- [x] **V4 · Decision trail, Ask Notary, Approval desk** (`e143d73`, `d15ff95`, `f488f45`) — verified: **138 web tests**, typecheck, build.
+  - [x] V4.1 trail: change-api q10 → decided by revoked `cert-f7310edf899b3e9b`; every line exactly one tag; all 71 fixture prediction hashes recomputed and match.
+  - [x] V4.2 Ask Notary: ⌘J panel + `/app/ask`; per-world filtering (default 16, change-api 12, real 0); local keyless ask showed `couldn't answer from the evidence` + `BLOCKED: NOTARY_MODEL_EXECUTOR not set` against a real `notary serve`.
+  - [x] V4.3 Approval desk: hosted read-only; local token flow, 401 handling and honest empty list verified against a real `notary serve`; dialog checked with mocked routes.
+  - [ ] BLOCKED: real Ask answers (executor model + AWS creds); live approve (Dodo test key, seed manifest, a real guarded run with held items).
+- [x] **V5 · Polish, evidence, deploy** — landing at `/` (exact hero, double-refund cards from graded fixture records, Read → Test → Challenge → Certify → Enforce, looping labelled fixture replay reusing Mission control's graph, three required tools from evidence.json, real vs fixture results kept apart, GitHub + dashboard buttons); three-way review of every page at 1440/390 × light/dark with route-interception checks of loading/empty/error/tamper states, WCAG AA contrast (token fixes: `--blue`, `--muted`, `--hatch-line`, new `--control-line`), ≥40px tap targets, fixed full-height sidebar, opaque top bar, no hosted `/api` probe, graded-unsafe decisions now visible in Queue/trail. Verified: **780 core + 152 web = 932 tests**, typecheck, build, check:secrets, `visual-check.mjs` 76 combos (no page errors/overflow; tamper rejection, deep links, palette, cohort separation). Vercel configured (root `packages/web`, pnpm 11.7.0, frozen root lockfile) and a clean-copy install+build verified locally.
+  - [ ] Not deployed: no `vercel deploy` was run (needs the user's Vercel account/login).
+  - [ ] evidence.json unchanged: no real neatlogs trace URL yet (`notary trace-link`), Entire CLI not installed, no checkpoints.
+
+## Session 8 — LiteLLM provider and Ask Notary tracing (Oct 11)
+
+- [x] Step 1 diagnosis: `.env` loads for every non-keyless command incl. `serve` (repo root, `cli.ts` loadEnv); BLOCKED was missing config + no LiteLLM backend (DECISIONS #138).
+- [x] Step 2 LiteLLM provider (`bc7fded`), step 3 `notary doctor --llm` (`12c8a4b`), step 4 BLOCKED messages name the variable + doctor (`c37c9c4`), step 6 prices + `NOTARY_MAX_USD` (`24eee7b`), step 6b model-call rate limiter (`688be67`), step 5 Ask tracing + `NOTARY_ASK_RPM` (see log). Verified: typecheck, **850 core + 152 web tests**, check:secrets; a test runs the real neatlogs SDK against a local fake collector and checks the exported span tree.
+- [x] `.env` configured: provider litellm, base URL https://litellm.vision.aivar.app/v1, executor claude-haiku, reflector claude-sonnet-4.6, adversary nova-pro.
+- [ ] BLOCKED step 7 (real verification): `LITELLM_API_KEY` is empty in `.env`. `pnpm notary doctor --llm` today → exit 3, `BLOCKED: LITELLM_API_KEY not set — set it in .env (see .env.example) and run `pnpm notary doctor --llm``. Once set: `pnpm notary doctor --llm`, then `pnpm notary serve`, POST /api/ask with the printed token, confirm a cited answer and the trace id in neatlogs.
+- [ ] Prices for claude-haiku / claude-sonnet-4.6 / nova-pro unknown unless LiteLLM sends `x-litellm-response-cost` or `NOTARY_PRICE_<ROLE>_IN/_OUT` is set.
