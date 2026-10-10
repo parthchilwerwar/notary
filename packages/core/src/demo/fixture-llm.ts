@@ -56,7 +56,15 @@ export function createFixtureLlm(): LlmClient {
   return new LlmClient({ env: fixtureLlmEnv(), transport: fixtureConverseTransport() });
 }
 
-const tokens = (text: string): number => Math.ceil(text.length / 4);
+// Prompts carry raw probe records with per-run values: random span/trace ids, timestamps and
+// latencies. Normalize them before estimating so the fixture's token count is deterministic.
+const tokens = (text: string): number =>
+  Math.ceil(
+    text
+      .replace(/\d{4}-\d{2}-\d{2}T[\d:.]+Z/g, "<ts>")
+      .replace(/\b[0-9a-f]{16,}\b/g, "<id>")
+      .replace(/\d+/g, "0").length / 4,
+  );
 
 export function fixtureConverseTransport(): ConverseTransport {
   return async (input: ConverseCommandInput): Promise<ConverseCommandOutput> => {
