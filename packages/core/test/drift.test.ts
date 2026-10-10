@@ -298,6 +298,38 @@ describe("make-drift: behavior rewrite (A-16)", () => {
     expect(list.drift.changed.map((c) => [c.before, c.after])).toEqual([[1234, 123400]]);
   });
 
+  it("idiv<k> divides only exact integer multiples of k; any other value is left unchanged and listed under skipped", async () => {
+    const l = await learn();
+    expect(parseTransform("idiv100")).toEqual({ kind: "divide", divisor: 100, exact: true });
+    expect(parseTransform("div100")).toEqual({ kind: "divide", divisor: 100 });
+    const base = { from: "test-probes-dodo", cassetteDir: l.cassetteDir, driftDir: l.driftDir };
+    // Every createProduct echo is x100 of an integer, so all of them divide exactly.
+    const { fixture } = makeDriftFixture({ ...base, op: OP, path: "$.price.price", transform: parseTransform("idiv100"), out: "test-idiv" });
+    expect(fixture.drift.transform).toBe("idiv100");
+    expect(fixture.drift.skipped).toEqual([]);
+    for (const e of fixture.exchanges.filter((x) => x.op === OP)) expect((e.responseBody as { price: { price: number } }).price.price).toBe(sentPrice(e));
+    // 1234 is not a multiple of 100: left alone (div100 would have written 12.34).
+    expect(() => makeDriftFixture({ ...base, op: "dodo.listProducts", path: "$.items[0].price", transform: parseTransform("idiv100"), out: "test-idiv-list" })).toThrow(
+      /every one was left unchanged \(idiv100 needs an integer multiple of 100, the recorded value is 1234\)/,
+    );
+    const { fixture: div } = makeDriftFixture({ ...base, op: "dodo.listProducts", path: "$.items[0].price", transform: parseTransform("div100"), out: "test-div-list" });
+    expect(div.drift.changed.map((c) => c.after)).toEqual([12.34]);
+  });
+
+  it("a FIXTURE source cassette yields a drift fixture marked fixture: true, and never one in fixtures/drift", async () => {
+    const l = await learn();
+    saveCassette({ ...l.cassette, name: "test-fx-probes", fixture: true }, l.cassetteDir);
+    const opts = { from: "test-fx-probes", op: OP, path: "$.price.price", transform: parseTransform("div100"), cassetteDir: l.cassetteDir };
+    const { fixture, path } = makeDriftFixture({ ...opts, driftDir: l.driftDir, out: "test-fx-drift" });
+    expect(fixture.fixture).toBe(true);
+    expect(loadDriftFixture(path).fixture).toBe(true);
+    expect(JSON.parse(readFileSync(path, "utf8")).fixture).toBe(true);
+    expect(() => makeDriftFixture({ ...opts, out: "test-fx-default-dir" })).toThrow(/FIXTURE cassette \(simulated traffic\); its drift fixture can't be written to/);
+    // A real (non-fixture) source stays unmarked.
+    const { fixture: real } = makeDriftFixture({ ...opts, from: "test-probes-dodo", driftDir: l.driftDir, out: "test-real-drift" });
+    expect(real.fixture).toBeUndefined();
+  });
+
   it("refuses: missing source cassette (BLOCKED, nothing created), both or neither selector, --match without --op", async () => {
     const l = await learn();
     const base = { path: "$.price.price", value: 1234, out: "test-drift", cassetteDir: l.cassetteDir, driftDir: l.driftDir };

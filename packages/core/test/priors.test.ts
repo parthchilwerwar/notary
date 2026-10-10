@@ -408,9 +408,10 @@ describe("comparePriorArms (fake tools)", () => {
   it("a prior on the wrong side can cost probes: it is measured, not assumed (never reached -> null)", async () => {
     const r = await arms({ alpha: 3, beta: 1 }, new OneReplyLlm());
     expect(r.without.perClaim[claim.id]).toBe(3);
-    // Beta(3,1) + 3 violations = Beta(3,4) (P(holds) 0.34): designs run out before candidate.
+    // Beta(3,1) + 5 violations = Beta(3,6) (P(holds) 0.14): the per-claim cap (5) ends it before
+    // candidate (unit_roundtrip has 6 amount designs since DECISIONS #100, so the cap binds, not the designs).
     expect(r.with.perClaim[claim.id]).toBeNull();
-    expect(r.with.after[0]).toMatchObject({ alpha: 3, beta: 4, status: "abstained" });
+    expect(r.with.after[0]).toMatchObject({ alpha: 3, beta: 6, status: "abstained" });
     expect(r.metrics.probes_to_candidate_with_priors).toBeNull();
     expect(r.metrics.paired_claims).toBe(0);
   });

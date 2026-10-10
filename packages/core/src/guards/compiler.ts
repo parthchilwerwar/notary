@@ -10,7 +10,8 @@
  *   unit_mismatch        transform on claim.operation: scale the request param `claim.param` by
  *                        1 / observed ratio, where the ratio (echoed / sent) is read from the
  *                        belief's cited unit_roundtrip probes (observed.ratio, as runner.ts records it). If the
- *                        cited probes disagree or carry no ratio, there is no safe transform: block.
+ *                        cited probes disagree (different ratios, or one echoed the amount unchanged)
+ *                        or carry no ratio, there is no safe transform: block.
  *   idempotency_hazard   retry_policy on claim.operation (no blind write retries; on timeout/5xx
  *                        read back and retry only if the read-back proves the write did not land)
  *                        + a precheck where one can refuse the write: createRefund -> existing
@@ -113,6 +114,17 @@ export function observedUnitRatios(b: Belief, probesById: ReadonlyMap<string, Pr
   return out;
 }
 
+/** Cited, valid unit_roundtrip probes whose echo equalled what was sent (outcome "equal", ratio 1). */
+export function honoredUnitProbes(b: Belief, probesById: ReadonlyMap<string, Probe>): string[] {
+  const out: string[] = [];
+  for (const ev of b.evidence) {
+    if (ev.valid === false) continue;
+    const p = probesById.get(ev.probeId);
+    if (p?.template === "unit_roundtrip" && (p.observed as { outcome?: unknown } | undefined)?.outcome === "equal") out.push(p.id);
+  }
+  return out;
+}
+
 function block(op: string, reason: string): GuardSpec {
   return { operation: op, kind: "block", rule: { reason }, reason };
 }
@@ -179,6 +191,17 @@ export function specsFor(b: Belief, claim: Claim, probesById: ReadonlyMap<string
       if (ratios.some((r) => Math.abs(r.ratio - r0) > 1e-9 * Math.max(1, r0))) {
         return [
           block(op, `${claim.id} violated (unit_mismatch) with inconsistent observed ratios ${ratios.map((r) => r.ratio).join(", ")}: no safe transform`),
+        ];
+      }
+      // A cited probe that echoed the amount unchanged (ratio 1) disagrees with the x100/div100 ones:
+      // the unit depends on something the probes did not isolate, so scaling every request is unsafe.
+      const equal = honoredUnitProbes(b, probesById);
+      if (equal.length > 0) {
+        return [
+          block(
+            op,
+            `${claim.id} violated (unit_mismatch) but the cited probes disagree: ${equal.join(", ")} echoed the amount unchanged, ${ratios.map((r) => r.probeId).join(", ")} echoed ${r0}x: no safe transform`,
+          ),
         ];
       }
       return [

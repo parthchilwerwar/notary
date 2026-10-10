@@ -144,6 +144,11 @@ export interface NotarizeOptions {
 export interface NotarizeParams {
   creditBudget: number;
   maxProbesPerClaim: number;
+  /**
+   * Per-run probe cap; omitted = MAX_PROBES_PER_RUN (30). Only the fixture demo raises it (in-process;
+   * recorded in the run inputs so a replay reproduces it). Nothing reads it from the environment.
+   */
+  maxProbesPerRun?: number;
   lambda: number;
   priorStrength: number;
   adversary: AdversaryBackend;
@@ -342,6 +347,7 @@ export async function notarize(opts: NotarizeOptions): Promise<NotarizeResult> {
   const params: NotarizeParams = {
     creditBudget: opts.params?.creditBudget ?? budgetFromEnv(env),
     maxProbesPerClaim: opts.params?.maxProbesPerClaim ?? maxProbesPerClaimFromEnv(env),
+    ...(opts.params?.maxProbesPerRun !== undefined ? { maxProbesPerRun: opts.params.maxProbesPerRun } : {}),
     lambda: opts.params?.lambda ?? lambdaFromEnv(env),
     priorStrength: opts.params?.priorStrength ?? opts.priorStrength ?? priorStrengthFromEnv(env),
     adversary: opts.params?.adversary ?? opts.adversary ?? "bedrock",
@@ -424,6 +430,7 @@ export async function notarize(opts: NotarizeOptions): Promise<NotarizeResult> {
         ledger,
         beliefs: beliefStore,
         maxProbesPerClaim: params.maxProbesPerClaim,
+        maxProbesPerRun: params.maxProbesPerRun ?? MAX_PROBES_PER_RUN,
         lambda: params.lambda,
         burst: new BurstCounter(),
         payments: new SimplePaymentPool(pool.ids),
@@ -470,7 +477,7 @@ export async function notarize(opts: NotarizeOptions): Promise<NotarizeResult> {
           verifyClaims: [],
           reexamine: subjects,
           seqStart: first.probes.length,
-          maxProbesPerRun: Math.max(0, MAX_PROBES_PER_RUN - first.probes.length),
+          maxProbesPerRun: Math.max(0, (params.maxProbesPerRun ?? MAX_PROBES_PER_RUN) - first.probes.length),
         });
         const ids = subjects.map((x) => x.claimId);
         const second = await runBeliefsPhase({

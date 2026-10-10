@@ -25,10 +25,12 @@
  * ("$.price.price" or "$request.price.price"), or on the response with "$response.<path>", or
  * "$status"; the value is JSON and compared canonically.
  * Values: JSON (`1234`, `"text"`, `null`, `{"a":1}`) sets the field; `x<k>` multiplies a numeric
- * field by k and `div<k>` divides it by k (e.g. x100, div100).
+ * field by k and `div<k>` divides it by k (e.g. x100, div100). `idiv<k>` divides an integer field by
+ * k only where the result is exact (amounts in minor units stay integers); any other value is left
+ * unchanged and listed under `skipped` with the reason.
  */
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { DEFAULT_CASSETTE_DIR, canonicalJson, computeContentHash, listCassettes, loadCassette, saveCassette } from "./recorder.js";
@@ -58,7 +60,7 @@ export const DriftMetaSchema = z.object({
   /** Exchange mode: "<requestHash>:<occurrence>" of the one altered exchange. */
   exchange: z.string().optional(),
   path: z.string(),
-  /** "set <json>" | "x<k>" | "div<k>". */
+  /** "set <json>" | "x<k>" | "div<k>" | "idiv<k>". */
   transform: z.string(),
   /** Every exchange the fixture changed, with the recorded and the rewritten value. */
   changed: z.array(ChangedSchema).min(1),
@@ -122,13 +124,20 @@ export function parseAssignment(arg: string): { path: string; value: unknown } {
   }
 }
 
-export type DriftTransform = { kind: "set"; value: unknown } | { kind: "scale"; factor: number } | { kind: "divide"; divisor: number };
+/** `exact`: integer division only (`idiv<k>`); a value it doesn't divide exactly is left unchanged (skipped). */
+export type DriftTransform = { kind: "set"; value: unknown } | { kind: "scale"; factor: number } | { kind: "divide"; divisor: number; exact?: true };
 
-/** "x100" / "*100" -> scale, "div100" / "/100" -> divide, anything else JSON -> set. */
+/** "x100" / "*100" -> scale, "div100" / "/100" -> divide, "idiv100" -> exact integer divide, anything else JSON -> set. */
 export function parseTransform(raw: string): DriftTransform {
   const s = raw.trim();
   const mul = /^(?:x|\*)(\d+(?:\.\d+)?)$/.exec(s);
   if (mul) return { kind: "scale", factor: Number(mul[1]) };
+  const idiv = /^idiv(\d+)$/.exec(s);
+  if (idiv) {
+    const divisor = Number(idiv[1]);
+    if (divisor === 0) throw new DriftFixtureError(`--set ${s}: cannot divide by zero`);
+    return { kind: "divide", divisor, exact: true };
+  }
   const div = /^(?:div|\/)(\d+(?:\.\d+)?)$/.exec(s);
   if (div) {
     const divisor = Number(div[1]);
@@ -138,11 +147,11 @@ export function parseTransform(raw: string): DriftTransform {
   try {
     return { kind: "set", value: JSON.parse(s) as unknown };
   } catch {
-    throw new DriftFixtureError(`--set value must be JSON (e.g. 1234, "text", null, {"a":1}) or an expression (x100, div100); got ${raw}`);
+    throw new DriftFixtureError(`--set value must be JSON (e.g. 1234, "text", null, {"a":1}) or an expression (x100, div100, idiv100); got ${raw}`);
   }
 }
 
-/** "<path>=<json | x<k> | div<k>>". */
+/** "<path>=<json | x<k> | div<k> | idiv<k>>". */
 export function parseSetArg(arg: string): { path: string; transform: DriftTransform } {
   const i = arg.indexOf("=");
   if (i <= 0) throw new DriftFixtureError(`--set needs <jsonPath>=<value>, got "${arg}"`);
@@ -163,7 +172,7 @@ export function parseMatchArg(arg: string): { path: string; value: unknown } {
 
 export function describeTransform(t: DriftTransform): string {
   if (t.kind === "scale") return `x${t.factor}`;
-  if (t.kind === "divide") return `div${t.divisor}`;
+  if (t.kind === "divide") return `${t.exact ? "idiv" : "div"}${t.divisor}`;
   return `set ${canonicalJson(t.value)}`;
 }
 
@@ -171,6 +180,9 @@ export function describeTransform(t: DriftTransform): string {
 function applyTransform(t: DriftTransform, before: unknown): { after: unknown } | { skip: string } {
   if (t.kind === "set") return { after: t.value };
   if (typeof before !== "number" || !Number.isFinite(before)) return { skip: `${describeTransform(t)} needs a number, the recorded value is ${canonicalJson(before ?? null)}` };
+  if (t.kind === "divide" && t.exact && (!Number.isInteger(before) || before % t.divisor !== 0)) {
+    return { skip: `${describeTransform(t)} needs an integer multiple of ${t.divisor}, the recorded value is ${canonicalJson(before)}` };
+  }
   const raw = t.kind === "scale" ? before * t.factor : before / t.divisor;
   // toPrecision(15) drops binary noise (12.34 * 100 = 1233.9999999999998 -> 1234).
   return { after: Number(raw.toPrecision(15)) };
@@ -303,6 +315,12 @@ export function makeDriftFixture(opts: MakeDriftOptions): { fixture: DriftFixtur
   const transform: DriftTransform = opts.transform ?? { kind: "set", value: opts.value };
   const source = loadCassette(opts.from, { dir: cassetteDir }); // verifies its content hash
   if ((source as Partial<DriftFixture>).drift !== undefined) throw new DriftFixtureError(`${opts.from} is itself a drift fixture; copy a real cassette`);
+  // A FIXTURE source (simulated traffic, `notary demo --fixture`) yields a FIXTURE drift fixture, and
+  // never lands in fixtures/drift, which holds drift fixtures derived from real recorded traffic only.
+  const fromFixture = source.fixture === true;
+  if (fromFixture && resolve(driftDir) === resolve(DEFAULT_DRIFT_DIR)) {
+    throw new DriftFixtureError(`${opts.from} is a FIXTURE cassette (simulated traffic); its drift fixture can't be written to ${DEFAULT_DRIFT_DIR}`);
+  }
   if (!/^[A-Za-z0-9._-]+$/.test(opts.out)) throw new DriftFixtureError(`invalid fixture name ${opts.out}`);
   const outPath = join(driftDir, `${opts.out}.json`);
   if (existsSync(outPath) && !opts.force) throw new DriftFixtureError(`${outPath} already exists (pass --force to overwrite)`);
@@ -348,6 +366,7 @@ export function makeDriftFixture(opts: MakeDriftOptions): { fixture: DriftFixtur
     createdAt: source.createdAt,
     exchanges,
     contentHash: computeContentHash(exchanges),
+    ...(fromFixture ? { fixture: true as const } : {}),
     drift: { ...meta, changed, skipped, note: opts.exchange !== undefined ? DRIFT_NOTE : DRIFT_NOTE_BEHAVIOR },
   };
   const path = saveCassette(fixture, driftDir);

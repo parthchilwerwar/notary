@@ -789,14 +789,15 @@ describe("runProbeLoop", () => {
     });
     expect(llm.requests).toHaveLength(2);
     expect(llm.requests[1]!.messages[0]!.content).toContain("REFUTED");
-    // the refuted design's fingerprint is spent; the new rivals get the two remaining variants
-    expect(res.probes.map((p) => p.verdict)).toEqual(["refuted", "confirmed", "confirmed"]);
-    expect(res.probes.map((p) => p.params.sent)).toEqual([1234, 3517, 4321]);
+    // the refuted design's fingerprint is spent; the new rivals get the next variants (DECISIONS #100:
+    // unit_roundtrip has 6 amount designs, so three fresh designs settle them)
+    expect(res.probes.map((p) => p.verdict)).toEqual(["refuted", "confirmed", "confirmed", "confirmed"]);
+    expect(res.probes.map((p) => p.params.sent)).toEqual([1234, 3517, 4321, 5678]);
     expect(res.hypotheses.find((h) => h.id === res.probes[1]!.winningHypothesisId)!.class).toBe("silent_coercion");
     expect(res.abstained).toEqual([]);
-    // Beta(1,3) is between thresholds and no independent design is left: abstain
-    expect(new BeliefStore(db).byClaim(claim.id)).toMatchObject({ status: "abstained", beta: 3 });
-    expect(res.claimOutcomes[0]).toMatchObject({ outcome: "abstained", reason: "no further independent probe design between thresholds" });
+    // three agreeing designs after the refutation: Beta(1,4) is a candidate (the refuted probe moved nothing)
+    expect(new BeliefStore(db).byClaim(claim.id)).toMatchObject({ status: "candidate", alpha: 1, beta: 4 });
+    expect(res.claimOutcomes[0]).toMatchObject({ outcome: "candidate" });
     expect(db.loadHypotheses("loop-2")).toHaveLength(4);
   });
 

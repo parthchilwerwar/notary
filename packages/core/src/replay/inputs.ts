@@ -52,6 +52,7 @@ export interface ReplayInputs {
   params: {
     creditBudget: number;
     maxProbesPerClaim?: number;
+    maxProbesPerRun?: number;
     lambda?: number;
     priorStrength?: number;
     adversary?: "bedrock" | "session";

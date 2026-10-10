@@ -47,9 +47,14 @@ const OPS = new Set(["dodo.createProduct", "dodo.createWalletLedgerEntry", "dodo
 export const UNIT_AMOUNTS = { treatment: 1234, control: 2468 } as const;
 /** Refund amounts stay small: they must fit inside a seeded payment. */
 export const REFUND_UNIT_AMOUNTS = { treatment: 100, control: 150 } as const;
-/** Treatment amounts per design variant (control stays fixed); index 0 is the base amount. */
-export const UNIT_TREATMENT_VARIANTS = [UNIT_AMOUNTS.treatment, 3517, 4321] as const;
-export const REFUND_TREATMENT_VARIANTS = [REFUND_UNIT_AMOUNTS.treatment, 120, 130] as const;
+/**
+ * Treatment amounts per design variant (control stays fixed); index 0 is the base amount. Variants
+ * 3–5 were appended later (DECISIONS #100) so a claim whose evidence is MIXED can still settle: the
+ * loop runs them only while the belief is between the thresholds and under the per-claim cap, so a
+ * consistent claim still settles on variants 0–2 exactly as before.
+ */
+export const UNIT_TREATMENT_VARIANTS = [UNIT_AMOUNTS.treatment, 3517, 4321, 5678, 6543, 7890] as const;
+export const REFUND_TREATMENT_VARIANTS = [REFUND_UNIT_AMOUNTS.treatment, 120, 130, 110, 140, 160] as const;
 
 export function classifyRatio(sent: number, echoed: number): string {
   if (echoed === sent) return "equal";
@@ -109,7 +114,7 @@ function writeSteps(claim: Claim, ctx: ProbeContext, variant: "t" | "c", amount:
 export const unitRoundtrip: ProbeTemplateModule = {
   name: "unit_roundtrip",
   classTable: UNIT_TABLE,
-  variants: 3,
+  variants: UNIT_TREATMENT_VARIANTS.length,
 
   appliesTo(claim) {
     return claim.expect.kind === "unit" && OPS.has(claim.operation);

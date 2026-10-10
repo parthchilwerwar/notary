@@ -4,7 +4,9 @@
  *
  *   recon -> checker anomalies -> reflector (model double) -> probes with committed predictions ->
  *   beliefs -> adversary (model double) -> guards compiled -> naive run and guarded run over
- *   fixtures/queue/seeded.json -> export / replay exclusion checks.
+ *   fixtures/queue/seeded.json -> export / replay exclusion checks -> drift replay (Stage 11: an
+ *   op-level drift fixture built from the demo's own FIXTURE probe cassette under runs/demo/drift/,
+ *   replayDrift on a copy of the demo store, un-learning and guard retirement by the real rules).
  *
  * Every step runs through the REAL code paths (notarize(), runQueue(), the recorder, redaction,
  * ledger, checker, probe templates, commit-then-run into SQLite, BeliefStore, guard compiler,
@@ -31,6 +33,12 @@ import { collectBundles, runExport } from "../export/index.js";
 import { DEFAULT_MANIFEST_PATH } from "../queue/manifest.js";
 import { seedSteps } from "../queue/seed-plan.js";
 import { runQueue } from "../queue/run.js";
+import { replayDrift } from "../beliefs/drift.js";
+import type { ReplayDriftResult } from "../beliefs/drift.js";
+import { GuardRegistry } from "../guards/registry.js";
+import { openDb } from "../store/db.js";
+import { makeDriftFixture } from "../tools/drift-fixture.js";
+import { DEFAULT_MAX_PROBES_PER_CLAIM, MAX_PROBES_PER_RUN } from "../reflect/loop.js";
 import { SEEDED_QUEUE_PATH, notarize, recordedRunId } from "../reflect/notarize.js";
 import type { NotarizeResult } from "../reflect/notarize.js";
 import { runReplay } from "../replay/index.js";
@@ -65,6 +73,16 @@ const REPO_ENV = fileURLToPath(new URL("../../../../.env", import.meta.url));
 /** Placeholder credentials so the real clients pass their key checks; the fixture never sees the network. */
 const FIXTURE_KEY = "fixture-placeholder-not-a-real-key";
 
+/**
+ * Probe caps raised for the FIXTURE demo only (DECISIONS #100), in-process: the per-claim cap through
+ * the demo's private env (NOTARY_MAX_PROBES_PER_CLAIM, never process.env) and the per-run cap through
+ * notarize's params. The intermittent Q2 needs 6 designs on the wallet unit claim, and without the
+ * per-run headroom those probes would come out of the #85 re-examination and the change-plan
+ * verification. Live defaults (5 per claim, 30 per run) are untouched.
+ */
+export const DEMO_MAX_PROBES_PER_CLAIM = 6;
+export const DEMO_MAX_PROBES_PER_RUN = 40;
+
 export const DEMO_RUN_IDS = {
   notarizeCrustdata: "demo-notarize-crustdata",
   notarizeDodo: "demo-notarize-dodo",
@@ -90,6 +108,8 @@ export interface FixtureDemoResult {
   bundlePaths: string[];
   bundles: RunBundle[];
   stats: { globalFetchCalls: number; served: number; refused: string[]; unknownRoutes: string[] };
+  /** Stage 11: the replayDrift result (on the store copy) and the drift fixture path. */
+  drift?: { result?: ReplayDriftResult; fixturePath?: string; storePath: string };
 }
 
 /** A wall clock that never returns the same instant twice (committedAt is always before ranAt). */
@@ -117,7 +137,7 @@ function assertSafeOutDir(outDir: string): void {
 function cleanPrevious(outDir: string): void {
   if (!existsSync(outDir)) return;
   for (const name of readdirSync(outDir)) {
-    const own = name.startsWith("demo-") || ["cassettes", "fixture", "export-check"].includes(name) || /^notary\.sqlite(-wal|-shm|-journal)?$/.test(name);
+    const own = name.startsWith("demo-") || ["cassettes", "fixture", "export-check", "drift"].includes(name) || /^notary\.sqlite(-wal|-shm|-journal)?$/.test(name);
     if (own) rmSync(join(outDir, name), { recursive: true, force: true });
   }
 }
@@ -154,11 +174,16 @@ function liveStops(env: NodeJS.ProcessEnv): LiveStops {
     8: [...missing(["CRUSTDATA_API_KEY", "DODO_PAYMENTS_API_KEY"]), ...manifest],
     9: [...missing(["CRUSTDATA_API_KEY", "DODO_PAYMENTS_API_KEY"]), ...manifest],
     10: [],
+    11: [],
   };
-  const upstream: Record<number, number[]> = { 1: [], 2: [1], 3: [1, 2], 4: [1, 2, 3], 5: [1, 2, 3, 4], 6: [1, 2, 3, 4, 5], 7: [1, 2, 3, 4, 5, 6], 8: [], 9: [1, 2, 3, 4, 5, 6, 7], 10: [] };
+  const upstream: Record<number, number[]> = { 1: [], 2: [1], 3: [1, 2], 4: [1, 2, 3], 5: [1, 2, 3, 4], 6: [1, 2, 3, 4, 5], 7: [1, 2, 3, 4, 5, 6], 8: [], 9: [1, 2, 3, 4, 5, 6, 7], 10: [], 11: [1, 2, 3, 4, 5, 6, 7] };
   return {
     line(stage) {
       if (stage === 10) return "live: keyless (export and replay read local files only)";
+      if (stage === 11) {
+        const blockedAt = (upstream[11] ?? []).find((s) => (own[s] ?? []).length > 0);
+        return `live: keyless itself (make:drift + replay --drift read a recorded cassette)${blockedAt !== undefined ? `; needs a recorded live notarize run, blocked upstream at Stage ${blockedAt}` : ""}`;
+      }
       const mine = own[stage] ?? [];
       if (mine.length) return `live: BLOCKED at Stage ${stage} — ${mine.join("; ")}`;
       const blockedAt = (upstream[stage] ?? []).find((s) => (own[s] ?? []).length > 0);
@@ -178,10 +203,11 @@ async function labelAsFixture(bundlePath: string): Promise<RunBundle> {
   if (!b.runId.startsWith("demo-")) throw new Error(`demo: refusing to label non-demo bundle ${b.runId}`);
   const quirks = `PLANTED FIXTURE QUIRKS (simulated, not claims about the real APIs): ${FIXTURE_QUIRKS.map((q) => `${q.id} ${q.where}: ${q.behaviour}`).join("; ")}`;
   const models = `Reflector and adversary are deterministic model doubles (${FIXTURE_MODEL_LABEL}); token counts are estimates, usd 0.`;
+  const caps = `Probe caps raised for the fixture demo only: ${DEMO_MAX_PROBES_PER_CLAIM} per claim, ${DEMO_MAX_PROBES_PER_RUN} per run (live defaults ${DEFAULT_MAX_PROBES_PER_CLAIM} and ${MAX_PROBES_PER_RUN}).`;
   const labelled = finalizeBundle({
     ...b,
     sample: true,
-    disclosure: [FIXTURE_DISCLOSURE, quirks, models, ...b.disclosure.filter((d) => d !== FIXTURE_DISCLOSURE)],
+    disclosure: [FIXTURE_DISCLOSURE, quirks, models, caps, ...b.disclosure.filter((d) => d !== FIXTURE_DISCLOSURE)],
   });
   await writeBundle(labelled, dirname(bundlePath));
   return labelled;
@@ -201,6 +227,98 @@ function rel(outDir: string, p: string): string {
   if (r.startsWith("..")) return relative(CORE_DIR, p).split(sep).join("/");
   const base = resolve(outDir) === resolve(DEMO_RUNS_DIR) ? "runs/demo" : "<outDir>";
   return r ? `${base}/${r}` : base;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Stage 11: drift replay (FIXTURE)
+
+/** The belief the drift beat targets: notarized violated on MIXED evidence (intermittent Q2). */
+export const DRIFT_CLAIM_ID = "dodo.wallet.credit-amount-minor-units";
+export const DRIFT_FIXTURE_NAME = "demo-drift-wallet-unit-fixed";
+/** "Dodo fixed the ledger unit bug": every credit's echoed balance becomes the minor-unit amount. */
+export const DRIFT_REWRITE = { op: "dodo.createWalletLedgerEntry", path: "$.balance", transform: { kind: "divide", divisor: 100, exact: true } } as const;
+
+interface DriftStageInput {
+  outDir: string;
+  cassetteDir: string;
+  dbPath: string;
+  bundle: RunBundle;
+  env: NodeJS.ProcessEnv;
+  now: () => Date;
+}
+
+/**
+ * Build an op-level drift fixture from the dodo notarize run's own FIXTURE probe cassette (written
+ * under <outDir>/drift, stamped fixture: true), then run the real replayDrift on a COPY of the demo
+ * store, so the store keeps what Stages 1–9 saw. Nothing is special-cased: un-learning is BeliefStore's
+ * crossing-0.5 rule and retirement is wireRetirement; if the recorded designs can't cross, it says why.
+ */
+async function driftStage(o: DriftStageInput): Promise<{ lines: string[]; problems: string[]; result?: ReplayDriftResult; fixturePath?: string }> {
+  const lines: string[] = [];
+  const problems: string[] = [];
+  const driftDir = join(o.outDir, "drift");
+  mkdirSync(driftDir, { recursive: true });
+  const sourceRef = o.bundle.cassettes.find((r) => r.split("@")[0]!.startsWith("probes-"));
+  if (!sourceRef) return { lines: ["  skipped: the dodo notarize bundle pins no probe cassette"], problems: ["stage 11: no probe cassette to drift"] };
+  const source = sourceRef.split("@")[0]!;
+
+  const storeCopy = join(driftDir, "notary.sqlite");
+  const src = openDb(o.dbPath);
+  try {
+    src.db.exec(`VACUUM INTO '${storeCopy.replace(/'/g, "''")}'`);
+  } finally {
+    src.close();
+  }
+
+  const made = makeDriftFixture({ from: source, cassetteDir: o.cassetteDir, driftDir, ...DRIFT_REWRITE, out: DRIFT_FIXTURE_NAME, force: true });
+  const fx = made.fixture;
+  lines.push(
+    `  drift fixture ${rel(o.outDir, made.path)} (fixture: ${fx.fixture === true}) from FIXTURE cassette ${source}: op ${fx.drift.op}, ${fx.drift.path} ${fx.drift.transform} — every wallet credit now books the sent amount in minor units`,
+  );
+  if (fx.fixture !== true) problems.push("stage 11: the drift fixture is not marked fixture: true");
+  lines.push(`  ${fx.drift.changed.length} exchange(s) rewritten, ${fx.drift.skipped.length} left unchanged${fx.drift.skipped.length ? `: ${fx.drift.skipped.map((s) => s.reason).join("; ")}` : ""}`);
+  lines.push(`  replayed on a copy of the demo store (${rel(o.outDir, storeCopy)}); the demo store keeps what Stages 1–9 saw`);
+
+  const db = openDb(storeCopy);
+  let result: ReplayDriftResult | undefined;
+  try {
+    const res = await replayDrift({ fixture: fx, db, probes: o.bundle.probes, hypotheses: o.bundle.hypotheses, claimId: DRIFT_CLAIM_ID, env: o.env, now: o.now });
+    result = res;
+    const t = res.trajectories.find((x) => x.claimId === DRIFT_CLAIM_ID);
+    if (!t) {
+      lines.push(`  ${DRIFT_CLAIM_ID}: not replayed — ${res.stopReason}`);
+      for (const l of res.lines.filter((x) => !x.startsWith("drift fixture "))) lines.push(`    ${short(l, 200)}`);
+      return { lines, problems, result, fixturePath: made.path };
+    }
+    const fmt = (p: { alpha: number; beta: number; pHolds: number }) => `Beta(${p.alpha}, ${p.beta}) P(holds)=${p.pHolds.toFixed(4)}`;
+    lines.push(
+      `  ${t.beliefId}: ${t.start.status} ${t.side} at ${fmt(t.start)} from mixed evidence; crossing 0.5 needs ${t.designsNeeded} contrary distinct designs`,
+    );
+    for (const s of t.steps) {
+      lines.push(`    design ${s.design} (${s.sourceProbeId}): ${s.verdict}${s.against ? ", against the notarized side" : ""} -> ${fmt(s)}  ${s.status}`);
+      if (s.replicateIds.length) lines.push(`      replicates not re-counted: ${s.replicateIds.join(", ")}`);
+    }
+    if (t.unlearned) {
+      const at = t.steps.findIndex((s) => s.status === "unlearned") + 1;
+      lines.push(`  UN-LEARNED at distinct design ${at} of ${t.distinctDesigns} (needed ${t.designsNeeded}; ${t.designsAgainst} of ${t.distinctDesigns} replayed designs went against the notarized side, each counted once)`);
+    } else {
+      lines.push(`  not un-learned: ${res.stopReason} (crossing 0.5 from Beta(${t.start.alpha}, ${t.start.beta}) needs ${t.designsNeeded})`);
+    }
+    for (const g of res.retiredGuards) lines.push(`  guard retired: ${g.id} (${g.kind} on ${g.operation}) — ${short(g.reason, 140)}`);
+    if (res.retiredGuards.length === 0) lines.push("  guards retired: none");
+    const still = new GuardRegistry(db).all().filter((g) => g.active && g.operation === DRIFT_REWRITE.op);
+    lines.push(`  still active on ${DRIFT_REWRITE.op}: ${still.length ? still.map((g) => `${g.id} (${g.kind}, ${g.beliefId.replace(/^belief-/, "")})`).join(", ") : "none"}`);
+  } finally {
+    db.close();
+  }
+  // The live command must not accept this fixture as a result.
+  const live = await runReplay({ drift: made.path, runsDir: o.outDir, webBundlesDir: null, cassetteDir: o.cassetteDir, now: o.now });
+  const refused = live.exitCode !== 0;
+  // The cassette hash covers recordedAt/latency (differs run to run): print it as <sha>.
+  const why = (live.lines[live.lines.length - 1] ?? "").replace(/\(sha [0-9a-f]+\)/g, "(sha <sha>)");
+  lines.push(`  ${refused ? "PASS" : "FAIL"} \`notary replay --drift\` on this fixture: exit ${live.exitCode} — ${short(why, 160)}`);
+  if (!refused) problems.push("stage 11: replay --drift accepted a FIXTURE drift fixture");
+  return { lines, problems, ...(result ? { result } : {}), fixturePath: made.path };
 }
 
 export async function runFixtureDemo(opts: FixtureDemoOptions = {}): Promise<FixtureDemoResult> {
@@ -224,6 +342,7 @@ export async function runFixtureDemo(opts: FixtureDemoOptions = {}): Promise<Fix
   const bundles: RunBundle[] = [];
   const problems: string[] = [];
   let globalFetchCalls = 0;
+  let driftOut: FixtureDemoResult["drift"];
 
   // ---- safety: trap global fetch, test mode in-process, fixture transport, private env ---------
   const realFetch = globalThis.fetch;
@@ -235,7 +354,12 @@ export async function runFixtureDemo(opts: FixtureDemoOptions = {}): Promise<Fix
   const prevMode = process.env.NOTARY_MODE;
   process.env.NOTARY_MODE = "test";
   const restoreTransport = setRecorderTransport({ fetch: api.fetch, fixture: true });
-  const env: NodeJS.ProcessEnv = { NOTARY_MODE: "test", CRUSTDATA_API_KEY: FIXTURE_KEY, DODO_PAYMENTS_API_KEY: FIXTURE_KEY };
+  const env: NodeJS.ProcessEnv = {
+    NOTARY_MODE: "test",
+    CRUSTDATA_API_KEY: FIXTURE_KEY,
+    DODO_PAYMENTS_API_KEY: FIXTURE_KEY,
+    NOTARY_MAX_PROBES_PER_CLAIM: String(DEMO_MAX_PROBES_PER_CLAIM),
+  };
   const noSleep = async (): Promise<void> => {};
 
   try {
@@ -244,6 +368,9 @@ export async function runFixtureDemo(opts: FixtureDemoOptions = {}): Promise<Fix
     lines.push(`output: ${rel(outDir, outDir)} (bundles <runId>/, cassettes cassettes/ marked fixture: true, store notary.sqlite); nothing under fixtures/cassettes or packages/web`);
     lines.push("network: global fetch is trapped for the whole demo; every HTTP call goes to the in-process fixture API (api.crustdata.com, test.dodopayments.com), any other host is refused");
     lines.push(`models: reflector and adversary are deterministic doubles behind the real LlmClient (${FIXTURE_MODEL_LABEL})`);
+    lines.push(
+      `probe caps (FIXTURE only, in-process): ${DEMO_MAX_PROBES_PER_CLAIM} per claim (NOTARY_MAX_PROBES_PER_CLAIM in the demo's private env), ${DEMO_MAX_PROBES_PER_RUN} per run (notarize params); live defaults stay ${DEFAULT_MAX_PROBES_PER_CLAIM} and ${MAX_PROBES_PER_RUN}`,
+    );
     lines.push(
       `world: built from SEED_PLAN (${world.products.size} products, ${world.customers.size} customers, ${world.payments.size} payments, ${world.refunds.length} pre-existing refund(s), ${world.ledger.length} seeded wallet credit(s), ${world.subscriptions.size} subscriptions); re-seeded before each queue run`,
     );
@@ -270,6 +397,7 @@ export async function runFixtureDemo(opts: FixtureDemoOptions = {}): Promise<Fix
         adversary: "bedrock",
         recordReplay: false,
         runId,
+        params: { maxProbesPerRun: DEMO_MAX_PROBES_PER_RUN },
       });
       const entry: { result: NotarizeResult; bundle?: RunBundle } = { result };
       if (result.bundlePath) {
@@ -420,6 +548,18 @@ export async function runFixtureDemo(opts: FixtureDemoOptions = {}): Promise<Fix
       if (!c.ok) problems.push(`stage 10: ${c.text}`);
     }
     lines.push(`  ${stops.line(10)}`);
+
+    // ---- Stage 11: drift replay on the demo's own FIXTURE cassette ------------------------------
+    lines.push(heading(11, "Drift replay (FIXTURE: simulated \"Dodo fixed the ledger unit bug\", replayed through replayDrift)"));
+    if (notarized.dodo?.bundle) {
+      const drift = await driftStage({ outDir, cassetteDir, dbPath, bundle: notarized.dodo.bundle, env, now });
+      lines.push(...drift.lines);
+      problems.push(...drift.problems);
+      driftOut = { ...(drift.result ? { result: drift.result } : {}), ...(drift.fixturePath ? { fixturePath: drift.fixturePath } : {}), storePath: join(outDir, "drift", "notary.sqlite") };
+    } else {
+      lines.push("  skipped: no dodo notarize bundle");
+    }
+    lines.push(`  ${stops.line(11)}`);
   } finally {
     restoreTransport();
     globalThis.fetch = realFetch;
@@ -444,5 +584,6 @@ export async function runFixtureDemo(opts: FixtureDemoOptions = {}): Promise<Fix
     bundlePaths,
     bundles,
     stats: { globalFetchCalls, served: api.stats.served, refused: [...api.stats.refused], unknownRoutes: [...api.stats.unknownRoutes] },
+    ...(driftOut ? { drift: driftOut } : {}),
   };
 }

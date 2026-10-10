@@ -21,7 +21,10 @@
  *   Q1 GET /payments and GET /refunds accept page_size > 100 (documented max) and silently clamp it to
  *      100 instead of rejecting it.
  *   Q2 POST /customers/{id}/wallets/ledger-entries reads `amount` in MAJOR units: a credit of 1000
- *      adds 100000 minor units to the balance (the docs say smallest unit).
+ *      adds 100000 minor units to the balance (the docs say smallest unit). INTERMITTENT: amounts in
+ *      the band [Q2_HONORED_BAND.from, Q2_HONORED_BAND.to) (3000–3999) are read correctly, in minor
+ *      units, so the probe loop sees mixed evidence on dodo.wallet.credit-amount-minor-units (one
+ *      honored design among the x100 ones). No seed, recon or queue amount falls in the band.
  *   Q3 The same endpoint ignores `idempotency_key`: repeating a keyed credit creates a new entry each
  *      time (the docs say the repeat is a no-op).
  *   Q4 POST /refunds reads a partial refund's `items[].amount` in MAJOR units and silently caps it at
@@ -54,6 +57,14 @@ export interface FixtureQuirk {
   claims: string[];
 }
 
+/** PLANTED QUIRK Q2 is intermittent: ledger amounts in [from, to) are read correctly (minor units). */
+export const Q2_HONORED_BAND = { from: 3000, to: 4000 } as const;
+
+/** Minor units the fixture ledger books for a sent `amount` (PLANTED QUIRK Q2). */
+export function q2LedgerDelta(amount: number): number {
+  return amount >= Q2_HONORED_BAND.from && amount < Q2_HONORED_BAND.to ? amount : amount * 100;
+}
+
 export const FIXTURE_QUIRKS: readonly FixtureQuirk[] = [
   {
     id: "Q1",
@@ -66,7 +77,7 @@ export const FIXTURE_QUIRKS: readonly FixtureQuirk[] = [
     id: "Q2",
     tool: "dodo",
     where: "POST /customers/{id}/wallets/ledger-entries",
-    behaviour: "`amount` is read in MAJOR units: crediting 1000 adds 100000 minor units",
+    behaviour: "`amount` is read in MAJOR units: crediting 1000 adds 100000 minor units; INTERMITTENT: amounts from 3000 to 3999 are read correctly (minor units)",
     claims: ["dodo.wallet.credit-amount-minor-units"],
   },
   {
@@ -421,10 +432,10 @@ export class FixtureWorld {
     return w;
   }
 
-  /** A wallet credit as the fixture API applies it (PLANTED QUIRK Q2: amount read in major units). */
+  /** A wallet credit as the fixture API applies it (PLANTED QUIRK Q2: amount read in major units, except the honored band). */
   credit(customerId: string, amount: number, currency: string, reason: string | null): FxWallet {
     const w = this.wallet(customerId, currency);
-    const delta = amount * 100;
+    const delta = q2LedgerDelta(amount);
     const before = w.balance;
     w.balance += delta;
     w.updated_at = this.tick();
@@ -883,7 +894,7 @@ export class FixtureApi {
     // PLANTED FIXTURE QUIRK Q3: idempotency_key is accepted but ignored (no dedup).
     if (body.entry_type === "debit") {
       const wal = w.wallet(cid, body.currency);
-      const delta = body.amount * 100; // Q2 applies to debits too
+      const delta = q2LedgerDelta(body.amount); // Q2 applies to debits too
       if (delta > wal.balance) return fail(400, "INSUFFICIENT_BALANCE", "A debit larger than the balance is refused"); // control
       const before = wal.balance;
       wal.balance -= delta;

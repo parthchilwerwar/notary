@@ -3,7 +3,7 @@
  *
  * Behavior rewrite (every exchange of the op changes the same way, like a real API change):
  *   pnpm --filter @notary/core make:drift --from <cassette name> --op <opName> \
- *     [--match '<jsonPath>=<json>'] --set '<jsonPath>=<json | x<k> | div<k>>' --out <name> [--force]
+ *     [--match '<jsonPath>=<json>'] --set '<jsonPath>=<json | x<k> | div<k> | idiv<k>>' --out <name> [--force]
  *   e.g. --op dodo.createRefund --set '$.amount=x100'   (every createRefund echo is now x100)
  *
  * One exchange (legacy; rarely un-learns anything, since replicates count once):
@@ -22,8 +22,8 @@ import { parseArgs } from "node:util";
 import { DriftFixtureError, makeDriftFixture, parseMatchArg, parseSetArg } from "../src/tools/drift-fixture.js";
 
 const USAGE = [
-  "usage: make:drift --from <cassette> --op <opName> [--match <jsonPath>=<json>] --set <jsonPath>=<json|x100|div100> --out <name>",
-  "       make:drift --from <cassette> --exchange <requestHash>[:occurrence] --set <jsonPath>=<json|x100|div100> --out <name>",
+  "usage: make:drift --from <cassette> --op <opName> [--match <jsonPath>=<json>] --set <jsonPath>=<json|x100|div100|idiv100> --out <name>",
+  "       make:drift --from <cassette> --exchange <requestHash>[:occurrence] --set <jsonPath>=<json|x100|div100|idiv100> --out <name>",
 ];
 
 function main(): number {
