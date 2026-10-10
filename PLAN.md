@@ -96,3 +96,9 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 - [x] Step 3: Entire backend uses documented `--relation CALLS` flags; UNVERIFIED until a local install (#102).
 - [ ] Step 4: trace-link machinery built and inactive (#103) — BLOCKED on the user pasting one neatlogs trace URL; then `pnpm notary trace-link --example "<url>" --trace-id <id> && pnpm notary export --evidence`.
 - [x] Step 5: fixture bundles republished; evidence.json regenerated (unchanged).
+
+## Session 6 (Oct 10) — certificates
+- [x] Steps 1–3: `notary export --certificates [--fixture]` — certificates, revocations, Notarized API Report (`report.json`, `export/REPORT.md`) from data only (#106). Real: 0 bundles → all 26 claims "not tested". Fixture default: 9 certified (5 match, 4 contradict), 17 unproven; change-api: 9 certified, 1 revoked.
+- [x] Step 4: `demo --fixture --scenario change-api` + re-verification sentinel in guarded runs (#105): API unit switch after q09 → belief un-learns via 5 contrary probes, certificate revoked, guard retired, q10 held.
+- [x] Step 5: README headline + How it works → Read → Test → Challenge → Certify → Enforce (#107).
+- [ ] Not verified live: sentinel probe replay/resume against a recorded live run (needs keys).

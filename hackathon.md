@@ -1,6 +1,6 @@
 # neatHack — Notary submission log
 
-Notary: *an agent that won't touch money until it has proven how its tools actually behave.*
+Notary: *certifies how your payment APIs actually behave, and won't move money on anything it hasn't certified* — Read → Test → Challenge → Certify → Enforce.
 This file tracks hackathon facts, sponsor evidence and submission status. Details live in
 [PLAN.md](PLAN.md), [docs/DECISIONS.md](docs/DECISIONS.md) and [docs/AUDIT.md](docs/AUDIT.md).
 
@@ -37,8 +37,10 @@ Machine-readable copy for the dashboard: [packages/web/public/evidence/evidence.
 
 ## What exists now (keyless)
 
-- `pnpm test`: 648 tests pass; typecheck clean; `pnpm check:secrets` clean; `notary guards coverage`: 0 unguarded call sites.
+- `pnpm test`: 673 tests pass; typecheck clean; `pnpm check:secrets` clean; `notary guards coverage`: 0 unguarded call sites.
 - `notary demo --fixture`: the whole pipeline on a simulated, clearly labelled fixture world — naive run 9 unsafe actions, guarded run 0 (executes 2 plan changes, holds 12 with evidence packs); Stage 11 shows a drift replay un-learning a mixed-evidence belief and retiring its guard. Published for the dashboard under `packages/web/public/bundles/fixture/` (sample: true, never mixed with real bundles).
+- `notary demo --fixture --scenario change-api`: the simulated Dodo switches the refund amount unit mid-run; the re-verification sentinel un-learns the belief, the certificate is revoked, its guard retires and the refund that would have gone out 100× short is held.
+- Certificates: `notary export --certificates` → `export/REPORT.md` (real: 0 bundles, all claims "not tested"); fixture reports under `packages/web/public/certificates/fixture/<scenario>/`.
 - `docs/EVALUATION.md` is generated from real bundles only: **0 real bundles today**, so every PRD headline metric is "not measured yet".
 
 ## Dashboard data (JSON only; UI is Codex's)
@@ -46,6 +48,7 @@ Machine-readable copy for the dashboard: [packages/web/public/evidence/evidence.
 - `packages/web/public/bundles/fixture/` — FIXTURE bundles from `notary demo --fixture --publish` (never mixed with real bundles)
 - `packages/web/public/content/glossary.json` — plain-language glossary from `notary export --content`
 - `packages/web/public/evidence/evidence.json` — sponsor evidence from `notary export --evidence`
+- `packages/web/public/certificates/` — certificates, revocations and `report.json` (real), `fixture/<scenario>/` (FIXTURE)
 
 ## Submission checklist (BUILD_PLAN)
 

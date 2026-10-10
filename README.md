@@ -1,6 +1,8 @@
 # Notary
 
-**An agent that won't touch money until it has proven how its tools actually behave.**
+**Notary certifies how your payment APIs actually behave, and won't move money on anything it hasn't certified.**
+
+*Read → Test → Challenge → Certify → Enforce.* An agent that won't touch money until it has proven how its tools actually behave.
 
 Notary is a billing-ops agent for the neatHack hackathon. It works a queue of refunds, partial refunds, plan changes and credits, using [Crustdata](https://crustdata.com) for company context and [Dodo Payments](https://dodopayments.com) in **test mode** to execute. Before any irreversible action it checks, by pre-registered experiment, the specific tool behaviors that action depends on. If a behavior isn't proven, the request is held for a human with the evidence attached.
 
@@ -10,58 +12,27 @@ Notary is a billing-ops agent for the neatHack hackathon. It works a queue of re
 
 Agents trust tool documentation by default, and when the tool moves money that trust is the most expensive bug in the system. A docs page can say a refund amount is in units when it's in cents, that a timed-out request wasn't processed when it was, or that a list returns everything when it stops at a page cap. None of these crash anything: every call returns 200, every trace looks green, and the damage turns up later as a double refund in the payments dashboard.
 
-## How it works
+## How it works: Read → Test → Challenge → Certify → Enforce
 
-Two loops share one belief store. Deterministic code makes every decision. Models only propose hypotheses and review beliefs.
+Deterministic code makes every decision. Models only propose hypotheses and review beliefs.
 
-**Notarization loop** (`pnpm notary notarize --tool <crustdata|dodo>`):
-
-1. **Recon + contract checker.** Doc claims, hand-written from the real docs ([`src/contracts/`](packages/core/src/contracts/)), are checked against recorded responses. No LLM is involved, and the same exchanges always give the same anomalies.
-2. **Reflector.** One batched Bedrock call proposes 2–3 rival hypotheses per anomaly, each tagged with a defect class.
-3. **Probe selection.** Eight probe templates, ranked by a greedy cost-aware score: rivals separated ÷ (credits + λ·calls).
-4. **Commit, then run.** Each prediction is hashed and written to SQLite before the HTTP call goes out. A trigger blocks any later change.
-5. **Verdict + belief.** Fixed verdict rules feed a Beta(α, β) belief. Only `confirmed` verdicts move it. Uninformative, inconclusive and invalid probes are logged but change nothing. A belief can rise, fall and be **unlearned**.
-6. **Evidence check.** Every cited probe span must actually have varied the claim's parameter (FR-10).
-7. **Adversary.** A different, stronger model, or a headless Claude Code session, tries to refute each candidate belief using only the raw probe records. It can uphold, narrow or downgrade.
-8. **Guard compiler.** Notarized beliefs on the *violated* side compile into guards.
-
-**Gated queue** (`pnpm notary run --queue …`):
-
-1. Crustdata enrichment sets each customer's tier, and a plain-code policy table picks the outcome.
-2. **Belief gate:** every belief that the action requires must be notarized. If any is missing, the item is **held** with an evidence pack.
-3. Every Dodo/Crustdata method runs through `guarded()`: transform, require_param, precheck, retry_policy, paginate_fully or block. There are no blind write retries. An unknown outcome is read back first.
-4. A deterministic grader compares decisions with hand-written expected outcomes and with Dodo state read back before and after the run.
+1. **Read.** Every concrete promise in the Crustdata and Dodo docs becomes a machine-checkable claim, quoted and linked ([`src/contracts/`](packages/core/src/contracts/)). A recon sweep records cheap calls, and a deterministic checker compares each response with each claim: same exchanges in, same anomalies out. A field path that doesn't exist in the response counts as *not observed*, never as "honored".
+2. **Test.** One batched reflector call proposes 2–3 rival explanations per anomaly; claims that behave as documented get code-built rivals ("honored" vs. the suspected defect). Probes are chosen by a cost-aware score, and every prediction is hashed into SQLite **before** the HTTP call. Fixed verdict rules feed a Beta(α, β) belief per claim; only confirmed, informative probes move it, each distinct probe design counts once.
+3. **Challenge.** A different, stronger model (or a headless Claude Code session) reads only the raw probe records and tries to refute each candidate belief: uphold, narrow its scope, or downgrade it. Every cited probe must also pass an evidence check against its recorded span.
+4. **Certify.** Each surviving belief becomes a **certificate**: the claim, the doc text and link, a verdict ("matches docs" or "contradicts docs: docs say X, observed Y"), its scope, the evidence (probe and trace ids), the adversary's verdict and a sha256 over the content. Unproven claims get a "no certificate" entry with the reason. When later evidence un-learns a belief, its certificate is **revoked** with the triggering evidence. `pnpm notary export --certificates` writes the certificates, revocations and a per-tool **Notarized API Report** ([`export/REPORT.md`](export/REPORT.md)).
+5. **Enforce.** Certificates on the "contradicts docs" side compile into guards (transform, require_param, precheck, retry_policy, paginate_fully, block) that wrap every Dodo and Crustdata call. A money action runs only if every certificate it depends on is active; otherwise it's **held** with an evidence pack. Before a write a guard would rewrite, a re-verification sentinel re-runs the certified experiment, so an API that changes mid-run revokes the certificate and holds the action instead of moving the wrong amount.
 
 ```mermaid
-flowchart TB
-  subgraph N["Notarization loop: notary notarize"]
-    A0["Recon sweep<br/>cheap calls per doc claim, recorded"] --> A1["Contract checker<br/>8 expect rules, no LLM"]
-    A1 --> A2["Reflector, Bedrock<br/>one batched call, 2-3 rivals per anomaly"]
-    A2 --> A3["Probe runner<br/>cost-aware score; prediction hashed into SQLite before the call"]
-    A3 --> A4["Belief store<br/>Beta, confidence = P of theta over 0.5; raise, lower, unlearn"]
-    A4 --> A7["Evidence check<br/>cited spans varied the param, from spans.jsonl"]
-    A7 --> A5["Adversary<br/>bedrock or session backend; uphold, narrow, downgrade"]
-    A5 --> A6["Guard compiler<br/>violated-side notarized beliefs only"]
-  end
-  subgraph Q["Queue execution: notary run"]
-    B1["Seeded queue<br/>20 requests, SEEDED FIXTURE"] --> B2["Policy, plain code<br/>Crustdata tier x plan x request type"]
-    B2 --> B3{"Belief gate<br/>required beliefs notarized?"}
-    B3 -- yes --> B4["guarded wrap<br/>createTools with wrap = guarded"]
-    B3 -- no --> B5["Hold<br/>evidence pack in the bundle"]
-    B4 --> B6["Dodo test mode + Crustdata<br/>recorded to cassettes"]
-    B6 --> B8["Deterministic grader<br/>expected.json + Dodo read-back"]
-    B8 --> B7["Run bundle<br/>zod schema, sha256 content hash"]
-  end
-  A4 -- beliefs --> B3
-  A6 -- guards --> B4
-  B7 --> R["notary replay<br/>keyless, exact metric match"]
-  B7 --> X["notary export<br/>EVALUATION.md, TOOLS.md, guards.json"]
-  B7 --> D["Dashboard, packages/web<br/>built by Codex"]
-  L["neatlogs SDK span per step, probe and model call<br/>+ local runs/id/spans.jsonl"] -.-> N
-  L -.-> Q
+flowchart LR
+  R["Read<br/>doc claims + recon + deterministic checker"] --> T["Test<br/>rival hypotheses, commit-then-run probes, Beta beliefs"]
+  T --> C["Challenge<br/>adversary on raw probe records + evidence check"]
+  C --> F["Certify<br/>certificates, revocations, Notarized API Report"]
+  F --> E["Enforce<br/>guards + belief gate + re-verification sentinel"]
+  E -- "API changed: belief un-learns" --> F
+  E --> B["Run bundle<br/>sha256, replayable offline"]
 ```
 
-The full design, as built, is in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+The commands: `notary notarize --tool <crustdata|dodo>` (Read, Test, Challenge), `notary export --certificates` (Certify), `notary run --queue …` (Enforce), `notary replay` (reproduce offline), `notary demo --fixture [--scenario change-api]` (the whole flow on a clearly labelled simulated world).
 
 ## Results
 
@@ -87,7 +58,7 @@ These values are copied from [`docs/EVALUATION.md` → Checks that don't need AP
 
 | Command | Result (from EVALUATION.md) |
 | --- | --- |
-| [`pnpm test`](docs/EVALUATION.md#checks-that-dont-need-api-keys) | PASS: 591 passed, 0 failed (591 tests in 35 files) |
+| [`pnpm test`](docs/EVALUATION.md#checks-that-dont-need-api-keys) | PASS: 673 passed, 0 failed (673 tests in 39 files) |
 | [`pnpm notary guards coverage --json`](docs/EVALUATION.md#checks-that-dont-need-api-keys) | PASS: unguarded_call_sites = 0 (27 sites: 21 guarded, 6 raw-by-design; backend tsc) |
 
 The coverage check uses the TypeScript-checker backend. The PRD asks for `entire graph` callers. That backend is implemented, but it is unverified because the Entire CLI isn't installed (see [limits](#honest-limits)).
@@ -109,6 +80,10 @@ pnpm test                       # vitest across the workspace
 pnpm notary guards coverage     # every raw client method reachable only through guarded(); exit 0 = 0 unguarded
 pnpm notary export --sample     # (re)write the synthetic SAMPLE bundle for dashboard development
 pnpm notary export              # regenerate docs/EVALUATION.md, export/TOOLS.md, export/guards.json (runs pnpm test + coverage)
+pnpm notary export --certificates [--fixture]  # certificates, revocations, Notarized API Report (export/REPORT.md)
+pnpm notary export --content    # dashboard glossary generated from code
+pnpm notary export --evidence   # sponsor evidence.json from facts on disk
+pnpm notary demo --fixture [--scenario change-api] [--publish]  # whole flow on a labelled simulated world
 pnpm --filter @notary/core seed:dodo --plan   # print the Dodo test world the seed would create; no network
 node scripts/fresh-clone-check.mjs            # clone HEAD to a temp dir, install, run replay with credentials stripped
 ```
