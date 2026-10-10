@@ -296,14 +296,21 @@ export function buildProgram(): Command {
       console.log(`  GET ${server.url}/api/bundles  GET ${server.url}/api/bundles/:id  GET ${server.url}/api/stream (SSE)`);
       // The one and only place the session token is shown (never written to a file, journal or span).
       for (const line of sessionBanner(server.url, server.session.token)) console.log(line);
+      // Each ask starts its own non-blocking flush (src/api/ask.ts). On SIGINT/SIGTERM: stop the
+      // server, then flush + shut down neatlogs, bounded so an unreachable endpoint can't hang exit;
+      // a second signal exits at once.
+      let stopping = false;
       const shutdown = (): void => {
+        if (stopping) process.exit(1);
+        stopping = true;
+        const deadline = new Promise<void>((done) => setTimeout(done, 5_000).unref());
         void server
           .close()
-          .then(() => shutdownTracing())
-          .then(() => process.exit(0));
+          .then(() => Promise.race([shutdownTracing(), deadline]))
+          .finally(() => process.exit(0));
       };
-      process.once("SIGINT", shutdown);
-      process.once("SIGTERM", shutdown);
+      process.on("SIGINT", shutdown);
+      process.on("SIGTERM", shutdown);
     });
 
   program
@@ -363,8 +370,23 @@ export function buildProgram(): Command {
 
   program
     .command("doctor")
-    .description("Emit one neatlogs test span and flush")
-    .action(async () => {
+    .description("Emit one neatlogs test span and flush (--llm: check the model provider, role models and one tiny call per role)")
+    .option("--llm", "check the LLM backend instead: config, GET /v1/models (LiteLLM), role models, separation of duties, one tiny call per role")
+    .action(async (opts: { llm?: boolean }) => {
+      if (opts.llm) {
+        // src/llm/doctor.ts: exit 0 ok, 1 a real failure, 3 BLOCKED (a required variable is not set).
+        const { runLlmDoctor } = await import("./llm/doctor.js");
+        const { initTracing, shutdownTracing, withWorkflow } = await import("./trace/index.js");
+        await initTracing({ serviceName: "doctor" });
+        try {
+          const report = await withWorkflow("doctor.llm", () => runLlmDoctor());
+          for (const line of report.lines) (report.exitCode === 0 ? console.log : console.error)(line);
+          process.exitCode = report.exitCode;
+        } finally {
+          await shutdownTracing();
+        }
+        return;
+      }
       const { runDoctor } = await import("./trace/doctor.js");
       const report = await runDoctor();
       console.log(JSON.stringify(report, null, 2));
