@@ -33,7 +33,8 @@ Machine-readable copy for the dashboard: [packages/web/public/evidence/evidence.
 | cfo.ai | pending | Business plan is P10 (manual): `docs/BUSINESS.md`, `packages/web/public/economics.json` not created yet |
 | Crustdata | blocked (no key) | Client, 26-claim contracts, 15 req/min throttle, credit budget built; no live calls recorded |
 | Dodo Payments | blocked (no key) | Test-mode-locked client built; seeding needs 12 hosted test-card checkouts |
-| AWS Bedrock | blocked (no creds/model ids) | Converse client with three roles; no live calls |
+| AWS Bedrock | not used (models go through LiteLLM) | Converse client kept working; `NOTARY_LLM_PROVIDER=bedrock` |
+| LiteLLM | configured, key pending | OpenAI-compatible provider (`openai@6.34.0` + neatlogs `wrapOpenAI`), `notary doctor --llm`, USD cap, rate limits; `LITELLM_API_KEY` not yet in `.env`, so no live call yet |
 
 ## What exists now (keyless)
 
@@ -48,6 +49,7 @@ Machine-readable copy for the dashboard: [packages/web/public/evidence/evidence.
 - V1 core support shipped: run timelines, deterministic explain engine (`explain.json`), local `POST /api/ask` and `GET/POST /api/approvals` (localhost + per-session token, Dodo test mode only), browser-safe certificate schemas. 780 core tests pass.
 - V2–V4 dashboard shipped (Claude Code now owns `packages/web`): app shell with ⌘K palette and record URLs, Mission control (five-stage graph, event feed, budget meters, live SSE / fixture replay), decision trail with "Model said" / "Verified" tags, Ask Notary (⌘J, cited answers), Approval desk (typed-amount confirm, local test mode only). 138 web tests.
 - V5: landing page at `/`, full screenshot review (1440/390, light/dark) with contrast and state fixes, Vercel config (not deployed yet). Tests: 780 core + 152 web.
+- Session 8: LiteLLM provider, `notary doctor --llm`, actionable BLOCKED messages, `NOTARY_MAX_USD` cap, model-call and Ask rate limits, one neatlogs trace per Ask question (retrieve → model call → citation validation). 850 core + 152 web tests.
 - Blocked on keys: Ask answers (Bedrock executor model), live approvals (Dodo test key + real held items).
 
 ## Dashboard data (JSON only)
