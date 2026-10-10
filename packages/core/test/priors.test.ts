@@ -10,6 +10,7 @@ import { finalizeBundle, writeBundle } from "../src/bundle/index.js";
 import { pHolds } from "../src/beliefs/math.js";
 import {
   DEFAULT_PRIOR_STRENGTH,
+  MAX_PRIOR_STRENGTH,
   baseRates,
   loadPriorsSource,
   priorStrengthFromEnv,
@@ -125,18 +126,31 @@ describe("transferPriors: base rates", () => {
   });
 
   it("strength scales the pseudo-counts", () => {
-    const r = transferPriors({ sourceBeliefs: SOURCE, targetClaims: DODO_TARGETS, strength: 4 });
-    expect(r.priors["dodo.refunds.page-size-max-100"]).toEqual({ alpha: 1, beta: 5, from: "crustdata" });
-    expect(r.priors["dodo.product.price-minor-units"]).toEqual({ alpha: 5, beta: 1, from: "crustdata" });
+    const r = transferPriors({ sourceBeliefs: SOURCE, targetClaims: DODO_TARGETS, strength: 1 });
+    expect(r.priors["dodo.refunds.page-size-max-100"]).toEqual({ alpha: 1, beta: 2, from: "crustdata" });
+    expect(r.priors["dodo.product.price-minor-units"]).toEqual({ alpha: 2, beta: 1, from: "crustdata" });
     expect(r.priors["dodo.refund.amount-minor-units"]).toEqual({ alpha: 1, beta: 1, from: "crustdata" });
     expect(() => transferPriors({ sourceBeliefs: SOURCE, targetClaims: DODO_TARGETS, strength: 0 })).toThrow(/positive/);
   });
 
-  it("NOTARY_PRIOR_STRENGTH: a positive number, default 2", () => {
+  it("NOTARY_PRIOR_STRENGTH: a positive number up to the max, default 2", () => {
     expect(priorStrengthFromEnv({})).toBe(2);
-    expect(priorStrengthFromEnv({ NOTARY_PRIOR_STRENGTH: "4" })).toBe(4);
+    expect(priorStrengthFromEnv({ NOTARY_PRIOR_STRENGTH: "2" })).toBe(2);
     expect(priorStrengthFromEnv({ NOTARY_PRIOR_STRENGTH: "0.5" })).toBe(0.5);
     for (const bad of ["0", "-1", "x", " "]) expect(priorStrengthFromEnv({ NOTARY_PRIOR_STRENGTH: bad })).toBe(2);
+  });
+
+  it("P9 AUDIT-22: prior strength is bounded so two contrary probes always outweigh the prior", () => {
+    expect(MAX_PRIOR_STRENGTH).toBe(2);
+    // Over the bound is refused loudly, never silently clamped.
+    for (const big of ["2.5", "4", "100"]) expect(() => priorStrengthFromEnv({ NOTARY_PRIOR_STRENGTH: big })).toThrow(RangeError);
+    for (const big of [2.000001, 4, 100]) expect(() => transferPriors({ sourceBeliefs: SOURCE, targetClaims: DODO_TARGETS, strength: big })).toThrow(/at most 2/);
+    // At the strongest allowed prior, two probes against it bring P(holds) back to 0.5 or past it.
+    const r = transferPriors({ sourceBeliefs: SOURCE, targetClaims: DODO_TARGETS, strength: MAX_PRIOR_STRENGTH });
+    const p = r.priors["dodo.refunds.page-size-max-100"]!; // violated-leaning prior Beta(1, 3)
+    expect(pHolds(p.alpha + 2, p.beta)).toBeGreaterThanOrEqual(0.5);
+    const q = r.priors["dodo.product.price-minor-units"]!; // honored-leaning prior Beta(3, 1)
+    expect(pHolds(q.alpha, q.beta + 2)).toBeLessThanOrEqual(0.5);
   });
 
   it("no settled source beliefs -> every prior is Beta(1, 1); other tools' beliefs are ignored", () => {

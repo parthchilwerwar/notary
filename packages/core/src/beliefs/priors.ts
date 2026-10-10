@@ -24,7 +24,7 @@
  *     α = 1 + s · (1 − rate(c))      (pseudo-observations of the doc claim holding)
  *     β = 1 + s · rate(c)            (pseudo-observations of a violation)
  * No settled source belief relevant to c (or a claim missing from the map) → Beta(1, 1).
- * s defaults to 2 (env NOTARY_PRIOR_STRENGTH, a positive number): the prior is worth two probes,
+ * s defaults to 2 (env NOTARY_PRIOR_STRENGTH, a positive number, at most MAX_PRIOR_STRENGTH = 2): the prior is worth two probes,
  * enough to save about one probe when the transfer is right and small enough that two contrary
  * probes outweigh it (from Beta(1,3), two honored probes give Beta(3,3) = 0.5 again).
  */
@@ -32,21 +32,38 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { verifyBundle } from "../bundle/hash.js";
 import { suspectedClassOf } from "../contracts/priors-map.js";
+import { MIN_INDEPENDENT_PROBES } from "./math.js";
 import type { Belief, BeliefStatus, Claim, DefectClass, RunBundle, Tool } from "../schema/index.js";
 import type { BeliefPrior } from "./store.js";
 
 /** Default prior strength in pseudo-counts (env NOTARY_PRIOR_STRENGTH). */
 export const DEFAULT_PRIOR_STRENGTH = 2;
 
+/**
+ * Upper bound on the prior strength (P9 AUDIT-22): the prior may be worth at most as many
+ * observations as the evidence floor (MIN_INDEPENDENT_PROBES), so two contrary probes always bring
+ * P(holds) back to 0.5 or past it. A stronger prior could outvote real probes. Larger values are
+ * refused, never clamped.
+ */
+export const MAX_PRIOR_STRENGTH = MIN_INDEPENDENT_PROBES;
+
+function assertStrength(n: number, what: string): void {
+  if (n > MAX_PRIOR_STRENGTH) {
+    throw new RangeError(`${what} must be at most ${MAX_PRIOR_STRENGTH} (a prior may not outweigh ${MIN_INDEPENDENT_PROBES} contrary probes), got ${n}`);
+  }
+}
+
 /** Source statuses that count as settled for the base rate. */
 export const SETTLED_STATUSES: ReadonlySet<BeliefStatus> = new Set<BeliefStatus>(["notarized", "candidate"]);
 
-/** NOTARY_PRIOR_STRENGTH: a positive finite number, else the default (2). */
+/** NOTARY_PRIOR_STRENGTH: a positive finite number up to MAX_PRIOR_STRENGTH, else the default (2); above the max throws. */
 export function priorStrengthFromEnv(env: NodeJS.ProcessEnv = process.env): number {
   const raw = env.NOTARY_PRIOR_STRENGTH?.trim();
   if (!raw) return DEFAULT_PRIOR_STRENGTH;
   const n = Number(raw);
-  return Number.isFinite(n) && n > 0 ? n : DEFAULT_PRIOR_STRENGTH;
+  if (!(Number.isFinite(n) && n > 0)) return DEFAULT_PRIOR_STRENGTH;
+  assertStrength(n, "NOTARY_PRIOR_STRENGTH");
+  return n;
 }
 
 export interface BaseRate {
@@ -131,6 +148,7 @@ export function baseRates(settled: readonly Belief[]): Partial<Record<DefectClas
 export function transferPriors(input: TransferPriorsInput): TransferPriorsResult {
   const strength = input.strength ?? DEFAULT_PRIOR_STRENGTH;
   if (!(Number.isFinite(strength) && strength > 0)) throw new RangeError(`prior strength must be a positive number, got ${strength}`);
+  assertStrength(strength, "prior strength");
   const tools = [...new Set(input.sourceBeliefs.map((b) => b.tool))];
   const from = input.from ?? tools[0];
   if (!from) throw new Error("transferPriors: no source beliefs and no `from` tool");

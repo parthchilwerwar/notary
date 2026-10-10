@@ -100,7 +100,7 @@ Needs Node ≥ 22 (built on Node 24) and pnpm. No `.env` and no keys.
 pnpm i && pnpm notary replay
 ```
 
-**What `replay` does today:** it finds the one bundle in the repo, the synthetic SAMPLE bundle [`packages/web/public/bundles/sample-42.json`](packages/web/public/bundles/sample-42.json), recomputes its sha256 content hash (`verified 1 bundle(s)`), and then stops with `BLOCKED: no recorded live runs to replay … record runs with API keys first`, exit code 3. That is the correct answer: replay never reports a pass when there's nothing recorded. Once live runs are recorded, it re-runs each one from its cassettes with no environment at all and compares every metric exactly. Any cassette miss, tampered file or mismatch exits 1.
+**What `replay` does today:** it finds the one bundle in the repo, the synthetic SAMPLE bundle [`packages/web/public/bundles/sample-42.json`](packages/web/public/bundles/sample-42.json), recomputes its sha256 content hash (`verified 1 bundle(s)`), and then stops with `BLOCKED: no recorded live runs to replay … record runs with API keys first`, exit code 3. That is the correct answer: replay never reports a pass when there's nothing recorded. Once live runs are recorded, it re-runs each one from its cassettes with no environment at all and compares every metric, and every probe, belief and decision record, exactly. Any cassette miss, tampered file or mismatch exits 1.
 
 Other things that run offline today:
 

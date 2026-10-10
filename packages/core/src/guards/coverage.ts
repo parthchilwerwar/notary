@@ -23,7 +23,7 @@
  *      wrap loop), so no static raw call is legitimate.
  *   4. createTools() calls (always TypeScript, resolved by symbol, so aliases count): the argument's
  *      type must have a non-optional `wrap`, and that wrap must not resolve to `identityWrap`.
- *      Exceptions are RAW_BY_DESIGN only.
+ *      Exceptions are RAW_BY_DESIGN only, per function and site count (not per file).
  */
 import { spawnSync } from "node:child_process";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
@@ -77,6 +77,10 @@ export interface AllowEntry {
   file: string;
   /** `no-wrap`: createTools() without a wrap. `identity-wrap`: a wrap that can be identityWrap. */
   kind: "no-wrap" | "identity-wrap";
+  /** Enclosing function of the allowed call(s) (see enclosingFunctionName). */
+  fn: string;
+  /** How many createTools() calls in `fn` this entry covers; one more is UNGUARDED. */
+  sites: number;
   reason: string;
 }
 
@@ -96,27 +100,43 @@ export interface CoverageConfig {
 /**
  * The only createTools() calls allowed to run without a guarded wrap. Keep this minimal: each entry
  * needs a reason a reviewer would accept, and it covers createTools() calls only, never a raw
- * client reference.
+ * client reference. Each entry names the enclosing function and the exact number of sites in it
+ * (AUDIT-10): a new raw call elsewhere in the same file is still UNGUARDED.
  */
 export const RAW_BY_DESIGN: readonly AllowEntry[] = [
   {
     file: "src/checker/recon.ts",
     kind: "no-wrap",
+    fn: "runRecon",
+    sites: 1,
     reason: "probing: the recon sweep measures the raw tool behavior that guards would hide (DECISIONS #56)",
   },
   {
     file: "src/reflect/notarize.ts",
     kind: "no-wrap",
+    fn: "notarize",
+    sites: 1,
     reason: "probing: probes must see the raw response to confirm or refute a belief (DECISIONS #56)",
+  },
+  {
+    file: "src/reflect/notarize.ts",
+    kind: "no-wrap",
+    fn: "rawReplayProbeIo",
+    sites: 1,
+    reason: "probing (replay of recorded probes, incl. drift): probes must see the raw response (DECISIONS #56)",
   },
   {
     file: "scripts/seed-dodo.ts",
     kind: "no-wrap",
+    fn: "seed",
+    sites: 1,
     reason: "seeding: builds the test-mode world (including the states guards exist to block) before any belief exists",
   },
   {
     file: "src/queue/run.ts",
     kind: "identity-wrap",
+    fn: "runQueue",
+    sites: 2,
     reason: "naive baseline: `gctx?.wrap ?? identityWrap` is identity only for --variant naive, the unguarded control",
   },
 ];
@@ -255,6 +275,22 @@ function resolved(checker: ts.TypeChecker, node: ts.Node): ts.Symbol | undefined
 function walk(node: ts.Node, visit: (n: ts.Node) => void): void {
   visit(node);
   node.forEachChild((c) => walk(c, visit));
+}
+
+/**
+ * Name of the nearest enclosing named function: a function/method declaration's name, or the
+ * variable/property an arrow function or function expression is assigned to. `<module>` at top level.
+ */
+export function enclosingFunctionName(node: ts.Node): string {
+  for (let n: ts.Node | undefined = node.parent; n; n = n.parent) {
+    if ((ts.isFunctionDeclaration(n) || ts.isMethodDeclaration(n)) && n.name) return n.name.getText();
+    if (ts.isArrowFunction(n) || ts.isFunctionExpression(n)) {
+      if (ts.isFunctionExpression(n) && n.name) return n.name.text;
+      const p = n.parent;
+      if ((ts.isVariableDeclaration(p) || ts.isPropertyAssignment(p) || ts.isPropertyDeclaration(p)) && p.name) return p.name.getText();
+    }
+  }
+  return "<module>";
 }
 
 function unwrapExpr(e: ts.Expression): ts.Expression {
@@ -616,8 +652,21 @@ function checkCreateToolsCalls(project: Project, config: CoverageConfig): Covera
     });
     return hit;
   };
-  const allowFor = (file: string, kind: AllowEntry["kind"]) =>
-    config.allowList.find((a) => a.kind === kind && norm(join(config.projectDir, a.file)) === norm(file));
+  // P9 (AUDIT-10): an entry covers at most `sites` createTools() calls inside function `fn` of its
+  // file, claimed in source order. Any other call in that file (another function, or one more than
+  // the entry allows) is UNGUARDED, so a new raw site can't hide behind a file-level allowance.
+  const used = new Map<AllowEntry, number>();
+  const allowFor = (node: ts.Node, file: string, kind: AllowEntry["kind"]): { entry?: AllowEntry; why?: string } => {
+    const inFile = config.allowList.filter((a) => a.kind === kind && norm(join(config.projectDir, a.file)) === norm(file));
+    if (inFile.length === 0) return {};
+    const fn = enclosingFunctionName(node);
+    const entry = inFile.find((a) => a.fn === fn);
+    if (!entry) return { why: `not covered by the allow-list (it covers ${inFile.map((a) => a.fn).join(", ")} in this file, not ${fn})` };
+    const n = used.get(entry) ?? 0;
+    if (n >= entry.sites) return { why: `not covered by the allow-list (it covers ${entry.sites} site(s) in ${fn}; this is one more)` };
+    used.set(entry, n + 1);
+    return { entry };
+  };
 
   const out: CoverageSite[] = [];
   for (const sf of project.scanned) {
@@ -629,8 +678,12 @@ function checkCreateToolsCalls(project: Project, config: CoverageConfig): Covera
       const wrapProp = arg ? checker.getTypeAtLocation(arg).getProperty("wrap") : undefined;
       const optional = !wrapProp || (wrapProp.flags & ts.SymbolFlags.Optional) !== 0;
       if (optional) {
-        const allow = allowFor(sf.fileName, "no-wrap");
-        out.push(allow ? { ...at, status: "raw-by-design", detail: allow.reason } : { ...at, status: "UNGUARDED", detail: "createTools() without a wrap: every op is raw" });
+        const { entry, why } = allowFor(n, sf.fileName, "no-wrap");
+        out.push(
+          entry
+            ? { ...at, status: "raw-by-design", detail: entry.reason }
+            : { ...at, status: "UNGUARDED", detail: `createTools() without a wrap: every op is raw${why ? `; ${why}` : ""}` },
+        );
         return;
       }
       // The wrap expression: the literal property when visible, else the whole argument.
@@ -643,11 +696,11 @@ function checkCreateToolsCalls(project: Project, config: CoverageConfig): Covera
       }
       const text = wrapExpr === arg ? `(${arg!.getText(sf).slice(0, 40)}…).wrap` : wrapExpr.getText(sf);
       if (reachesIdentity(wrapExpr, new Set(), 0)) {
-        const allow = allowFor(sf.fileName, "identity-wrap");
+        const { entry, why } = allowFor(n, sf.fileName, "identity-wrap");
         out.push(
-          allow
-            ? { ...at, status: "raw-by-design", detail: `wrap: ${text} can be identityWrap; ${allow.reason}` }
-            : { ...at, status: "UNGUARDED", detail: `wrap: ${text} can be identityWrap` },
+          entry
+            ? { ...at, status: "raw-by-design", detail: `wrap: ${text} can be identityWrap; ${entry.reason}` }
+            : { ...at, status: "UNGUARDED", detail: `wrap: ${text} can be identityWrap${why ? `; ${why}` : ""}` },
         );
         return;
       }

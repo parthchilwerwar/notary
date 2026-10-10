@@ -64,7 +64,7 @@ describe("guards coverage on a fixture with deliberate raw calls", () => {
     scanDirs: ["src"],
     toolsIndex: "src/tools/index.ts",
     clients: [{ className: "DodoClient", file: "src/tools/dodo.ts", opPrefix: "dodo" }],
-    allowList: [{ file: "src/probe.ts", kind: "no-wrap", reason: "probing (fixture)" }],
+    allowList: [{ file: "src/probe.ts", kind: "no-wrap", fn: "probeTools", sites: 1, reason: "probing (fixture)" }],
   });
 
   beforeAll(() => {
@@ -176,6 +176,47 @@ export const fake = () => make({ wrap: identityWrap });
     expect(byFile["src/probe.ts:2"]).toBe("raw-by-design");
     expect(report.sites.some((s) => s.file === "src/ok.ts")).toBe(false);
     expect(formatCoverage(report)).toContain("src/bad.ts:7");
+  });
+
+  it("P9 AUDIT-10: the allow-list covers named call sites, not a whole file", () => {
+    // A second no-wrap createTools() in the allow-listed file, in another function and beyond the
+    // entry's site count, is UNGUARDED; the original site stays raw-by-design.
+    const original = `import { createTools } from "./tools/index.js";
+export const probeTools = () => createTools();
+`;
+    write(
+      "src/probe.ts",
+      `import { createTools } from "./tools/index.js";
+export const probeTools = () => createTools();
+export const sneaky = () => createTools();
+export function probeToolsAgain() {
+  return createTools();
+}
+`,
+    );
+    try {
+      const report = runCoverage({ backend: "tsc", config: config() });
+      const probe = Object.fromEntries(report.createToolsCalls.filter((c) => c.file === "src/probe.ts").map((c) => [c.line, c.status]));
+      expect(probe).toEqual({ 2: "raw-by-design", 3: "UNGUARDED", 5: "UNGUARDED" });
+      // Same function, more sites than the entry allows: the extra one is UNGUARDED too.
+      write(
+        "src/probe.ts",
+        `import { createTools } from "./tools/index.js";
+export const probeTools = () => [createTools(), createTools()];
+`,
+      );
+      const again = runCoverage({ backend: "tsc", config: config() });
+      expect(again.createToolsCalls.filter((c) => c.file === "src/probe.ts").map((c) => c.status).sort()).toEqual(["UNGUARDED", "raw-by-design"]);
+    } finally {
+      write("src/probe.ts", original);
+    }
+  });
+
+  it("P9 AUDIT-10: every real allow-list entry names its function and exact site count", () => {
+    for (const a of RAW_BY_DESIGN) {
+      expect(a.fn.length).toBeGreaterThan(0);
+      expect(Number.isInteger(a.sites) && a.sites >= 1).toBe(true);
+    }
   });
 
   it("exits 0 once the raw calls are gone", () => {

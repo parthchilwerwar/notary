@@ -195,6 +195,15 @@ describe("credit ledger", () => {
     expect(ledger.snapshot()).toMatchObject({ budget: 5, total: 2, reserved: 3, remaining: 0 });
   });
 
+  it("P9 AUDIT-21 (evidence for won't-fix): an overshoot is bounded — once a charge exceeds the budget, every later call is refused, even a free one", () => {
+    const ledger = new CreditLedger({ budget: 5 });
+    ledger.reserve("crustdata.enrichCompany", 4);
+    ledger.settle("crustdata.enrichCompany", 7); // X-Credits-Used came back above the estimate
+    expect(ledger.snapshot()).toMatchObject({ total: 7, remaining: -2 });
+    expect(() => ledger.reserve("crustdata.identifyCompany", 0)).toThrow(BudgetExceededError);
+    expect(() => ledger.reserve("crustdata.enrichCompany", 1)).toThrow(BudgetExceededError);
+  });
+
   it("reads the budget from CRUSTDATA_CREDIT_BUDGET, defaulting to 200", () => {
     expect(new CreditLedger({ env: {} }).budget).toBe(200);
     expect(new CreditLedger({ env: { CRUSTDATA_CREDIT_BUDGET: "50" } }).budget).toBe(50);

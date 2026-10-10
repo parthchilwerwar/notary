@@ -74,4 +74,4 @@ Phase checklist from `docs/BUILD_PLAN.md`. One phase per session; each ends with
 ## Session 3 — keyless hardening (Oct 10)
 - [x] Step 1 keyless health check run for real (fresh-clone install, typecheck, 481 tests, check:secrets, coverage 0 unguarded; every CLI command with --help and with no keys; `serve` curl incl. tampered bundle → `x-notary-hash-mismatch: 1`). Two failures found: `doctor` exit 1 not BLOCKED/3 (DECISIONS #73), SSE not cross-process (#74) — both fixed with tests (`test/health-fixes.test.ts`).
 - [ ] Step 2 `notary demo --fixture` walkthrough
-- [ ] Step 4 open audit findings
+- [x] Step 4 open audit findings — fixed A-10 (per-call-site coverage allow-list), A-19 (replay compares records, not just metrics), A-22 (prior strength capped at 2); won't fix A-18/A-20/A-21 (reasons in AUDIT.md); open: A-12/13/15/17/23/24 need keys or installs, A-11/14/16 need a user decision. Totals: 12 fixed, 6 open (keys), 3 open (decision), 3 won't fix, 2 verified.

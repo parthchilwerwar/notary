@@ -16,6 +16,7 @@ import { runQueue } from "../src/queue/run.js";
 import { notarize } from "../src/reflect/notarize.js";
 import { BLOCKED_NOTHING_RECORDED, runReplay } from "../src/replay/index.js";
 import { normalizeVolatile } from "../src/replay/llm-cassette.js";
+import { compareRecords } from "../src/replay/records.js";
 import { parseRef, pinRef } from "../src/replay/pins.js";
 import type { Probe, RunBundle } from "../src/schema/index.js";
 import { makeDriftFixture } from "../src/tools/drift-fixture.js";
@@ -380,6 +381,39 @@ describe("notary replay fails loudly", () => {
     expect(res.exitCode).toBe(1);
     expect(res.lines.some((l) => l.startsWith("TAMPERED OR INVALID BUNDLE") && l.includes("content hash mismatch"))).toBe(true);
   }, 60_000);
+
+  it("P9 AUDIT-19: a record that differs while every metric matches fails the command (record-level identity)", async () => {
+    const d = dirsFor();
+    const original = await liveRun("naive", d);
+    const file = join(d.runs, original.runId, `${original.runId}.json`);
+    const raw = JSON.parse(readFileSync(file, "utf8")) as RunBundle;
+    expect(raw.decisions.length).toBeGreaterThan(0);
+    // Re-hashed, so the bundle verifies; no metric changes, only one decision's record.
+    raw.decisions[0]!.missingBeliefs = [...raw.decisions[0]!.missingBeliefs, "tampered.claim"];
+    writeRaw(file, finalizeBundle(raw));
+    vi.stubGlobal("fetch", refuseFetch);
+    const res = await runReplay({ runsDir: d.runs, webBundlesDir: null, cassetteDir: d.cassettes, unguardedCallSites: async () => 0 });
+    const r = res.replays.find((x) => x.runId === original.runId)!;
+    expect(r.rows!.every((x) => x.match)).toBe(true); // metrics alone would have passed
+    expect(r.ok).toBe(false);
+    expect(r.records!.find((x) => x.section === "decisions")!.match).toBe(false);
+    expect(res.exitCode).toBe(1);
+    expect(res.lines.some((l) => l.includes("record(s) differ") && l.includes("decisions"))).toBe(true);
+  }, 60_000);
+
+  it("P9 AUDIT-19: unit — compareRecords reports the first differing record per section", () => {
+    const b = { probes: [], hypotheses: [], anomalies: [], beliefs: { before: [], after: [] }, decisions: [] } as unknown as RunBundle;
+    const same = compareRecords(b, b);
+    expect(same.allMatch).toBe(true);
+    expect(same.rows.map((x) => x.section)).toEqual(["probes", "hypotheses", "anomalies", "beliefs", "decisions"]);
+    const belief = (id: string, alpha: number) => ({ id, status: "candidate", alpha, beta: 1, confidence: 0.9, class: "honored", statement: "s", evidence: [] });
+    const a = { ...b, beliefs: { before: [], after: [belief("b1", 3), belief("b2", 4)] } } as unknown as RunBundle;
+    const c = { ...b, beliefs: { before: [], after: [belief("b1", 3), belief("b2", 5)] } } as unknown as RunBundle;
+    const diff = compareRecords(a, c);
+    expect(diff.allMatch).toBe(false);
+    expect(diff.rows.find((x) => x.section === "beliefs")).toMatchObject({ match: false, original: 2, replay: 2 });
+    expect(diff.rows.find((x) => x.section === "beliefs")!.detail).toContain("b2");
+  });
 
   it("a tampered cassette fails: edited without re-hashing, or re-hashed but no longer the pinned recording", async () => {
     const d = dirsFor();

@@ -8,8 +8,9 @@
  * snapshot in the run's replay record, with the recorded parameters and NO environment: no keys,
  * no .env, no model ids. A cassette miss (tool or model) fails loudly and names the exchange. The
  * replay bundle is written with `replayOf` = the original runId and mode "replay", and every key
- * of the original's `bundle.metrics` is compared exactly with the replay's. Exit 0 only when every
- * bundle replayed and every metric matched; 1 on any miss, tamper, missing record or mismatch;
+ * of the original's `bundle.metrics` is compared exactly with the replay's, and so are the records
+ * themselves (probes, hypotheses, anomalies, beliefs, decisions; see records.ts, AUDIT-19). Exit 0
+ * only when every bundle replayed and every metric and record matched; 1 on any miss, tamper, missing record or mismatch;
  * 3 (BLOCKED) when there is nothing recorded to replay.
  *
  * `--drift <fixture>` instead replays the notarize bundle whose probe cassette the drift fixture was
@@ -34,6 +35,8 @@ import { loadDriftFixture } from "../tools/drift-fixture.js";
 import { pinnedPath, readInputs, restoreStore, sha256File } from "./inputs.js";
 import type { FilePin, ReplayInputs } from "./inputs.js";
 import { ReplayLlm } from "./llm-cassette.js";
+import { compareRecords, formatRecords } from "./records.js";
+import type { RecordRow } from "./records.js";
 import { PinMismatchError, loadPinned, parseRef } from "./pins.js";
 
 export const BLOCKED_NOTHING_RECORDED =
@@ -61,6 +64,8 @@ export interface BundleReplay {
   replayRunId?: string;
   replayBundlePath?: string;
   rows?: MetricRow[];
+  /** Record-level comparison (probes, hypotheses, anomalies, beliefs, decisions); AUDIT-19. */
+  records?: RecordRow[];
   error?: string;
   replay?: RunBundle;
 }
@@ -263,7 +268,8 @@ export async function replayBundle(
     const v = verifyBundle(JSON.parse(readFileSync(bundlePath, "utf8")));
     if (!v.ok) throw new Error(`replay bundle failed verification: ${v.error}`);
     const { rows, allMatch } = compareExact(original.metrics, v.bundle.metrics);
-    const out = { ...base, ok: allMatch, replayRunId, replayBundlePath: bundlePath, rows, replay: v.bundle };
+    const records = compareRecords(original, v.bundle);
+    const out = { ...base, ok: allMatch && records.allMatch, replayRunId, replayBundlePath: bundlePath, rows, records: records.rows, replay: v.bundle };
     if (opts.keepDb && db) return { ...out, db };
     db?.close();
     return out;
@@ -328,8 +334,14 @@ export async function runReplay(opts: ReplayOptions = {}): Promise<ReplayResult>
       continue;
     }
     lines.push(...formatComparison(r.rows ?? []));
+    lines.push(...formatRecords(r.records ?? []));
     const bad = (r.rows ?? []).filter((x) => !x.match).length;
-    lines.push(r.ok ? `  OK: all ${r.rows?.length ?? 0} metrics match exactly` : `  FAIL: ${bad} metric(s) differ`);
+    const badRecords = (r.records ?? []).filter((x) => !x.match);
+    if (r.ok) lines.push(`  OK: all ${r.rows?.length ?? 0} metrics and all ${r.records?.length ?? 0} record sections match exactly`);
+    else {
+      if (bad) lines.push(`  FAIL: ${bad} metric(s) differ`);
+      if (badRecords.length) lines.push(`  FAIL: record(s) differ in ${badRecords.map((x) => x.section).join(", ")}`);
+    }
     if (r.replayBundlePath) lines.push(`  replay bundle: ${r.replayBundlePath}`);
   }
   const allOk = failures.length === 0 && replays.every((r) => r.ok);
