@@ -22,6 +22,7 @@ import { CommandPalette } from "./CommandPalette";
 import { RunPicker } from "./RunPicker";
 import { useTheme } from "../../useTheme";
 import { useData } from "../../state/DataProvider";
+import { LiveToasts } from "../../state/live";
 import { MODE_LABEL, withRun } from "../../state/data-mode";
 import { matchAppRoute, routeById, type AppRoute } from "../../routes";
 import { date } from "../../data";
@@ -228,6 +229,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </SidebarInset>
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
       <Toaster theme={dark ? "dark" : "light"} position="bottom-right" />
+      <LiveToasts />
     </SidebarProvider>
   );
 }

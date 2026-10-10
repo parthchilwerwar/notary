@@ -29,12 +29,14 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
+        // Two vendor chunks only. A separate "charts" chunk (recharts, d3-*) became circular
+        // with "ui" once @xyflow/react (which imports d3-zoom/d3-drag) landed in "ui", and the
+        // production bundle failed at startup with a TDZ ReferenceError. zod imports nothing,
+        // so its chunk cannot form a cycle.
         manualChunks(id) {
           if (id.includes("node_modules")) {
-            if (/recharts|d3-|victory|redux|reselect|immer/.test(id))
-              return "charts";
-            if (id.includes("zod")) return "schema";
-            return "ui";
+            if (/[\\/]zod[\\/]/.test(id)) return "schema";
+            return "vendor";
           }
         },
       },

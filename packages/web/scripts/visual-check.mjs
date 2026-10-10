@@ -26,7 +26,7 @@ const probe = notarize.probes[0];
 const belief = notarize.beliefs.after[0];
 const allPages = [
   { path: `/app${q(guarded.runId)}`, h1: "Overview", detail: ".funnel-card" },
-  { path: `/app/mission-control${q(guarded.runId)}`, h1: "Mission control", detail: ".stage-grid" },
+  { path: `/app/mission-control${q(guarded.runId)}`, h1: "Mission control", detail: ".stage-graph" },
   { path: `/app/runs${q(guarded.runId)}`, h1: "Runs", detail: ".run-tables" },
   { path: `/app/runs/${enc(notarize.runId)}${q(guarded.runId)}`, h1: notarize.runId, detail: ".kpi-grid" },
   { path: `/app/probes${q(notarize.runId)}`, h1: "Probe log", detail: ".probe-timeline .analytics-card" },

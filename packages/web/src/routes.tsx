@@ -1,6 +1,7 @@
 // THE route table for /app. Sidebar, breadcrumbs, document titles, the command palette and the
 // router all read it. To build a page in a later phase, replace its `element` here; to add a
 // page, add a row (and a `group` if it belongs in the sidebar).
+import { MissionControlPage } from "./pages/mission-control/MissionControlPage";
 import type { ComponentType, ReactElement } from "react";
 import { matchPath } from "react-router";
 import { SquaresFourIcon as SquaresFour } from "@phosphor-icons/react/dist/csr/SquaresFour";
@@ -17,7 +18,6 @@ import { ReceiptIcon as Receipt } from "@phosphor-icons/react/dist/csr/Receipt";
 import { ScalesIcon as Scales } from "@phosphor-icons/react/dist/csr/Scales";
 import { ProhibitIcon as Prohibit } from "@phosphor-icons/react/dist/csr/Prohibit";
 import {
-  MissionControlPage,
   OverviewPage,
   ProbeDetailPage,
   ProbesPage,

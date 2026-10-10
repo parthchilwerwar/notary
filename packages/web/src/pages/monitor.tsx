@@ -1,4 +1,5 @@
-// Monitor group: Overview, Mission control, Runs (+ run detail), Probe log (+ probe detail).
+// Monitor group: Overview, Runs (+ run detail), Probe log (+ probe detail).
+// Mission control lives in ./mission-control/.
 import { Link, useNavigate, useParams } from "react-router";
 import { Overview } from "../Overview";
 import { Comparison } from "../Comparison";
@@ -38,86 +39,6 @@ export function OverviewPage() {
         }
       />
       <Overview bundle={bundle} comparison={baseline} all={bundles} />
-    </>
-  );
-}
-
-/** Read → Test → Challenge → Certify → Enforce, counted from the selected bundle's records. */
-export function missionStages(bundle: RunBundle) {
-  const after = bundle.beliefs.after;
-  const by = (s: string) => bundle.decisions.filter((d) => d.status === s).length;
-  return [
-    {
-      name: "Read",
-      value: bundle.claims.length,
-      unit: "claims",
-      note: `${number(bundle.anomalies.length)} anomalies recorded`,
-      to: "/app/beliefs",
-    },
-    {
-      name: "Test",
-      value: bundle.probes.length,
-      unit: "probes",
-      note: `${number(bundle.hypotheses.length)} hypotheses committed`,
-      to: "/app/probes",
-    },
-    {
-      name: "Challenge",
-      value: after.filter((b) => b.adversary).length,
-      unit: "adversary reviews",
-      note: `${number(after.filter((b) => b.adversary?.verdict === "downgrade").length)} downgraded`,
-      to: "/app/beliefs",
-    },
-    {
-      name: "Certify",
-      value: after.filter((b) => b.status === "notarized").length,
-      unit: "notarized beliefs",
-      note: `${number(after.length)} beliefs after the run`,
-      to: "/app/certificates",
-    },
-    {
-      name: "Enforce",
-      value: bundle.decisions.length,
-      unit: "decisions",
-      note: `${number(by("executed"))} executed · ${number(by("held"))} held · ${number(by("escalated"))} escalated · ${number(bundle.guards.filter((g) => g.active).length)} active guards`,
-      to: "/app/queue",
-    },
-  ];
-}
-
-export function MissionControlPage() {
-  const bundle = useBundle();
-  const path = useRunPath();
-  return (
-    <>
-      <PageHeader
-        title="Mission control"
-        description="Where the selected run stands, stage by stage."
-      />
-      <div className="stage-grid">
-        {missionStages(bundle).map((stage, i) => (
-          <KpiCard
-            key={stage.name}
-            label={`${i + 1} · ${stage.name}`}
-            value={number(stage.value)}
-            note={
-              <>
-                {stage.unit}
-                <br />
-                {stage.note}
-              </>
-            }
-          >
-            <Link className="card-link" to={path(stage.to)}>
-              Inspect
-            </Link>
-          </KpiCard>
-        ))}
-      </div>
-      <p className="caption">
-        Counts are array lengths of the selected bundle ({bundle.runId}); stage
-        names follow Read → Test → Challenge → Certify → Enforce.
-      </p>
     </>
   );
 }
