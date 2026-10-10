@@ -4,11 +4,15 @@
  * log makes the reason obvious.
  */
 
-/** A live call needs a credential that isn't in the environment. Thrown before any network I/O. */
+/**
+ * A live call needs a credential that isn't in the environment. Thrown before any network I/O.
+ * `hint` (optional) is appended as "BLOCKED: <VAR> not set — <hint>" (model settings point to
+ * `notary doctor --llm`).
+ */
 export class MissingCredentialError extends Error {
   readonly variable: string;
-  constructor(variable: string) {
-    super(`BLOCKED: ${variable} not set`);
+  constructor(variable: string, hint?: string) {
+    super(`BLOCKED: ${variable} not set${hint ? ` — ${hint}` : ""}`);
     this.name = "MissingCredentialError";
     this.variable = variable;
   }

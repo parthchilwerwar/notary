@@ -25,6 +25,9 @@ importers:
       neatlogs:
         specifier: ^1.1.26
         version: 1.1.26(ai@7.0.93(zod@4.6.5))(zod@4.6.5)
+      openai:
+        specifier: 6.34.0
+        version: 6.34.0(zod@4.6.5)
       zod:
         specifier: ^4.6.5
         version: 4.6.5
@@ -1882,6 +1885,18 @@ packages:
   obug@2.2.1:
     resolution: {integrity: sha512-XrsrhT5sybtKI6wakr2SPOlGZWWYbUXZ7a0jT8/QOeAPau+1X/bSegNe5YR75oJmEZQbKningirmGOEJCIk61Q==}
     engines: {node: '>=12.20.0'}
+
+  openai@6.34.0:
+    resolution: {integrity: sha512-yEr2jdGf4tVFYG6ohmr3pF6VJuveP0EA/sS8TBx+4Eq5NT10alu5zg2dmxMXMgqpihRDQlFGpRt2XwsGj+Fyxw==}
+    hasBin: true
+    peerDependencies:
+      ws: ^8.18.0
+      zod: ^3.25 || ^4.0
+    peerDependenciesMeta:
+      ws:
+        optional: true
+      zod:
+        optional: true
 
   pathe@2.0.3:
     resolution: {integrity: sha512-WUjGcAqP1gQacoQe+OBJsFA7Ld4DyXuUIjZ5cc75cLHvJ7dtNsTugphxIADwspS+AraAUePCKrSVtPLFj/F88w==}
@@ -3936,6 +3951,10 @@ snapshots:
   node-releases@2.0.58: {}
 
   obug@2.2.1: {}
+
+  openai@6.34.0(zod@4.6.5):
+    optionalDependencies:
+      zod: 4.6.5
 
   pathe@2.0.3: {}
 

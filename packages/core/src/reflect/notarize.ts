@@ -9,8 +9,9 @@
  * replay — the cassettes are served (no tool network, no tool keys). `notary replay` also serves the
  *          model answers (src/replay/llm-cassette.ts) and restores the store snapshot; probe ids and
  *          request tags use `identityRunId` (the recorded run's id), never the replay's own runId.
- * BLOCKED (exit 3) before any network call when a tool key (live), the reflector model id or
- * AWS_REGION is missing; also when a credential error surfaces mid-run.
+ * BLOCKED (exit 3) before any network call when a tool key (live), the reflector model id or the
+ * provider's connection settings (LITELLM_BASE_URL + LITELLM_API_KEY, or AWS_REGION; see
+ * src/llm/config.ts) are missing; also when a credential error surfaces mid-run.
  *
  * P5 beliefs phase (src/beliefs/phase.ts) runs after runProbeLoop: ensure a belief per claim,
  * apply every probe (only "confirmed" moves α/β), abstain what ended between thresholds, check
@@ -46,7 +47,7 @@ import { bundleTraceLinks } from "../trace/links.js";
 import { observedClaimIds } from "../checker/check.js";
 import { runRecon } from "../checker/recon.js";
 import type { ReconResult } from "../checker/recon.js";
-import { LlmClient, ModelConfigError } from "../llm/index.js";
+import { LlmClient, ModelConfigError, llmConfigIssues } from "../llm/index.js";
 import type { LlmLike, UsageMeter } from "../llm/index.js";
 import { reviewBelief } from "../adversary/index.js";
 import type { AdversaryBackend, ReviewBeliefArgs, ReviewOutcome } from "../adversary/index.js";
@@ -313,13 +314,8 @@ export function preflight(opts: Pick<NotarizeOptions, "tool" | "replay" | "llm">
       if (err instanceof ModelConfigError) return { result: { exitCode: 1, lines: [err.message], status: "failed" } };
       throw err;
     }
-    try {
-      client.modelFor("reflector");
-    } catch (err) {
-      if (isBlocked(err)) reasons.push(err.message);
-      else throw err;
-    }
-    if (!(env.AWS_REGION ?? "").trim()) reasons.push("AWS_REGION not set");
+    // Provider-aware (src/llm/config.ts): the reflector model id, then LiteLLM URL + key or AWS_REGION.
+    for (const issue of llmConfigIssues(env, "reflector")) reasons.push(issue.message);
     llm = client;
   }
   if (reasons.length) return { result: blocked(reasons) };

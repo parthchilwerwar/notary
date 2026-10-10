@@ -46,6 +46,9 @@ import { NotaryDb } from "../src/store/db.js";
 import { BudgetExceededError, CreditLedger } from "../src/tools/index.js";
 import type { Exchange } from "../src/tools/index.js";
 
+/** Appended to every model-setting BLOCKED message (src/llm/config.ts LLM_FIX_HINT). */
+const LLM_HINT = " — set it in .env (see .env.example) and run `pnpm notary doctor --llm`";
+
 // ---------------------------------------------------------------------------------------------
 // Test doubles and builders
 
@@ -865,6 +868,6 @@ describe("notarize CLI flow", () => {
     const r = await notarize({ tool: "crustdata", env: {}, dbPath: ":memory:" });
     expect(r.exitCode).toBe(3);
     expect(r.status).toBe("blocked");
-    expect(r.lines).toEqual(["BLOCKED: CRUSTDATA_API_KEY not set", "BLOCKED: NOTARY_MODEL_REFLECTOR not set", "BLOCKED: AWS_REGION not set"]);
+    expect(r.lines).toEqual(["BLOCKED: CRUSTDATA_API_KEY not set", `BLOCKED: NOTARY_MODEL_REFLECTOR not set${LLM_HINT}`, `BLOCKED: AWS_REGION not set${LLM_HINT}`]);
   });
 });

@@ -29,6 +29,9 @@ import { NotaryDb } from "../src/store/db.js";
 import { CreditLedger } from "../src/tools/index.js";
 import type { Exchange } from "../src/tools/index.js";
 
+/** Appended to every model-setting BLOCKED message (src/llm/config.ts LLM_FIX_HINT). */
+const LLM_HINT = " — set it in .env (see .env.example) and run `pnpm notary doctor --llm`";
+
 const T0 = "2026-10-10T12:00:00.000Z";
 
 function claimOf(id: string): Claim {
@@ -297,8 +300,8 @@ describe("notarize --priors-from / --compare-priors gating", () => {
     expect(r.lines).toEqual([
       "BLOCKED: no notarize bundle for crustdata — run notarize --tool crustdata first",
       "BLOCKED: DODO_PAYMENTS_API_KEY not set",
-      "BLOCKED: NOTARY_MODEL_REFLECTOR not set",
-      "BLOCKED: AWS_REGION not set",
+      `BLOCKED: NOTARY_MODEL_REFLECTOR not set${LLM_HINT}`,
+      `BLOCKED: AWS_REGION not set${LLM_HINT}`,
     ]);
   });
 

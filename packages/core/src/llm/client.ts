@@ -1,21 +1,35 @@
 /**
- * Bedrock LLM client: one client, three roles (TDD "Integrations: AWS Bedrock").
+ * LLM client: one client, three roles, two providers (TDD "Integrations: AWS Bedrock"; LiteLLM
+ * added in session 8). The provider comes from NOTARY_LLM_PROVIDER (src/llm/config.ts; unset =
+ * bedrock).
  *
- * SDK: @aws-sdk/client-bedrock-runtime, Converse API —
+ * bedrock — @aws-sdk/client-bedrock-runtime, Converse API:
  *   new BedrockRuntimeClient({ region }).send(new ConverseCommand({
  *     modelId, system: [{ text }], messages: [{ role, content: [{ text }] }],
  *     inferenceConfig: { maxTokens, temperature: 0 },
  *   }))
  *   → { output: { message: { content: [{ text }] } }, usage: { inputTokens, outputTokens }, stopReason }
+ *   Credentials come from the SDK's default provider chain (env keys, AWS_PROFILE / SSO, …). This
+ *   module never reads, passes or logs a credential. If the chain finds none, the SDK's
+ *   CredentialsProviderError is rethrown as the BLOCKED error.
  *
- * Credentials come from the SDK's default provider chain (env keys, AWS_PROFILE / SSO, …). This
- * module never reads, passes or logs a credential. If the chain finds none, the SDK's
- * CredentialsProviderError is rethrown as the BLOCKED error.
+ * litellm — the OpenAI-compatible `/v1/chat/completions` of a LiteLLM proxy (src/llm/litellm.ts):
+ *   { model, messages: [{ role: "system", content }, …], max_tokens, temperature: 0 }
+ *   → choices[0].message.content, usage.prompt_tokens / completion_tokens (→ input / output),
+ *   finish_reason mapped onto the Bedrock stop reasons ("length" → "max_tokens", "stop" → "end_turn").
+ *   LITELLM_BASE_URL / LITELLM_API_KEY missing → the BLOCKED error before any network I/O.
+ *
+ * Both providers behave identically for callers: same request (system + messages, temperature 0,
+ * maxTokens default 2048), same CompleteResult, same secret scrubbing of every prompt (and of error
+ * messages), same per-role UsageMeter accounting and pricing, same BLOCKED errors; JSON validation
+ * stays in the callers. A non-credential transport error is rethrown (scrubbed) for the caller's
+ * fail-safe path.
  *
  * Every call opens a neatlogs span "notary.llm" (CHAIN) with role, model id, token counts and USD;
- * prompts are never put in its attributes. Under it, the SDK's wrapBedrock emits the LLM span,
- * which does carry the (already secret-scrubbed) messages and completion. Usage accumulates per role in a UsageMeter, whose snapshot is
- * the bundle's `usageByRole`.
+ * prompts are never put in its attributes. Under it, the SDK's provider wrapper (wrapBedrock /
+ * wrapOpenAI) emits the LLM span, which does carry the (already secret-scrubbed) messages and
+ * completion. Usage accumulates per role in a UsageMeter, whose snapshot is the bundle's
+ * `usageByRole`.
  */
 import type { ConverseCommandInput, ConverseCommandOutput } from "@aws-sdk/client-bedrock-runtime";
 import type { Role, UsageByRole } from "../schema/index.js";
@@ -24,6 +38,10 @@ import { traceBedrockClient, withSpan } from "../trace/index.js";
 import { costUsd, resolvePrice } from "./pricing.js";
 import { ROLES, requireModel, resolveModels } from "./roles.js";
 import type { ModelRoster } from "./roles.js";
+import { AWS_REGION_ENV, LITELLM_API_KEY_ENV, LITELLM_BASE_URL_ENV, llmMissing, llmProvider, normalizeLiteLlmBaseUrl } from "./config.js";
+import type { LlmProvider } from "./config.js";
+import { liteLlmTransport, stopReasonFromFinish } from "./litellm.js";
+import type { ChatRequest, ChatTransport } from "./litellm.js";
 
 type Env = Record<string, string | undefined>;
 
@@ -43,7 +61,7 @@ export type CompleteResult = {
   outputTokens: number;
   usd: number;
   modelId: string;
-  /** Bedrock stop reason, e.g. "end_turn", "max_tokens"; "unknown" if absent. */
+  /** Stop reason in Bedrock's vocabulary, e.g. "end_turn", "max_tokens" (LiteLLM finish_reason is mapped); "unknown" if absent. */
   stopReason: string;
 };
 
@@ -127,20 +145,52 @@ export type LlmClientOptions = {
   env?: Env;
   /** Override the Bedrock transport (tests). When omitted, AWS_REGION must be set. */
   transport?: ConverseTransport;
+  /** Override the LiteLLM transport (tests). When omitted, LITELLM_BASE_URL and LITELLM_API_KEY must be set. */
+  chatTransport?: ChatTransport;
   meter?: UsageMeter;
 };
 
+/** One provider reply, normalized. */
+type ProviderReply = { text: string; inputTokens: number; outputTokens: number; stopReason: string };
+type ProviderRequest = { system?: string; messages: LlmMessage[]; maxTokens: number };
+type ProviderCall = (modelId: string, req: ProviderRequest) => Promise<ProviderReply>;
+
+/** Scrub secret env values out of an error's message (the error object is kept, so its class survives). */
+function scrubError(err: unknown, clean: (s: string) => string): unknown {
+  if (err instanceof Error) {
+    const m = clean(err.message);
+    if (m !== err.message) {
+      try {
+        err.message = m;
+      } catch {
+        // read-only message: leave it
+      }
+    }
+  }
+  return err;
+}
+
 export class LlmClient implements LlmLike {
   readonly meter: UsageMeter;
+  readonly provider: LlmProvider;
   private readonly env: Env;
   private readonly roster: ModelRoster;
   private transport: ConverseTransport | undefined;
+  private chatTransport: ChatTransport | undefined;
 
   constructor(opts: LlmClientOptions = {}) {
     this.env = opts.env ?? process.env;
+    this.provider = llmProvider(this.env); // throws ModelConfigError on an unknown provider
     this.roster = resolveModels(this.env); // throws ModelConfigError on a separation-of-duties breach
     this.meter = opts.meter ?? new UsageMeter();
+    if (this.provider === "litellm" && opts.transport && !opts.chatTransport) {
+      throw new Error("LlmClient: a Bedrock transport was injected but NOTARY_LLM_PROVIDER=litellm (inject chatTransport)");
+    }
+    if (this.provider === "bedrock" && opts.chatTransport && !opts.transport) {
+      throw new Error("LlmClient: a LiteLLM chatTransport was injected but the provider is bedrock (set NOTARY_LLM_PROVIDER=litellm)");
+    }
     this.transport = opts.transport;
+    this.chatTransport = opts.chatTransport;
   }
 
   /** The configured model id for a role, or the BLOCKED error. */
@@ -150,46 +200,103 @@ export class LlmClient implements LlmLike {
 
   private getTransport(): ConverseTransport {
     if (this.transport) return this.transport;
-    const region = (this.env.AWS_REGION ?? "").trim();
-    if (!region) throw new MissingCredentialError("AWS_REGION");
+    const region = (this.env[AWS_REGION_ENV] ?? "").trim();
+    if (!region) throw llmMissing(AWS_REGION_ENV);
     this.transport = bedrockTransport(region);
     return this.transport;
   }
 
+  private getChatTransport(): ChatTransport {
+    if (this.chatTransport) return this.chatTransport;
+    const rawBase = (this.env[LITELLM_BASE_URL_ENV] ?? "").trim();
+    if (!rawBase) throw llmMissing(LITELLM_BASE_URL_ENV);
+    const baseUrl = normalizeLiteLlmBaseUrl(rawBase);
+    if (!baseUrl) {
+      throw new MissingCredentialError(`${LITELLM_BASE_URL_ENV} (an http(s) URL)`, "fix it in .env (see .env.example) and run `pnpm notary doctor --llm`");
+    }
+    const apiKey = (this.env[LITELLM_API_KEY_ENV] ?? "").trim();
+    if (!apiKey) throw llmMissing(LITELLM_API_KEY_ENV);
+    this.chatTransport = liteLlmTransport({ baseUrl, apiKey });
+    return this.chatTransport;
+  }
+
+  /** The provider call for this client; resolving it throws BLOCKED before any network I/O. */
+  private providerCall(): ProviderCall {
+    if (this.provider === "litellm") {
+      const transport = this.getChatTransport();
+      return async (modelId, req) => {
+        const body: ChatRequest = {
+          model: modelId,
+          messages: [
+            ...(req.system ? [{ role: "system" as const, content: req.system }] : []),
+            ...req.messages.map((m) => ({ role: m.role, content: m.content })),
+          ],
+          max_tokens: req.maxTokens,
+          temperature: 0,
+        };
+        const { completion } = await transport(body);
+        const choice = completion.choices?.[0];
+        const content = choice?.message?.content;
+        return {
+          text: typeof content === "string" ? content : "",
+          inputTokens: completion.usage?.prompt_tokens ?? 0,
+          outputTokens: completion.usage?.completion_tokens ?? 0,
+          stopReason: stopReasonFromFinish(choice?.finish_reason),
+        };
+      };
+    }
+    const transport = this.getTransport();
+    return async (modelId, req) => {
+      const input: ConverseCommandInput = {
+        modelId,
+        messages: req.messages.map((m) => ({ role: m.role, content: [{ text: m.content }] })),
+        inferenceConfig: { maxTokens: req.maxTokens, temperature: 0 },
+        ...(req.system ? { system: [{ text: req.system }] } : {}),
+      };
+      let out: ConverseCommandOutput;
+      try {
+        out = await transport(input);
+      } catch (err) {
+        if (isAwsCredentialError(err)) throw new MissingCredentialError(AWS_CREDENTIALS_LABEL);
+        throw err;
+      }
+      const blocks = out.output && "message" in out.output ? (out.output.message?.content ?? []) : [];
+      return {
+        text: blocks.map((b) => ("text" in b && typeof b.text === "string" ? b.text : "")).join(""),
+        inputTokens: out.usage?.inputTokens ?? 0,
+        outputTokens: out.usage?.outputTokens ?? 0,
+        stopReason: String(out.stopReason ?? "unknown"),
+      };
+    };
+  }
+
   async complete(req: CompleteRequest): Promise<CompleteResult> {
     const modelId = this.modelFor(req.role);
-    const transport = this.getTransport();
+    const call = this.providerCall();
     // P9 (AUDIT-08): backstop — no secret env value is ever sent to a model, whatever built the prompt.
     const clean = scrubber(this.env);
-    const input: ConverseCommandInput = {
-      modelId,
-      messages: req.messages.map((m) => ({ role: m.role, content: [{ text: clean(m.content) }] })),
-      inferenceConfig: { maxTokens: req.maxTokens ?? 2048, temperature: 0 },
-      ...(req.system ? { system: [{ text: clean(req.system) }] } : {}),
+    const scrubbed: ProviderRequest = {
+      messages: req.messages.map((m) => ({ role: m.role, content: clean(m.content) })),
+      maxTokens: req.maxTokens ?? 2048,
+      ...(req.system ? { system: clean(req.system) } : {}),
     };
 
     let setAttr: ((k: string, v: string | number | boolean) => void) | undefined;
     return withSpan(
       "notary.llm",
-      { "notary.role": req.role, "llm.model_id": modelId },
+      { "notary.role": req.role, "llm.model_id": modelId, "llm.provider": this.provider },
       async () => {
-        let out: ConverseCommandOutput;
+        let out: ProviderReply;
         try {
-          out = await transport(input);
+          out = await call(modelId, scrubbed);
         } catch (err) {
-          if (isAwsCredentialError(err)) throw new MissingCredentialError(AWS_CREDENTIALS_LABEL);
-          throw err;
+          throw scrubError(err, clean);
         }
-        const inputTokens = out.usage?.inputTokens ?? 0;
-        const outputTokens = out.usage?.outputTokens ?? 0;
+        const { inputTokens, outputTokens, text, stopReason } = out;
         const priced = resolvePrice(req.role, modelId, this.env);
         if (priced.warning) this.meter.warn(priced.warning);
         const usd = costUsd(priced.price, inputTokens, outputTokens);
         this.meter.add(req.role, { inputTokens, outputTokens, usd });
-
-        const blocks = out.output && "message" in out.output ? (out.output.message?.content ?? []) : [];
-        const text = blocks.map((b) => ("text" in b && typeof b.text === "string" ? b.text : "")).join("");
-        const stopReason = String(out.stopReason ?? "unknown");
 
         if (setAttr) {
           setAttr("llm.input_tokens", inputTokens);
@@ -200,7 +307,7 @@ export class LlmClient implements LlmLike {
         }
         return { text, inputTokens, outputTokens, usd, modelId, stopReason };
       },
-      // CHAIN, not LLM: the wrapped Bedrock client emits the LLM child span (no double capture).
+      // CHAIN, not LLM: the wrapped provider client emits the LLM child span (no double capture).
       { kind: "CHAIN", onSpan: (_ids, set) => (setAttr = set) },
     );
   }

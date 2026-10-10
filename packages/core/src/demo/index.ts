@@ -38,6 +38,7 @@ import { fileURLToPath } from "node:url";
 import { parseEnv } from "node:util";
 import { finalizeBundle, verifyBundle, writeBundle } from "../bundle/index.js";
 import { recordRunTimeline } from "../timeline/write.js";
+import { MODEL_ENV, llmConfigIssues } from "../llm/index.js";
 import { RUNS_DIR } from "../checker/notarize.js";
 import { collectBundles, runExport } from "../export/index.js";
 import { DEFAULT_MANIFEST_PATH } from "../queue/manifest.js";
@@ -227,10 +228,10 @@ function liveStops(env: NodeJS.ProcessEnv): LiveStops {
   const own: Record<number, string[]> = {
     1: missing(["CRUSTDATA_API_KEY", "DODO_PAYMENTS_API_KEY"]),
     2: [],
-    3: [...missing(["NOTARY_MODEL_REFLECTOR", "AWS_REGION"])],
+    3: llmConfigIssues(env, "reflector").map((i) => `${i.variable} ${i.problem}`),
     4: manifest.map((m) => `refund probes: ${m}`),
     5: [],
-    6: missing(["NOTARY_MODEL_ADVERSARY"]),
+    6: llmConfigIssues(env, "adversary").filter((i) => i.variable === MODEL_ENV.adversary).map((i) => `${i.variable} ${i.problem}`),
     7: [],
     8: [...missing(["CRUSTDATA_API_KEY", "DODO_PAYMENTS_API_KEY"]), ...manifest],
     9: [...missing(["CRUSTDATA_API_KEY", "DODO_PAYMENTS_API_KEY"]), ...manifest],
@@ -249,7 +250,7 @@ function liveStops(env: NodeJS.ProcessEnv): LiveStops {
       if (mine.length) return `live: BLOCKED at Stage ${stage} — ${mine.join("; ")}`;
       const blockedAt = (upstream[stage] ?? []).find((s) => (own[s] ?? []).length > 0);
       if (blockedAt !== undefined) return `live: nothing of its own to configure; blocked upstream at Stage ${blockedAt}`;
-      return `live: requirements present (AWS credentials are not checked offline)`;
+      return `live: requirements present (model keys and AWS credentials are not checked offline; \`pnpm notary doctor --llm\` checks them)`;
     },
   };
 }
