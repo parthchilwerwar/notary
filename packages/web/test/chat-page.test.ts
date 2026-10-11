@@ -16,6 +16,8 @@ import {
   afterScroll,
   applyChatEvent,
   buildSuggestions,
+  buildSuggestionCards,
+  domainOf,
   citationHref,
   citationTarget,
   classifyStepData,
@@ -83,7 +85,7 @@ describe("event reducer", () => {
     expect(view.steps.s2!.fix).toContain("CRUSTDATA_API_KEY");
     expect(view.text).toBe("The certificate is **active** [1]. A flagged one [2] and a missing one [3].");
     expect(view.citations).toEqual([CITE, BAD]);
-    expect(workSummary(view, "live")).toBe("Worked through 2 steps · 4.2s · $0.0123");
+    expect(workSummary(view, "live")).toBe("Checked 2 sources · 4.2s · $0.0123");
   });
 
   it("is working while steps stream, answering once text arrives, and ignores events after done", () => {
@@ -106,7 +108,7 @@ describe("event reducer", () => {
     expect(stopped.status).toBe("stopped");
     expect(stopped.steps.s1!.state).toBe("aborted");
     expect(reduceChatEvents([STEP], { finished: true }).status).toBe("stopped");
-    expect(workSummary(stopped, "live")).toBe("Worked through 1 step · 0ms · stopped");
+    expect(workSummary(stopped, "live")).toBe("Checked 1 source · 0ms · stopped");
   });
 
   it("words steps, durations and costs from data only", () => {
@@ -120,7 +122,7 @@ describe("event reducer", () => {
     expect(noteTag("live")).toBe("Model said");
     expect(noteTag("replay")).toBe("Replay engine");
     const replayDone = reduceChatEvents([STEP, FINISH, { type: "citations", items: [] }, { type: "done", costUsd: null, tokens: { input: 0, output: 0 }, steps: 1, durationMs: 300, mode: "replay" }]);
-    expect(workSummary(replayDone, "replay")).toBe("Worked through 1 step · 300ms · no model call");
+    expect(workSummary(replayDone, "replay")).toBe("Checked 1 source · 300ms · no model call");
   });
 });
 
@@ -185,6 +187,21 @@ describe("suggested prompts", () => {
     expect(s.slice(2)).toEqual([...FIXED_PROMPTS]);
     // No data → no invented prompt.
     expect(buildSuggestions(undefined, [])).toEqual([...FIXED_PROMPTS]);
+  });
+
+  it("cards describe each prompt from its own record (reason, verdict), never invented", () => {
+    const certs = read("certificates/fixture/default/dodo.json").certificates;
+    const held = guarded.decisions.find((d) => d.status === "held")!;
+    const active = certs.find((c: { status: string }) => c.status === "active");
+    const cards = buildSuggestionCards(guarded, certs);
+    expect(cards.map((c) => c.prompt)).toEqual(buildSuggestions(guarded, certs));
+    expect(cards[0]!.detail).toBe(held.evidencePack?.reason ?? cards[0]!.detail);
+    expect(cards[0]!.detail.length).toBeGreaterThan(0);
+    expect(cards[1]!.detail).toBe(`Certificate active, ${active.verdictKind.replaceAll("_", " ")}`);
+    expect(cards.slice(2).every((c) => c.detail.length > 0)).toBe(true);
+    expect(buildSuggestionCards(undefined, []).map((c) => c.prompt)).toEqual([...FIXED_PROMPTS]);
+    expect(domainOf("https://www.docs.dodopayments.com/api/refunds")).toBe("docs.dodopayments.com");
+    expect(domainOf("not a url")).toBe("");
   });
 });
 
@@ -253,13 +270,13 @@ describe("MessageView", () => {
     expect(html).toContain('aria-label="Unavailable"');
     expect(html).toContain("Crustdata not connected — set CRUSTDATA_API_KEY");
     expect(html).toContain("Model said");
-    expect(html).not.toMatch(/<ol[^>]*class="chat-steps"[^>]*hidden/);
+    expect(html).not.toMatch(/<ol[^>]*class="[^"]*chat-steps[^"]*"[^>]*hidden/);
   });
 
   it("finished: collapsed summary, citation chips, flagged citations, footer with cost/tokens and trace id as text", () => {
     const html = render(reduceChatEvents(turn));
-    expect(html).toContain("Worked through 2 steps · 4.2s · $0.0123");
-    expect(html).toMatch(/<ol[^>]*class="chat-steps"[^>]*hidden/);
+    expect(html).toContain("Checked 2 sources · 4.2s · $0.0123");
+    expect(html).toMatch(/<ol[^>]*class="[^"]*chat-steps[^"]*"[^>]*hidden/);
     expect(html).toContain('aria-label="Citation 1: dodo.refund.amount-minor-units. Show the step that produced it"');
     expect(html).toContain("citation 2, flagged");
     expect(html).toContain("citation 3, missing");

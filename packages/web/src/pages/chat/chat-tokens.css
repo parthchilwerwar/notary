@@ -1,0 +1,40 @@
+/* Chat-only aliases. Every color resolves to a D1 token in src/design/tokens.css (light, and navy
+   dark under [data-theme="dark"]); nothing here is a literal color, and no font family either:
+   the display serif and body sans are D1's --font-display / --font-sans. */
+
+.chat-page,
+.chat-msg,
+.chat-recent-menu {
+  --chat-font-display: var(--font-display);
+  --chat-font-body: var(--font-sans);
+  --chat-column: 760px;
+  --chat-rail: 20px; /* the step-mark column of the work timeline */
+  --chat-rail-gap: 10px;
+  --chat-indent: calc(var(--chat-rail) + var(--chat-rail-gap));
+
+  /* The ground the thread sits on: the dashboard shell paints the page --surface-subtle. */
+  --chat-ground: var(--surface-subtle);
+  --chat-bubble: var(--accent-soft);
+  --chat-bubble-text: var(--text);
+  --chat-cite-bg: var(--accent-soft);
+  --chat-cite-text: var(--accent-text);
+  --chat-cite-hover-bg: var(--accent);
+  --chat-cite-hover-text: var(--on-accent);
+  --chat-link: var(--accent-text);
+  --chat-link-hover: var(--accent-hover);
+  --chat-highlight: var(--accent-soft);
+  --chat-rail-line: var(--hairline-color);
+  --chat-panel: var(--surface-subtle);
+  --chat-raised: var(--card);
+  --chat-code-inline: var(--muted-surface);
+  --chat-composer-line: var(--hairline-color);
+  --chat-composer-focus: var(--accent);
+  --chat-composer-halo: var(--accent-soft);
+  --chat-send: var(--accent);
+  --chat-send-hover: var(--accent-hover);
+  --chat-send-text: var(--on-accent);
+  --chat-send-off: var(--muted-surface);
+  --chat-send-off-text: var(--text-faint); /* a disabled glyph: non-text */
+  --chat-stop: var(--text);
+  --chat-stop-text: var(--page);
+}

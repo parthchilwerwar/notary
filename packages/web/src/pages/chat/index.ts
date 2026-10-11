@@ -3,4 +3,4 @@
 export { ChatPage } from "./ChatPage";
 export { MessageView, UserMessage, StepMark, type MessageViewProps } from "./MessageView";
 export { Markdown } from "./MarkdownView";
-export { reduceChatEvents, applyChatEvent, stopTurn, workSummary, buildSuggestions, type TurnView, type ChatMode } from "./model";
+export { reduceChatEvents, applyChatEvent, stopTurn, workSummary, buildSuggestions, buildSuggestionCards, type TurnView, type ChatMode } from "./model";

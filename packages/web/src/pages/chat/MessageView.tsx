@@ -1,10 +1,12 @@
-// Presentational pieces of Notary Chat: a user message, and an assistant message (work section
-// with live steps and notes → streamed markdown answer → numbered citation chips → sources and
-// footer). No data loading here: pass a TurnView built by `reduceChatEvents` (./model.ts), so the
-// landing can show a recorded excerpt with the same components.
+// Presentational pieces of Notary Chat: a user message, and an assistant message (agent badge →
+// work timeline with live steps and notes → streamed markdown answer with numbered citation chips
+// → sources and footer). No data loading here: pass a TurnView built by `reduceChatEvents`
+// (./model.ts), so other pages can show a recorded turn with the same components.
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import type { ChatCitation } from "../../../../core/src/schema";
+import { AgentBadge, Card, CertificateCard, TableFrame, Timeline, TimelineItem, TimelineMarker, slideIn, type TimelineMark, type TimelineTone } from "../../ui";
+import { CaretRight, CheckIcon, CopyIcon, External } from "./icons";
 import { Markdown } from "./MarkdownView";
 import {
   cellText,
@@ -12,6 +14,7 @@ import {
   citationTarget,
   classifyStepData,
   costText,
+  domainOf,
   durationText,
   humanKey,
   isTurnFinished,
@@ -29,33 +32,22 @@ import {
   type StepView,
   type TurnView,
 } from "./model";
+import "./chat-tokens.css";
 import "./chat.css";
 
 /* ------------------------------------------------------------------------------- marks */
 
+const MARK: Record<StepState, { mark: TimelineMark; tone: TimelineTone }> = {
+  running: { mark: "spinner", tone: "active" },
+  ok: { mark: "check", tone: "active" },
+  error: { mark: "x", tone: "unsafe" },
+  unavailable: { mark: "pending", tone: "neutral" },
+  aborted: { mark: "x", tone: "neutral" },
+};
+
+/** One timeline node: spinner while running, blue check when done, red x on failure, neutral otherwise. */
 export function StepMark({ state }: { state: StepState }) {
-  return (
-    <span className="chat-mark" data-state={state} role="img" aria-label={statusLabel(state)}>
-      {state === "running" ? (
-        <span className="chat-spinner" />
-      ) : (
-        <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
-          {state === "ok" ? (
-            <path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-          ) : state === "error" ? (
-            <path d="M4.5 4.5l7 7m0-7l-7 7" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-          ) : state === "unavailable" ? (
-            <>
-              <circle cx="8" cy="8" r="5.25" fill="none" stroke="currentColor" strokeWidth="1.5" />
-              <path d="M5.5 8h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            </>
-          ) : (
-            <rect x="5" y="5" width="6" height="6" rx="1" fill="currentColor" />
-          )}
-        </svg>
-      )}
-    </span>
-  );
+  return <TimelineMarker {...MARK[state]} label={statusLabel(state)} />;
 }
 
 /* --------------------------------------------------------------------------- step data */
@@ -65,8 +57,9 @@ function JsonToggle({ data }: { data: unknown }) {
   const id = useId();
   return (
     <div className="chat-json">
-      <button type="button" className="chat-link-button" aria-expanded={open} aria-controls={id} onClick={() => setOpen((v) => !v)}>
-        {open ? "Hide JSON" : "Show JSON"}
+      <button type="button" className="chat-text-button" aria-expanded={open} aria-controls={id} onClick={() => setOpen((v) => !v)}>
+        <CaretRight className="chat-caret" />
+        Raw JSON
       </button>
       {open && (
         <pre id={id} tabIndex={0} aria-label="Step result as JSON">
@@ -77,6 +70,19 @@ function JsonToggle({ data }: { data: unknown }) {
   );
 }
 
+function KeyValues({ entries }: { entries: [string, ReactNode][] }) {
+  return (
+    <dl className="chat-kv">
+      {entries.map(([k, v]) => (
+        <div key={k}>
+          <dt>{k}</dt>
+          <dd>{v}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 function StepDataView({ data, runId }: { data: StepData; runId?: string }) {
   switch (data.kind) {
     case "none":
@@ -84,115 +90,98 @@ function StepDataView({ data, runId }: { data: StepData; runId?: string }) {
     case "certificate": {
       const c = data.card;
       return (
-        <div className="chat-card">
-          <p className="chat-card-head">
-            <span className="chat-pill" data-status={c.status}>
-              {c.status}
+        <CertificateCard
+          className="chat-cert"
+          tool={c.tool ?? c.claimId.split(".")[0] ?? "API"}
+          claimId={c.claimId}
+          revoked={c.status === "revoked"}
+          verdict={c.verdict}
+          scope={c.scope}
+          evidence={c.evidenceCount !== undefined ? `${c.evidenceCount} probe${c.evidenceCount === 1 ? "" : "s"}` : undefined}
+          href={citationHref({ type: "certificate", id: c.id }, runId)!.href}
+          footer={
+            <span className="chat-cert-id">
+              Certificate <code translate="no">{c.id}</code>
             </span>
-            <code translate="no">{c.claimId}</code>
-          </p>
-          <dl className="chat-kv">
-            {c.verdict && (
-              <div>
-                <dt>Verdict</dt>
-                <dd>{c.verdict}</dd>
-              </div>
-            )}
-            {c.scope && (
-              <div>
-                <dt>Scope</dt>
-                <dd>{c.scope}</dd>
-              </div>
-            )}
-            {c.evidenceCount !== undefined && (
-              <div>
-                <dt>Evidence</dt>
-                <dd className="tabular">
-                  {c.evidenceCount} probe{c.evidenceCount === 1 ? "" : "s"}
-                </dd>
-              </div>
-            )}
-          </dl>
-          <p className="chat-card-link">
-            <Link to={citationHref({ type: "certificate", id: c.id }, runId)!.href}>Open certificate {c.id}</Link>
-          </p>
-        </div>
+          }
+        />
       );
     }
     case "run_events":
       return (
-        <ol className="chat-events">
-          {data.rows.map((r) => (
-            <li key={`${r.runId}#${r.seq}`}>
-              <Link to={citationHref({ type: "run_event", id: `${r.runId}#${r.seq}` })!.href}>
-                <span className="chat-event-seq tabular">#{r.seq}</span>
-                <span className="chat-event-summary">{r.summary}</span>
-              </Link>
-            </li>
-          ))}
-          {data.total !== undefined && data.total > data.rows.length && (
-            <li className="chat-muted">
-              {data.total - data.rows.length} more in{" "}
-              {data.runId ? <Link to={citationHref({ type: "run", id: data.runId })!.href}>the run</Link> : "the run"}
-            </li>
-          )}
-        </ol>
+        <Card padding="none" className="chat-card-flush">
+          <ol className="chat-events">
+            {data.rows.map((r) => (
+              <li key={`${r.runId}#${r.seq}`}>
+                <Link to={citationHref({ type: "run_event", id: `${r.runId}#${r.seq}` })!.href}>
+                  <span className="chat-event-seq tabular">#{r.seq}</span>
+                  <span className="chat-event-summary">{r.summary}</span>
+                  <CaretRight className="chat-event-go" />
+                </Link>
+              </li>
+            ))}
+            {data.total !== undefined && data.total > data.rows.length && (
+              <li className="chat-events-more">
+                {data.total - data.rows.length} more in{" "}
+                {data.runId ? <Link to={citationHref({ type: "run", id: data.runId })!.href}>the run</Link> : "the run"}
+              </li>
+            )}
+          </ol>
+        </Card>
       );
-    case "doc":
+    case "doc": {
+      const domain = domainOf(data.url);
       return (
-        <div className="chat-card">
-          <p className="chat-card-head">
-            <a href={data.url} target="_blank" rel="noreferrer noopener">
-              {data.title ?? data.url}
-              <span className="sr-only"> (opens in a new tab)</span>
-            </a>
-          </p>
-          <p className="chat-muted chat-break">{data.url}</p>
+        <Card padding="sm" className="chat-doc">
+          <a className="chat-doc-title" href={data.url} target="_blank" rel="noreferrer noopener">
+            <span>{data.title ?? data.url}</span>
+            <External />
+            <span className="sr-only"> (opens in a new tab)</span>
+          </a>
+          {domain && <p className="chat-doc-domain">{domain}</p>}
           {data.passage && <blockquote className="chat-passage">{data.passage}</blockquote>}
-        </div>
+        </Card>
       );
+    }
     case "table":
       return (
-        <div className="chat-table-wrap" tabIndex={0} role="region" aria-label="Step result table">
-          <table className="chat-table">
-            <thead>
-              <tr>
-                {data.columns.map((c) => (
-                  <th key={c} scope="col">
-                    {humanKey(c)}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {data.rows.map((r, i) => (
-                <tr key={i}>
+        <div className="chat-table-block">
+          <TableFrame className="chat-table-frame">
+            <table className="chat-table" tabIndex={0} aria-label="Step result table">
+              <thead>
+                <tr>
                   {data.columns.map((c) => (
-                    <td key={c}>{cellText(r[c])}</td>
+                    <th key={c} scope="col">
+                      {humanKey(c)}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {data.rows.map((r, i) => (
+                  <tr key={i}>
+                    {data.columns.map((c) => (
+                      <td key={c}>{cellText(r[c])}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableFrame>
           {(data.note || (data.total !== undefined && data.total > data.rows.length)) && (
-            <p className="chat-muted">
+            <p className="chat-table-note">
               {[data.note, data.total !== undefined && data.total > data.rows.length ? `${data.rows.length} of ${data.total} shown` : undefined]
                 .filter(Boolean)
-                .join(" · ")}
+                .join(". ")}
             </p>
           )}
         </div>
       );
     case "kv":
       return (
-        <dl className="chat-kv">
-          {data.entries.map(([k, v]) => (
-            <div key={k}>
-              <dt>{humanKey(k)}</dt>
-              <dd className="chat-break">{cellText(v)}</dd>
-            </div>
-          ))}
-        </dl>
+        <Card padding="sm" className="chat-kv-card">
+          <KeyValues entries={data.entries.map(([k, v]) => [humanKey(k), cellText(v)])} />
+        </Card>
       );
   }
 }
@@ -222,20 +211,41 @@ function StepRow({
   ].filter(Boolean);
   const data = classifyStepData(step.data);
   const expandable = step.state !== "running";
+  const ref = useRef<HTMLLIElement>(null);
+  // Rows slide in as they stream (kit motion; nothing under reduced motion). Once per row: a
+  // second gsap.from (React StrictMode re-runs effects) would start from the first one's 0 opacity.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || el.dataset.slid) return;
+    el.dataset.slid = "1";
+    slideIn(el);
+  }, []);
   return (
-    <li className="chat-step" id={domId} data-state={step.state} data-highlight={highlighted || undefined} tabIndex={-1}>
-      <button
-        type="button"
-        className="chat-step-head"
-        aria-expanded={expandable ? expanded : undefined}
-        aria-controls={expandable ? bodyId : undefined}
-        disabled={!expandable}
-        onClick={onToggle}
-      >
-        <StepMark state={step.state} />
-        <span className="chat-step-title">{stepTitle(step)}</span>
-        {meta.length > 0 && <span className="chat-step-meta tabular">{meta.join(" · ")}</span>}
-      </button>
+    <TimelineItem
+      ref={ref}
+      {...MARK[step.state]}
+      markLabel={statusLabel(step.state)}
+      className="chat-step"
+      id={domId}
+      data-state={step.state}
+      data-open={(expanded && expandable) || undefined}
+      data-highlight={highlighted || undefined}
+      tabIndex={-1}
+      title={
+        <button
+          type="button"
+          className="chat-step-head"
+          aria-expanded={expandable ? expanded : undefined}
+          aria-controls={expandable ? bodyId : undefined}
+          disabled={!expandable}
+          onClick={onToggle}
+        >
+          <span className="chat-step-title">{stepTitle(step)}</span>
+          {expandable && <CaretRight className="chat-caret" />}
+        </button>
+      }
+      meta={meta.length > 0 ? <span className="chat-step-meta">{meta.join(" · ")}</span> : undefined}
+    >
       {step.fix && (step.state === "unavailable" || step.state === "error") && (
         <p className="chat-step-fix" data-state={step.state}>
           <CodeText text={step.fix} />
@@ -243,17 +253,21 @@ function StepRow({
       )}
       {expanded && expandable && (
         <div id={bodyId} className="chat-step-body">
-          {step.output && <p className="chat-step-output">{step.output}</p>}
-          {step.input && (
-            <p className="chat-muted chat-break">
-              Input <code translate="no">{step.input}</code>
+          {(step.output || step.input) && (
+            <p className="chat-step-output">
+              {step.output}
+              {step.input && (
+                <span className="chat-step-input">
+                  Input <code translate="no">{step.input}</code>
+                </span>
+              )}
             </p>
           )}
           <StepDataView data={data} runId={runId} />
           {step.data !== undefined && <JsonToggle data={step.data} />}
         </div>
       )}
-    </li>
+    </TimelineItem>
   );
 }
 
@@ -294,7 +308,7 @@ export type MessageViewProps = {
   runId?: string;
   /** Recorded trace id → URL links, when any exist (never built). */
   traceLinks?: Record<string, string>;
-  /** Hide the footer actions (landing excerpt). */
+  /** Hide the footer actions (an embedded excerpt). */
   compact?: boolean;
 };
 
@@ -313,7 +327,7 @@ export function MessageView({ view, mode, messageKey, runId, traceLinks, compact
   }, [finished]);
   useEffect(() => {
     if (!highlight) return;
-    const t = setTimeout(() => setHighlight(undefined), 2000);
+    const t = setTimeout(() => setHighlight(undefined), 2200);
     return () => clearTimeout(t);
   }, [highlight]);
 
@@ -342,6 +356,14 @@ export function MessageView({ view, mode, messageKey, runId, traceLinks, compact
   const missing = new Set(unknownMarkers(view.text, view.citations));
   const renderCite = (n: number, key: string): ReactNode => {
     const c = byN.get(n);
+    // While streaming, citations arrive with the final event: a marker is pending, not flagged.
+    if (!c && !finished)
+      return (
+        <span key={key} className="chat-cite" data-static="" data-pending="">
+          {n}
+          <span className="sr-only"> (citation {n})</span>
+        </span>
+      );
     if (!c || !c.valid)
       return (
         <span key={key} className="chat-cite" data-invalid="" title={c ? "This citation did not match any step of this answer" : "No citation was recorded for this number"}>
@@ -356,26 +378,43 @@ export function MessageView({ view, mode, messageKey, runId, traceLinks, compact
   const hasWork = view.items.length > 0;
   const trace = view.done?.traceId;
   const traceUrl = traceHref(trace, traceLinks);
+  const copy = () => {
+    void navigator.clipboard?.writeText(view.text).then(
+      () => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      },
+      () => setCopied(false),
+    );
+  };
   return (
-    <article className="chat-msg chat-msg-assistant" aria-label="Notary's answer" aria-busy={!finished || undefined}>
+    <article className="chat-msg chat-msg-assistant" aria-label="Notary Chat's answer" aria-busy={!finished || undefined}>
+      <div className="chat-msg-who">
+        <AgentBadge agent="chat" />
+      </div>
       {(hasWork || !finished) && (
-        <section className="chat-work" data-open={workOpen || undefined}>
+        <section className="chat-work" data-open={workOpen || undefined} data-finished={finished || undefined}>
           <button type="button" className="chat-work-toggle" aria-expanded={workOpen} aria-controls={workId} onClick={() => setWorkOpen((v) => !v)}>
-            {!finished && <StepMark state="running" />}
-            <span>{finished ? workSummary(view, mode) : steps ? `Working… ${steps} step${steps === 1 ? "" : "s"}` : "Working…"}</span>
-            <svg className="chat-chevron" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
-              <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            {!finished && <span className="chat-spinner" aria-hidden="true" />}
+            <span className="chat-work-label">{finished ? workSummary(view, mode) : steps ? `Working… ${steps} step${steps === 1 ? "" : "s"}` : "Working…"}</span>
+            <CaretRight className="chat-caret" />
           </button>
-          <ol id={workId} className="chat-steps" hidden={!workOpen} aria-live="polite" aria-relevant="additions" aria-label="Steps">
+          <Timeline id={workId} className="chat-steps" hidden={!workOpen} aria-live="polite" aria-relevant="additions" aria-label="Steps">
             {view.items.map((item) =>
               item.kind === "note" ? (
-                <li key={item.key} className="chat-note">
-                  <span className="chat-note-tag" data-mode={mode}>
-                    {noteTag(mode, item.source)}
-                  </span>
-                  <span>{item.text}</span>
-                </li>
+                <TimelineItem
+                  key={item.key}
+                  mark="dot"
+                  className="chat-note"
+                  title={
+                    <span className="chat-note-line">
+                      <span className="chat-note-tag" data-source={noteTag(mode, item.source) === "Replay engine" ? "replay" : "model"}>
+                        {noteTag(mode, item.source)}
+                      </span>{" "}
+                      <span className="chat-note-text">{item.text}</span>
+                    </span>
+                  }
+                />
               ) : view.steps[item.id] ? (
                 <StepRow
                   key={item.id}
@@ -388,51 +427,45 @@ export function MessageView({ view, mode, messageKey, runId, traceLinks, compact
                 />
               ) : null,
             )}
-          </ol>
+          </Timeline>
         </section>
       )}
-      {view.text && <Markdown className="chat-answer" text={view.text} renderCite={renderCite} />}
+      {view.text && (
+        <div className="chat-answer-wrap" aria-live="polite" aria-busy={!finished || undefined}>
+          <Markdown className="chat-answer" text={view.text} renderCite={renderCite} />
+        </div>
+      )}
       {view.error && (
         <div className="chat-error" role="alert">
-          <p>{view.error.message}</p>
+          <p className="chat-error-title">{view.error.message}</p>
           {view.error.fix && (
-            <p className="chat-muted">
+            <p className="chat-error-fix">
               <CodeText text={view.error.fix} />
             </p>
           )}
         </div>
       )}
-      {view.status === "stopped" && <p className="chat-muted chat-stopped">Stopped.</p>}
+      {view.status === "stopped" && <p className="chat-stopped">Stopped before the answer finished.</p>}
       {(view.citations.length > 0 || missing.size > 0) && finished && (
         <Sources citations={view.citations} missing={[...missing]} view={view} runId={runId} onStep={showStep} />
       )}
       {view.done && !compact && (
         <footer className="chat-footer">
-          <span className="tabular">{costText(view.done.costUsd, view.done.mode)}</span>
-          <span className="tabular">{tokensText(view.done.tokens)}</span>
+          <span className="chat-footer-fact">{costText(view.done.costUsd, view.done.mode)}</span>
+          {view.done.mode === "live" && tokensText(view.done.tokens) && <span className="chat-footer-fact">{tokensText(view.done.tokens)}</span>}
           {trace &&
             (traceUrl ? (
-              <a href={traceUrl} target="_blank" rel="noreferrer noopener">
+              <a className="chat-footer-action" href={traceUrl} target="_blank" rel="noreferrer noopener">
+                <External />
                 View trace<span className="sr-only"> (opens in a new tab)</span>
               </a>
             ) : (
-              <span>
+              <span className="chat-footer-fact">
                 Trace <code translate="no" title="No trace link was recorded">{trace}</code>
               </span>
             ))}
-          <button
-            type="button"
-            className="chat-link-button"
-            onClick={() => {
-              void navigator.clipboard?.writeText(view.text).then(
-                () => {
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 1500);
-                },
-                () => setCopied(false),
-              );
-            }}
-          >
+          <button type="button" className="chat-footer-action" onClick={copy} aria-label={copied ? "Answer copied" : "Copy answer"}>
+            {copied ? <CheckIcon /> : <CopyIcon />}
             {copied ? "Copied" : "Copy"}
           </button>
           <span className="sr-only" role="status">
@@ -466,7 +499,7 @@ function CiteChip({ c, view, runId, onStep }: { c: ChatCitation; view: TurnView;
       </a>
     );
   return (
-    <span className="chat-cite" title={c.label}>
+    <span className="chat-cite" data-static="" title={c.label}>
       {c.n}
       <span className="sr-only"> ({label})</span>
     </span>
@@ -495,11 +528,13 @@ function Sources({
   runId?: string;
   onStep: (id: string) => void;
 }) {
+  const flagged = citations.filter((c) => !c.valid).length + missing.length;
   return (
     <details className="chat-sources">
       <summary>
+        <CaretRight className="chat-caret" />
         {citations.length} source{citations.length === 1 ? "" : "s"}
-        {citations.some((c) => !c.valid) || missing.length ? ` · ${citations.filter((c) => !c.valid).length + missing.length} flagged` : ""}
+        {flagged ? <span className="chat-flag-count"> · {flagged} flagged</span> : null}
       </summary>
       <ol>
         {citations.map((c) => {
@@ -507,11 +542,11 @@ function Sources({
           const step = c.stepId && view.steps[c.stepId] ? c.stepId : undefined;
           return (
             <li key={c.n} data-invalid={!c.valid || undefined}>
-              <span className="chat-cite" data-invalid={!c.valid ? "" : undefined} aria-hidden="true">
+              <span className="chat-cite" data-static="" data-invalid={!c.valid ? "" : undefined} aria-hidden="true">
                 {c.n}
               </span>
               <span className="chat-source-body">
-                <span className="chat-source-type">{TYPE_LABEL[c.type]}</span>{" "}
+                <span className="chat-source-type">{TYPE_LABEL[c.type]}</span>
                 {href ? (
                   href.external ? (
                     <a href={href.href} target="_blank" rel="noreferrer noopener">
@@ -523,14 +558,11 @@ function Sources({
                 ) : (
                   <span>{c.label}</span>
                 )}
-                {!c.valid && <span className="chat-flag"> Flagged: did not match any step of this answer</span>}
+                {!c.valid && <span className="chat-flag">Flagged: did not match any step of this answer</span>}
                 {step && (
-                  <>
-                    {" "}
-                    <button type="button" className="chat-link-button" onClick={() => onStep(step)}>
-                      Show step
-                    </button>
-                  </>
+                  <button type="button" className="chat-text-button" onClick={() => onStep(step)}>
+                    Show step
+                  </button>
                 )}
               </span>
             </li>
@@ -538,7 +570,7 @@ function Sources({
         })}
         {missing.map((n) => (
           <li key={`m${n}`} data-invalid>
-            <span className="chat-cite" data-invalid="" aria-hidden="true">
+            <span className="chat-cite" data-static="" data-invalid="" aria-hidden="true">
               {n}
             </span>
             <span className="chat-flag">[{n}] appears in the answer but no citation was recorded for it</span>

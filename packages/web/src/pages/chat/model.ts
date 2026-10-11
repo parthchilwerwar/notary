@@ -195,11 +195,11 @@ export function tokensText(tokens: DoneEvent["tokens"] | undefined): string {
 export const noteTag = (mode: ChatMode, source?: "model" | "replay") =>
   source === "replay" || (source === undefined && mode === "replay") ? "Replay engine" : "Model said";
 
-/** "Worked through 6 steps · 4.2s · $0.012" (collapsed work section). */
+/** "Checked 5 sources · 3.8s · $0.011" (collapsed work section): every step read one source. */
 export function workSummary(view: TurnView, mode: ChatMode): string {
   const steps = turnSteps(view);
   const count = view.done?.steps ?? steps.length;
-  const parts = [`Worked through ${count} step${count === 1 ? "" : "s"}`];
+  const parts = [`Checked ${count} source${count === 1 ? "" : "s"}`];
   const ms = view.done?.durationMs ?? (steps.length ? steps.reduce((a, s) => a + (s.durationMs ?? 0), 0) : undefined);
   if (ms !== undefined) parts.push(durationText(ms));
   if (view.done) parts.push(costText(view.done.costUsd, view.done.mode));
@@ -392,6 +392,50 @@ export function buildSuggestions(bundle: Pick<RunBundle, "decisions"> | undefine
   }
   out.push(...FIXED_PROMPTS);
   return out.slice(0, 4);
+}
+
+export type SuggestionCard = { prompt: string; detail: string };
+
+/**
+ * The same four prompts as cards: the question, and one line saying what it reads. The data-built
+ * cards describe their record (the held decision's reason, the certificate's verdict) from the
+ * record itself; the fixed examples describe themselves.
+ */
+export function buildSuggestionCards(
+  bundle: Pick<RunBundle, "decisions"> | undefined,
+  certificates: readonly Pick<Certificate, "tool" | "claimId" | "status" | "verdictKind">[] = [],
+): SuggestionCard[] {
+  const prompts = buildSuggestions(bundle, certificates);
+  const held = bundle?.decisions.find((d) => d.status === "held");
+  const cert = certificates.find((c) => c.status === "active") ?? certificates[0];
+  return prompts.map((prompt, i) => {
+    if (held && i === 0) {
+      const missing = held.missingBeliefs.length;
+      const detail = held.evidencePack?.reason
+        ? held.evidencePack.reason
+        : missing
+          ? `${missing} required certificate${missing === 1 ? "" : "s"} missing; ${held.action}`
+          : `Held on the ${held.tier} tier; ${held.action}`;
+      return { prompt, detail };
+    }
+    if (cert && i === (held ? 1 : 0))
+      return { prompt, detail: `Certificate ${cert.status}, ${cert.verdictKind.replaceAll("_", " ")}` };
+    return { prompt, detail: FIXED_DETAIL[prompt] ?? "" };
+  });
+}
+
+const FIXED_DETAIL: Record<string, string> = {
+  [FIXED_PROMPTS[0]]: "A company lookup through the Crustdata API",
+  [FIXED_PROMPTS[1]]: "The claims the adversary refuted in the latest run",
+};
+
+/** "docs.dodopayments.com" for a fetched page's URL (empty when it is not a URL). */
+export function domainOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
 }
 
 // ------------------------------------------------------------------------------ auto-scroll
