@@ -134,3 +134,12 @@ Claude Code owns `packages/core` and `packages/web` (Codex out of quota). Phases
 - [x] `.env` configured: provider litellm, base URL https://litellm.vision.aivar.app/v1, executor claude-haiku, reflector claude-sonnet-4.6, adversary nova-pro.
 - [ ] BLOCKED step 7 (real verification): `LITELLM_API_KEY` is empty in `.env`. `pnpm notary doctor --llm` today → exit 3, `BLOCKED: LITELLM_API_KEY not set — set it in .env (see .env.example) and run `pnpm notary doctor --llm``. Once set: `pnpm notary doctor --llm`, then `pnpm notary serve`, POST /api/ask with the printed token, confirm a cited answer and the trace id in neatlogs.
 - [ ] Prices for claude-haiku / claude-sonnet-4.6 / nova-pro unknown unless LiteLLM sends `x-litellm-response-cost` or `NOTARY_PRICE_<ROLE>_IN/_OUT` is set.
+
+## Session 9 — redesign pass R1–R4 (Oct 11)
+
+- [x] **R1** (`d382541`) real backend wiring: serve `/api/health`, `POST/GET /api/runs`, `/api/runs/:id[/events]`, `/api/certificates[/:id]`, `/api/approvals/:id/approve|reject`; web `src/data/` (LiveSource / ReplaySource, boundary test); `docs/AUDIT.md` hardcoded-data audit (44 rows).
+- [x] **R2** (`cf028bd`) black-and-white shell: Run · Certificates · Approvals · Ask; Report page (comparison, cost, Connections, receipts); evidence inside certificate detail; old pages removed with redirects.
+- [x] **R3** (`5f5b71a`) Run page as an agent transcript (SSE / replay 1×·4×·instant, expandable rows tagged Model said / Verified, inline held cards).
+- [x] **R4** (`eb0fed4`) GSAP landing (SplitText hero, counting proof from exported runs, ScrollTrigger steps, transcript excerpt); @xyflow/react, motion, recharts, d3 removed.
+- Verified: typecheck, **866 core + 188 web tests**, build, check:secrets, visual check 28 route × theme × viewport combos (no page errors / overflow), Lighthouse a11y 100, perf median 94 (86–95).
+- [ ] BLOCKED live: integrations report `missing <VAR>` — LITELLM_API_KEY, CRUSTDATA_API_KEY, DODO_PAYMENTS_API_KEY (+ seed manifest via `seed:dodo`), Entire CLI. Start run, live approvals and model-backed Ask need them.
