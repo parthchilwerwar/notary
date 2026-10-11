@@ -22,8 +22,7 @@ import type {
 } from "../../../../core/src/schema";
 import { canonicalJson, sha256Hex } from "../../../../core/src/bundle/hash";
 import type { CertificateView as CertificateWorld } from "../../data";
-import { scenarioKey } from "../../state/data-mode";
-import { safeLink } from "../../data";
+import { safeLink, scenarioKey } from "../../data";
 
 // ------------------------------------------------------------------------------ classification
 
@@ -54,6 +53,11 @@ export type TrailSource =
   | "evidence-pack" // reason text written by the gate / guards / sentinel code
   | "executor" // executor model output
   | "reflector" // reflector model output
+  | "anomaly" // mismatch recorded by the deterministic checker (expected vs observed)
+  | "probe.request" // the request a probe sent (template params), as recorded
+  | "budget" // recorded budget snapshot (credits, tool calls, USD by role)
+  | "approval" // recorded human approval / rejection and its effects
+  | "run" // run status and stop reason, as recorded
   | "record"; // a statement the trail code makes about records (e.g. "not published")
 
 const VERIFIED_SOURCES: ReadonlySet<string> = new Set<TrailSource>([
@@ -75,6 +79,11 @@ const VERIFIED_SOURCES: ReadonlySet<string> = new Set<TrailSource>([
   "effect",
   "grade",
   "evidence-pack",
+  "anomaly",
+  "probe.request",
+  "budget",
+  "approval",
+  "run",
   "record",
 ]);
 
@@ -176,10 +185,10 @@ export type RequiredStatus = "certified" | "unproven" | "revoked" | "missing";
 
 // ------------------------------------------------------------------------------------ helpers
 
-type LineInit = Omit<TrailLine, "tag" | "source" | "key"> & { key?: string };
+export type LineInit = Omit<TrailLine, "tag" | "source" | "key"> & { key?: string };
 
 /** Every line is built here, so every line gets exactly one tag from `classifySource`. */
-function line(source: TrailSource, init: LineInit): TrailLine {
+export function trailLine(source: TrailSource, init: LineInit): TrailLine {
   return {
     ...init,
     key: init.key ?? source,
@@ -355,6 +364,46 @@ function executedAt(d: Decision): string | undefined {
 
 const short = (hash: string) => `${hash.slice(0, 12)}…`;
 
+// ------------------------------------------------------------------------- model words
+
+/** Every adversary sentence recorded in a data world (belief reviews, certificate reviews, narrowed scopes). */
+export function modelTextsOf(pool: readonly RunBundle[], world?: Pick<CertificateWorld, "certificates">): string[] {
+  const out = new Set<string>();
+  for (const b of pool)
+    for (const belief of [...b.beliefs.before, ...b.beliefs.after]) {
+      if (belief.adversary?.reason) out.add(belief.adversary.reason);
+      if (belief.adversary?.scope) out.add(belief.adversary.scope);
+    }
+  for (const c of world?.certificates ?? []) {
+    if (c.adversary?.reason) out.add(c.adversary.reason);
+    if (c.scope.narrowed?.text) out.add(c.scope.narrowed.text);
+  }
+  return [...out].filter((t) => t.length >= 12).sort((a, b) => b.length - a.length);
+}
+
+const ADVERSARY_QUOTE = /\badversary (?:upheld|narrowed|downgraded|uphold|narrow|downgrade)\b[^:]*:/i;
+
+/**
+ * A code-written sentence (a no-certificate reason, a revocation reason) can quote the adversary.
+ * Known adversary sentences are cut out (they are shown on their own "Model said" line). If the
+ * text still quotes an adversary verdict that could not be cut out, the whole line is "Model said".
+ */
+export function separateModelWords(
+  source: TrailSource,
+  text: string,
+  modelTexts: readonly string[],
+): { source: TrailSource; text: string } {
+  let out = text;
+  let cut = false;
+  for (const m of modelTexts)
+    if (out.includes(m)) {
+      out = out.split(m).join("(the adversary's words: see its Model said line)");
+      cut = true;
+    }
+  if (!cut && ADVERSARY_QUOTE.test(out)) return { source: "adversary", text };
+  return { source, text: out };
+}
+
 // ------------------------------------------------------------------- shared evidence group
 
 /**
@@ -371,7 +420,7 @@ export function beliefEvidenceLines(
   const lines: TrailLine[] = [];
   const beliefRef: RecordRef = { kind: "belief", id: belief.id, runId: beliefBundle.runId };
   lines.push(
-    line("belief.math", {
+    trailLine("belief.math", {
       label: "Belief",
       text: `Beta(${fmtNumber(belief.alpha)}, ${fmtNumber(belief.beta)}) · P(holds) = ${fmtProb(belief.confidence)}`,
       status: belief.status,
@@ -392,12 +441,12 @@ export function beliefEvidenceLines(
       const h = findHypothesis(pool, hit.bundle, hid);
       lines.push(
         h
-          ? line(hypothesisSource(h), {
+          ? trailLine(hypothesisSource(h), {
               label: `Hypothesis · ${words(h.class)}`,
               text: h.statement,
               detail: `${h.id} · test ${words(h.distinguishingTest)}`,
             })
-          : line("record", {
+          : trailLine("record", {
               label: "Hypothesis",
               text: `${hid} is cited by ${hit.probe.id} but not recorded in this data world.`,
             }),
@@ -408,7 +457,7 @@ export function beliefEvidenceLines(
   for (const { e, hit } of found) {
     if (!hit) {
       lines.push(
-        line("record", {
+        trailLine("record", {
           label: `Probe ${e.probeId}`,
           text: "Cited by the belief; the probe record is not in this data world's published bundles.",
           ...resolveTrace(e.traceId, linkMaps),
@@ -427,7 +476,7 @@ export function beliefEvidenceLines(
       beforeRun === false && `committed at ${probe.committedAt}, after the call at ${probe.ranAt}`,
     ].filter(Boolean);
     lines.push(
-      line("prediction", {
+      trailLine("prediction", {
         key: `prediction-${bundle.runId}-${probe.id}`,
         label: `Committed prediction · ${probe.id}`,
         text: Object.entries(probe.prediction)
@@ -438,7 +487,7 @@ export function beliefEvidenceLines(
         record,
         ...trace,
       }),
-      line("observation", {
+      trailLine("observation", {
         key: `observation-${bundle.runId}-${probe.id}`,
         label: `Observation · ${words(probe.template)}`,
         text:
@@ -452,7 +501,7 @@ export function beliefEvidenceLines(
       ? findHypothesis(pool, bundle, probe.winningHypothesisId)
       : undefined;
     lines.push(
-      line("verdict", {
+      trailLine("verdict", {
         key: `verdict-${bundle.runId}-${probe.id}`,
         label: "Verdict",
         text: probe.verdict
@@ -487,17 +536,19 @@ export function beliefEvidenceLines(
     const p = ev.probeId ? findProbe(pool, ev.probeId) : undefined;
     // The status change is code; an adversary's own words inside its reason are not, so they are
     // shown once, on the "Model said" adversary line below.
-    const modelText = belief.adversary?.reason;
-    const stripped = !!modelText && ev.reason.includes(modelText);
-    const text = stripped
-      ? ev.reason.replace(modelText, "(adversary's reason: see the challenge below)")
-      : ev.reason;
+    const modelTexts = [belief.adversary?.reason, belief.adversary?.scope].filter(
+      (t): t is string => !!t && t.length >= 12,
+    );
+    const stripped = modelTexts.some((m) => ev.reason.includes(m));
+    let text = ev.reason;
+    for (const m of modelTexts)
+      text = text.split(m).join(m === belief.adversary?.reason ? "(adversary's reason: see the challenge below)" : "(adversary's scope: see the challenge below)");
     // Unsure whether model words remain (an adversary event whose text we could not separate)?
     // Then the whole line is "Model said".
     const source: TrailSource =
       !stripped && ev.reason.startsWith("adversary ") ? "adversary" : "belief.event";
     lines.push(
-      line(source, {
+      trailLine(source, {
         label: `Status ${ev.from} → ${ev.to}`,
         text,
         detail: `Beta(${fmtNumber(ev.alpha)}, ${fmtNumber(ev.beta)}) · P(holds) = ${fmtProb(ev.confidence)} · ${ev.at}${ev.probeId ? ` · probe ${ev.probeId}` : ""}`,
@@ -511,7 +562,7 @@ export function beliefEvidenceLines(
   const a = belief.adversary;
   lines.push(
     a
-      ? line("adversary", {
+      ? trailLine("adversary", {
           label: `Adversary challenge · ${words(a.verdict)}`,
           text: a.reason,
           status: a.verdict,
@@ -525,7 +576,7 @@ export function beliefEvidenceLines(
             .join(" · "),
           record: beliefRef,
         })
-      : line("record", {
+      : trailLine("record", {
           label: "Adversary challenge",
           text: "No adversary review recorded for this belief.",
           record: beliefRef,
@@ -539,12 +590,13 @@ function certificateLines(
   linkMaps: (Record<string, string> | undefined)[],
   selectedRunId: string | undefined,
   decidedAt?: string,
+  modelTexts: readonly string[] = [],
 ): TrailLine[] {
   const out: TrailLine[] = [];
   const c = status.certificate;
   if (c) {
     out.push(
-      line("certificate", {
+      trailLine("certificate", {
         label: `Certificate ${c.id}`,
         text: c.verdict,
         status: c.status,
@@ -556,10 +608,11 @@ function certificateLines(
   const r = status.revocation;
   if (r) {
     const after = decidedAt && r.revokedAt > decidedAt;
+    const reason = separateModelWords("revocation", r.reason, modelTexts);
     out.push(
-      line("revocation", {
+      trailLine(reason.source, {
         label: `Revoked ${r.id}`,
-        text: r.reason,
+        text: reason.text,
         status: r.to,
         detail: `revoked ${r.revokedAt}${after ? " (after this decision ran)" : ""} · Beta(${fmtNumber(r.alpha)}, ${fmtNumber(r.beta)}) · trigger probes ${r.triggerProbeIds.join(", ")}${r.guardsRetired.length ? ` · guards retired ${r.guardsRetired.map((g) => `${g.id} (${words(g.kind)})`).join(", ")}` : ""} · source ${r.sourceBundle.runId}`,
         record: { kind: "certificate", id: r.certificateId, runId: selectedRunId },
@@ -568,11 +621,12 @@ function certificateLines(
     );
   }
   const n = status.noCertificate;
-  if (n)
+  const nReason = n ? separateModelWords("certificate", n.reason, modelTexts) : undefined;
+  if (n && nReason)
     out.push(
-      line("certificate", {
+      trailLine(nReason.source, {
         label: `No certificate · ${words(n.kind)}`,
-        text: n.reason,
+        text: nReason.text,
         status: n.status,
         detail:
           n.alpha !== undefined && n.beta !== undefined
@@ -644,7 +698,7 @@ function requestLines(
 ): TrailLine[] {
   if (!request)
     return [
-      line("record", {
+      trailLine("record", {
         label: "Request",
         text: `Request ${decision.requestId} is not included in this bundle; the decision records type ${words(decision.requestType)} for ${decision.customerId}.`,
         record,
@@ -653,8 +707,8 @@ function requestLines(
     ];
   const base = { record, ...trace };
   const out: TrailLine[] = [
-    line("request", { label: "Type", text: `${words(request.type)} · plan ${request.plan}`, ...base }),
-    line("request", {
+    trailLine("request", { label: "Type", text: `${words(request.type)} · plan ${request.plan}`, ...base }),
+    trailLine("request", {
       label: "Amount",
       text:
         request.amount === undefined
@@ -662,7 +716,7 @@ function requestLines(
           : `${fmtNumber(request.amount)} ${request.currency ?? "(currency not recorded)"} minor units`,
       ...base,
     }),
-    line("request", {
+    trailLine("request", {
       label: "Customer",
       text: [request.customerId, request.companyDomain, request.customerEmail].filter(Boolean).join(" · "),
       detail: `decision customer ${decision.customerId}`,
@@ -674,8 +728,8 @@ function requestLines(
     request.subscriptionId && `subscription ${request.subscriptionId}`,
     request.targetPlan && `target plan ${request.targetPlan}`,
   ].filter(Boolean);
-  if (refs.length) out.push(line("request", { label: "References", text: refs.join(" · "), ...base }));
-  out.push(line("request", { label: "Reason", text: request.reason, detail: request.note, ...base }));
+  if (refs.length) out.push(trailLine("request", { label: "References", text: refs.join(" · "), ...base }));
+  out.push(trailLine("request", { label: "Reason", text: request.reason, detail: request.note, ...base }));
   return out;
 }
 
@@ -687,7 +741,7 @@ function contextLines(
   const e = decision.enrichment;
   const basis = e && typeof e.tierBasis === "string" ? e.tierBasis : undefined;
   const out: TrailLine[] = [
-    line("tier", {
+    trailLine("tier", {
       label: "Tier",
       text: words(decision.tier),
       detail: basis ? `basis ${basis}` : "basis not recorded",
@@ -697,7 +751,7 @@ function contextLines(
   ];
   if (!e) {
     out.push(
-      line("record", { label: "Crustdata", text: "No enrichment recorded on this decision.", record, ...trace }),
+      trailLine("record", { label: "Enrichment", text: "No enrichment recorded on this decision.", record, ...trace }),
     );
     return out;
   }
@@ -710,10 +764,10 @@ function contextLines(
     }
     // Identifiers are shown verbatim, never number-formatted.
     const text = /id$/i.test(k) && typeof v === "number" ? String(v) : formatValue(v);
-    out.push(line("enrichment", { label: k, text, record, ...trace }));
+    out.push(trailLine("enrichment", { label: k, text, record, ...trace }));
   }
   if (empty.length)
-    out.push(line("enrichment", { label: "Not returned", text: empty.join(", "), record, ...trace }));
+    out.push(trailLine("enrichment", { label: "Not returned", text: empty.join(", "), record, ...trace }));
   return out;
 }
 
@@ -761,9 +815,11 @@ export function deriveDecisionTrail({
   const decisive = new Set(by.ids);
   const missing = new Set(decision.missingBeliefs);
 
+  const modelTexts = modelTextsOf(pool, world);
   const certLines: TrailLine[] = decision.requiredBeliefs.map((id) => {
     const s = statuses.get(id)!;
     const c = s.certificate;
+    const noCert = s.noCertificate ? separateModelWords("certificate", s.noCertificate.reason, modelTexts) : undefined;
     const isMissing = missing.has(id);
     const revokedAfter =
       s.revocation && decidedAt && s.revocation.revokedAt > decidedAt
@@ -771,15 +827,15 @@ export function deriveDecisionTrail({
         : s.revocation
           ? ` · revoked ${s.revocation.revokedAt}`
           : "";
-    return line(world ? "certificate" : "record", {
+    return trailLine(!world ? "record" : !c && noCert ? noCert.source : "certificate", {
       key: `required-${id}`,
       label: id,
       text: !world
         ? "Certificate status unavailable in this data world."
         : c
           ? `${c.id}: ${c.verdict}`
-          : s.noCertificate
-            ? s.noCertificate.reason
+          : noCert
+            ? noCert.text
             : "No certificate and no certificate record for this belief.",
       status: world ? s.status : undefined,
       detail: `${isMissing ? "missing at decision time" : "present at decision time"}${revokedAfter}`,
@@ -798,11 +854,11 @@ export function deriveDecisionTrail({
     const s = statuses.get(id)!;
     const isDecisive = decisive.has(id);
     const lines = [
-      ...certificateLines(s, linkMaps, bundle.runId, decidedAt),
+      ...certificateLines(s, linkMaps, bundle.runId, decidedAt, modelTexts),
       ...(hit
         ? beliefEvidenceLines(hit.belief, hit.bundle, pool, linkMaps)
         : [
-            line("record", {
+            trailLine("record", {
               label: "Belief",
               text: `${id} is not recorded in this data world's published bundles.`,
             }),
@@ -827,14 +883,14 @@ export function deriveDecisionTrail({
 
   // Decision.
   const decisionLines: TrailLine[] = [
-    line("policy", {
+    trailLine("policy", {
       label: "Policy",
       text: `${words(decision.policyOutcome)} · action ${decision.action}`,
       detail: `${words(decision.requestType)} · tier ${words(decision.tier)}`,
       record: dRef,
       ...dTrace,
     }),
-    line("policy", {
+    trailLine("policy", {
       label: "Status",
       text: words(decision.status),
       status: decision.status,
@@ -845,7 +901,7 @@ export function deriveDecisionTrail({
   for (const id of decision.missingBeliefs) {
     const s = statuses.get(id);
     decisionLines.push(
-      line("policy", {
+      trailLine("policy", {
         key: `missing-${id}`,
         label: "Missing belief",
         text: `${id}${s?.certificate ? ` (certificate ${s.certificate.id}, ${s.certificate.status})` : ""}`,
@@ -859,7 +915,7 @@ export function deriveDecisionTrail({
   for (const gid of decision.guardsApplied) {
     const g = bundle.guards.find((x) => x.id === gid);
     decisionLines.push(
-      line("guard", {
+      trailLine("guard", {
         key: `guard-${gid}`,
         label: g ? `Guard ${gid} · ${words(g.kind)}` : `Guard ${gid}`,
         text: g ? g.reason : "Guard definition not included in this bundle.",
@@ -875,7 +931,7 @@ export function deriveDecisionTrail({
   }
   if (decision.evidencePack)
     decisionLines.push(
-      line("evidence-pack", {
+      trailLine("evidence-pack", {
         label: "Reason recorded",
         text: decision.evidencePack.reason,
         detail: decision.evidencePack.relatedProbeIds.length
@@ -888,11 +944,11 @@ export function deriveDecisionTrail({
     );
   if (decision.error && decision.error !== decision.evidencePack?.reason)
     decisionLines.push(
-      line("evidence-pack", { label: "Error recorded", text: decision.error, record: dRef, ...dTrace }),
+      trailLine("evidence-pack", { label: "Error recorded", text: decision.error, record: dRef, ...dTrace }),
     );
   decision.effects.forEach((ef, i) =>
     decisionLines.push(
-      line("effect", {
+      trailLine("effect", {
         key: `effect-${i}`,
         label: `Effect ${i + 1} · ${ef.op}`,
         text: `${ef.status === null ? "outcome unknown" : `HTTP ${ef.status}`}${ef.amount !== undefined ? ` · ${fmtNumber(ef.amount)} ${ef.currency ?? ""} minor units` : ""}${ef.resultId ? ` · ${ef.resultId}` : ""}`,
@@ -903,10 +959,10 @@ export function deriveDecisionTrail({
     ),
   );
   if (!decision.effects.length)
-    decisionLines.push(line("effect", { label: "Effects", text: "No external effects recorded.", record: dRef, ...dTrace }));
+    decisionLines.push(trailLine("effect", { label: "Effects", text: "No external effects recorded.", record: dRef, ...dTrace }));
   if (decision.grade)
     decisionLines.push(
-      line("grade", {
+      trailLine("grade", {
         label: "Grade",
         text: `${decision.grade.correct ? "correct" : "not correct"} · expected ${words(decision.grade.expectedOutcome)}${decision.grade.expectedStatus ? ` / ${decision.grade.expectedStatus}` : ""}`,
         detail: `unsafe actions: ${decision.grade.unsafe.length ? decision.grade.unsafe.map(words).join(", ") : "none"}`,
@@ -945,7 +1001,7 @@ export function deriveDecisionTrail({
       },
       {
         key: "context",
-        title: "Crustdata context and tier",
+        title: "Enrichment context and tier",
         summary: `Tier ${words(decision.tier)}${decision.enrichment && typeof decision.enrichment.source === "string" ? ` · enrichment from ${decision.enrichment.source}` : ""}`,
         lines: contextLines(decision, dTrace, dRef),
         groups: [],
@@ -981,6 +1037,82 @@ export function deriveDecisionTrail({
   };
 }
 
+/**
+ * A certificate's scope as tagged lines. The scope sentence is computed by src/certify, but when
+ * the adversary narrowed it, it quotes the adversary's words: those are cut out of the Verified
+ * line and shown once on the "Model said" narrowed line (if they cannot be cut out, the whole
+ * sentence is "Model said"). The machine form is Verified only as far as code checked it: a
+ * parsed scope is shown as parsed; an unparsed one says which guard records exist for the
+ * certificate's belief in this data world, or that none does (H-20: never claim a check that
+ * did not happen).
+ */
+export function certificateScopeLines(
+  c: Certificate,
+  pool: RunBundle[],
+  certRef?: RecordRef,
+): TrailLine[] {
+  const ap = c.scope.asProbed;
+  const narrowed = c.scope.narrowed;
+  const quoted = narrowed ? `"${narrowed.text}"` : undefined;
+  const scopeText =
+    narrowed && quoted && c.scope.text.includes(quoted)
+      ? trailLine("scope", {
+          label: "Scope",
+          text: c.scope.text.replace(quoted, "(the adversary's words: see the narrowed scope below)"),
+          record: certRef,
+        })
+      : trailLine(narrowed ? "scope.narrowed" : "scope", {
+          label: "Scope",
+          text: c.scope.text,
+          record: certRef,
+        });
+  const out: TrailLine[] = [
+    scopeText,
+    trailLine("scope", {
+      label: "As probed",
+      text: `${ap.operations.join(", ")} · ${ap.param} ∈ {${ap.values.join(", ")}}${ap.currencies.length ? ` · ${ap.currencies.join(", ")}` : ""}`,
+      detail: `${fmtNumber(ap.probes)} cited probe(s)`,
+      record: certRef,
+    }),
+  ];
+  if (!narrowed) return out;
+  out.push(trailLine("scope.narrowed", { label: "Narrowed scope (adversary)", text: narrowed.text, record: certRef }));
+  if (narrowed.parsed) {
+    out.push(
+      trailLine("scope", {
+        label: "Narrowed scope, machine form",
+        text: formatValue(narrowed.parsed),
+        detail: "parsed by code from the narrowed text",
+        record: certRef,
+      }),
+    );
+    return out;
+  }
+  const guards = new Map<string, { id: string; kind: string; operation: string; active: boolean; runId: string }>();
+  for (const b of pool)
+    for (const g of b.guards)
+      if (g.beliefId === c.beliefId && !guards.has(g.id))
+        guards.set(g.id, { id: g.id, kind: g.kind, operation: g.operation, active: g.active, runId: b.runId });
+  const found = [...guards.values()];
+  out.push(
+    found.length
+      ? trailLine("guard", {
+          label: "Narrowed scope, machine form",
+          text: `Not machine-checkable. Guard record(s) for this belief: ${found
+            .map((g) => `${g.id} (${words(g.kind)}, ${g.operation}, ${g.active ? "active" : "retired"})`)
+            .join("; ")}.`,
+          detail: `from ${[...new Set(found.map((g) => g.runId))].join(", ")}`,
+          record: certRef,
+        })
+      : trailLine("record", {
+          label: "Narrowed scope, machine form",
+          text: "Not machine-checkable, and no guard record for this belief is published in this data world, so nothing here shows out-of-scope calls being blocked.",
+          record: certRef,
+        }),
+  );
+  return out;
+}
+
 // ------------------------------------------------------------------------ certificate trail
 
 export type CertificateTrailInput = {
@@ -1011,51 +1143,30 @@ export function deriveCertificateTrail({
 
   // Claim.
   const claimLines: TrailLine[] = [
-    line("claim", {
+    trailLine("claim", {
       label: "Claim",
       text: `${c.claim.operation} · ${c.claim.param}${c.claim.endpoint ? ` · ${c.claim.endpoint}` : ""}`,
       detail: `${c.claimId} · expect ${formatValue(c.claim.expect)}`,
       record: certRef,
     }),
-    line("claim", { label: "Docs say", text: c.docText, href: docs, record: certRef }),
+    trailLine("claim", { label: "Docs say", text: c.docText, href: docs, record: certRef }),
   ];
 
   // Scope.
-  const ap = c.scope.asProbed;
-  const scopeLines: TrailLine[] = [
-    line("scope", { label: "Scope", text: c.scope.text, record: certRef }),
-    line("scope", {
-      label: "As probed",
-      text: `${ap.operations.join(", ")} · ${ap.param} ∈ {${ap.values.join(", ")}}${ap.currencies.length ? ` · ${ap.currencies.join(", ")}` : ""}`,
-      detail: `${fmtNumber(ap.probes)} cited probe(s)`,
-      record: certRef,
-    }),
-  ];
-  if (c.scope.narrowed) {
-    scopeLines.push(
-      line("scope.narrowed", { label: "Narrowed scope (adversary)", text: c.scope.narrowed.text, record: certRef }),
-      line("scope", {
-        label: "Narrowed scope, machine form",
-        text: c.scope.narrowed.parsed
-          ? formatValue(c.scope.narrowed.parsed)
-          : "Not machine-checkable; guards block out-of-scope calls.",
-        record: certRef,
-      }),
-    );
-  }
+  const scopeLines = certificateScopeLines(c, pool, certRef);
 
   // Certificate.
   const status = requiredStatus(world, c.beliefId, c.claimId);
   const certLines: TrailLine[] = [
-    line("certificate", {
+    trailLine("certificate", {
       label: `Certificate ${c.id}`,
       text: c.verdict,
       status: c.status,
       detail: `${words(c.verdictKind)} · ${words(c.side)}${c.defectClass ? ` · ${words(c.defectClass)}` : ""}`,
       record: certRef,
     }),
-    line("certificate", { label: "Observed", text: c.observed, record: certRef }),
-    line("belief.math", {
+    trailLine("certificate", { label: "Observed", text: c.observed, record: certRef }),
+    trailLine("belief.math", {
       label: "Evidence",
       text: `Beta(${fmtNumber(c.alpha)}, ${fmtNumber(c.beta)}) · P(holds) = ${fmtProb(c.confidence)}`,
       detail: `issued ${c.issuedAt} from ${c.issuedFrom} · source ${c.sourceBundle.runId} ${short(c.sourceBundle.contentHash)} · seal ${short(c.sha256)}`,
@@ -1065,6 +1176,8 @@ export function deriveCertificateTrail({
       { status: status.status, revocation: c.status === "revoked" ? revocation : undefined },
       linkMaps,
       runId,
+      undefined,
+      modelTextsOf(pool, world),
     ),
   ];
 
@@ -1095,7 +1208,7 @@ export function deriveCertificateTrail({
       decisive: true,
       lines: [
         ...c.evidence.map((e) =>
-          line("observation", {
+          trailLine("observation", {
             key: `cert-evidence-${e.probeId}`,
             label: `Probe ${e.probeId}${e.template ? ` · ${words(e.template)}` : ""}`,
             text: e.observed ?? "Observation not recorded on the certificate.",
@@ -1104,7 +1217,7 @@ export function deriveCertificateTrail({
           }),
         ),
         c.adversary
-          ? line("adversary", {
+          ? trailLine("adversary", {
               label: `Adversary challenge · ${words(c.adversary.verdict)}`,
               text: c.adversary.reason,
               status: c.adversary.verdict,
@@ -1112,7 +1225,7 @@ export function deriveCertificateTrail({
                 .filter(Boolean)
                 .join(" · "),
             })
-          : line("record", { label: "Adversary challenge", text: "No adversary review recorded." }),
+          : trailLine("record", { label: "Adversary challenge", text: "No adversary review recorded." }),
       ],
     });
   }
@@ -1125,7 +1238,7 @@ export function deriveCertificateTrail({
       if (g.beliefId === c.beliefId && !guardSeen.has(`${g.id}|${g.active}`)) {
         guardSeen.add(`${g.id}|${g.active}`);
         enforce.push(
-          line("guard", {
+          trailLine("guard", {
             key: `guard-${b.runId}-${g.id}`,
             label: `Guard ${g.id} · ${words(g.kind)}`,
             text: g.reason,
@@ -1145,7 +1258,7 @@ export function deriveCertificateTrail({
       const isMissing = d.missingBeliefs.includes(c.beliefId);
       if (isMissing) held++;
       enforce.push(
-        line("policy", {
+        trailLine("policy", {
           key: `decision-${d.id}`,
           label: `Decision ${d.requestId} · ${b.runId}`,
           text: `${words(d.status)} · ${d.action}${isMissing ? " · this belief was missing" : ""}`,
@@ -1159,7 +1272,7 @@ export function deriveCertificateTrail({
   }
   if (!enforce.length)
     enforce.push(
-      line("record", {
+      trailLine("record", {
         label: "Enforcement",
         text: "No guard or guarded decision in this data world references this certificate's belief.",
       }),
@@ -1183,7 +1296,9 @@ export function deriveCertificateTrail({
       {
         key: "evidence",
         title: "Hypotheses, predictions, observations, verdicts",
-        summary: `${groups[0].lines.filter((l) => l.source === "prediction").length || c.evidence.length} probe(s)`,
+        summary: beliefHit
+          ? `${groups[0].lines.filter((l) => l.source === "prediction").length} probe(s) with committed predictions`
+          : `${c.evidence.length} probe(s) cited on the certificate`,
         lines: [],
         groups,
       },

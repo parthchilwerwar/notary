@@ -9,8 +9,8 @@ import { ChatCircleDotsIcon as ChatCircleDots } from "@phosphor-icons/react/dist
 import { WarningIcon as Warning } from "@phosphor-icons/react/dist/csr/Warning";
 import type { RunBundle } from "../../../../core/src/schema";
 import { StatusPill } from "../ui/status-pill";
-import { useData } from "../../state/DataProvider";
-import { recordPath, withRun } from "../../state/data-mode";
+import { useData } from "../../app/catalog";
+import { recordPath, withRun } from "../../app/links";
 import {
   TAG_LABEL,
   deriveCertificateTrail,

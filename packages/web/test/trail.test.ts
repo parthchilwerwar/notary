@@ -17,6 +17,8 @@ import {
   deriveCertificateTrail,
   deriveDecisionTrail,
   hypothesisSource,
+  modelTextsOf,
+  separateModelWords,
   worldMatches,
   worldPool,
   type TrailLine,
@@ -357,5 +359,39 @@ describe("graded unsafe actions", () => {
         const t = deriveDecisionTrail({ bundle: b, decisionId: d.id, bundles, world: world(b.runId) })!;
         expect(t.unsafe).toBeUndefined();
       }
+  });
+});
+
+describe("model words never ride on a Verified line (R3, incl. AUDIT H-20)", () => {
+  it("certificate trails: scope sentence, no-certificate and revocation reasons are separated from adversary text", () => {
+    for (const w of [changeWorld, world("demo-run-guarded")]) {
+      const texts = modelTextsOf(bundles, w);
+      for (const c of w.certificates) {
+        const m = deriveCertificateTrail({ certificateId: c.id, world: w, bundles })!;
+        for (const l of allLines(m)) if (l.tag === "verified") for (const t of texts) expect(l.text).not.toContain(t);
+        // H-20: nothing claims "guards block" without a guard record behind it.
+        for (const l of allLines(m)) expect(l.text).not.toContain("guards block out-of-scope calls");
+      }
+    }
+  });
+
+  it("decision trails: required-certificate lines quote no adversary words as Verified", HEAVY, () => {
+    for (const b of bundles.filter((x) => x.kind === "run")) {
+      const w = world(b.runId);
+      const texts = modelTextsOf(bundles, w);
+      for (const d of b.decisions) {
+        const m = deriveDecisionTrail({ bundle: b, decisionId: d.id, bundles, world: w })!;
+        for (const l of allLines(m)) if (l.tag === "verified") for (const t of texts) expect(l.text).not.toContain(t);
+      }
+    }
+  });
+
+  it("separateModelWords cuts known adversary text, and tags an inseparable adversary quote Model said", () => {
+    expect(separateModelWords("certificate", "abstained after: the probes all clamp to 100 items", ["the probes all clamp to 100 items"])).toEqual({
+      source: "certificate",
+      text: "abstained after: (the adversary's words: see its Model said line)",
+    });
+    expect(separateModelWords("revocation", "adversary downgraded (bedrock, m): unknown words", []).source).toBe("adversary");
+    expect(separateModelWords("revocation", "sentinel probe refuted the claim", []).source).toBe("revocation");
   });
 });
