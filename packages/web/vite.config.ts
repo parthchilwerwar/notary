@@ -29,14 +29,16 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        // Two vendor chunks only. A separate "charts" chunk (recharts, d3-*) became circular
-        // with "ui" once @xyflow/react (which imports d3-zoom/d3-drag) landed in "ui", and the
-        // production bundle failed at startup with a TDZ ReferenceError. zod imports nothing,
-        // so its chunk cannot form a cycle.
+        // Two named chunks only. A hand-made "charts" chunk (recharts, d3-*) once became circular
+        // with "ui" (TDZ crash at startup, DECISIONS #128), so nothing else is grouped by hand.
+        // zod and the React core import nothing outside themselves, so neither can form a cycle.
         manualChunks(id) {
           if (id.includes("node_modules")) {
             if (/[\\/]zod[\\/]/.test(id)) return "schema";
-            return "vendor";
+            // Only what every route needs shares "vendor". Dashboard-only libraries (recharts,
+            // d3, cmdk, ...) are left to Rollup's splitting so they load with the lazy /app
+            // chunk, never on the landing (R4 Lighthouse).
+            if (/[\\/]node_modules[\\/](react|react-dom|scheduler|react-router)[\\/]/.test(id)) return "vendor";
           }
         },
       },

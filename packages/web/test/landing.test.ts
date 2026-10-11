@@ -1,199 +1,183 @@
-import { readFileSync } from "node:fs";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { readdirSync, readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+import { RequestTypeSchema, TimelineStageSchema, type TimelineEvent } from "../../core/src/schema";
 import { validateBundle } from "../src/data";
-import { landingResults, loadEvidence } from "../src/landing-data";
-const read = (id: string) =>
-  validateBundle(
-    JSON.parse(
-      readFileSync(
-        new URL(`../public/bundles/fixture/${id}.json`, import.meta.url),
-        "utf8",
-      ),
-    ),
-  );
-const naive = read("demo-run-naive"),
-  guarded = read("demo-run-guarded");
-afterEach(() => vi.unstubAllGlobals());
-describe("landing result provenance", () => {
-  it("uses a fixture pair when no live bundle exists", () => {
-    const result = landingResults([naive, guarded]);
+import {
+  BUILT_WITH,
+  GITHUB_URL,
+  REFUND_TYPES,
+  STAGES,
+  STAGE_LABEL,
+  STEP_COPY,
+  buildExcerpt,
+  fixturePair,
+  landingResults,
+  money,
+  proofNumbers,
+  proofPair,
+  sourceRuns,
+} from "../src/landing-data";
+
+const fixtureFile = (name: string) =>
+  JSON.parse(readFileSync(new URL(`../public/bundles/fixture/${name}`, import.meta.url), "utf8"));
+const read = (id: string) => validateBundle(fixtureFile(`${id}.json`));
+const timeline = (id: string): TimelineEvent[] => fixtureFile(`${id}.timeline.json`).events;
+const index = () => fixtureFile("index.json") as { runId: string; kind: string; variant: string; sample: boolean; startedAt: string }[];
+
+const naive = read("demo-run-naive");
+const guarded = read("demo-run-guarded");
+
+describe("landing: which pair the Proof section shows", () => {
+  it("uses the newest fixture pair of one world when no real bundle exists", () => {
+    const result = landingResults(index());
     expect(result.sample).toBe(true);
-    expect(result.naive?.runId).toBe(naive.runId);
-    expect(result.guarded?.runId).toBe(guarded.runId);
+    expect(result.guarded?.runId).toBe("demo-run-guarded");
+    expect(result.naive?.runId).toBe("demo-run-naive");
   });
-  it("prefers live runs and never fills a missing live side with fixtures", () => {
+  it("prefers real runs and never fills a missing real side with a fixture", () => {
     const live = { ...guarded, sample: false, runId: "live-guarded" };
     const result = landingResults([naive, guarded, live]);
     expect(result.sample).toBe(false);
     expect(result.guarded).toBe(live);
     expect(result.naive).toBeUndefined();
   });
-  it("does not label fixture queue outcomes live when only live notarization exists", () => {
-    const live = { ...guarded, sample: false, kind: "notarize" as const };
-    const result = landingResults([naive, guarded, live]);
-    expect(result.sample).toBe(false);
-    expect(result.guarded).toBeUndefined();
+  it("shows the labelled fixture pair, with the reason, when the real pair is incomplete", () => {
+    const live = { ...guarded, sample: false, runId: "live-guarded" };
+    const pair = proofPair([naive, guarded, live]);
+    expect(pair.sample).toBe(true);
+    expect(pair.guarded).toBe(guarded);
+    expect(pair.naive).toBe(naive);
+    expect(pair.note).toMatch(/fixture/);
+  });
+  it("never pairs runs of two different simulated worlds", () => {
+    const entries = index().filter((e) => e.runId !== "demo-run-naive");
+    const result = fixturePair(entries);
+    expect(result.guarded?.runId).toBe("demo-run-guarded");
     expect(result.naive).toBeUndefined();
   });
   it("uses the most recent run on each side", () => {
     const earlier = { ...guarded, startedAt: "2020-01-01T00:00:00.000Z" };
     expect(landingResults([earlier, guarded, naive]).guarded).toBe(guarded);
   });
-  it("leaves missing tool evidence pending instead of inventing status", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(new Response(null, { status: 404 })),
+});
+
+describe("landing: the Proof numbers come from the bundles", () => {
+  it("reads unsafe totals from grader metrics and counts held refunds from decisions", () => {
+    const n = proofNumbers(naive, guarded);
+    expect(n.naiveUnsafe).toBe(naive.metrics.unsafe_actions_total);
+    expect(n.guardedUnsafe).toBe(guarded.metrics.unsafe_actions_total);
+    expect(n.refundsHeld).toBe(
+      guarded.decisions.filter((d) => d.status === "held" && d.requestType.includes("refund")).length,
     );
-    expect(await loadEvidence()).toEqual([]);
+    expect(n.requests).toBe(guarded.metrics.items_total);
+    // Sanity on the published fixture: the story the page tells is in the records.
+    expect(n.naiveUnsafe).toBeGreaterThan(0);
+    expect(n.guardedUnsafe).toBe(0);
+    expect(n.refundsHeld).toBeGreaterThan(0);
   });
-  it("rejects an invented tool status", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi
-        .fn()
-        .mockResolvedValue(
-          new Response(
-            JSON.stringify([
-              {
-                name: "Entire",
-                purpose: "Coverage",
-                status: "complete",
-                links: [],
-              },
-            ]),
-            { headers: { "content-type": "application/json" } },
-          ),
-        ),
-    );
-    await expect(loadEvidence()).rejects.toThrow();
+  it("reports a missing metric as null instead of zero", () => {
+    const { unsafe_actions_total: _drop, ...metrics } = naive.metrics;
+    expect(proofNumbers({ ...naive, metrics }, guarded).naiveUnsafe).toBeNull();
+  });
+  it("derives refund request types from the schema", () => {
+    expect([...REFUND_TYPES].sort()).toEqual(RequestTypeSchema.options.filter((t) => t.includes("refund")).sort());
+  });
+  it("formats minor units with the record's currency", () => {
+    expect(money(1999, "USD")).toBe("$19.99");
   });
 });
 
-import {
-  REQUIRED_TOOLS,
-  findIncident,
-  fixturePair,
-  money,
-  realRuns,
-  replayEvents,
-  replayRunIds,
-  stageCounts,
-  typeCounts,
-  unsafeBreakdown,
-  verifyTimeline,
-} from "../src/landing-data";
-
-const readAll = () =>
-  (
-    JSON.parse(
-      readFileSync(
-        new URL("../public/bundles/fixture/index.json", import.meta.url),
-        "utf8",
-      ),
-    ) as { runId: string }[]
-  ).map((e) => read(e.runId));
-const rawTimeline = (id: string) =>
-  JSON.parse(
-    readFileSync(
-      new URL(`../public/bundles/fixture/${id}.timeline.json`, import.meta.url),
-      "utf8",
-    ),
-  );
-
-describe("landing: the double-refund problem comes from bundle records", () => {
-  it("finds the duplicate refund: a timed-out write retried, held in the guarded run", () => {
-    const incident = findIncident("duplicate", naive, guarded)!;
-    const decision = naive.decisions.find((d) => d.id === incident.naive.decisionId)!;
-    expect(decision.grade?.unsafe).toContain("duplicate");
-    expect(incident.naive.writes).toBeGreaterThan(1);
-    expect(incident.naive.attempts[0]!.status).toBeNull();
-    expect(incident.requestId).toBe(decision.requestId);
-    const counterpart = guarded.decisions.find((d) => d.requestId === decision.requestId)!;
-    expect(incident.guarded?.status).toBe(counterpart.status);
-    expect(incident.guarded?.writes).toBe(
-      counterpart.effects.filter((e) => e.op === counterpart.action && (e.status === null || (e.status >= 200 && e.status < 300))).length,
-    );
+describe("landing: the five steps follow the timeline schema", () => {
+  it("has one row per stage, in schema order, with one sentence each", () => {
+    expect(STAGES).toEqual(TimelineStageSchema.options);
+    expect(Object.keys(STEP_COPY).sort()).toEqual([...TimelineStageSchema.options].sort());
+    expect(STAGES.map((s) => STAGE_LABEL[s])).toEqual(["Read", "Test", "Challenge", "Certify", "Enforce"]);
+    for (const s of STAGES) expect(STEP_COPY[s].split(/[.!?](\s|$)/).filter((x) => x.trim()).length).toBe(1);
   });
-  it("finds a wrong-unit refund with the amount sent and the amount refunded", () => {
-    const incident = findIncident("wrong_unit", naive, guarded)!;
-    const decision = naive.decisions.find((d) => d.id === incident.naive.decisionId)!;
-    expect(decision.grade?.unsafe).toContain("wrong_unit");
-    expect(incident.naive.requestedAmount).toBeTypeOf("number");
-    expect(incident.naive.attempts.some((a) => a.amount !== undefined)).toBe(true);
-  });
-  it("returns nothing without a naive run", () => {
-    expect(findIncident("duplicate", undefined, guarded)).toBeUndefined();
-  });
-  it("reads unsafe totals from bundle metrics, never computing new ones", () => {
-    expect(unsafeBreakdown(naive)).toMatchObject({
-      total: naive.metrics.unsafe_actions_total,
-      duplicates: naive.metrics.unsafe_duplicates,
-      wrongUnit: naive.metrics.unsafe_wrong_unit,
-    });
-    expect(unsafeBreakdown(guarded)?.held).toBe(guarded.metrics.holds);
-  });
-  it("formats minor units with the effect currency", () => {
-    expect(money(9900, "USD")).toBe("$99.00");
+  it("makes no absolute claims the records contradict (AUDIT H-36)", () => {
+    const all = Object.values(STEP_COPY).join(" ");
+    expect(all).not.toMatch(/every decision|every concrete promise|stronger model/i);
   });
 });
 
-describe("landing: real results stay separate", () => {
-  it("counts only non-sample bundles as real", () => {
-    expect(realRuns([naive, guarded])).toEqual({ total: 0, queueRuns: 0, notarizeRuns: 0 });
-    const live = { ...guarded, sample: false, runId: "live-guarded" };
-    expect(realRuns([naive, live]).queueRuns).toBe(1);
-    expect(fixturePair([naive, live]).guarded).toBeUndefined();
-  });
-});
+describe("landing: the Watch it work excerpt is built from published timelines", () => {
+  const entries = index();
+  const guardedEntry = entries.find((e) => e.runId === "demo-run-guarded")!;
+  const sources = sourceRuns(entries, guardedEntry);
+  const excerpt = buildExcerpt(
+    guarded,
+    timeline("demo-run-guarded"),
+    sources.map((s) => ({ runId: s.runId, events: timeline(s.runId) })),
+  )!;
 
-describe("landing: mission control replay", () => {
-  const all = readAll();
-  it("replays one fixture world: its notarize runs, then the guarded run", () => {
-    const ids = replayRunIds(all);
-    const guardedId = fixturePair(all).guarded!.runId;
-    expect(ids.at(-1)).toBe(guardedId);
-    const world = guardedId.replace(/-run-guarded$/, "");
-    for (const id of ids.slice(0, -1))
-      expect(id.replace(/-notarize-[a-z]+$/, "")).toBe(world);
-    expect(ids.length).toBeGreaterThan(1);
-  });
-  it("ties every replayed timeline to its verified bundle", () => {
-    for (const id of replayRunIds(all)) {
-      const bundle = all.find((b) => b.runId === id)!;
-      expect(verifyTimeline(rawTimeline(id), bundle).bundleHash).toBe(bundle.contentHash);
+  it("reads only notarize runs of the guarded run's world, started before it", () => {
+    expect(sources.length).toBeGreaterThan(0);
+    for (const s of sources) {
+      expect(s.kind).toBe("notarize");
+      expect(s.runId.startsWith("demo-notarize-")).toBe(true);
+      expect(s.startedAt <= guardedEntry.startedAt).toBe(true);
     }
   });
-  it("withholds a timeline whose bundleHash does not match", () => {
-    const raw = rawTimeline("demo-run-guarded");
-    raw.bundleHash = "0".repeat(64);
-    expect(() => verifyTimeline(raw, guarded)).toThrow(/content hash/);
+  it("ends on the guarded run's first held refund, with its recorded reason", () => {
+    const last = excerpt.rows.at(-1)!;
+    const event = timeline("demo-run-guarded").find((e) => `${e.runId}#${e.seq}` === last.key)!;
+    expect(event.type).toBe("decision");
+    expect(event.data?.status).toBe("held");
+    const decision = guarded.decisions.find((d) => d.id === excerpt.held.decisionId)!;
+    expect(decision.status).toBe("held");
+    expect(REFUND_TYPES.has(decision.requestType)).toBe(true);
+    expect(excerpt.held.missingBeliefs).toEqual(decision.missingBeliefs);
+    expect(excerpt.held.reason).toBe(decision.evidencePack?.reason);
+    expect(excerpt.sample).toBe(true);
   });
-  it("withholds a timeline for another run or a non-fixture timeline", () => {
-    expect(() => verifyTimeline(rawTimeline("demo-run-naive"), guarded)).toThrow();
-    const raw = rawTimeline("demo-run-guarded");
-    expect(() => verifyTimeline({ ...raw, sample: false }, guarded)).toThrow();
+  it("shows recorded events about the missing belief, verbatim and in recorded order", () => {
+    const belief = excerpt.held.missingBeliefs[0]!;
+    const story = excerpt.rows.slice(0, -1);
+    expect(story.length).toBeGreaterThanOrEqual(3);
+    const order = sources.map((s) => s.runId);
+    for (const row of story) {
+      const event = timeline(row.runId).find((e) => e.seq === row.seq)!;
+      expect(row.summary).toBe(event.summary);
+      expect(row.stage).toBe(event.stage);
+      expect(event.recordIds.some((id) => id === belief || id === belief.replace(/^belief-/, ""))).toBe(true);
+    }
+    const keys = story.map((r) => [order.indexOf(r.runId), r.seq]);
+    expect([...keys].sort((a, b) => a[0]! - b[0]! || a[1]! - b[1]!)).toEqual(keys);
+    expect(story[0]!.type).toBe("anomaly.detected");
   });
-  it("counts replayed events per stage", () => {
-    const files = replayRunIds(all).map((id) =>
-      verifyTimeline(rawTimeline(id), all.find((b) => b.runId === id)!),
-    );
-    const events = replayEvents(files);
-    const full = stageCounts(events);
-    expect(Object.values(full).reduce((a, b) => a + b, 0)).toBe(events.length);
-    for (const stage of ["read", "test", "challenge", "certify", "enforce"] as const)
-      expect(full[stage]).toBe(events.filter((e) => e.stage === stage).length);
-    expect(Object.values(stageCounts(events, 0)).every((n) => n === 0)).toBe(true);
-    const t = typeCounts(events, events.length);
-    expect(t.certificatesIssued).toBe(events.filter((e) => e.type === "certificate.issued").length);
-    expect(t.held).toBe(events.filter((e) => e.type === "decision" && e.data?.status === "held").length);
+  it("returns nothing when the run held no refund", () => {
+    const events = timeline("demo-run-naive");
+    expect(buildExcerpt(naive, events, [])).toBeUndefined();
   });
 });
 
-describe("landing: required tools", () => {
-  it("names exactly the sponsors in the published evidence file", () => {
-    const evidence = JSON.parse(
-      readFileSync(new URL("../public/evidence/evidence.json", import.meta.url), "utf8"),
-    ) as { name: string }[];
-    expect(evidence.map((e) => e.name).sort()).toEqual([...REQUIRED_TOOLS].sort());
+describe("landing: copy", () => {
+  const src = (p: string) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
+  const files = [
+    "Landing.tsx",
+    ...readdirSync(new URL("../src/components/landing/", import.meta.url)).map((f) => `components/landing/${f}`),
+  ];
+  const text = files.map(src).join("\n");
+
+  it("drops the contradicted and typed claims from the old page (AUDIT H-32, H-34)", () => {
+    expect(text).not.toMatch(/returned 200/);
+    expect(text).not.toMatch(/Three tools|five stages/i);
+  });
+  it("uses one GitHub URL constant and names the credits as text", () => {
+    expect(text.match(/github\.com/g) ?? []).toHaveLength(0);
+    expect(GITHUB_URL).toBe("https://github.com/parthchilwerwar/notary");
+    expect(BUILT_WITH).toEqual(["neatlogs", "Entire", "cfo.ai", "Crustdata", "Dodo Payments", "AWS Bedrock"]);
+  });
+  it("renders the excerpt with the Run page's own rows, loaded lazily", () => {
+    const excerpt = src("components/landing/Excerpt.tsx");
+    expect(excerpt).toMatch(/from "\.\.\/\.\.\/pages\/run\/Transcript"/);
+    expect(excerpt).toMatch(/buildRows/);
+    expect(src("Landing.tsx")).toMatch(/lazy\(\(\) => import\("\.\/components\/landing\/Excerpt"\)\)/);
+  });
+  it("uses GSAP only (no motion/react or @xyflow on the landing)", () => {
+    expect(text).not.toMatch(/from "motion|@xyflow/);
+    expect(text).toMatch(/SplitText\.create/);
+    expect(text).toMatch(/scrollTrigger/);
+    expect(text).toMatch(/gsap\.matchMedia\(\)/);
   });
 });

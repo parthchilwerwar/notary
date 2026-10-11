@@ -1,176 +1,159 @@
-import { useEffect, useMemo, useState } from "react";
+// The landing page (`/`). Hero, Proof (numbers from the latest exported naive/guarded pair),
+// How it works, Watch it work (a recorded excerpt), Built with, footer. Every number comes from
+// hash-verified bundles through the data layer (useDataSource); see landing-data.ts.
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
-import { MoonIcon as Moon } from "@phosphor-icons/react/dist/csr/Moon";
-import { SunIcon as Sun } from "@phosphor-icons/react/dist/csr/Sun";
-import { ShieldCheckIcon as ShieldCheck } from "@phosphor-icons/react/dist/csr/ShieldCheck";
-import type { CertificateReport, RunBundle, TimelineFile } from "../../core/src/schema";
-import { Button } from "./components/ui/button";
+import type { BundleIndexEntry, RunBundle } from "../../core/src/schema";
+import { finishedEntries, useDataSource } from "./data";
+import { BUILT_WITH, GITHUB_URL, proofNumbers, proofPair } from "./landing-data";
 import { Hero } from "./components/landing/Hero";
-import { DoubleRefund } from "./components/landing/DoubleRefund";
-import { ProcessSteps } from "./components/landing/ProcessSteps";
-import { MissionReplay } from "./components/landing/MissionReplay";
-import { RequiredTools } from "./components/landing/RequiredTools";
-import { Results } from "./components/landing/Results";
-import { FinalCTA } from "./components/landing/FinalCTA";
-import { LandingFooter } from "./components/landing/LandingFooter";
+import { Proof, type ProofState } from "./components/landing/Proof";
+import { HowItWorks } from "./components/landing/HowItWorks";
+import { ScrollTrigger, useGSAP } from "./components/landing/gsap";
 import { useTheme } from "./useTheme";
-import {
-  byNewest,
-  entryOfBundle,
-  finishedEntries,
-  loadEvidence,
-  toCertificateView,
-  useDataSource,
-  type EvidenceEntry,
-} from "./data";
-import {
-  fixturePair,
-  landingResults,
-  loadReplay,
-  realRuns,
-  replayRunIds,
-} from "./landing-data";
-import { unsafeDecisionIds } from "./pages/mission-control/model";
+import "./design/tokens.css";
 import "./landing.css";
+
+const Excerpt = lazy(() => import("./components/landing/Excerpt"));
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 export default function Landing() {
   const [dark, setDark] = useTheme();
   const { source, ready } = useDataSource();
-  const [all, setAll] = useState<RunBundle[]>([]);
-  const [bundleError, setBundleError] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [tools, setTools] = useState<EvidenceEntry[]>([]);
-  const [toolError, setToolError] = useState("");
-  const [toolsLoading, setToolsLoading] = useState(true);
-  const [timelines, setTimelines] = useState<TimelineFile[]>([]);
-  const [replayError, setReplayError] = useState("");
-  const [replayLoading, setReplayLoading] = useState(true);
-  const [fixtureReport, setFixtureReport] = useState<{ scenario?: string; report: CertificateReport }>();
-  const [realReport, setRealReport] = useState<CertificateReport>();
-  const [certError, setCertError] = useState("");
+  const [entries, setEntries] = useState<BundleIndexEntry[]>([]);
+  const [proof, setProof] = useState<ProofState>({ status: "loading" });
+  const [guarded, setGuarded] = useState<RunBundle>();
 
   useEffect(() => {
-    document.title = "Notary — certificates for API behavior";
+    document.title = "Notary: no certificate, no money moves";
   }, []);
 
   useEffect(() => {
     if (!ready) return;
     const controller = new AbortController();
     const { signal } = controller;
-    const live = () => !signal.aborted;
     (async () => {
-      const entries = finishedEntries(await source.listRuns(signal));
-      // Hash-verified by the data layer.
-      return (await Promise.all(entries.map((e) => source.getRun(e.runId, signal)))).sort(byNewest);
-    })()
-      .then(async (bundles) => {
-        if (!live()) return;
-        setAll(bundles);
-        setLoading(false);
-        await Promise.all([
-          loadReplay(bundles, (id, s) => source.getTimeline(id, s), signal)
-            .then((files) => live() && setTimelines(files))
-            .catch((e) => live() && setReplayError(message(e)))
-            .finally(() => live() && setReplayLoading(false)),
-          // The fixture certificate scenario whose sources include this world's notarize runs.
-          (async () => {
-            const first = bundles.find((b) => b.runId === replayRunIds(bundles)[0]);
-            if (!first) return;
-            const w = toCertificateView(await source.certificates(entryOfBundle(first), signal));
-            if (live() && w) setFixtureReport({ scenario: w.scenario, report: w.report });
-          })().catch((e) => live() && setCertError(message(e))),
-          source
-            .certificates(undefined, signal)
-            .then((w) => live() && w.report && setRealReport(w.report))
-            .catch((e) => live() && setCertError(message(e))),
-        ]);
-      })
-      .catch((e) => {
-        if (!live()) return;
-        setBundleError(message(e));
-        setLoading(false);
-        setReplayLoading(false);
-      });
-    loadEvidence(signal)
-      .then((entries) => live() && setTools(entries))
-      .catch((e) => live() && setToolError(message(e)))
-      .finally(() => live() && setToolsLoading(false));
+      const all = finishedEntries(await source.listRuns(signal));
+      const pair = proofPair(all);
+      if (!pair.naive || !pair.guarded) {
+        if (!signal.aborted) {
+          setEntries(all);
+          setProof({
+            status: "empty",
+            message:
+              "No naive and guarded run pair from one scenario has been exported yet; pnpm notary demo --fixture --publish publishes a fixture pair.",
+          });
+        }
+        return;
+      }
+      // Hash-verified by the data layer; a mismatch throws and the error is shown instead.
+      // One after the other so each bundle's hash check is its own main-thread task.
+      const naive = await source.getRun(pair.naive.runId, signal);
+      const guardedRun = await source.getRun(pair.guarded.runId, signal);
+      if (signal.aborted) return;
+      setEntries(all);
+      setGuarded(guardedRun);
+      setProof({ status: "ready", naive, guarded: guardedRun, numbers: proofNumbers(naive, guardedRun), note: pair.note });
+    })().catch((e) => {
+      if (!signal.aborted) setProof({ status: "error", message: message(e) });
+    });
     return () => controller.abort();
   }, [source, ready]);
 
-  const fixture = fixturePair(all);
-  const real = landingResults(all.filter((b) => !b.sample));
-  const realCounts = realRuns(all);
-  const unsafe = useMemo(() => {
-    const ids = new Set<string>();
-    for (const f of timelines) {
-      const b = all.find((x) => x.runId === f.runId);
-      if (b) for (const id of unsafeDecisionIds(b)) ids.add(id);
-    }
-    return ids;
-  }, [timelines, all]);
-
   return (
     <div className="landing">
-      <a className="skip" href="#landing-main">
+      <a className="l-skip" href="#landing-main">
         Skip to content
       </a>
-      <header className="landing-header">
-        <Link className="brand" to="/" aria-label="Notary home">
-          <ShieldCheck size={23} aria-hidden="true" />
-          Notary<span className="brand-period">.</span>
+      <header className="l-header">
+        <Link className="l-wordmark" to="/" aria-label="Notary home">
+          Notary
         </Link>
-        <nav aria-label="Landing sections">
-          <a href="#problem">The problem</a>
-          <a href="#how-it-works">How it works</a>
-          <a href="#replay">Replay</a>
-          <a href="#required-tools">Tools</a>
-          <a href="#results">Results</a>
-        </nav>
-        <div className="landing-header-actions">
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
-            onClick={() => setDark(!dark)}
-          >
-            {dark ? <Sun /> : <Moon />}
-          </Button>
-          <Button asChild>
-            <Link to="/app">Dashboard</Link>
-          </Button>
-        </div>
+        <button
+          type="button"
+          className="l-theme"
+          aria-pressed={dark}
+          onClick={() => setDark(!dark)}
+        >
+          Dark theme
+        </button>
       </header>
-      <main id="landing-main">
+      <main id="landing-main" className="l-main">
         <Hero />
-        <DoubleRefund
-          naive={fixture.naive}
-          guarded={fixture.guarded}
-          loading={loading}
-          error={bundleError}
-        />
-        <ProcessSteps />
-        <MissionReplay
-          files={timelines}
-          unsafe={unsafe}
-          loading={loading || replayLoading}
-          error={bundleError || replayError}
-        />
-        <RequiredTools tools={tools} error={toolError} loading={toolsLoading} />
-        <Results
-          loading={loading}
-          error={bundleError}
-          fixture={fixture}
-          real={{ ...realCounts, naive: real.naive, guarded: real.guarded }}
-          fixtureReport={fixtureReport}
-          realReport={realReport}
-          certError={certError}
-        />
-        <FinalCTA />
-        <LandingFooter />
+        <Proof state={proof} />
+        <HowItWorks />
+        <WatchItWork guarded={guarded} entries={entries} proofStatus={proof.status} />
+        <section className="l-section" aria-labelledby="built-title">
+          <h2 id="built-title" className="l-h2">
+            Built with
+          </h2>
+          <ul className="l-built">
+            {BUILT_WITH.map((name) => (
+              <li key={name}>{name}</li>
+            ))}
+          </ul>
+        </section>
       </main>
+      <footer className="l-footer">
+        <div className="l-footer-inner">
+          <span>Built for neatHack</span>
+          <a href={GITHUB_URL} rel="noreferrer">
+            GitHub
+          </a>
+        </div>
+      </footer>
     </div>
+  );
+}
+
+/** Mounts the lazy excerpt (and fetches its timelines) only when the section nears the viewport. */
+function WatchItWork({
+  guarded,
+  entries,
+  proofStatus,
+}: {
+  guarded?: RunBundle;
+  entries: BundleIndexEntry[];
+  proofStatus: ProofState["status"];
+}) {
+  const root = useRef<HTMLElement>(null);
+  const [near, setNear] = useState(false);
+  const { source } = useDataSource();
+
+  useGSAP(
+    () => {
+      // Not an animation: a one-shot visibility trigger, so it also runs under reduced motion.
+      ScrollTrigger.create({
+        trigger: root.current,
+        start: "top bottom+=400",
+        once: true,
+        onEnter: () => setNear(true),
+      });
+    },
+    { scope: root },
+  );
+
+  return (
+    <section className="l-section l-watch" ref={root} aria-labelledby="watch-title">
+      <h2 id="watch-title" className="l-h2">
+        Watch it work
+      </h2>
+      <p className="l-lede">
+        Recorded events from the guarded run’s world, in order: how one claim was tested and why a
+        refund that depended on it was held.
+      </p>
+      <div className="l-watch-body">
+        {guarded && near ? (
+          <Suspense fallback={<p className="l-lede">Loading the recorded run…</p>}>
+            <Excerpt source={source} entries={entries} guarded={guarded} />
+          </Suspense>
+        ) : proofStatus === "error" || proofStatus === "empty" ? (
+          <p className="l-lede">No recorded run to show.</p>
+        ) : (
+          <p className="l-lede">Loading the recorded run…</p>
+        )}
+      </div>
+    </section>
   );
 }
