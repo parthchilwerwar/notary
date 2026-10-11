@@ -22,6 +22,7 @@
  */
 import type { Role } from "../schema/index.js";
 import { baseModelId } from "./roles.js";
+import { AGENTS } from "../schema/agents.js";
 
 export type ModelPrice = {
   /** USD per 1M input tokens. */
@@ -79,7 +80,7 @@ export function resolvePrice(role: Role, modelId: string, env: Env = process.env
     return {
       price: null,
       source: "unknown",
-      warning: `${inName} and ${outName} must both be non-negative numbers (USD per 1M tokens); usd recorded as 0 for ${role}`,
+      warning: `${inName} and ${outName} must both be non-negative numbers (USD per 1M tokens); usd recorded as 0 for the ${AGENTS[role].name}`,
     };
   }
 
@@ -92,7 +93,7 @@ export function resolvePrice(role: Role, modelId: string, env: Env = process.env
   return {
     price: null,
     source: "unknown",
-    warning: `No price for model "${modelId}" (${role}); usd recorded as 0. Set ${inName} and ${outName} (USD per 1M tokens; Bedrock list prices: ${BEDROCK_PRICING_URL})`,
+    warning: `No price for model "${modelId}" (${AGENTS[role].name}); usd recorded as 0. Set ${inName} and ${outName} (USD per 1M tokens; Bedrock list prices: ${BEDROCK_PRICING_URL})`,
   };
 }
 

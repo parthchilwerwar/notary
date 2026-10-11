@@ -5,8 +5,15 @@
  * verdict: the missing beliefs, the probes run on their claims, those probes' span ids and trace
  * receipts. A trace receipt is the local span log the probe's run wrote
  * (`runs/<runId>/spans.jsonl#trace=<traceId>`, DECISIONS #48): verifiable offline, no invented URL.
+ *
+ * This check is the Guard (src/schema/agents.ts: a deterministic rule, not a model). Each verdict on
+ * a money action is one `notary.guard` GUARDRAIL span with `notary.agent` = "Guard", the action,
+ * the counts of required / missing beliefs and the outcome (allow); never a prompt or a secret.
  */
 import { beliefIdFor } from "../beliefs/store.js";
+import { AGENT_SPAN_ATTR } from "../llm/agents.js";
+import { AGENTS } from "../schema/agents.js";
+import { withSpan } from "../trace/index.js";
 import type { Belief, Probe } from "../schema/index.js";
 import type { GateContext, GateHook, GateVerdict } from "./executor.js";
 import { REQUIRED_GAPS, requiredActionFor, requiredActionForRequestType, requiredClaims } from "./required.js";
@@ -28,7 +35,22 @@ export function createGate(src: GateSources): GateHook {
       ? requiredActionForRequestType(ctx.request.type)
       : requiredActionFor(ctx.policy.action, ctx.policy.refundAmount, ctx.paymentAmount, ctx.request.type);
     if (action === null) return { allow: true, requiredBeliefs: [], missingBeliefs: [] };
+    let set: (k: string, v: string | number | boolean) => void = () => {};
+    return withSpan(
+      "notary.guard",
+      { [AGENT_SPAN_ATTR]: AGENTS.guard.name, "notary.requestId": ctx.request.id, "notary.guard.action": action, "notary.guard.forEscalation": ctx.forEscalation === true },
+      () => {
+        const v = verdictFor(action);
+        set("notary.guard.allow", v.allow);
+        set("notary.guard.required", v.requiredBeliefs.length);
+        set("notary.guard.missing", v.missingBeliefs.length);
+        return v;
+      },
+      { kind: "GUARDRAIL", onSpan: (_ids, setter) => (set = setter) },
+    );
+  };
 
+  function verdictFor(action: NonNullable<ReturnType<typeof requiredActionFor>>): GateVerdict {
     const claims = requiredClaims(action);
     const byId = new Map(src.beliefs().map((b) => [b.id, b]));
     const missingClaims = claims.filter((c) => byId.get(beliefIdFor(c))?.status !== "notarized");
@@ -55,5 +77,5 @@ export function createGate(src: GateSources): GateHook {
       reason: gap ? `${reason}. Gap: ${gap}` : reason,
       evidence: { relatedProbeIds, spanIds, traceLinks },
     };
-  };
+  }
 }

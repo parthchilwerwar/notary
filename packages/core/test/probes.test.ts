@@ -729,7 +729,7 @@ describe("runProbeLoop", () => {
       ledger: new CreditLedger({ budget: 10 }),
     });
     expect(res.probes).toEqual([]);
-    expect(res.stoppedReason).toMatch(/^USD cap reached: NOTARY_MAX_USD=0\.01 .*\(before the reflector proposed hypotheses\)$/);
+    expect(res.stoppedReason).toMatch(/^USD cap reached: NOTARY_MAX_USD=0\.01 .*\(before the Reflector proposed hypotheses\)$/);
     expect(io.log).toHaveLength(0);
   });
 

@@ -23,6 +23,7 @@
  *   probes_to_candidate_{without,with}_priors_<claimId> per claim; null if never reached
  *   candidates_{without,with}_priors, probes_{without,with}_priors, priors_strength
  */
+import { AGENTS } from "../schema/agents.js";
 import { join } from "node:path";
 import { canonicalJson } from "../bundle/hash.js";
 import { finalizeBundle, writeBundle } from "../bundle/index.js";
@@ -233,7 +234,7 @@ export async function comparePriorArms(opts: CompareArmsOptions): Promise<Compar
     metrics[`probes_to_candidate_with_priors_${id}`] = withPriors.perClaim[id] ?? null;
   }
   const lines = [
-    `compare priors: ${opts.tool}, runId ${opts.runId}; reflector calls ${llm.calls} (served again from memo: ${llm.hits})`,
+    `compare priors: ${opts.tool}, runId ${opts.runId}; ${AGENTS.reflector.name} calls ${llm.calls} (served again from memo: ${llm.hits})`,
     `without priors: ${without.probes.length} probes, ${metrics.candidates_without_priors} candidate(s)${without.error ? `; STOPPED: ${without.error}` : ""}`,
     `with priors:    ${withPriors.probes.length} probes, ${metrics.candidates_with_priors} candidate(s)${withPriors.error ? `; STOPPED: ${withPriors.error}` : ""}`,
     `probes to candidate (paired over ${paired.length} claim(s)): without ${metrics.probes_to_candidate_without_priors ?? "n/a"}, with ${metrics.probes_to_candidate_with_priors ?? "n/a"}`,

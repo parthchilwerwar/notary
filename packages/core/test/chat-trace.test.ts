@@ -5,6 +5,7 @@
  * events, spans or stored messages. The model is a real LlmClient (LiteLLM provider) over a transport
  * double that streams like the real one and opens an LLM span like wrapOpenAI (no network).
  */
+import { AGENTS } from "../src/schema/agents.js";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -130,6 +131,9 @@ describe("one trace per message", () => {
       expect(l).toMatchObject({ kind: "CHAIN", parentSpanId: rootSpan.spanId });
       expect(l.attrs["llm.usd"]).toBeGreaterThan(0);
     }
+    // P2: every span of the turn names the agent (AGENTS.chat), model calls included (role stays executor).
+    for (const s of [rootSpan, ...tools, ...llms]) expect(s.attrs["notary.agent"]).toBe(AGENTS.chat.name);
+    for (const l of llms) expect(l.attrs["notary.role"]).toBe("executor");
     const provider = spans.filter((s) => s.name === "fake.provider.chat");
     expect(provider).toHaveLength(3);
     for (const p of provider) expect(llms.map((l) => l.spanId)).toContain(p.parentSpanId);
@@ -177,6 +181,7 @@ describe("one trace per message", () => {
     const roots = readSpans(spansPath).filter((s) => s.name === "notary.chat.message");
     expect(roots).toHaveLength(2);
     expect(roots[1]!.attrs["notary.chat.rate_limited"]).toBe(true);
+    expect(roots[1]!.attrs["notary.agent"]).toBe("Notary Chat");
   });
 });
 

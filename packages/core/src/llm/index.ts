@@ -71,3 +71,5 @@ export {
 } from "./budget.js";
 export { MODEL_ENV, ModelConfigError, ROLES, baseModelId, requireModel, resolveModels } from "./roles.js";
 export type { ModelRoster } from "./roles.js";
+export { AGENT_SPAN_ATTR, agentModels, agentName, agentRoster, roleAgentName } from "./agents.js";
+export type { AgentModels, AgentStatus, ModelAgentId } from "./agents.js";

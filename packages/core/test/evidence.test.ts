@@ -412,7 +412,7 @@ describe("runBeliefsPhase: probes -> beliefs -> evidence check -> adversary", ()
     const res = await runBeliefsPhase({ db, tool: "dodo", runsDir, claims: [CLAIM], probes, hypotheses: HYPS, backend: "bedrock", llm: llm as never });
     expect(res.adversaryBlocked).toBe("BLOCKED: NOTARY_MODEL_ADVERSARY not set");
     expect(res.after[0]!.status).toBe("candidate");
-    expect(res.lines.at(-1)).toBe("BLOCKED: NOTARY_MODEL_ADVERSARY not set (adversary review skipped; 1 belief(s) stay candidate)");
+    expect(res.lines.at(-1)).toBe("BLOCKED: NOTARY_MODEL_ADVERSARY not set (Adversary review skipped; 1 belief(s) stay candidate)");
     expect(res.events.at(-1)).toMatchObject({ from: "candidate", to: "candidate", reason: expect.stringMatching(/BLOCKED/) });
   });
 
@@ -428,7 +428,7 @@ describe("runBeliefsPhase: probes -> beliefs -> evidence check -> adversary", ()
     expect(res.usdCapStopped).toMatch(/^USD cap reached: NOTARY_MAX_USD=0\.05/);
     expect(res.reviews).toEqual({ uphold: 0, narrow: 0, downgrade: 0, failed: 0 });
     expect(res.after[0]!.status).toBe("candidate");
-    expect(res.lines.at(-1)).toMatch(/^STOPPED: USD cap reached: NOTARY_MAX_USD=0\.05 .*\(adversary review stopped; 1 belief\(s\) stay candidate\)$/);
+    expect(res.lines.at(-1)).toMatch(/^STOPPED: USD cap reached: NOTARY_MAX_USD=0\.05 .*\(Adversary review stopped; 1 belief\(s\) stay candidate\)$/);
     expect(res.events.at(-1)).toMatchObject({ from: "candidate", to: "candidate", reason: expect.stringMatching(/NOTARY_MAX_USD/) });
   });
 

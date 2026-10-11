@@ -2,6 +2,7 @@
  * Stage-by-stage text summary for `notary demo --fixture`. Pure formatting over bundles and cassettes
  * the demo wrote; no I/O and no clock, so two demo runs print the same lines (timestamps aside).
  */
+import { AGENTS } from "../schema/agents.js";
 import { canonicalJson } from "../bundle/hash.js";
 import { contractFor } from "../contracts/index.js";
 import { REQUIRED_CLAIMS } from "../queue/required.js";
@@ -66,7 +67,7 @@ export function hypothesisLines(bundle: RunBundle): string[] {
   const verifyIds = [...byAnomaly.keys()].filter((k) => k.startsWith(VERIFY_PREFIX)).sort();
   const n = bundle.anomalies.length;
   const u = bundle.usageByRole.reflector;
-  out.push(`${bundle.tool}: ${proposed.length} hypotheses for ${n} anomal${n === 1 ? "y" : "ies"} — reflector double: ${u.calls} call(s), ${u.inputTokens} in / ${u.outputTokens} out tokens, ${u.usd} (fixture model, no cost)`);
+  out.push(`${bundle.tool}: ${proposed.length} hypotheses for ${n} anomal${n === 1 ? "y" : "ies"} — ${AGENTS.reflector.name} double: ${u.calls} call(s), ${u.inputTokens} in / ${u.outputTokens} out tokens, ${u.usd} (fixture model, no cost)`);
   for (const a of [...bundle.anomalies].sort((x, y) => (x.id < y.id ? -1 : 1))) {
     const hs = byAnomaly.get(a.id) ?? [];
     out.push(`  ${a.id} (${a.claimId}):${hs.length ? "" : " no valid hypotheses"}`);
@@ -119,7 +120,7 @@ export function beliefLines(beliefs: readonly Belief[]): string[] {
 
 export function adversaryLines(beliefs: readonly Belief[], usage: { calls: number; inputTokens: number; outputTokens: number; usd: number }): string[] {
   const reviewed = beliefs.filter((b) => b.adversary);
-  const out = [`adversary double: ${usage.calls} call(s), ${usage.inputTokens} in / ${usage.outputTokens} out tokens, $${usage.usd} (fixture model, no cost)`];
+  const out = [`${AGENTS.adversary.name} double: ${usage.calls} call(s), ${usage.inputTokens} in / ${usage.outputTokens} out tokens, $${usage.usd} (fixture model, no cost)`];
   if (reviewed.length === 0) out.push("  no belief reached candidate, so nothing was reviewed");
   for (const b of reviewed) {
     const a = b.adversary!;

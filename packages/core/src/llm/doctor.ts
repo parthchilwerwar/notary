@@ -1,5 +1,6 @@
 /**
- * `notary doctor --llm`: is the model backend reachable and configured for all three roles?
+ * `notary doctor --llm`: is the model backend reachable and configured for all three roles? Output
+ * names each role by its agent (src/schema/agents.ts): Executor, Reflector, Adversary (P2).
  * The CLI loads .env, inits tracing ("doctor") and roots the run in a WORKFLOW span; this module
  * only checks and reports.
  *
@@ -37,6 +38,7 @@ import type { LlmConfigIssue, LlmProvider } from "./config.js";
 import { liteLlmModelLister } from "./litellm.js";
 import type { ChatTransport, ModelLister } from "./litellm.js";
 import { MODEL_ENV, ROLES, baseModelId } from "./roles.js";
+import { roleAgentName as nm } from "./agents.js";
 import { MAX_USD_ENV, maxUsdFromEnv } from "./budget.js";
 import { resolvePrice } from "./pricing.js";
 import { LLM_CONCURRENCY_ENV, LLM_MAX_429_RETRIES, LLM_MAX_BACKOFF_MS, LLM_RPM_ENV, llmConcurrencyFromEnv, llmRpmFromEnv } from "./limiter.js";
@@ -121,7 +123,7 @@ export async function runLlmDoctor(opts: LlmDoctorOptions = {}): Promise<LlmDoct
   };
   const finish = (provider: LlmProvider | null): LlmDoctorReport => {
     const status = failed ? "failed" : blocked ? "blocked" : "ok";
-    out(`result: ${status === "ok" ? "OK — all three roles answered" : status === "blocked" ? "BLOCKED — set the variables above" : "FAILED — fix the lines marked FAIL"}`);
+    out(`result: ${status === "ok" ? `OK — ${ROLES.map(nm).join(", ").replace(/, ([^,]*)$/, " and $1")} answered` : status === "blocked" ? "BLOCKED — set the variables above" : "FAILED — fix the lines marked FAIL"}`);
     return { status, exitCode: failed ? 1 : blocked ? 3 : 0, provider, lines };
   };
 
@@ -144,7 +146,7 @@ export async function runLlmDoctor(opts: LlmDoctorOptions = {}): Promise<LlmDoct
     out(`  ${AWS_REGION_ENV}: ${read(env, AWS_REGION_ENV) || "not set"}`);
     out("  AWS credentials: SDK default chain (env keys / profile / SSO); exercised by the test calls only");
   }
-  for (const role of ROLES) out(`  ${role.padEnd(9)} ${MODEL_ENV[role]} = ${read(env, MODEL_ENV[role]) || "(not set)"}`);
+  for (const role of ROLES) out(`  ${nm(role)} (${MODEL_ENV[role]}) = ${read(env, MODEL_ENV[role]) || "(not set)"}`);
 
   // Rate limits (process-wide, every real model call).
   out(
@@ -164,10 +166,10 @@ export async function runLlmDoctor(opts: LlmDoctorOptions = {}): Promise<LlmDoct
     if (!id) continue;
     const r = resolvePrice(role, id, env);
     const names = `NOTARY_PRICE_${role.toUpperCase()}_IN/_OUT`;
-    if (r.source === "env") out(`  price ${role}: env override ${names} ($${r.price!.inPerM} in / $${r.price!.outPerM} out per 1M tokens)`);
-    else if (r.warning && /must both be/.test(r.warning)) fail(`price ${role}: ${r.warning}`, `set both ${names} (USD per 1M tokens) or neither`);
-    else if (r.source === "table") out(`  price ${role}: Bedrock table ($${r.price!.inPerM} in / $${r.price!.outPerM} out per 1M tokens)${provider === "litellm" ? "; a proxy-reported cost takes precedence" : ""}`);
-    else out(`  price ${role}: ${provider === "litellm" ? "the proxy's x-litellm-response-cost if it sends one, else unknown" : "unknown"} (set ${names} to fix it)`);
+    if (r.source === "env") out(`  price ${nm(role)}: env override ${names} ($${r.price!.inPerM} in / $${r.price!.outPerM} out per 1M tokens)`);
+    else if (r.warning && /must both be/.test(r.warning)) fail(`price ${nm(role)}: ${r.warning}`, `set both ${names} (USD per 1M tokens) or neither`);
+    else if (r.source === "table") out(`  price ${nm(role)}: Bedrock table ($${r.price!.inPerM} in / $${r.price!.outPerM} out per 1M tokens)${provider === "litellm" ? "; a proxy-reported cost takes precedence" : ""}`);
+    else out(`  price ${nm(role)}: ${provider === "litellm" ? "the proxy's x-litellm-response-cost if it sends one, else unknown" : "unknown"} (set ${names} to fix it)`);
   }
 
   // Config issues, de-duplicated across roles (the connection settings are shared).
@@ -212,12 +214,12 @@ export async function runLlmDoctor(opts: LlmDoctorOptions = {}): Promise<LlmDoct
     if (!id) continue;
     if (available && !offered.has(id)) {
       fail(
-        `${role}: model "${id}" is not offered by the proxy for this key`,
+        `${nm(role)}: model "${id}" is not offered by the proxy for this key`,
         `set ${MODEL_ENV[role]} to one of: ${available.join(", ") || "(none listed)"} (e.g. ${MODEL_ENV[role]}=${modelExample(available)})`,
       );
       continue;
     }
-    if (available) out(`ok   ${role}: "${id}" is offered by the proxy`);
+    if (available) out(`ok   ${nm(role)}: "${id}" is offered by the proxy`);
     usable.push(role);
   }
 
@@ -229,11 +231,11 @@ export async function runLlmDoctor(opts: LlmDoctorOptions = {}): Promise<LlmDoct
     if (baseModelId(refl) === baseModelId(adv)) {
       separated = false;
       fail(
-        `separation of duties: reflector and adversary are the same model ("${refl}")`,
+        `separation of duties: ${nm("reflector")} and ${nm("adversary")} are the same model ("${refl}")`,
         `set ${MODEL_ENV.adversary} to a different model, e.g. ${MODEL_ENV.adversary}=${modelExample(available, [refl])}`,
       );
     } else {
-      out(`ok   separation of duties: reflector "${refl}" ≠ adversary "${adv}"`);
+      out(`ok   separation of duties: ${nm("reflector")} "${refl}" ≠ ${nm("adversary")} "${adv}"`);
     }
   }
 
@@ -257,7 +259,7 @@ export async function runLlmDoctor(opts: LlmDoctorOptions = {}): Promise<LlmDoct
           ...(opts.transport ? { transport: opts.transport } : {}),
         });
       } catch (err) {
-        fail(`${role} test call: ${errText(err)}`, `fix the model settings in .env and rerun \`pnpm notary doctor --llm\``);
+        fail(`${nm(role)} test call: ${errText(err)}`, `fix the model settings in .env and rerun \`pnpm notary doctor --llm\``);
         continue;
       }
       const t0 = now();
@@ -266,17 +268,17 @@ export async function runLlmDoctor(opts: LlmDoctorOptions = {}): Promise<LlmDoct
         const ms = Math.round(now() - t0);
         const source = res.priceSource ?? "unknown";
         out(
-          `ok   ${role} test call: "${id}" ${ms} ms, ${res.inputTokens} in / ${res.outputTokens} out tokens, $${res.usd.toFixed(6)} (price: ${source}), stop ${res.stopReason}, reply ${JSON.stringify(res.text.slice(0, 40))}`,
+          `ok   ${nm(role)} test call: "${id}" ${ms} ms, ${res.inputTokens} in / ${res.outputTokens} out tokens, $${res.usd.toFixed(6)} (price: ${source}), stop ${res.stopReason}, reply ${JSON.stringify(res.text.slice(0, 40))}`,
         );
         if (source === "unknown") {
           const up = role.toUpperCase();
-          out(`WARN ${role}: price unknown for "${id}" — USD is recorded as $0 (and ${MAX_USD_ENV} can only count proxy-reported costs)`);
+          out(`WARN ${nm(role)}: price unknown for "${id}" — USD is recorded as $0 (and ${MAX_USD_ENV} can only count proxy-reported costs)`);
           out(`  FIX: set NOTARY_PRICE_${up}_IN=<USD per 1M input tokens> and NOTARY_PRICE_${up}_OUT=<USD per 1M output tokens> in .env`);
         }
       } catch (err) {
         const status = statusOf(err);
         fail(
-          `${role} test call ("${id}"): ${errText(err)}`,
+          `${nm(role)} test call ("${id}"): ${errText(err)}`,
           status === 401 || status === 403
             ? `the provider rejected the credentials; check ${provider === "litellm" ? LITELLM_API_KEY_ENV : "the AWS credentials"} in .env`
             : status === 404 || status === 400
@@ -286,6 +288,6 @@ export async function runLlmDoctor(opts: LlmDoctorOptions = {}): Promise<LlmDoct
       }
     }
   }
-  if (!separated) out("note: the bundle-producing commands refuse this roster until reflector ≠ adversary");
+  if (!separated) out(`note: the bundle-producing commands refuse this roster until the ${nm("reflector")} and the ${nm("adversary")} run on different models`);
   return finish(provider);
 }

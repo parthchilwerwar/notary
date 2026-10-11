@@ -24,7 +24,8 @@
 // Tracing: one trace per message — `notary.chat.message` (WORKFLOW root: sizes, steps, model calls,
 // tokens, USD or usd_unknown, citations total/invalid, status) -> `notary.chat.tool` (TOOL, one per
 // step: tool, step id, status, duration, credits) and `notary.llm` (CHAIN, opened by LlmClient, with
-// the provider wrapper's LLM span under it). Never the message text, prompts, the token or a secret in
+// the provider wrapper's LLM span under it). Every one of them carries `notary.agent` = "Notary Chat"
+// (P2, src/schema/agents.ts; span names unchanged for continuity). Never the message text, prompts, the token or a secret in
 // attributes. Spans sink to <runsDir>/_chat/spans.jsonl (withSpanSink); a flush is started after every
 // message and never awaited.
 //
@@ -38,6 +39,8 @@ import { scrubber, streamScrubber } from "../llm/client.js";
 import { LlmClient } from "../llm/client.js";
 import type { LlmLike } from "../llm/client.js";
 import { llmBlockedReason, llmConfigIssues } from "../llm/config.js";
+import { AGENT_SPAN_ATTR } from "../llm/agents.js";
+import { AGENTS } from "../schema/agents.js";
 import { ChatEventSchema, ConversationDetailSchema, ConversationsListSchema, CreateConversationResponseSchema, SendMessageBodySchema } from "../schema/chat.js";
 import type { ChatEvent } from "../schema/chat.js";
 import { CreditLedger } from "../tools/ledger.js";
@@ -188,7 +191,7 @@ export function mountChat(app: Hono, opts: ChatOptions): { store: () => ChatStor
       await traced(() =>
         withSpan(
           "notary.chat.message",
-          { "notary.chat.rate_limited": true, "notary.chat.rpm": limit.rpm, "notary.chat.retry_after_s": retryAfterS, "notary.chat.content_chars": body.content.length },
+          { [AGENT_SPAN_ATTR]: AGENTS.chat.name, "notary.chat.rate_limited": true, "notary.chat.rpm": limit.rpm, "notary.chat.retry_after_s": retryAfterS, "notary.chat.content_chars": body.content.length },
           () => ({ rateLimited: true }),
           { kind: "WORKFLOW" },
         ),
@@ -234,7 +237,7 @@ export function mountChat(app: Hono, opts: ChatOptions): { store: () => ChatStor
           try {
             llm = opts.llm ? opts.llm() : new LlmClient({ env });
           } catch (err) {
-            configError = { type: "error", message: `Model configuration is invalid: ${err instanceof Error ? err.message : String(err)}`, fix: "Fix the model settings in .env, restart `pnpm notary serve`, then run `pnpm notary doctor --llm`" };
+            configError = { type: "error", message: `${AGENTS.chat.name}'s model configuration is invalid: ${err instanceof Error ? err.message : String(err)}`, fix: "Fix the model settings in .env, restart `pnpm notary serve`, then run `pnpm notary doctor --llm`" };
           }
         }
         let traceId: string | undefined;
@@ -242,7 +245,7 @@ export function mountChat(app: Hono, opts: ChatOptions): { store: () => ChatStor
         await traced(() =>
           withSpan(
             "notary.chat.message",
-            { "notary.chat.content_chars": body.content.length, "notary.chat.history_messages": history.length, "notary.chat.model_configured": configError === null },
+            { [AGENT_SPAN_ATTR]: AGENTS.chat.name, "notary.chat.content_chars": body.content.length, "notary.chat.history_messages": history.length, "notary.chat.model_configured": configError === null },
             async (): Promise<{ status: string }> => {
               if (configError || !llm) {
                 emit(configError!);

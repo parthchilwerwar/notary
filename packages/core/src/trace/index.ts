@@ -65,6 +65,12 @@
  * SDK's `wrapBedrock` (via `traceBedrockClient`); the manual "notary.llm" span around each call is
  * a CHAIN that only adds role and USD, so each model call yields exactly one LLM span.
  *
+ * Agent names (P2, src/schema/agents.ts): span names stay as they were for continuity (notary.llm,
+ * notary.adversary, notary.chat.*, notary.queue.item), and every span an agent owns carries
+ * `notary.agent` = its display name: notary.llm (the calling agent: Executor / Reflector / Adversary /
+ * Notary Chat), notary.adversary (Adversary), notary.chat.message + notary.chat.tool (Notary Chat),
+ * notary.queue.item (Executor) and notary.guard (Guard, one GUARDRAIL span per certificate-gate verdict).
+ *
  * Secrets: no env var value is ever put into an attribute by this module. As a backstop, a
  * global `mask` scrubs the value of any secret-looking env var (…KEY, …TOKEN, …SECRET, …PASSWORD)
  * from every exported span and log, and attribute keys that look like credentials are dropped.

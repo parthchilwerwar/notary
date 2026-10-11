@@ -54,6 +54,8 @@ import type {
   Tier,
 } from "../schema/index.js";
 import { withSpan } from "../trace/index.js";
+import { AGENT_SPAN_ATTR } from "../llm/agents.js";
+import { AGENTS } from "../schema/agents.js";
 import { isRef, resolveRef } from "./manifest.js";
 import type { SeedManifest } from "./manifest.js";
 import { decidePolicy, tierFromCompany } from "./policy.js";
@@ -298,6 +300,7 @@ export async function executeQueue(opts: ExecuteQueueOptions): Promise<ExecuteQu
       const decision = await withSpan(
         "notary.queue.item",
         {
+          [AGENT_SPAN_ATTR]: AGENTS.executor.name,
           "notary.requestId": req.id,
           "notary.requestType": req.type,
           "notary.variant": opts.variant,

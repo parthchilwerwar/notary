@@ -389,6 +389,7 @@ export async function answerQuestion(req: AskRequest, opts: AskOptions): Promise
         try {
           const res = await llm.complete({
             role: "executor",
+            agent: "chat",
             system: ASK_SYSTEM_PROMPT,
             messages: [{ role: "user", content: buildAskPrompt(req.question, got.records) }],
             maxTokens: 1024,

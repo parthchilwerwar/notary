@@ -63,6 +63,7 @@ import type { FixtureApiChange, FixtureQuirk, FixtureRefundBooking, FixtureWorld
 import { bus } from "../api/bus.js";
 import { SEED_PLAN } from "../queue/seed-plan.js";
 import { canonicalJson } from "../bundle/hash.js";
+import { AGENTS } from "../schema/agents.js";
 import { claimById } from "../contracts/index.js";
 import { FIXTURE_MODEL_LABEL, createFixtureLlm } from "./fixture-llm.js";
 import {
@@ -445,7 +446,7 @@ export async function runFixtureDemo(opts: FixtureDemoOptions = {}): Promise<Fix
     if (changeApi) lines.push(CHANGE_API_DISCLOSURE);
     lines.push(`output: ${rel(outDir, outDir)} (bundles <runId>/, cassettes cassettes/ marked fixture: true, store notary.sqlite); nothing under fixtures/cassettes or packages/web`);
     lines.push("network: global fetch is trapped for the whole demo; every HTTP call goes to the in-process fixture API (api.crustdata.com, test.dodopayments.com), any other host is refused");
-    lines.push(`models: reflector and adversary are deterministic doubles behind the real LlmClient (${FIXTURE_MODEL_LABEL})`);
+    lines.push(`models: the ${AGENTS.reflector.name} and the ${AGENTS.adversary.name} are deterministic doubles behind the real LlmClient (${FIXTURE_MODEL_LABEL})`);
     lines.push(
       `probe caps (FIXTURE only, in-process): ${DEMO_MAX_PROBES_PER_CLAIM} per claim (NOTARY_MAX_PROBES_PER_CLAIM in the demo's private env), ${DEMO_MAX_PROBES_PER_RUN} per run (notarize params); live defaults stay ${DEFAULT_MAX_PROBES_PER_CLAIM} and ${MAX_PROBES_PER_RUN}`,
     );
@@ -498,7 +499,7 @@ export async function runFixtureDemo(opts: FixtureDemoOptions = {}): Promise<Fix
     for (const b of nb) lines.push(...anomalyLines(b));
     lines.push(`  ${stops.line(2)}`);
 
-    lines.push(heading(3, "Hypotheses (reflector: one batched model call, the model only proposes; verification rivals: built by code, no model)"));
+    lines.push(heading(3, `Hypotheses (${AGENTS.reflector.name}: one batched model call, it only proposes; verification rivals: built by code, no model)`));
     for (const b of nb) lines.push(...hypothesisLines(b));
     lines.push(`  ${stops.line(3)}`);
 

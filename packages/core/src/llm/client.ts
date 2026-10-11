@@ -36,7 +36,8 @@
  * wait and the attempt count are attributes on the same `notary.llm` span (llm.waited_ms,
  * llm.attempts, llm.retry_after_ms) plus a log event per retry — no extra LLM span from Notary.
  *
- * Every call opens a neatlogs span "notary.llm" (CHAIN) with role, model id, token counts and USD;
+ * Every call opens a neatlogs span "notary.llm" (CHAIN) with the agent's display name (`notary.agent`,
+ * e.g. "Reflector", "Notary Chat"; P2), role, model id, token counts and USD;
  * prompts are never put in its attributes. Under it, the SDK's provider wrapper (wrapBedrock /
  * wrapOpenAI) emits the LLM span, which does carry the (already secret-scrubbed) messages and
  * completion. Usage accumulates per role in a UsageMeter, whose snapshot is the bundle's
@@ -46,6 +47,8 @@ import type { ConverseCommandInput, ConverseCommandOutput } from "@aws-sdk/clien
 import type { Role, UsageByRole } from "../schema/index.js";
 import { MissingCredentialError } from "../tools/errors.js";
 import { traceBedrockClient, traceLog, withSpan } from "../trace/index.js";
+import type { AgentId } from "../schema/agents.js";
+import { AGENT_SPAN_ATTR, agentName } from "./agents.js";
 import { LLM_MAX_429_RETRIES, LLM_MAX_BACKOFF_MS, LlmRateLimitedError, defaultBackOffMs, llmLimiter, rateLimitInfo } from "./limiter.js";
 import type { LlmLimiter, LlmSlot } from "./limiter.js";
 import { costUsd, priceCall, reportedCostUsd, resolvePrice } from "./pricing.js";
@@ -64,6 +67,12 @@ export type LlmMessage = { role: "user" | "assistant"; content: string };
 
 export type CompleteRequest = {
   role: Role;
+  /**
+   * Which agent (src/schema/agents.ts) makes this call, for the `notary.agent` span attribute.
+   * Default: the agent that owns `role` (executor → Executor, ...). Notary Chat runs on the executor
+   * role and passes "chat". Never affects the request, the cassette key or usage accounting.
+   */
+  agent?: AgentId;
   system?: string;
   messages: LlmMessage[];
   /** Output token cap. Default 2048. */
@@ -446,7 +455,7 @@ export class LlmClient implements LlmLike {
     let setAttr: ((k: string, v: string | number | boolean) => void) | undefined;
     return withSpan(
       "notary.llm",
-      { "notary.role": req.role, "llm.model_id": modelId, "llm.provider": this.provider },
+      { [AGENT_SPAN_ATTR]: agentName(req.agent ?? req.role), "notary.role": req.role, "llm.model_id": modelId, "llm.provider": this.provider },
       async () => {
         if (setAttr && this.maxUsd !== null) setAttr("llm.usd_cap", this.maxUsd);
         const limiter = this.limiter();

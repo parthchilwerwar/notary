@@ -50,7 +50,7 @@
       "traceIds": [
         "fd9b592c61a04aea973c686fba88ff55"
       ],
-      "summary": "Request q02 held: dodo.createRefund; guards applied: grd-4a311973a512.",
+      "summary": "Guard held request q02: dodo.createRefund — guard grd-4a311973a512 refused the call; guards applied: grd-4a311973a512.",
       "data": {
         "requestId": "q02",
         "requestType": "refund",
@@ -113,7 +113,7 @@
       "traceIds": [
         "250873034d194b41b9ee9e92eb1b1579"
       ],
-      "summary": "Request q04 held: dodo.createRefund; guards applied: grd-4a311973a512.",
+      "summary": "Guard held request q04: dodo.createRefund — guard grd-4a311973a512 refused the call; guards applied: grd-4a311973a512.",
       "data": {
         "requestId": "q04",
         "requestType": "refund",
@@ -176,7 +176,7 @@
       "traceIds": [
         "e6dd0103068949fa95026b1812c18ee6"
       ],
-      "summary": "Request q06 held: dodo.createRefund; guards applied: grd-4a311973a512.",
+      "summary": "Guard held request q06: dodo.createRefund — guard grd-4a311973a512 refused the call; guards applied: grd-4a311973a512.",
       "data": {
         "requestId": "q06",
         "requestType": "refund",
@@ -233,7 +233,7 @@
       "traceIds": [
         "53dd62f0bfe4414ba65820d74472926d"
       ],
-      "summary": "Request q08 held: dodo.createWalletLedgerEntry of 5000 USD (minor units); guards applied: grd-3e9c0bf4b81e.",
+      "summary": "Guard held request q08: dodo.createWalletLedgerEntry of 5000 USD (minor units) — guard grd-3e9c0bf4b81e refused the call; guards applied: grd-3e9c0bf4b81e.",
       "data": {
         "requestId": "q08",
         "requestType": "credit",
@@ -783,7 +783,7 @@
       "traceIds": [
         "0ce89669e4d248cb91a2314f13c7e87a"
       ],
-      "summary": "Request q10 held: dodo.createRefund of 2500 USD (minor units); missing notarized beliefs: belief-dodo.refund.amount-minor-units.",
+      "summary": "Guard held request q10: dodo.createRefund of 2500 USD (minor units) — no certificate for dodo.refund.amount-minor-units.",
       "data": {
         "requestId": "q10",
         "requestType": "partial_refund",
@@ -920,7 +920,7 @@
       "traceIds": [
         "664de0e4c213470f8551e70716c35248"
       ],
-      "summary": "Request q15 held: dodo.createWalletLedgerEntry of 25000 USD (minor units); guards applied: grd-3e9c0bf4b81e.",
+      "summary": "Guard held request q15: dodo.createWalletLedgerEntry of 25000 USD (minor units) — guard grd-3e9c0bf4b81e refused the call; guards applied: grd-3e9c0bf4b81e.",
       "data": {
         "requestId": "q15",
         "requestType": "credit",
@@ -1007,7 +1007,7 @@
       "traceIds": [
         "8bfd16ca063d431aaab42c42d4250ac5"
       ],
-      "summary": "Request q18 held: dodo.createWalletLedgerEntry of 1500 USD (minor units); guards applied: grd-3e9c0bf4b81e.",
+      "summary": "Guard held request q18: dodo.createWalletLedgerEntry of 1500 USD (minor units) — guard grd-3e9c0bf4b81e refused the call; guards applied: grd-3e9c0bf4b81e.",
       "data": {
         "requestId": "q18",
         "requestType": "credit",
@@ -1065,7 +1065,7 @@
       "traceIds": [
         "04df0070fe524938bc19e6d8d78b57bf"
       ],
-      "summary": "Request q20 held: dodo.createRefund; missing notarized beliefs: belief-dodo.refund.amount-minor-units.",
+      "summary": "Guard held request q20: dodo.createRefund — no certificate for dodo.refund.amount-minor-units.",
       "data": {
         "requestId": "q20",
         "requestType": "refund",

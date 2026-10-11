@@ -12,6 +12,7 @@
  *      model (BLOCKED) leaves the candidates as candidates.
  * Returns beliefs before/after and the belief events appended during the phase, for the bundle.
  */
+import { AGENTS } from "../schema/agents.js";
 import { reviewBelief } from "../adversary/index.js";
 import type { AdversaryBackend, ReviewBeliefArgs, ReviewOutcome } from "../adversary/index.js";
 import type { LlmLike } from "../llm/index.js";
@@ -160,7 +161,7 @@ export async function runBeliefsPhase(opts: BeliefsPhaseOptions): Promise<Belief
   const candidates = store.list(opts.tool).filter((b) => b.status === "candidate" && (!reviewOnly || reviewOnly.has(b.claimId)));
   if (candidates.length && opts.backend === "bedrock") {
     const withModel = opts.llm as (LlmLike & { modelFor?: (role: "adversary") => string }) | undefined;
-    if (!withModel) adversaryBlocked = "BLOCKED: no LLM client for the bedrock adversary";
+    if (!withModel) adversaryBlocked = `BLOCKED: no model client for the ${AGENTS.adversary.name} (bedrock backend)`;
     else if (typeof withModel.modelFor === "function") {
       try {
         withModel.modelFor("adversary");
@@ -211,10 +212,10 @@ export async function runBeliefsPhase(opts: BeliefsPhaseOptions): Promise<Belief
     const after = store.applyAdversary(b.id, outcome.review, outcome.failure);
     if (outcome.review) {
       reviews[outcome.review.verdict] += 1;
-      lines.push(`adversary ${outcome.review.verdict} ${b.id} -> ${after.status}: ${outcome.review.reason}`);
+      lines.push(`${AGENTS.adversary.name} ${outcome.review.verdict} ${b.id} -> ${after.status}: ${outcome.review.reason}`);
     } else {
       reviews.failed += 1;
-      lines.push(`adversary failed ${b.id} (stays candidate): ${outcome.failure ?? "no review"}`);
+      lines.push(`${AGENTS.adversary.name} failed ${b.id} (stays candidate): ${outcome.failure ?? "no review"}`);
     }
   }
 
@@ -225,15 +226,15 @@ export async function runBeliefsPhase(opts: BeliefsPhaseOptions): Promise<Belief
   lines.unshift(
     `beliefs: ${after.length}  ${Object.entries(counts).map(([k, v]) => `${k}=${v}`).join(" ")}`,
     `evidence: checked ${checked}, invalid ${invalid} (source ${spans.source})`,
-    `adversary: backend=${opts.backend} uphold=${reviews.uphold} narrow=${reviews.narrow} downgrade=${reviews.downgrade} failed=${reviews.failed}`,
+    `${AGENTS.adversary.name}: backend=${opts.backend} uphold=${reviews.uphold} narrow=${reviews.narrow} downgrade=${reviews.downgrade} failed=${reviews.failed}`,
   );
   if (usdCapStopped) {
     const n = after.filter((b) => b.status === "candidate").length;
-    lines.push(`STOPPED: ${usdCapStopped} (adversary review stopped; ${n} belief(s) stay candidate)`);
+    lines.push(`STOPPED: ${usdCapStopped} (${AGENTS.adversary.name} review stopped; ${n} belief(s) stay candidate)`);
   }
   if (adversaryBlocked) {
     const n = after.filter((b) => b.status === "candidate").length;
-    lines.push(`${adversaryBlocked.startsWith("BLOCKED:") ? adversaryBlocked : `BLOCKED: ${adversaryBlocked}`} (adversary review skipped; ${n} belief(s) stay candidate)`);
+    lines.push(`${adversaryBlocked.startsWith("BLOCKED:") ? adversaryBlocked : `BLOCKED: ${adversaryBlocked}`} (${AGENTS.adversary.name} review skipped; ${n} belief(s) stay candidate)`);
   }
   return {
     before,

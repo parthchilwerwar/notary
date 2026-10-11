@@ -179,7 +179,7 @@ describe("429 handling in LlmClient", () => {
     expect(err).toBeInstanceOf(LlmRateLimitedError);
     expect(err.attempts).toBe(4);
     expect(err.message).toBe(
-      'LLM rate limited (HTTP 429) for executor ("test-haiku") after 4 attempts. Lower NOTARY_LLM_RPM (now 7/min) or NOTARY_LLM_CONCURRENCY (now 1) in .env and check with `pnpm notary doctor --llm`',
+      'Model call rate limited (HTTP 429) for the Executor ("test-haiku") after 4 attempts. Lower NOTARY_LLM_RPM (now 7/min) or NOTARY_LLM_CONCURRENCY (now 1) in .env and check with `pnpm notary doctor --llm`',
     );
     expect(calls).toHaveLength(4);
     expect(llm.meter.snapshot().executor.calls).toBe(0);

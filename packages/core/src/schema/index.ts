@@ -106,3 +106,4 @@ export * from "./approval.js";
 export * from "./certificate.js";
 export * from "./api.js";
 export * from "./chat.js";
+export * from "./agents.js";

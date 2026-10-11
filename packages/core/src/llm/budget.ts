@@ -20,6 +20,7 @@
  * recorded error by name, so `isUsdCapExceeded` matches on the name, not the class.
  */
 import { ModelConfigError } from "./roles.js";
+import { AGENTS } from "../schema/agents.js";
 
 type Env = Record<string, string | undefined>;
 
@@ -54,9 +55,10 @@ export class UsdCapExceededError extends Error {
   readonly estimate: number;
   readonly role: string;
   constructor(role: string, cap: number, spent: number, estimate: number) {
+    const agent = (AGENTS as Readonly<Record<string, { name: string } | undefined>>)[role]?.name ?? role;
     super(
       `USD cap reached: ${MAX_USD_ENV}=${cap} — ${usd(spent)} already spent this run` +
-        (estimate > 0 ? `, the next ${role} call could cost up to ~${usd(estimate)}` : `, next ${role} call not made`) +
+        (estimate > 0 ? `, the next ${agent} call could cost up to ~${usd(estimate)}` : `, next ${agent} call not made`) +
         ` (raise ${MAX_USD_ENV} in .env to continue)`,
     );
     this.name = "UsdCapExceededError";

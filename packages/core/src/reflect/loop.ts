@@ -51,6 +51,7 @@
  * (NOTARY_MAX_USD: a UsdCapExceededError from a reflector call stops the run the same way), header_burst per-run
  * cap, step repeat ≤ 3 (templates), MAX_PROBES_PER_RUN. BLOCKED errors propagate.
  */
+import { AGENTS } from "../schema/agents.js";
 import { BeliefStore } from "../beliefs/store.js";
 import type { BeliefPrior } from "../beliefs/store.js";
 import { designFingerprint } from "../beliefs/params.js";
@@ -275,7 +276,7 @@ export async function runProbeLoop(opts: ProbeLoopOptions): Promise<ProbeLoopRes
     proposed = await proposeHypotheses({ anomalies, claims: opts.claims, llm: opts.llm });
   } catch (err) {
     if (!isUsdCapExceeded(err)) throw err;
-    capStop = `${err.message} (before the reflector proposed hypotheses)`;
+    capStop = `${err.message} (before the ${AGENTS.reflector.name} proposed hypotheses)`;
     proposed = { hypotheses: [], rejected: [], usage: { inputTokens: 0, outputTokens: 0, usd: 0, calls: 0 } };
   }
   const hypotheses: Hypothesis[] = [...proposed.hypotheses];

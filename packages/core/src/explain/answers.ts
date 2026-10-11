@@ -12,6 +12,7 @@
 //   revocations    every revoked certificate, its trigger probes and traces and the guards retired
 //
 // Browser-safe (no Node imports).
+import { AGENTS } from "../schema/agents.js";
 import type { Certificate, Revocation, ToolCertificates } from "../schema/certificate.js";
 import type { Citation, ExplainAnswer } from "../schema/explain.js";
 import type { Belief, Decision, Guard, Probe, RunBundle, Tool } from "../schema/index.js";
@@ -120,7 +121,7 @@ export function whyHeld(bundle: RunBundle, decisionId: string, world: World = ma
     w.say("The decision lists no required beliefs for this action", [dc]);
   } else {
     w.say(
-      `The certificate gate requires ${plural(d.requiredBeliefs.length, "notarized belief")} for this action; ${
+      `The ${AGENTS.guard.name} (the certificate gate) requires ${plural(d.requiredBeliefs.length, "notarized belief")} for this action; ${
         missing.size ? `${missing.size} ${missing.size === 1 ? "was" : "were"} missing` : "none was recorded as missing"
       }`,
       [dc],
@@ -247,9 +248,9 @@ function explainMissingBelief(w: AnswerWriter, world: World, bundle: RunBundle, 
 
   if (snap.adversary) {
     const a = snap.adversary;
-    w.say(`Adversary review: ${a.verdict}${a.backend ? ` (${a.backend}, ${a.model})` : ` (${a.model})`}: ${quote(a.reason)}`, bc);
+    w.say(`${AGENTS.adversary.name} review: ${a.verdict}${a.backend ? ` (${a.backend}, ${a.model})` : ` (${a.model})`}: ${quote(a.reason)}`, bc);
   } else {
-    w.absent("No adversary review is recorded on this belief");
+    w.absent(`No ${AGENTS.adversary.name} review is recorded on this belief`);
   }
   const cited = resolveProbes(world, snap.evidence.map((e) => e.probeId));
   if (cited.found.length) {
@@ -365,7 +366,7 @@ export function toolKnowledge(tool: Tool, bundles: readonly RunBundle[] | World,
       `${claimOfBelief(belief.id)} is notarized (latest snapshot in ${runId}): ${confidenceWords(belief)}, so ${sideWords(belief.confidence)}${
         belief.confidence < 0.5 && belief.class ? ` (${belief.class})` : ""
       }; ${plural(belief.evidence.length, "cited probe")}${ev.found.length ? ` (${tally(ev.found.map((f) => probeWords(f.probe)))})` : ""}${
-        belief.adversary ? `; adversary ${belief.adversary.verdict}` : ""
+        belief.adversary ? `; ${AGENTS.adversary.name} ${belief.adversary.verdict}` : ""
       }`,
       [cite.belief(runId, belief.id), ...ev.found.map((f) => cite.probe(f.runId, f.probe))],
     );

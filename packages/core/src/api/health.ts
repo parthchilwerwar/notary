@@ -18,7 +18,9 @@
 // the tools through createTools with a read-only wrap that refuses every op but the one read.
 // Labels are exactly "connected" | "configured" | "missing <VAR>" | "error <one line>"; every
 // detail, label and fix goes through the env scrubber, and no value of any variable is ever read
-// into a response (only whether it is set).
+// into a response (only whether it is set) — except the NOTARY_MODEL_* model ids: P2 `agents` lists
+// each agent (src/schema/agents.ts) with the model it runs on, from config, so the dashboard can show
+// "Adversary · <model>"; model ids are configuration, not secrets, and still go through the scrubber.
 import { findOnPath } from "../beliefs/evidence.js";
 import { scrubber } from "../llm/client.js";
 import {
@@ -33,7 +35,9 @@ import {
 import type { LlmConfigIssue, LlmProvider } from "../llm/config.js";
 import { liteLlmModelLister } from "../llm/litellm.js";
 import { MODEL_ENV, ROLES, baseModelId } from "../llm/roles.js";
+import { agentRoster } from "../llm/agents.js";
 import { HealthResponseSchema } from "../schema/api.js";
+import { AGENTS } from "../schema/agents.js";
 import type { HealthResponse, IntegrationName, IntegrationStatus } from "../schema/api.js";
 import { CreditLedger, DODO_TEST_BASE_URL, ToolHttpError, createTools } from "../tools/index.js";
 import type { Wrap } from "../tools/index.js";
@@ -203,7 +207,7 @@ async function llmCheck(env: Env, probes: HealthProbes): Promise<Body> {
   const adv = read(env, MODEL_ENV.adversary);
   if (baseModelId(refl) === baseModelId(adv)) {
     return failed(
-      `separation of duties: reflector and adversary are the same model ("${refl}")`,
+      `separation of duties: ${AGENTS.reflector.name} and ${AGENTS.adversary.name} are the same model ("${refl}")`,
       `Set ${MODEL_ENV.adversary} to a different model than ${MODEL_ENV.reflector} in .env, ${RESTART}`,
       MODEL_ENV.adversary,
     );
@@ -372,7 +376,9 @@ export function createHealth(opts: HealthOptions = {}): Health {
   return {
     async check() {
       const integrations = await Promise.all(INTEGRATIONS.map(cached));
-      return HealthResponseSchema.parse({ ok: true, service: "notary serve", integrations });
+      // P2: who works here and on which configured model (NOTARY_MODEL_*; null when unset, always null for the Guard).
+      const agents = agentRoster(env).map((a) => ({ ...a, model: a.model === null ? null : clean(a.model) }));
+      return HealthResponseSchema.parse({ ok: true, service: "notary serve", integrations, agents });
     },
   };
 }

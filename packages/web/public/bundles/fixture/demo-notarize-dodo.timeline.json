@@ -416,7 +416,7 @@
       "traceIds": [
         "fbed0816119a4d4db32de527db4e398a"
       ],
-      "summary": "Probe demo-notarize-dodo-p001 (retry_after_timeout) committed its predictions for dodo.wallet.idempotency-key-no-duplicate before running.",
+      "summary": "Reflector proposed 2 hypotheses for dodo.wallet.idempotency-key-no-duplicate; probe demo-notarize-dodo-p001 (retry_after_timeout) committed its predictions before running.",
       "data": {
         "claimId": "dodo.wallet.idempotency-key-no-duplicate",
         "template": "retry_after_timeout",
@@ -490,7 +490,7 @@
       "traceIds": [
         "91acf18d7b534e8f91a5edd895c34ef1"
       ],
-      "summary": "Probe demo-notarize-dodo-p002 (retry_after_timeout) committed its predictions for dodo.wallet.idempotency-key-no-duplicate before running.",
+      "summary": "Reflector proposed 2 hypotheses for dodo.wallet.idempotency-key-no-duplicate; probe demo-notarize-dodo-p002 (retry_after_timeout) committed its predictions before running.",
       "data": {
         "claimId": "dodo.wallet.idempotency-key-no-duplicate",
         "template": "retry_after_timeout",
@@ -564,7 +564,7 @@
       "traceIds": [
         "943896e6829847feafc50e606099e41a"
       ],
-      "summary": "Probe demo-notarize-dodo-p003 (retry_after_timeout) committed its predictions for dodo.wallet.idempotency-key-no-duplicate before running.",
+      "summary": "Reflector proposed 2 hypotheses for dodo.wallet.idempotency-key-no-duplicate; probe demo-notarize-dodo-p003 (retry_after_timeout) committed its predictions before running.",
       "data": {
         "claimId": "dodo.wallet.idempotency-key-no-duplicate",
         "template": "retry_after_timeout",
@@ -638,7 +638,7 @@
       "traceIds": [
         "3eefd94d45514e5181a4ff93ac8a6f10"
       ],
-      "summary": "Probe demo-notarize-dodo-p004 (boundary_sweep) committed its predictions for dodo.payments.page-size-max-100 before running.",
+      "summary": "Reflector proposed 2 hypotheses for dodo.payments.page-size-max-100; probe demo-notarize-dodo-p004 (boundary_sweep) committed its predictions before running.",
       "data": {
         "claimId": "dodo.payments.page-size-max-100",
         "template": "boundary_sweep",
@@ -712,7 +712,7 @@
       "traceIds": [
         "8d64972d2a1146f5b6bc3d78538b96e3"
       ],
-      "summary": "Probe demo-notarize-dodo-p005 (boundary_sweep) committed its predictions for dodo.payments.page-size-max-100 before running.",
+      "summary": "Reflector proposed 2 hypotheses for dodo.payments.page-size-max-100; probe demo-notarize-dodo-p005 (boundary_sweep) committed its predictions before running.",
       "data": {
         "claimId": "dodo.payments.page-size-max-100",
         "template": "boundary_sweep",
@@ -786,7 +786,7 @@
       "traceIds": [
         "baf3adeadbe84ba8a8c5030e4bba93d5"
       ],
-      "summary": "Probe demo-notarize-dodo-p006 (boundary_sweep) committed its predictions for dodo.payments.page-size-max-100 before running.",
+      "summary": "Reflector proposed 2 hypotheses for dodo.payments.page-size-max-100; probe demo-notarize-dodo-p006 (boundary_sweep) committed its predictions before running.",
       "data": {
         "claimId": "dodo.payments.page-size-max-100",
         "template": "boundary_sweep",
@@ -861,7 +861,7 @@
       "traceIds": [
         "ecc2f18e4a984650a963988c504fa980"
       ],
-      "summary": "Probe demo-notarize-dodo-p007 (unit_roundtrip) committed its predictions for dodo.wallet.credit-amount-minor-units before running.",
+      "summary": "Reflector proposed 3 hypotheses for dodo.wallet.credit-amount-minor-units; probe demo-notarize-dodo-p007 (unit_roundtrip) committed its predictions before running.",
       "data": {
         "claimId": "dodo.wallet.credit-amount-minor-units",
         "template": "unit_roundtrip",
@@ -936,7 +936,7 @@
       "traceIds": [
         "fb8f7cad486d493da9230d6be422829f"
       ],
-      "summary": "Probe demo-notarize-dodo-p008 (unit_roundtrip) committed its predictions for dodo.wallet.credit-amount-minor-units before running.",
+      "summary": "Reflector proposed 3 hypotheses for dodo.wallet.credit-amount-minor-units; probe demo-notarize-dodo-p008 (unit_roundtrip) committed its predictions before running.",
       "data": {
         "claimId": "dodo.wallet.credit-amount-minor-units",
         "template": "unit_roundtrip",
@@ -1011,7 +1011,7 @@
       "traceIds": [
         "4e37bb490f9f41ff96d2c878afa2e663"
       ],
-      "summary": "Probe demo-notarize-dodo-p009 (unit_roundtrip) committed its predictions for dodo.wallet.credit-amount-minor-units before running.",
+      "summary": "Reflector proposed 3 hypotheses for dodo.wallet.credit-amount-minor-units; probe demo-notarize-dodo-p009 (unit_roundtrip) committed its predictions before running.",
       "data": {
         "claimId": "dodo.wallet.credit-amount-minor-units",
         "template": "unit_roundtrip",
@@ -1086,7 +1086,7 @@
       "traceIds": [
         "113199d6c87243a1899693d90718cd95"
       ],
-      "summary": "Probe demo-notarize-dodo-p010 (unit_roundtrip) committed its predictions for dodo.wallet.credit-amount-minor-units before running.",
+      "summary": "Reflector proposed 3 hypotheses for dodo.wallet.credit-amount-minor-units; probe demo-notarize-dodo-p010 (unit_roundtrip) committed its predictions before running.",
       "data": {
         "claimId": "dodo.wallet.credit-amount-minor-units",
         "template": "unit_roundtrip",
@@ -1161,7 +1161,7 @@
       "traceIds": [
         "313fc5b437024f57b3bd3d5b67530d3c"
       ],
-      "summary": "Probe demo-notarize-dodo-p011 (unit_roundtrip) committed its predictions for dodo.wallet.credit-amount-minor-units before running.",
+      "summary": "Reflector proposed 3 hypotheses for dodo.wallet.credit-amount-minor-units; probe demo-notarize-dodo-p011 (unit_roundtrip) committed its predictions before running.",
       "data": {
         "claimId": "dodo.wallet.credit-amount-minor-units",
         "template": "unit_roundtrip",
@@ -1236,7 +1236,7 @@
       "traceIds": [
         "c6fa207ae95b4742a0a897bd03b13705"
       ],
-      "summary": "Probe demo-notarize-dodo-p012 (unit_roundtrip) committed its predictions for dodo.wallet.credit-amount-minor-units before running.",
+      "summary": "Reflector proposed 3 hypotheses for dodo.wallet.credit-amount-minor-units; probe demo-notarize-dodo-p012 (unit_roundtrip) committed its predictions before running.",
       "data": {
         "claimId": "dodo.wallet.credit-amount-minor-units",
         "template": "unit_roundtrip",
@@ -1310,7 +1310,7 @@
       "traceIds": [
         "38044be2bff7484c9aff582b13175c05"
       ],
-      "summary": "Probe demo-notarize-dodo-p013 (boundary_sweep) committed its predictions for dodo.refunds.page-size-max-100 before running.",
+      "summary": "Reflector proposed 2 hypotheses for dodo.refunds.page-size-max-100; probe demo-notarize-dodo-p013 (boundary_sweep) committed its predictions before running.",
       "data": {
         "claimId": "dodo.refunds.page-size-max-100",
         "template": "boundary_sweep",
@@ -1381,7 +1381,7 @@
       "traceIds": [
         "5f624c87302647e4acdbbbafe77563ec"
       ],
-      "summary": "Probe demo-notarize-dodo-p014 (pagination_completeness) committed its predictions for dodo.refunds.page-size-max-100 before running.",
+      "summary": "Reflector proposed 2 hypotheses for dodo.refunds.page-size-max-100; probe demo-notarize-dodo-p014 (pagination_completeness) committed its predictions before running.",
       "data": {
         "claimId": "dodo.refunds.page-size-max-100",
         "template": "pagination_completeness",
@@ -1455,7 +1455,7 @@
       "traceIds": [
         "b705d1b99ef644468f25f79e17cdf71c"
       ],
-      "summary": "Probe demo-notarize-dodo-p015 (pagination_completeness) committed its predictions for dodo.refunds.page-size-max-100 before running.",
+      "summary": "Reflector proposed 2 hypotheses for dodo.refunds.page-size-max-100; probe demo-notarize-dodo-p015 (pagination_completeness) committed its predictions before running.",
       "data": {
         "claimId": "dodo.refunds.page-size-max-100",
         "template": "pagination_completeness",
@@ -1529,7 +1529,7 @@
       "traceIds": [
         "1fcb619f95ef46d8be68cc96f9009abc"
       ],
-      "summary": "Probe demo-notarize-dodo-p016 (pagination_completeness) committed its predictions for dodo.refunds.page-size-max-100 before running.",
+      "summary": "Reflector proposed 2 hypotheses for dodo.refunds.page-size-max-100; probe demo-notarize-dodo-p016 (pagination_completeness) committed its predictions before running.",
       "data": {
         "claimId": "dodo.refunds.page-size-max-100",
         "template": "pagination_completeness",
@@ -2709,7 +2709,7 @@
         "dodo.payment.refunds-lists-issued-refund"
       ],
       "traceIds": [],
-      "summary": "Adversary upheld dodo.payment.refunds-lists-issued-refund: belief candidate → notarized.",
+      "summary": "Adversary challenged dodo.payment.refunds-lists-issued-refund — upheld: belief candidate → notarized.",
       "data": {
         "beliefId": "belief-dodo.payment.refunds-lists-issued-refund",
         "claimId": "dodo.payment.refunds-lists-issued-refund",
@@ -2778,7 +2778,7 @@
         "dodo.payments.page-size-max-100"
       ],
       "traceIds": [],
-      "summary": "Adversary downgraded dodo.payments.page-size-max-100: belief candidate → hypothesis.",
+      "summary": "Adversary challenged dodo.payments.page-size-max-100 — downgraded: belief candidate → hypothesis.",
       "data": {
         "beliefId": "belief-dodo.payments.page-size-max-100",
         "claimId": "dodo.payments.page-size-max-100",
@@ -2821,7 +2821,7 @@
         "dodo.refund.amount-minor-units"
       ],
       "traceIds": [],
-      "summary": "Adversary upheld dodo.refund.amount-minor-units: belief candidate → notarized.",
+      "summary": "Adversary challenged dodo.refund.amount-minor-units — upheld: belief candidate → notarized.",
       "data": {
         "beliefId": "belief-dodo.refund.amount-minor-units",
         "claimId": "dodo.refund.amount-minor-units",
@@ -2890,7 +2890,7 @@
         "dodo.refund.full-retry-no-duplicate"
       ],
       "traceIds": [],
-      "summary": "Adversary upheld dodo.refund.full-retry-no-duplicate: belief candidate → notarized.",
+      "summary": "Adversary challenged dodo.refund.full-retry-no-duplicate — upheld: belief candidate → notarized.",
       "data": {
         "beliefId": "belief-dodo.refund.full-retry-no-duplicate",
         "claimId": "dodo.refund.full-retry-no-duplicate",
@@ -2959,7 +2959,7 @@
         "dodo.refunds.amount-integer"
       ],
       "traceIds": [],
-      "summary": "Adversary upheld dodo.refunds.amount-integer: belief candidate → notarized.",
+      "summary": "Adversary challenged dodo.refunds.amount-integer — upheld: belief candidate → notarized.",
       "data": {
         "beliefId": "belief-dodo.refunds.amount-integer",
         "claimId": "dodo.refunds.amount-integer",
@@ -3028,7 +3028,7 @@
         "dodo.refunds.page-size-max-100"
       ],
       "traceIds": [],
-      "summary": "Adversary upheld dodo.refunds.page-size-max-100: belief candidate → notarized.",
+      "summary": "Adversary challenged dodo.refunds.page-size-max-100 — upheld: belief candidate → notarized.",
       "data": {
         "beliefId": "belief-dodo.refunds.page-size-max-100",
         "claimId": "dodo.refunds.page-size-max-100",
@@ -3097,7 +3097,7 @@
         "dodo.subscription.change-plan-pending-409"
       ],
       "traceIds": [],
-      "summary": "Adversary upheld dodo.subscription.change-plan-pending-409: belief candidate → notarized.",
+      "summary": "Adversary challenged dodo.subscription.change-plan-pending-409 — upheld: belief candidate → notarized.",
       "data": {
         "beliefId": "belief-dodo.subscription.change-plan-pending-409",
         "claimId": "dodo.subscription.change-plan-pending-409",
@@ -3166,7 +3166,7 @@
         "dodo.wallet.credit-amount-minor-units"
       ],
       "traceIds": [],
-      "summary": "Adversary narrowed dodo.wallet.credit-amount-minor-units: belief candidate → notarized.",
+      "summary": "Adversary challenged dodo.wallet.credit-amount-minor-units — narrowed: belief candidate → notarized.",
       "data": {
         "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
         "claimId": "dodo.wallet.credit-amount-minor-units",
@@ -3239,7 +3239,7 @@
         "dodo.wallet.idempotency-key-no-duplicate"
       ],
       "traceIds": [],
-      "summary": "Adversary narrowed dodo.wallet.idempotency-key-no-duplicate: belief candidate → notarized.",
+      "summary": "Adversary challenged dodo.wallet.idempotency-key-no-duplicate — narrowed: belief candidate → notarized.",
       "data": {
         "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
         "claimId": "dodo.wallet.idempotency-key-no-duplicate",
@@ -3313,7 +3313,7 @@
       "traceIds": [
         "2d8bf8a8f9714c2f8432c24570dfe2c7"
       ],
-      "summary": "Probe demo-notarize-dodo-p032 (pagination_completeness) committed its predictions for dodo.payments.page-size-max-100 before running.",
+      "summary": "Reflector proposed 2 hypotheses for dodo.payments.page-size-max-100; probe demo-notarize-dodo-p032 (pagination_completeness) committed its predictions before running.",
       "data": {
         "claimId": "dodo.payments.page-size-max-100",
         "template": "pagination_completeness",
@@ -3387,7 +3387,7 @@
       "traceIds": [
         "08c8dd9b89bd42d09d3f649a4ba837a9"
       ],
-      "summary": "Probe demo-notarize-dodo-p033 (pagination_completeness) committed its predictions for dodo.payments.page-size-max-100 before running.",
+      "summary": "Reflector proposed 2 hypotheses for dodo.payments.page-size-max-100; probe demo-notarize-dodo-p033 (pagination_completeness) committed its predictions before running.",
       "data": {
         "claimId": "dodo.payments.page-size-max-100",
         "template": "pagination_completeness",
@@ -3461,7 +3461,7 @@
       "traceIds": [
         "3a0dcea0bc3044ffa6977740d4919a44"
       ],
-      "summary": "Probe demo-notarize-dodo-p034 (pagination_completeness) committed its predictions for dodo.payments.page-size-max-100 before running.",
+      "summary": "Reflector proposed 2 hypotheses for dodo.payments.page-size-max-100; probe demo-notarize-dodo-p034 (pagination_completeness) committed its predictions before running.",
       "data": {
         "claimId": "dodo.payments.page-size-max-100",
         "template": "pagination_completeness",

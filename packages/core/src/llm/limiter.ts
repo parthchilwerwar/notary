@@ -21,6 +21,7 @@
  */
 import { SlidingWindowLimiter, backOffFromHeaders, realClock } from "../ratelimit/window.js";
 import type { Clock } from "../ratelimit/window.js";
+import { AGENTS } from "../schema/agents.js";
 
 type Env = Record<string, string | undefined>;
 
@@ -84,7 +85,7 @@ export class LlmLimiter {
     const env = opts.env ?? process.env;
     this.rpm = opts.rpm ?? llmRpmFromEnv(env);
     this.concurrency = opts.concurrency ?? llmConcurrencyFromEnv(env);
-    if (!(this.concurrency >= 1)) throw new Error(`LLM concurrency must be ≥ 1 (got ${this.concurrency})`);
+    if (!(this.concurrency >= 1)) throw new Error(`Model-call concurrency must be ≥ 1 (got ${this.concurrency})`);
     this.clock = opts.clock ?? realClock;
     this.virtual = this.clock !== realClock;
     this.window = new SlidingWindowLimiter("llm", this.rpm, LLM_RATE_WINDOW_MS, this.clock, this.virtual);
@@ -214,7 +215,7 @@ export class LlmRateLimitedError extends Error {
   readonly retryAfterMs: number | null;
   constructor(role: string, modelId: string, attempts: number, retryAfterMs: number | null, limits: { rpm: number; concurrency: number }, detail?: string) {
     super(
-      `LLM rate limited (HTTP 429) for ${role} ("${modelId}") after ${attempts} attempt${attempts === 1 ? "" : "s"}${detail ? `; ${detail}` : ""}. ` +
+      `Model call rate limited (HTTP 429) for the ${(AGENTS as Readonly<Record<string, { name: string } | undefined>>)[role]?.name ?? role} ("${modelId}") after ${attempts} attempt${attempts === 1 ? "" : "s"}${detail ? `; ${detail}` : ""}. ` +
         `Lower ${LLM_RPM_ENV} (now ${limits.rpm}/min) or ${LLM_CONCURRENCY_ENV} (now ${limits.concurrency}) in .env and check with \`pnpm notary doctor --llm\``,
     );
     this.name = "LlmRateLimitedError";

@@ -24,6 +24,12 @@
  *                                  stage = the last stage of the bundle kind: notarize → certify,
  *                                  run and sample → enforce
  *
+ * Summaries name the agents exactly as src/schema/agents.ts does (P2): the Reflector proposes
+ * hypotheses (probe.committed, when the probe tests any hypothesis not built by code for
+ * re-verification), the Adversary challenges a candidate (adversary.verdict), the Guard holds a money
+ * action that lacks a certificate or that a compiled guard refused (decision). Recorded reason text
+ * inside the bundle is never rewritten (the bundle schema and its records are frozen).
+ *
  * Order: `at`, then TYPE_RANK, then the primary record id, then the record's position in the bundle.
  *
  * Certificate ids are the ones `notary export --certificates` computes (certify/ledger.ts
@@ -47,6 +53,7 @@ import type { Revocation } from "../certify/revocations.js";
 import type { Belief, BeliefEvent, Decision, Probe, RunBundle } from "../schema/index.js";
 import type { BudgetSnapshot, TimelineEvent, TimelineEventType, TimelineStage } from "../schema/timeline.js";
 import { usdCapFromStopReason } from "../llm/budget.js";
+import { AGENTS } from "../schema/agents.js";
 
 export type DerivedTimelineEvent = Omit<TimelineEvent, "seq">;
 
@@ -200,11 +207,30 @@ function decisionAmount(bundle: RunBundle, d: Decision): { amount?: number; curr
   return { ...(amount !== undefined ? { amount } : {}), ...(currency !== undefined ? { currency } : {}) };
 }
 
-function decisionSummary(d: Decision, money: { amount?: number; currency?: string }): string {
+/** A hold recorded as a compiled guard's refusal ("guard <id> refused <op>: …", src/queue/executor.ts). */
+const GUARD_REFUSAL = /^guard (\S+) refused /;
+
+function decisionSummary(claimOf: (beliefId: string) => string, d: Decision, money: { amount?: number; currency?: string }): string {
   const what = d.action === "none" ? "no action" : `${d.action}${money.amount !== undefined ? ` of ${money.amount}${money.currency ? ` ${money.currency}` : ""} (minor units)` : ""}`;
-  const missing = d.missingBeliefs.length ? `; missing notarized beliefs: ${d.missingBeliefs.join(", ")}` : "";
   const guards = d.guardsApplied.length ? `; guards applied: ${d.guardsApplied.join(", ")}` : "";
+  // The Guard held it: a required belief is not notarized (no certificate) or a compiled guard refused the call.
+  const refusedBy = d.status === "held" ? GUARD_REFUSAL.exec(d.evidencePack?.reason ?? "")?.[1] : undefined;
+  if (d.status === "held" && d.missingBeliefs.length) {
+    const claims = [...new Set(d.missingBeliefs.map(claimOf))];
+    return `${AGENTS.guard.name} held request ${d.requestId}: ${what} — no certificate for ${claims.join(", ")}${guards}.`;
+  }
+  if (refusedBy) return `${AGENTS.guard.name} held request ${d.requestId}: ${what} — guard ${refusedBy} refused the call${guards}.`;
+  const missing = d.missingBeliefs.length ? `; missing notarized beliefs: ${d.missingBeliefs.join(", ")}` : "";
   return `Request ${d.requestId} ${d.status}: ${what}${missing}${guards}.`;
+}
+
+/** Hypotheses a probe tests that the Reflector proposed (code-built re-verification rivals have a `verify:` anomaly id). */
+function reflectorHypotheses(bundle: RunBundle, p: Probe): number {
+  const byId = new Map(bundle.hypotheses.map((h) => [h.id, h]));
+  return p.hypothesisIds.filter((id) => {
+    const h = byId.get(id);
+    return h !== undefined && !h.anomalyId.startsWith("verify:");
+  }).length;
 }
 
 function probeWinningClass(bundle: RunBundle, p: Probe): string | undefined {
@@ -244,7 +270,12 @@ export function deriveTimeline(bundle: RunBundle, opts: DeriveTimelineOptions = 
       type: "probe.committed",
       recordIds: ids(p.id, ...p.hypothesisIds, p.claimId),
       traceIds: ids(p.traceId),
-      summary: `Probe ${p.id} (${p.template}) committed its predictions for ${p.claimId} before running.`,
+      summary: (() => {
+        const proposed = reflectorHypotheses(bundle, p);
+        return proposed
+          ? `${AGENTS.reflector.name} proposed ${proposed} ${proposed === 1 ? "hypothesis" : "hypotheses"} for ${p.claimId}; probe ${p.id} (${p.template}) committed its predictions before running.`
+          : `Probe ${p.id} (${p.template}) committed its predictions for ${p.claimId} before running.`;
+      })(),
       data: { claimId: p.claimId, template: p.template, tool: p.tool, hypotheses: p.hypothesisIds.length },
     });
     if (p.verdict) {
@@ -291,8 +322,8 @@ export function deriveTimeline(bundle: RunBundle, opts: DeriveTimelineOptions = 
         traceIds: [],
         summary:
           verdict === null
-            ? `Adversary review of ${claimId} was unavailable; the belief stays candidate (fail safe).`
-            : `Adversary ${verdict === "uphold" ? "upheld" : verdict === "narrow" ? "narrowed" : "downgraded"} ${claimId}: belief ${e.from} → ${e.to}.`,
+            ? `${AGENTS.adversary.name} review of ${claimId} was unavailable; the belief stays candidate (fail safe).`
+            : `${AGENTS.adversary.name} challenged ${claimId} — ${verdict === "uphold" ? "upheld" : verdict === "narrow" ? "narrowed" : "downgraded"}: belief ${e.from} → ${e.to}.`,
         data: {
           beliefId: e.beliefId,
           claimId,
@@ -391,7 +422,7 @@ export function deriveTimeline(bundle: RunBundle, opts: DeriveTimelineOptions = 
       type: "decision",
       recordIds: ids(d.id, d.requestId, ...d.missingBeliefs, ...d.guardsApplied),
       traceIds: ids(d.traceId),
-      summary: decisionSummary(d, money),
+      summary: decisionSummary((id) => claimIdOf(bundle, id), d, money),
       data: {
         requestId: d.requestId,
         requestType: d.requestType,
@@ -455,7 +486,7 @@ export function liveDecisionEvent(runId: string, d: Decision, request: { amount?
     type: "decision",
     recordIds: ids(d.id, d.requestId, ...d.missingBeliefs, ...d.guardsApplied),
     traceIds: ids(d.traceId),
-    summary: decisionSummary(d, money),
+    summary: decisionSummary((id) => id.replace(/^belief-/, ""), d, money),
     data: {
       requestId: d.requestId,
       requestType: d.requestType,

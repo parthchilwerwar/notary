@@ -278,7 +278,7 @@
       "traceIds": [
         "4c6cc52bcdb84bd9adfc29bc14b1906f"
       ],
-      "summary": "Probe demo-notarize-crustdata-p001 (type_edge) committed its predictions for crustdata.enrich.funding-total-investment-number before running.",
+      "summary": "Reflector proposed 3 hypotheses for crustdata.enrich.funding-total-investment-number; probe demo-notarize-crustdata-p001 (type_edge) committed its predictions before running.",
       "data": {
         "claimId": "crustdata.enrich.funding-total-investment-number",
         "template": "type_edge",
@@ -353,7 +353,7 @@
       "traceIds": [
         "c04f9412fa6e4582a5f4e524a2f4fc70"
       ],
-      "summary": "Probe demo-notarize-crustdata-p002 (type_edge) committed its predictions for crustdata.enrich.funding-total-investment-number before running.",
+      "summary": "Reflector proposed 3 hypotheses for crustdata.enrich.funding-total-investment-number; probe demo-notarize-crustdata-p002 (type_edge) committed its predictions before running.",
       "data": {
         "claimId": "crustdata.enrich.funding-total-investment-number",
         "template": "type_edge",
@@ -428,7 +428,7 @@
       "traceIds": [
         "c075f8c09560478fb2ad42ed792ca154"
       ],
-      "summary": "Probe demo-notarize-crustdata-p003 (type_edge) committed its predictions for crustdata.enrich.funding-total-investment-number before running.",
+      "summary": "Reflector proposed 3 hypotheses for crustdata.enrich.funding-total-investment-number; probe demo-notarize-crustdata-p003 (type_edge) committed its predictions before running.",
       "data": {
         "claimId": "crustdata.enrich.funding-total-investment-number",
         "template": "type_edge",
@@ -503,7 +503,7 @@
       "traceIds": [
         "18696a25a4e84de0867df9402e669c78"
       ],
-      "summary": "Probe demo-notarize-crustdata-p004 (type_edge) committed its predictions for crustdata.enrich.funding-total-investment-number before running.",
+      "summary": "Reflector proposed 3 hypotheses for crustdata.enrich.funding-total-investment-number; probe demo-notarize-crustdata-p004 (type_edge) committed its predictions before running.",
       "data": {
         "claimId": "crustdata.enrich.funding-total-investment-number",
         "template": "type_edge",
@@ -578,7 +578,7 @@
       "traceIds": [
         "cd7bcfa4320c4593ba197fc989a8dab9"
       ],
-      "summary": "Probe demo-notarize-crustdata-p005 (type_edge) committed its predictions for crustdata.enrich.funding-total-investment-number before running.",
+      "summary": "Reflector proposed 3 hypotheses for crustdata.enrich.funding-total-investment-number; probe demo-notarize-crustdata-p005 (type_edge) committed its predictions before running.",
       "data": {
         "claimId": "crustdata.enrich.funding-total-investment-number",
         "template": "type_edge",
@@ -892,7 +892,7 @@
         "crustdata.enrich.headcount-total-integer"
       ],
       "traceIds": [],
-      "summary": "Adversary upheld crustdata.enrich.headcount-total-integer: belief candidate → notarized.",
+      "summary": "Adversary challenged crustdata.enrich.headcount-total-integer — upheld: belief candidate → notarized.",
       "data": {
         "beliefId": "belief-crustdata.enrich.headcount-total-integer",
         "claimId": "crustdata.enrich.headcount-total-integer",

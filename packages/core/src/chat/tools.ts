@@ -250,7 +250,7 @@ const searchCertificates: ChatToolDef = {
 
 const getCertificate: ChatToolDef = {
   name: "get_certificate",
-  description: "One certificate or revocation by id: claim, docs vs observed, scope, evidence (probe ids, trace ids), the experiments behind it, the adversary review.",
+  description: "One certificate or revocation by id: claim, docs vs observed, scope, evidence (probe ids, trace ids), the experiments behind it, the Adversary review.",
   argsDoc: '{"id": "cert-<16 hex> or rev-<16 hex>"}',
   args: z.object({ id: z.string().regex(/^(cert|rev)-[0-9a-f]{16}$/, "id must be cert-<16 hex> or rev-<16 hex>") }).strict(),
   title: (a) => `Opening certificate ${String(a.id)}`,
@@ -680,7 +680,7 @@ const dodoLookup: ChatToolDef = {
 
 const getHealth: ChatToolDef = {
   name: "get_health",
-  description: "Which integrations this server is connected to (LLM, Crustdata, Dodo, neatlogs, Entire), with the exact fix for anything missing.",
+  description: "Which integrations this server is connected to (the model provider, Crustdata, Dodo, neatlogs, Entire), with the exact fix for anything missing.",
   argsDoc: "{}",
   args: z.object({}).strict(),
   title: () => "Checking connections",

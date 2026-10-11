@@ -102,7 +102,7 @@ describe("cost precedence: env override > LiteLLM-reported > table > unknown", (
     expect(a).toMatchObject({ usd: 0, priceSource: "unknown" });
     expect(llm.meter.warnings).toHaveLength(1);
     expect(warned).toHaveLength(1);
-    expect(warned[0]).toMatch(/No price for model "test-nova-pro" \(adversary\); usd recorded as 0\. Set NOTARY_PRICE_ADVERSARY_IN and NOTARY_PRICE_ADVERSARY_OUT/);
+    expect(warned[0]).toMatch(/No price for model "test-nova-pro" \(Adversary\); usd recorded as 0\. Set NOTARY_PRICE_ADVERSARY_IN and NOTARY_PRICE_ADVERSARY_OUT/);
   });
 });
 
@@ -127,7 +127,7 @@ describe("NOTARY_MAX_USD", () => {
     const err = (await llm.complete({ ...req, maxTokens: 500_000 }).catch((e) => e)) as UsdCapExceededError; // est ≈ $10
     expect(err).toBeInstanceOf(UsdCapExceededError);
     expect(isUsdCapExceeded(err)).toBe(true);
-    expect(err.message).toMatch(/^USD cap reached: NOTARY_MAX_USD=0\.02 — \$0\.0120 already spent this run, the next executor call could cost up to ~\$10\.0000/);
+    expect(err.message).toMatch(/^USD cap reached: NOTARY_MAX_USD=0\.02 — \$0\.0120 already spent this run, the next Executor call could cost up to ~\$10\.0000/);
     expect(calls).toHaveLength(1);
     expect(llm.meter.snapshot().executor).toMatchObject({ calls: 1, usd: 0.012 });
     await llm.complete(req); // still fits: 0.012 + 0.00202 ≤ 0.02 → spent 0.024
@@ -158,7 +158,7 @@ describe("NOTARY_MAX_USD", () => {
     expect(usdCapFromStopReason("Credit budget exceeded: x")).toBeNull();
     expect(usdCapFromStopReason(undefined)).toBeNull();
     const b = buildSampleBundle(7);
-    expect(budgetSnapshot({ ...b, status: "stopped_budget", stopReason: `${err.message} (before the reflector proposed hypotheses)` }).usdCap).toBe(0.75);
+    expect(budgetSnapshot({ ...b, status: "stopped_budget", stopReason: `${err.message} (before the Reflector proposed hypotheses)` }).usdCap).toBe(0.75);
     const { stopReason: _drop, ...noStop } = b;
     expect(budgetSnapshot(noStop).usdCap).toBeNull();
   });

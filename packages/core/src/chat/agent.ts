@@ -28,6 +28,9 @@
 import { z } from "zod";
 import { isUsdCapExceeded } from "../llm/budget.js";
 import { LlmRateLimitedError } from "../llm/limiter.js";
+import { AGENT_SPAN_ATTR } from "../llm/agents.js";
+import { MODEL_ENV } from "../llm/roles.js";
+import { AGENTS } from "../schema/agents.js";
 import type { CompleteResult, LlmLike, LlmMessage } from "../llm/client.js";
 import { ChatToolNameSchema } from "../schema/chat.js";
 import type { ChatEvent, ChatMessage } from "../schema/chat.js";
@@ -45,7 +48,9 @@ export const HISTORY_MESSAGE_CHARS = 6000;
 export const ACTION_MAX_TOKENS = 500;
 export const ANSWER_MAX_TOKENS = 1500;
 export const STOPPED_MESSAGE = "Stopped — this answer is incomplete.";
-const DOCTOR_FIX = "Check the executor model with `pnpm notary doctor --llm`";
+/** The model Notary Chat runs on (AGENTS.chat.modelRole → its NOTARY_MODEL_* variable), for fix lines. */
+const CHAT_MODEL = `the model ${AGENTS.chat.name} runs on (${MODEL_ENV[AGENTS.chat.modelRole!]})`;
+const DOCTOR_FIX = `Check ${CHAT_MODEL} with \`pnpm notary doctor --llm\``;
 
 export interface TurnInput {
   /** Earlier messages of the conversation, oldest first. */
@@ -276,14 +281,14 @@ export async function runTurn(input: TurnInput, deps: AgentDeps): Promise<TurnRe
     if (signal.aborted) throw new Aborted();
     let r: CompleteResult;
     try {
-      r = await deps.llm.complete({ role: "executor", system: systemPrompt(), messages: alternate(messages), maxTokens, signal, ...(onText ? { onText } : {}) });
+      r = await deps.llm.complete({ role: AGENTS.chat.modelRole!, agent: "chat", system: systemPrompt(), messages: alternate(messages), maxTokens, signal, ...(onText ? { onText } : {}) });
     } catch (err) {
       if (signal.aborted) throw new Aborted();
       const msg = clean(err instanceof Error ? err.message : String(err));
       if (msg.startsWith("BLOCKED:")) throw new TurnError(msg, "Fix the variable named above in .env, restart `pnpm notary serve`, then run `pnpm notary doctor --llm`");
       if (isUsdCapExceeded(err)) throw new TurnError(msg, "Raise NOTARY_MAX_USD in .env (or unset it), then restart `pnpm notary serve`");
       if (err instanceof LlmRateLimitedError) throw new TurnError(msg, "Wait a minute and ask again, or raise NOTARY_LLM_RPM / NOTARY_LLM_CONCURRENCY in .env; `pnpm notary doctor --llm` shows the limits");
-      throw new TurnError(`The model call failed: ${msg}`, DOCTOR_FIX);
+      throw new TurnError(`${AGENTS.chat.name}'s model call failed: ${msg}`, DOCTOR_FIX);
     }
     usage.calls += 1;
     usage.input += r.inputTokens;
@@ -304,7 +309,7 @@ export async function runTurn(input: TurnInput, deps: AgentDeps): Promise<TurnRe
     // The span body returns a small summary only (the SDK records the return value); the result stays here.
     await withSpan(
       "notary.chat.tool",
-      { "notary.chat.tool": def.name, "notary.chat.step_id": id, "notary.chat.input_chars": inputSummary.length },
+      { [AGENT_SPAN_ATTR]: AGENTS.chat.name, "notary.chat.tool": def.name, "notary.chat.step_id": id, "notary.chat.input_chars": inputSummary.length },
       async () => {
         try {
           run = await def.run(args, ctx);
@@ -380,7 +385,7 @@ export async function runTurn(input: TurnInput, deps: AgentDeps): Promise<TurnRe
         convo.push({ role: "user", content: `Your reply was not a valid action: ${action.reason}. Reply with exactly one JSON object as described in the protocol, nothing else.` });
         reply = await callModel(convo, ACTION_MAX_TOKENS);
         action = parseAction(reply.text);
-        if (!action.ok) throw new TurnError(`The model's reply was not a valid action twice in a row (${action.reason}).`, "Ask again or rephrase the question; if it keeps happening, check the executor model with `pnpm notary doctor --llm`");
+        if (!action.ok) throw new TurnError(`${AGENTS.chat.name}'s reply was not a valid action twice in a row (${action.reason}).`, `Ask again or rephrase the question; if it keeps happening, check ${CHAT_MODEL} with \`pnpm notary doctor --llm\``);
       }
       convo.push({ role: "assistant", content: reply.text });
       if (action.note) emit({ type: "note", text: clean(shortNote(action.note)), source: "model" });
@@ -417,7 +422,7 @@ export async function runTurn(input: TurnInput, deps: AgentDeps): Promise<TurnRe
     show(splitter.push(safe.end()));
     show(splitter.end().text);
     const block = splitter.block;
-    if (!visible.trim()) throw new TurnError("The model returned an empty answer.", DOCTOR_FIX);
+    if (!visible.trim()) throw new TurnError(`${AGENTS.chat.name} returned an empty answer.`, DOCTOR_FIX);
     if (money.moneyMoving && !visible.includes(APPROVALS_PATH)) {
       const notice = `\n\n${MONEY_NOTICE}`;
       visible += notice;

@@ -2,6 +2,7 @@
 // Browser-safe (zod only). Everything served comes from the real agent's files and integrations;
 // no handler returns canned data. The bundle schema stays frozen.
 import { z } from "zod";
+import { AgentIdSchema } from "./agents.js";
 import { BundleIndexEntrySchema } from "./bundle.js";
 import { CertificateReportSchema, ToolCertificatesSchema } from "./certificate.js";
 import { ToolSchema } from "./common.js";
@@ -28,10 +29,21 @@ export const IntegrationStatusSchema = z.object({
   checkedAt: z.iso.datetime(),
 });
 
+// P2: the agent roster with the model each one runs on, from config (NOTARY_MODEL_*), never hardcoded.
+// model = null when the role's variable is unset; always null for the Guard (a deterministic rule).
+export const AgentStatusSchema = z.object({
+  id: AgentIdSchema,
+  name: z.string(),
+  role: z.string(),
+  kind: z.enum(["model", "rule"]),
+  model: z.string().nullable(),
+});
+
 export const HealthResponseSchema = z.object({
   ok: z.literal(true),
   service: z.literal("notary serve"),
   integrations: z.array(IntegrationStatusSchema),
+  agents: z.array(AgentStatusSchema).optional(),
 });
 
 // ---- runs ----------------------------------------------------------------------------------
@@ -87,6 +99,7 @@ export type IntegrationName = z.infer<typeof IntegrationNameSchema>;
 export type IntegrationState = z.infer<typeof IntegrationStateSchema>;
 export type IntegrationStatus = z.infer<typeof IntegrationStatusSchema>;
 export type HealthResponse = z.infer<typeof HealthResponseSchema>;
+export type AgentStatusEntry = z.infer<typeof AgentStatusSchema>;
 export type StartRunRequest = z.infer<typeof StartRunRequestSchema>;
 export type StartRunResponse = z.infer<typeof StartRunResponseSchema>;
 export type RunListEntry = z.infer<typeof RunListEntrySchema>;

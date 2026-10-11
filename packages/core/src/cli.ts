@@ -372,7 +372,7 @@ export function buildProgram(): Command {
   program
     .command("doctor")
     .description("Emit one neatlogs test span and flush (--llm: check the model provider, role models and one tiny call per role)")
-    .option("--llm", "check the LLM backend instead: config, GET /v1/models (LiteLLM), role models, separation of duties, one tiny call per role")
+    .option("--llm", "check the model backend instead: config, GET /v1/models (LiteLLM), the Executor, Reflector and Adversary models, separation of duties, one tiny call per agent")
     .action(async (opts: { llm?: boolean }) => {
       if (opts.llm) {
         // src/llm/doctor.ts: exit 0 ok, 1 a real failure, 3 BLOCKED (a required variable is not set).

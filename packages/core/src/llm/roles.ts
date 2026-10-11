@@ -12,6 +12,7 @@
  */
 import type { Role } from "../schema/index.js";
 import { MissingCredentialError } from "../tools/errors.js";
+import { AGENTS } from "../schema/agents.js";
 
 export const ROLES: readonly Role[] = ["executor", "reflector", "adversary"];
 
@@ -57,7 +58,7 @@ export function resolveModels(env: Env = process.env): ModelRoster {
   };
   if (roster.reflector && roster.adversary && baseModelId(roster.reflector) === baseModelId(roster.adversary)) {
     throw new ModelConfigError(
-      `Separation of duties: ${MODEL_ENV.reflector} and ${MODEL_ENV.adversary} must name different models ` +
+      `Separation of duties: the ${AGENTS.reflector.name} (${MODEL_ENV.reflector}) and the ${AGENTS.adversary.name} (${MODEL_ENV.adversary}) must run on different models ` +
         `(both are "${roster.reflector}"). The model that proposes a belief may never review it. ` +
         `Set ${MODEL_ENV.adversary} to a different model and run \`pnpm notary doctor --llm\`.`,
     );

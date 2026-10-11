@@ -7,7 +7,8 @@
  * {review: null, failure} so the caller leaves the belief unchanged. BLOCKED (missing model id or
  * AWS credentials) and a separation-of-duties ModelConfigError propagate from the bedrock backend.
  */
-import { LlmClient } from "../llm/index.js";
+import { AGENT_SPAN_ATTR, LlmClient } from "../llm/index.js";
+import { AGENTS } from "../schema/agents.js";
 import type { LlmLike } from "../llm/index.js";
 import type { Belief, Claim, Probe } from "../schema/index.js";
 import { withSpan } from "../trace/index.js";
@@ -49,6 +50,7 @@ export async function reviewBelief(args: ReviewBeliefArgs): Promise<ReviewOutcom
   return withSpan(
     "notary.adversary",
     {
+      [AGENT_SPAN_ATTR]: AGENTS.adversary.name,
       "notary.beliefId": args.belief.id,
       "notary.claimId": args.claim.id,
       "notary.adversary.backend": args.backend,
