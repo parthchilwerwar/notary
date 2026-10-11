@@ -12,7 +12,7 @@
  */
 import { buildUrl, encodeId, requireEnv, send } from "./client.js";
 import type { QueryValue, ToolResult } from "./client.js";
-import { CassetteMissError, MissingCredentialError, TestModeLockError } from "./errors.js";
+import { CassetteMissError, MissingCredentialError, RequestNotSentError, TestModeLockError } from "./errors.js";
 import type { CreditLedger } from "./ledger.js";
 import type { Recorder, RecorderMode } from "./recorder.js";
 
@@ -414,7 +414,7 @@ export class DodoClient {
       return result;
     } catch (err) {
       // Count every call that reached the API (HTTP or network errors), not ones never sent.
-      if (!(err instanceof MissingCredentialError || err instanceof CassetteMissError)) this.ledger.countCall(op);
+      if (!(err instanceof MissingCredentialError || err instanceof CassetteMissError || err instanceof RequestNotSentError)) this.ledger.countCall(op);
       throw err;
     }
   }

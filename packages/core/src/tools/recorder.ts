@@ -18,7 +18,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { CassetteMissError, TestModeLockError, ToolNetworkError } from "./errors.js";
+import { CassetteMissError, ReadOnlyRequestError, RequestNotSentError, TestModeLockError, ToolNetworkError } from "./errors.js";
 import { RateLimitScope, VirtualClock, rateLimitScope, setRateLimitScope } from "./ratelimit.js";
 
 export type RecorderMode = "live" | "replay";
@@ -135,7 +135,15 @@ export interface RecorderOptions {
   env?: NodeJS.ProcessEnv;
   /** Live request timeout. Default 30 s. */
   timeoutMs?: number;
+  /** Live: cancels in-flight requests (combined with the timeout). Notary Chat's Stop. */
+  signal?: AbortSignal;
+  /**
+   * Live: HTTP methods this recorder may send (e.g. ["GET"] for Notary Chat's Dodo reads). Any other
+   * method is refused with ReadOnlyRequestError before credentials are read or any I/O happens.
+   */
+  allowedMethods?: readonly string[];
 }
+
 
 export const DEFAULT_CASSETTE_DIR = fileURLToPath(new URL("../../fixtures/cassettes/", import.meta.url));
 
@@ -407,12 +415,17 @@ export class Recorder {
     } else {
       // P9 (AUDIT-06): the network chokepoint enforces the Dodo test-mode lock too, whatever built the request.
       assertDodoTestHost(spec.url);
+      // Read-only recorders (Notary Chat) refuse any other method here, before credentials or I/O.
+      const allowed = this.opts.allowedMethods;
+      if (allowed && !allowed.map((m) => m.toUpperCase()).includes(method)) throw new ReadOnlyRequestError(spec.op, method, allowed);
+      if (this.opts.signal?.aborted) throw new RequestNotSentError(spec.op, "aborted before sending");
       // Credentials are resolved here, before any I/O: a missing key throws without a request.
       const headers = spec.headers?.() ?? {};
       this.occurrences.set(requestHash, occurrence + 1);
       // Throttle (Crustdata: 15/min) through the PROCESS-WIDE scope, shared by every live Recorder
       // (recon, probes, queue). Replay never gets here, so it never waits.
       await rateLimitScope().limiter(spec.tool)?.acquire();
+      if (this.opts.signal?.aborted) throw new RequestNotSentError(spec.op, "aborted before sending");
       exchange = await this.live(spec, method, headers, id, requestHash, occurrence);
     }
 
@@ -458,7 +471,9 @@ export class Recorder {
       const init: RequestInit = {
         method,
         headers: sendHeaders,
-        signal: AbortSignal.timeout(this.opts.timeoutMs ?? 30_000),
+        signal: this.opts.signal
+          ? AbortSignal.any([this.opts.signal, AbortSignal.timeout(this.opts.timeoutMs ?? 30_000)])
+          : AbortSignal.timeout(this.opts.timeoutMs ?? 30_000),
       };
       if (payload !== undefined) init.body = payload;
       res = await (transportOverride?.fetch ?? globalThis.fetch)(spec.url, init);

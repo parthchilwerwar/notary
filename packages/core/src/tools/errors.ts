@@ -118,3 +118,21 @@ export function isBlocked(err: unknown): err is MissingCredentialError {
     (err instanceof Error && err.name === "MissingCredentialError" && err.message.startsWith("BLOCKED:"))
   );
 }
+
+/** The request was never sent (refused or cancelled before any I/O): nothing to count or charge. */
+export class RequestNotSentError extends Error {
+  readonly op: string;
+  constructor(op: string, reason: string) {
+    super(`${op}: not sent: ${reason}`);
+    this.name = "RequestNotSentError";
+    this.op = op;
+  }
+}
+
+/** A request refused by a recorder restricted to `allowedMethods` (Notary Chat's GET-only Dodo client). */
+export class ReadOnlyRequestError extends RequestNotSentError {
+  constructor(op: string, method: string, allowed: readonly string[]) {
+    super(op, `${method} refused — this client may only send ${allowed.join(", ")} (read-only)`);
+    this.name = "ReadOnlyRequestError";
+  }
+}

@@ -161,6 +161,10 @@ export interface CreateToolsOptions {
   dodoBaseUrl?: string;
   crustdataBaseUrl?: string;
   timeoutMs?: number;
+  /** Live: cancels in-flight requests (Notary Chat's Stop). */
+  signal?: AbortSignal;
+  /** Live: the only HTTP methods the recorder may send (Notary Chat's Dodo reads: ["GET"]). */
+  allowedMethods?: readonly string[];
 }
 
 export interface Tools {
@@ -205,6 +209,8 @@ export function createTools(opts: CreateToolsOptions): Tools {
     ...(dir === undefined ? {} : { cassetteDir: dir }),
     ...(opts.onExchange ? { onExchange: opts.onExchange } : {}),
     ...(opts.timeoutMs === undefined ? {} : { timeoutMs: opts.timeoutMs }),
+    ...(opts.signal ? { signal: opts.signal } : {}),
+    ...(opts.allowedMethods ? { allowedMethods: opts.allowedMethods } : {}),
     env,
   });
   const ledger = opts.ledger ?? new CreditLedger({ env });

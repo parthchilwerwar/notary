@@ -53,7 +53,8 @@ function ownsRunDir(runDir: string, b: RunBundle): boolean {
   return parsed.success && parsed.data.some((e) => e.runId === b.runId && e.contentHash === b.contentHash);
 }
 
-function timelineFor(l: LoadedBundle, runsDir: string | null): TimelineEvent[] {
+/** The timeline of one loaded bundle (runs/<runId>/timeline.jsonl when that dir owns the bundle, else the published file); [] if none. */
+export function timelineFor(l: LoadedBundle, runsDir: string | null): TimelineEvent[] {
   const b = l.bundle;
   const runDir = runsDir === null ? null : join(runsDir, b.runId);
   if (runDir && existsSync(timelinePath(runDir)) && ownsRunDir(runDir, b)) {

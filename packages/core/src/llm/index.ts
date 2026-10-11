@@ -6,6 +6,7 @@ export {
   bedrockTransport,
   isAwsCredentialError,
   scrubber,
+  streamScrubber,
   setLlmWarningSink,
 } from "./client.js";
 export {
@@ -28,7 +29,7 @@ export {
 } from "./config.js";
 export type { LlmConfigIssue, LlmProvider } from "./config.js";
 export { KEPT_RESPONSE_HEADERS, liteLlmModelLister, liteLlmTransport, stopReasonFromFinish } from "./litellm.js";
-export type { ChatReply, ChatRequest, ChatTransport, ModelLister } from "./litellm.js";
+export type { ChatCallOptions, ChatReply, ChatRequest, ChatTransport, ModelLister } from "./litellm.js";
 export type {
   CompleteRequest,
   CompleteResult,

@@ -25,8 +25,15 @@ import { tracingEnabled } from "../trace/index.js";
 export type ChatRequest = ChatCompletionCreateParamsNonStreaming;
 /** One chat completion and the response headers the caller cares about (lowercased names). */
 export type ChatReply = { completion: ChatCompletion; headers?: Record<string, string> };
+/**
+ * Per-call options: `signal` cancels the HTTP request; `onDelta` asks for a streamed reply
+ * (`stream: true`, `stream_options.include_usage`), each text delta passed on as it arrives. The
+ * reply is still returned whole (a completion assembled from the chunks), so pricing, usage and
+ * stop reasons are identical to the non-streamed path.
+ */
+export type ChatCallOptions = { signal?: AbortSignal; onDelta?: (delta: string) => void };
 /** Sends one chat completion. Injectable so tests never reach a proxy. */
-export type ChatTransport = (body: ChatRequest) => Promise<ChatReply>;
+export type ChatTransport = (body: ChatRequest, opts?: ChatCallOptions) => Promise<ChatReply>;
 /** Lists the model ids the proxy offers (GET <base>/v1/models). Injectable for tests. */
 export type ModelLister = () => Promise<string[]>;
 
@@ -37,8 +44,17 @@ const CALL_HEADER = "x-notary-call-id";
 /** Per-request timeout. Long replies (the reflector may write up to 8000 tokens) need minutes. */
 export const LITELLM_TIMEOUT_MS = 300_000;
 
+type CreateOpts = { headers?: Record<string, string>; signal?: AbortSignal };
+/** One streamed chunk (the fields Notary reads). */
+type StreamChunk = {
+  id?: string;
+  model?: string;
+  created?: number;
+  choices?: { delta?: { content?: string | null }; finish_reason?: string | null }[];
+  usage?: ChatCompletion["usage"] | null;
+};
 type OpenAiClient = {
-  chat: { completions: { create: (body: ChatRequest, opts?: { headers?: Record<string, string> }) => Promise<ChatCompletion> } };
+  chat: { completions: { create: (body: ChatRequest | Record<string, unknown>, opts?: CreateOpts) => Promise<ChatCompletion | AsyncIterable<StreamChunk>> } };
   models: { list: () => Promise<{ data: { id: string }[] }> & AsyncIterable<{ id: string }> };
 };
 
@@ -91,16 +107,53 @@ function lazyClient(opts: { baseUrl: string; apiKey: string; fetch?: typeof fetc
 /** Default LiteLLM transport: the real proxy through `openai`, created on the first call. */
 export function liteLlmTransport(opts: { baseUrl: string; apiKey: string; fetch?: typeof fetch }): ChatTransport {
   const lazy = lazyClient(opts);
-  return async (body) => {
+  return async (body, opts) => {
     const client = await lazy.get();
     const id = randomUUID();
+    const reqOpts: CreateOpts = { headers: { [CALL_HEADER]: id }, ...(opts?.signal ? { signal: opts.signal } : {}) };
     try {
-      const completion = await client.chat.completions.create(body, { headers: { [CALL_HEADER]: id } });
+      if (!opts?.onDelta) {
+        const completion = (await client.chat.completions.create(body, reqOpts)) as ChatCompletion;
+        return { completion, headers: lazy.captured.get(id) ?? {} };
+      }
+      const stream = (await client.chat.completions.create({ ...body, stream: true, stream_options: { include_usage: true } }, reqOpts)) as AsyncIterable<StreamChunk>;
+      const completion = await collectStream(stream, opts.onDelta, body.model);
       return { completion, headers: lazy.captured.get(id) ?? {} };
     } finally {
       lazy.captured.delete(id);
     }
   };
+}
+
+/** Read a streamed chat completion, passing each text delta on, and assemble the whole completion. */
+export async function collectStream(stream: AsyncIterable<StreamChunk>, onDelta: (delta: string) => void, model: string): Promise<ChatCompletion> {
+  let text = "";
+  let finish: string | null = null;
+  let usage: ChatCompletion["usage"] | undefined;
+  let id = "";
+  let created = 0;
+  let modelId = model;
+  for await (const chunk of stream) {
+    if (chunk.id) id = chunk.id;
+    if (chunk.created) created = chunk.created;
+    if (chunk.model) modelId = chunk.model;
+    if (chunk.usage) usage = chunk.usage;
+    const choice = chunk.choices?.[0];
+    const delta = choice?.delta?.content;
+    if (typeof delta === "string" && delta.length > 0) {
+      text += delta;
+      onDelta(delta);
+    }
+    if (choice?.finish_reason) finish = choice.finish_reason;
+  }
+  return {
+    id,
+    object: "chat.completion",
+    created,
+    model: modelId,
+    choices: [{ index: 0, message: { role: "assistant", content: text, refusal: null }, finish_reason: (finish ?? "stop") as "stop", logprobs: null }],
+    ...(usage ? { usage } : {}),
+  } as ChatCompletion;
 }
 
 /** Default model lister: GET <base>/v1/models with the key. */

@@ -15,7 +15,7 @@
  */
 import { buildUrl, requireEnv } from "./client.js";
 import type { ToolResult } from "./client.js";
-import { CassetteMissError, MissingCredentialError, RateLimitedError, ToolHttpError } from "./errors.js";
+import { CassetteMissError, MissingCredentialError, RateLimitedError, RequestNotSentError, ToolHttpError } from "./errors.js";
 import type { CreditLedger } from "./ledger.js";
 import {
   CRUSTDATA_MAX_429_RETRIES,
@@ -198,7 +198,7 @@ export class CrustdataClient {
         credits: creditsFrom(estimate),
       });
     } catch (err) {
-      if (err instanceof MissingCredentialError || err instanceof CassetteMissError) {
+      if (err instanceof MissingCredentialError || err instanceof CassetteMissError || err instanceof RequestNotSentError) {
         this.ledger.release(op); // nothing was sent
       } else {
         // Sent but no response (network error): the charge is unknown, so assume the estimate.

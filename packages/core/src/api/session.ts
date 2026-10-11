@@ -50,7 +50,7 @@ export function createSession(token: string = randomBytes(SESSION_TOKEN_BYTES).t
 export function sessionBanner(baseUrl: string, token: string): string[] {
   return [
     `  session token (this run only; never stored): ${token}`,
-    `  POST ${baseUrl}/api/runs  POST ${baseUrl}/api/ask  GET|POST ${baseUrl}/api/approvals[/:id/approve|reject]  need: Authorization: Bearer <token>`,
+    `  POST ${baseUrl}/api/runs  POST ${baseUrl}/api/ask  GET|POST ${baseUrl}/api/approvals[/:id/approve|reject]  /api/chat[/:id[/messages]]  need: Authorization: Bearer <token>`,
   ];
 }
 

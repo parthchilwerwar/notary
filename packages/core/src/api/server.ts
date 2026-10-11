@@ -17,8 +17,11 @@
 //   POST /api/ask         Ask Notary (src/api/ask.ts): cited answers from the loaded records
 //                         (NOTARY_ASK_RPM per session, 429 + Retry-After; spans in runs/_ask/spans.jsonl)
 //   GET|POST /api/approvals, POST /api/approvals/:id/approve|reject  approval desk (src/api/approvals.ts)
+//   POST|GET /api/chat, GET|DELETE /api/chat/:id, POST /api/chat/:id/messages (SSE)  Notary Chat
+//                         (src/api/chat.ts; read-only tool agent, NOTARY_ASK_RPM per session, spans in
+//                         runs/_chat/spans.jsonl, conversations in runs/chat.sqlite)
 //
-// POST /api/runs, ask and approvals need the per-session token (Authorization: Bearer) AND a loopback
+// POST /api/runs, ask, chat and approvals need the per-session token (Authorization: Bearer) AND a loopback
 // socket, Host and Origin (src/api/session.ts). Everything else is read-only and unauthenticated as
 // before. CORS is limited to loopback dashboard dev origins. No handler returns canned data: every
 // response is read from run files, the environment, or a real integration check.
@@ -40,9 +43,11 @@ import type { BundleIndexEntry } from "../schema/index.js";
 import { bus as defaultBus, DEFAULT_EVENT_JOURNAL, tailEventJournal } from "./bus.js";
 import type { EventBus, NotaryEvent } from "./bus.js";
 import { servedTimeline } from "../timeline/serve.js";
-import { mountApprovals } from "./approvals.js";
+import { listApprovals, mountApprovals } from "./approvals.js";
 import { loadVerifiedBundles } from "./bundle-source.js";
-import { mountCertificates } from "./certificates.js";
+import { mountCertificates, realCertificates } from "./certificates.js";
+import { CHAT_SPANS_DIR, mountChat } from "./chat.js";
+import type { ChatOptions } from "./chat.js";
 import { createHealth } from "./health.js";
 import type { HealthOptions } from "./health.js";
 import { mountRuns } from "./runs.js";
@@ -77,6 +82,8 @@ export interface ApiOptions {
   session?: ApiSession;
   /** POST /api/ask options (test seams: model double, env). */
   ask?: Omit<AskOptions, "bundleDirs">;
+  /** /api/chat options (test seams: model double, env, fetch, store, tools). */
+  chat?: Omit<ChatOptions, "session" | "runsDir" | "bundleDirs">;
   /** GET/POST /api/approvals options (test seams: env, tools, store, manifest). */
   approvals?: Omit<ApprovalsOptions, "runsDir" | "bus">;
   /** GET /api/health options (test seams: env, probes, clock). */
@@ -156,7 +163,7 @@ export function createApp(opts: ApiOptions = {}): Hono {
     cors({
       origin: (origin) => (LOOPBACK_ORIGIN.test(origin) ? origin : null),
       // POST + Authorization + Content-Type for the token-protected ask/approvals endpoints; loopback origins only.
-      allowMethods: ["GET", "HEAD", "POST", "OPTIONS"],
+      allowMethods: ["GET", "HEAD", "POST", "DELETE", "OPTIONS"],
       allowHeaders: ["Last-Event-ID", "Cache-Control", "Authorization", "Content-Type"],
       // Retry-After: the ask endpoint's 429 (rate limit) tells the dashboard when to try again.
       exposeHeaders: [HASH_MISMATCH_HEADER, "Retry-After"],
@@ -287,6 +294,19 @@ export function createApp(opts: ApiOptions = {}): Hono {
     // so they never land in an approval's runs/<runId>/spans.jsonl (approvals swap the global sink).
     spansPath: runsDir === null ? null : join(runsDir, ASK_SPANS_DIR, "spans.jsonl"),
     ...opts.ask,
+    session,
+    bundleDirs: () => bundleDirectories(opts),
+  });
+  // Notary Chat (token + localhost). Its certificate, approvals and health readers are injected here so
+  // the chat module itself never imports approval/queue/certify code (test/chat-safety.test.ts).
+  const approvalsRead = { ...opts.approvals, runsDir, bus };
+  mountChat(app, {
+    runsDir,
+    spansPath: runsDir === null ? null : join(runsDir, CHAT_SPANS_DIR, "spans.jsonl"),
+    certificates: () => realCertificates({ verifiedBundles }),
+    approvals: () => listApprovals(approvalsRead),
+    health: () => health.check(),
+    ...opts.chat,
     session,
     bundleDirs: () => bundleDirectories(opts),
   });

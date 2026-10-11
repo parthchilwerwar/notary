@@ -68,6 +68,18 @@ export type CompleteRequest = {
   messages: LlmMessage[];
   /** Output token cap. Default 2048. */
   maxTokens?: number;
+  /**
+   * Abort the call (Notary Chat's Stop): checked before the rate-limit slot and the request, and
+   * passed to the provider SDK so an in-flight HTTP request is cancelled. An aborted call records no
+   * usage and rejects with the signal's reason.
+   */
+  signal?: AbortSignal;
+  /**
+   * Stream the reply: LiteLLM uses `stream: true` and calls this with each text delta as it arrives;
+   * a provider/transport that does not stream (Bedrock Converse, test doubles) gets the whole reply
+   * in one call after it completes. The returned CompleteResult still carries the full text.
+   */
+  onText?: (delta: string) => void;
 };
 
 export type CompleteResult = {
@@ -85,8 +97,8 @@ export type CompleteResult = {
 /** Anything that can complete a prompt; lets callers (e.g. the reflector) accept a narrower type. */
 export type LlmLike = { complete(req: CompleteRequest): Promise<CompleteResult> };
 
-/** Sends one Converse request. Injectable so tests never reach AWS. */
-export type ConverseTransport = (input: ConverseCommandInput) => Promise<ConverseCommandOutput>;
+/** Sends one Converse request. Injectable so tests never reach AWS. `abortSignal` cancels it. */
+export type ConverseTransport = (input: ConverseCommandInput, opts?: { abortSignal?: AbortSignal }) => Promise<ConverseCommandOutput>;
 
 /** The AWS SDK's "no credentials found" errors (from @smithy/property-provider). */
 const CREDENTIAL_ERROR_NAMES = new Set(["CredentialsProviderError", "TokenProviderError"]);
@@ -113,6 +125,40 @@ export function scrubber(env: Env): (text: string) => string {
     let out = text;
     for (const s of secrets) if (out.includes(s)) out = out.split(s).join("[REDACTED]");
     return out;
+  };
+}
+
+/**
+ * The scrubber for streamed text: a secret split across deltas is still replaced. `push` returns the
+ * text safe to pass on now, holding back a tail that could be the start of a secret; `end` flushes it.
+ */
+export function streamScrubber(env: Env): { push: (delta: string) => string; end: () => string } {
+  const secrets = Object.entries(env)
+    .filter(([name, v]) => SECRET_ENV_RE.test(name) && (v?.trim().length ?? 0) >= 8)
+    .map(([, v]) => v!.trim());
+  const clean = scrubber(env);
+  let buf = "";
+  return {
+    push(delta) {
+      buf = clean(buf + delta);
+      let hold = 0;
+      for (const s of secrets) {
+        for (let k = Math.min(s.length - 1, buf.length); k > hold; k--) {
+          if (buf.endsWith(s.slice(0, k))) {
+            hold = k;
+            break;
+          }
+        }
+      }
+      const out = buf.slice(0, buf.length - hold);
+      buf = buf.slice(buf.length - hold);
+      return out;
+    },
+    end() {
+      const out = clean(buf);
+      buf = "";
+      return out;
+    },
   };
 }
 
@@ -177,16 +223,17 @@ export class UsageMeter {
 
 /** Default transport: the real Bedrock Runtime client, created lazily on the first call. */
 export function bedrockTransport(region: string): ConverseTransport {
-  let client: { send: (cmd: unknown) => Promise<unknown> } | null = null;
+  let client: { send: (cmd: unknown, opts?: { abortSignal?: AbortSignal }) => Promise<unknown> } | null = null;
   let ConverseCommandCtor: (new (input: ConverseCommandInput) => unknown) | null = null;
-  return async (input) => {
+  return async (input, opts) => {
     if (!client || !ConverseCommandCtor) {
       const sdk = await import("@aws-sdk/client-bedrock-runtime");
       // wrapBedrock (when tracing is on) emits the LLM span with messages, completion and usage.
       client = traceBedrockClient(new sdk.BedrockRuntimeClient({ region })) as unknown as typeof client;
       ConverseCommandCtor = sdk.ConverseCommand;
     }
-    return (await client!.send(new ConverseCommandCtor!(input))) as ConverseCommandOutput;
+    const cmd = new ConverseCommandCtor!(input);
+    return (await (opts?.abortSignal ? client!.send(cmd, { abortSignal: opts.abortSignal }) : client!.send(cmd))) as ConverseCommandOutput;
   };
 }
 
@@ -214,7 +261,16 @@ type ProviderReply = {
   reportedUsd: number | null;
 };
 type ProviderRequest = { system?: string; messages: LlmMessage[]; maxTokens: number };
-type ProviderCall = (modelId: string, req: ProviderRequest) => Promise<ProviderReply>;
+/** Per-call I/O options (not part of the prompt, never priced or traced). */
+type ProviderIo = { signal?: AbortSignal; onDelta?: (delta: string) => void };
+type ProviderCall = (modelId: string, req: ProviderRequest, io?: ProviderIo) => Promise<ProviderReply>;
+
+/** Reject with the signal's reason (an AbortError by default) when it has fired. */
+function throwIfAborted(signal: AbortSignal | undefined): void {
+  if (!signal?.aborted) return;
+  const reason: unknown = signal.reason;
+  throw reason instanceof Error ? reason : new DOMException("The operation was aborted", "AbortError");
+}
 
 /** Scrub secret env values out of an error's message (the error object is kept, so its class survives). */
 function scrubError(err: unknown, clean: (s: string) => string): unknown {
@@ -296,7 +352,7 @@ export class LlmClient implements LlmLike {
   private providerCall(): ProviderCall {
     if (this.provider === "litellm") {
       const transport = this.getChatTransport();
-      return async (modelId, req) => {
+      return async (modelId, req, io) => {
         const body: ChatRequest = {
           model: modelId,
           messages: [
@@ -306,7 +362,7 @@ export class LlmClient implements LlmLike {
           max_tokens: req.maxTokens,
           temperature: 0,
         };
-        const { completion, headers } = await transport(body);
+        const { completion, headers } = await (io?.signal || io?.onDelta ? transport(body, { ...(io.signal ? { signal: io.signal } : {}), ...(io.onDelta ? { onDelta: io.onDelta } : {}) }) : transport(body));
         const choice = completion.choices?.[0];
         const content = choice?.message?.content;
         return {
@@ -319,7 +375,7 @@ export class LlmClient implements LlmLike {
       };
     }
     const transport = this.getTransport();
-    return async (modelId, req) => {
+    return async (modelId, req, io) => {
       const input: ConverseCommandInput = {
         modelId,
         messages: req.messages.map((m) => ({ role: m.role, content: [{ text: m.content }] })),
@@ -328,7 +384,7 @@ export class LlmClient implements LlmLike {
       };
       let out: ConverseCommandOutput;
       try {
-        out = await transport(input);
+        out = await (io?.signal ? transport(input, { abortSignal: io.signal }) : transport(input));
       } catch (err) {
         if (isAwsCredentialError(err)) throw new MissingCredentialError(AWS_CREDENTIALS_LABEL, AWS_CREDENTIALS_HINT);
         throw err;
@@ -369,6 +425,24 @@ export class LlmClient implements LlmLike {
       ...(req.system ? { system: clean(req.system) } : {}),
     };
 
+    // Streaming: deltas go to the caller as they arrive; a non-streaming provider gets one delta at the end.
+    // Deltas are scrubbed as a stream, so a secret split across two deltas is still replaced.
+    let streamed = false;
+    const streamClean = req.onText ? streamScrubber(this.env) : null;
+    const io: ProviderIo = {
+      ...(req.signal ? { signal: req.signal } : {}),
+      ...(req.onText
+        ? {
+            onDelta: (d: string) => {
+              if (!d) return;
+              streamed = true;
+              const safe = streamClean!.push(d);
+              if (safe) req.onText!(safe);
+            },
+          }
+        : {}),
+    };
+
     let setAttr: ((k: string, v: string | number | boolean) => void) | undefined;
     return withSpan(
       "notary.llm",
@@ -383,13 +457,15 @@ export class LlmClient implements LlmLike {
           attempt += 1;
           // NOTARY_MAX_USD before every attempt (a retry is a new spend decision).
           this.checkUsdCap(req.role, modelId, scrubbed);
+          throwIfAborted(req.signal);
           let slot: LlmSlot | null = null;
           if (limiter) {
             slot = await limiter.acquire();
             waitedMs += slot.waitedMs;
           }
           try {
-            out = await call(modelId, scrubbed);
+            throwIfAborted(req.signal);
+            out = await call(modelId, scrubbed, io);
           } catch (err) {
             const rl = limiter ? rateLimitInfo(err) : null;
             if (!rl || !limiter) throw scrubError(err, clean);
@@ -408,6 +484,12 @@ export class LlmClient implements LlmLike {
           }
         }
         const { inputTokens, outputTokens, text, stopReason } = out;
+        if (req.onText && streamed) {
+          const tail = streamClean!.end();
+          if (tail) req.onText(tail);
+        }
+        if (req.onText && !streamed && text) req.onText(clean(text));
+        if (setAttr && req.onText) setAttr("llm.streamed", streamed);
         const priced = priceCall(req.role, modelId, { inputTokens, outputTokens }, this.env, out.reportedUsd);
         if (priced.warning) this.meter.warn(priced.warning);
         const usd = priced.usd;
