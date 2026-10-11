@@ -1076,7 +1076,7 @@ export function certificateScopeLines(
     }),
   ];
   if (!narrowed) return out;
-  out.push(trailLine("scope.narrowed", { label: "Narrowed scope (adversary)", text: narrowed.text, record: certRef }));
+  out.push(trailLine("scope.narrowed", { label: "Narrowed scope (Adversary)", text: narrowed.text, record: certRef }));
   if (narrowed.parsed) {
     out.push(
       trailLine("scope", {

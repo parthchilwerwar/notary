@@ -4,10 +4,14 @@ import { Command } from "cmdk";
 import { useData } from "../../app/catalog";
 import { paletteEntries, withRun } from "../../app/links";
 import { routes } from "../../routes";
-import { ASK_SHORTCUT_LABEL, useAsk } from "../ask";
 
 /** Pages that can be opened without a record id (no `:param`). */
 export const paletteRoutes = () => routes.filter((r) => !r.path.includes(":"));
+
+/** The Chat page with the typed text prefilled (never auto-sent). */
+export function chatPrefillPath(text: string, runId?: string): string {
+  return withRun("/app/chat", runId, { q: text.trim() || undefined });
+}
 
 /**
  * Ctrl+K / Cmd+K palette: jump to any page, or to any decision, probe, belief or certificate of
@@ -19,16 +23,6 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
   const [search, setSearch] = useState("");
   const input = useRef<HTMLInputElement>(null);
   const restore = useRef<HTMLElement | null>(null);
-  const ask = useAsk();
-  // One overlay at a time: opening Ask (Ctrl+J) closes the palette, and opening the palette closes Ask.
-  useEffect(() => {
-    if (ask.open) onOpenChange(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ask.open]);
-  useEffect(() => {
-    if (open) ask.setOpen(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
   const records = useMemo(
     () => paletteEntries(bundle, certificates.status === "ready" ? certificates.data.certificates : []),
     [bundle, certificates],
@@ -102,17 +96,6 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
                   <small>{r.description}</small>
                 </Command.Item>
               ))}
-              <Command.Item
-                value="ask panel question answer explain why held"
-                onSelect={() => {
-                  restore.current = null;
-                  onOpenChange(false);
-                  ask.setOpen(true);
-                }}
-              >
-                <span className="palette-label">Open the Ask panel</span>
-                <small>{ASK_SHORTCUT_LABEL}</small>
-              </Command.Item>
             </Command.Group>
             {groups.map((group) => {
               const items = records.filter((e) => e.group === group);
@@ -131,6 +114,20 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
                 </Command.Group>
               ) : null;
             })}
+            {search.trim() && (
+              <Command.Group heading="Chat" forceMount>
+                <Command.Item
+                  forceMount
+                  // Its own value never matches the search, so cmdk ranks it after matching records;
+                  // forceMount keeps it listed for any text.
+                  value="zz-notary-chat-prefill"
+                  onSelect={() => go(chatPrefillPath(search, selectedRunId))}
+                >
+                  <span className="palette-label">Ask Notary Chat: {search.trim()}</span>
+                  <small>Opens Chat with this question filled in</small>
+                </Command.Item>
+              </Command.Group>
+            )}
           </Command.List>
         </Command>
       </div>

@@ -1,98 +1,203 @@
-/* Report page. Tokens only. */
-.report {
-  display: grid;
-  gap: var(--space-3);
+/* Report (K3): layout only; surfaces and type come from src/ui. Also styles the receipts shared
+   with the certificate page (receipts.tsx). */
+.report .ui-section {
+  scroll-margin-top: 24px;
+}
+.report-note,
+.report-detail {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.report-detail {
+  margin-top: 8px;
+  font-size: 13px;
+}
+.report-unsafe {
+  margin: 0;
+  color: var(--status-unsafe-text);
+  overflow-wrap: anywhere;
+}
+td.report-unsafe {
+  font-weight: 500;
+}
+.report-chart {
   min-width: 0;
 }
-.report .section {
-  margin-top: var(--space-4);
-  scroll-margin-top: calc(var(--topbar-height) + var(--space-2));
+.report-cohort {
+  display: grid;
+  gap: 12px;
 }
-.report-toc {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1) var(--space-3);
-  padding-bottom: var(--space-2);
-  border-bottom: var(--hairline);
+.report-runs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
-.report-toc a {
-  color: var(--strong-muted);
+.report-run {
+  display: grid;
+  gap: 6px;
+  height: 100%;
+  box-shadow: var(--shadow-soft);
+}
+.report-run[data-selected] {
+  border-color: var(--accent);
+}
+.report-run-id {
+  color: var(--text);
+  font-weight: 500;
+  overflow-wrap: anywhere;
   text-decoration: none;
 }
-.report-toc a:hover {
-  color: var(--fg);
+.report-run-id:hover {
+  color: var(--accent-text);
   text-decoration: underline;
 }
-.pair {
+.report-run-kind {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.report-run-figure {
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+.report-run-figure > span {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.report-more {
   display: grid;
-  gap: var(--space-1);
-  min-width: 0;
+  gap: 8px;
 }
-.report .data-table tbody th {
-  font-weight: var(--weight-regular);
-  text-align: left;
-}
-.th-run {
-  display: block;
-  margin-top: 2px;
-  color: var(--strong-muted);
-  font-family: var(--font-mono);
-  font-size: 11px;
-}
-.other-pairs {
-  margin-top: var(--space-1);
-}
-.cost-detail {
-  display: grid;
-  gap: var(--space-1);
-  margin-top: var(--space-2);
-  min-width: 0;
-}
-.cost-detail h3 {
-  font-size: var(--text-md);
-}
-.cost-detail-grid {
+.report-split {
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-  gap: var(--space-2);
+  gap: 16px;
   align-items: start;
 }
-.fix {
-  margin-top: 4px;
-  color: var(--strong-muted);
+@media (max-width: 900px) {
+  .report-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
-.trace-list {
+.report-offline {
+  display: grid;
+  gap: 8px;
+}
+.report-offline p {
+  margin: 0;
+}
+.report-conn-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.report-conn-list li {
+  display: grid;
+  grid-template-columns: 120px auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px 16px;
+  padding: 14px 0;
+  border-top: 1px solid var(--hairline-color);
+}
+.report-conn-list li:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+.report-conn-name {
+  font-weight: 500;
+}
+.report-conn-detail {
   display: grid;
   gap: 4px;
+  overflow-wrap: anywhere;
+}
+.report-conn-fix,
+.report-conn-time {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+@media (max-width: 767px) {
+  .report-conn-list li {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .report-conn-detail,
+  .report-conn-time {
+    grid-column: 1 / -1;
+  }
+}
+.report-receipts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+.report-receipt {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+.report-receipt p {
+  margin: 0;
+}
+.report-traces {
+  display: grid;
+  gap: 6px;
   max-height: 280px;
   overflow-y: auto;
   margin: 0;
   padding: 0;
   list-style: none;
 }
-.evidence-list {
+.report-evidence {
   display: grid;
+  gap: 20px;
   margin: 0;
   padding: 0;
   list-style: none;
-  border: var(--hairline);
-  border-radius: var(--radius);
-}
-.evidence-list > li {
-  padding: var(--space-2);
-}
-.evidence-list > li + li {
-  border-top: var(--hairline);
-}
-.notice > p + p {
-  margin-top: var(--space-1);
-}
-.nowrap {
-  white-space: nowrap;
 }
 
-@media (max-width: 900px) {
-  .cost-detail-grid {
-    grid-template-columns: 1fr;
-  }
+/* Receipts (shared) */
+.evidence-entry {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.evidence-entry p {
+  margin: 0;
+}
+.evidence-entry-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.evidence-entry-head h3,
+.evidence-entry-head h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+.tool-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.integration-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin: 0;
+}
+.trace-ref {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  min-width: 0;
 }

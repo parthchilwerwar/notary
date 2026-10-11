@@ -1,4 +1,5 @@
-/* Decision trail / Certificate trail. Tokens from styles.css; stacks at phone width. */
+/* Decision trail / Certificate trail (K3: kit surfaces — white cards, hairlines, serif titles).
+   Tokens only (src/design/tokens.css); stacks at phone width. */
 .trail {
   display: flex;
   flex-direction: column;
@@ -14,9 +15,10 @@
   gap: var(--space-3) var(--space-6);
 }
 .trail-head h2 {
+  font-family: var(--font-display);
   font-size: 28px;
-  font-weight: 300;
-  letter-spacing: -0.5px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
   margin: 4px 0 0;
   overflow-wrap: anywhere;
 }
@@ -26,7 +28,7 @@
   align-items: center;
   gap: 6px 8px;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--text-muted);
 }
 .trail-legend-text {
   margin-right: var(--space-2);
@@ -38,42 +40,39 @@
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
-  border-radius: var(--radius-control);
-  font-size: 10.5px;
-  letter-spacing: 0.3px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: 500;
   white-space: nowrap;
   line-height: 16px;
   height: fit-content;
   width: fit-content;
 }
 .trail-tag[data-tag="verified"] {
-  border: 1px solid var(--fg);
-  color: var(--fg);
-  background: var(--surface);
+  border: 1px solid transparent;
+  color: var(--status-certified-text);
+  background: var(--status-certified-bg);
 }
 .trail-tag[data-tag="model"] {
-  border: 1px dashed var(--hatch-line);
-  color: var(--fg);
-  background: repeating-linear-gradient(
-    125deg,
-    var(--hatch-bg) 0 3px,
-    var(--surface) 3px 6px
-  );
+  border: 1px dashed var(--control-line);
+  color: var(--text-strong-muted);
+  background: var(--card);
 }
 
 .trail-decided {
   padding: var(--space-4) var(--space-5);
-  border-radius: var(--radius-inner);
-  border: 1px solid var(--line);
-  background: var(--surface);
-  border-left: 4px solid var(--fg);
+  border-radius: 16px;
+  border: 1px solid var(--hairline-color);
+  background: var(--card);
+  border-left: 4px solid var(--accent);
+  box-shadow: var(--shadow-soft);
 }
 .trail-decided[data-kind="revoked_certificate"],
 .trail-decided[data-kind="missing_certificate"] {
-  border-left-color: var(--unsafe);
+  border-left-color: var(--status-unsafe-text);
 }
 .trail-decided[data-kind="guard"] {
-  border-left-color: var(--blue);
+  border-left-color: var(--accent);
 }
 .trail-decided p {
   margin: 6px 0 0;
@@ -81,14 +80,14 @@
   overflow-wrap: anywhere;
 }
 .trail-decided[data-unsafe] {
-  border-left-color: var(--unsafe);
+  border-left-color: var(--status-unsafe-text);
 }
 .trail-decided .trail-unsafe {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: var(--unsafe);
+  color: var(--status-unsafe-text);
 }
 .trail-decided .trail-unsafe svg {
   flex-shrink: 0;
@@ -96,10 +95,10 @@
 .trail-note {
   margin: 0;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--text-muted);
   padding: var(--space-2) var(--space-4);
-  border: 1px dashed var(--line);
-  border-radius: var(--radius-inner);
+  border: 1px dashed var(--hairline-color);
+  border-radius: 16px;
 }
 
 .trail-steps {
@@ -123,8 +122,8 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  border: 1px solid var(--line);
-  background: var(--surface);
+  border: 1px solid var(--hairline-color);
+  background: var(--card);
   display: grid;
   place-items: center;
   font-size: 12px;
@@ -134,7 +133,7 @@
   content: "";
   flex: 1;
   width: 1px;
-  background: var(--line);
+  background: var(--hairline-color);
   margin: 4px 0;
 }
 .trail-step:last-child .trail-step-marker::after {
@@ -152,7 +151,7 @@
 .trail-step-head p {
   margin: 0 0 var(--space-3);
   font-size: 12px;
-  color: var(--muted);
+  color: var(--text-muted);
   overflow-wrap: anywhere;
 }
 
@@ -160,9 +159,9 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-inner);
-  background: var(--surface);
+  border: 1px solid var(--hairline-color);
+  border-radius: 16px;
+  background: var(--card);
   overflow: hidden;
 }
 .trail-line {
@@ -171,14 +170,14 @@
   align-items: start;
   gap: var(--space-2) var(--space-4);
   padding: 10px var(--space-4);
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--hairline-color);
 }
 .trail-line:first-child {
   border-top: 0;
 }
 .trail-line[data-decisive] {
-  background: var(--hover);
-  box-shadow: inset 3px 0 0 var(--fg);
+  background: var(--accent-soft);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 .trail-line-key,
 .trail-line-value {
@@ -198,7 +197,7 @@
 }
 .trail-label {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--text-muted);
   overflow-wrap: anywhere;
 }
 .trail-text {
@@ -214,7 +213,7 @@
   margin: 2px 0 0;
   font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--muted);
+  color: var(--text-muted);
   overflow-wrap: anywhere;
 }
 .trail-warning {
@@ -223,7 +222,7 @@
   gap: 6px;
   margin: 4px 0 0;
   font-size: 12px;
-  color: var(--unsafe);
+  color: var(--status-unsafe-text);
 }
 .trail-refs {
   display: flex;
@@ -242,49 +241,49 @@
   gap: 6px;
   max-width: 100%;
   padding: 2px 8px;
-  border-radius: var(--radius-control);
-  border: 1px solid var(--line);
-  background: var(--surface);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--hairline-color);
+  background: var(--card);
   font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--fg);
+  color: var(--text);
   text-decoration: none;
   overflow-wrap: anywhere;
   word-break: break-all;
 }
 a.trail-ref:hover {
-  border-color: var(--fg);
+  border-color: var(--accent);
+  color: var(--accent-text);
 }
 .trail-ref.muted {
-  color: var(--muted);
+  color: var(--text-muted);
 }
 .trail-ref > span {
   font-family: var(--font-sans);
-  color: var(--muted);
+  color: var(--text-muted);
   font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
   word-break: normal;
   white-space: nowrap;
 }
 .trail-decisive-badge {
-  font-size: 10.5px;
+  font-size: 11px;
+  font-weight: 500;
   padding: 2px 8px;
-  border-radius: var(--radius-control);
-  background: var(--fg);
-  color: var(--surface);
+  border-radius: var(--r-pill);
+  background: var(--accent-soft);
+  color: var(--accent-text);
   white-space: nowrap;
 }
 
 .trail-group {
   margin-top: var(--space-3);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-inner);
-  background: var(--canvas);
+  border: 1px solid var(--hairline-color);
+  border-radius: 16px;
+  background: var(--card);
   min-width: 0;
 }
 .trail-group[data-decisive] {
-  border-color: var(--fg);
+  border-color: var(--accent);
 }
 .trail-group > summary {
   cursor: pointer;
@@ -295,7 +294,7 @@ a.trail-ref:hover {
   list-style-position: inside;
 }
 .trail-group > summary::marker {
-  color: var(--muted);
+  color: var(--text-muted);
 }
 .trail-group-title {
   display: inline-flex;
@@ -311,11 +310,11 @@ a.trail-ref:hover {
 }
 .trail-group-count {
   font-size: 11px;
-  color: var(--muted);
+  color: var(--text-muted);
 }
 .trail-group-subtitle {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--text-muted);
   overflow-wrap: anywhere;
 }
 .trail-group > .trail-lines {

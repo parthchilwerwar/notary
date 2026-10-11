@@ -919,7 +919,7 @@ export function rowDetails(row: RunRow, ctx: RowContext = {}): RowDetails {
           trailLine("belief.event", {
             key: "applied",
             label: "Applied by code",
-            text: `Belief status set to ${words(str(data.to)!)} from the adversary's verdict.`,
+            text: `Belief status set to ${words(str(data.to)!)} from the Adversary's verdict.`,
             record: ref,
           }),
         );

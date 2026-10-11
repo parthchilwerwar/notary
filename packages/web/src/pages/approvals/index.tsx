@@ -5,16 +5,11 @@
 // sidebar counts), grouped by cohort, plus the selected run's held items; no actions at all.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ApprovalRecord, ApprovalsList } from "../../../../core/src/schema";
-import {
-  Button,
-  EmptyState,
-  ErrorState,
-  LoadingState,
-  PageHeader,
-  StatusPill,
-} from "../../components/ui";
+import { Link } from "react-router";
+import { Button, Card, EmptyState, Page, PageBody, Section, Skeleton, SkyBand, Stat, StatRow, usePageMotion } from "../../ui";
 import { useData } from "../../app/catalog";
 import { LocalApiError, number, useSessionToken } from "../../data";
+import { withRun } from "../../app/links";
 import { useOptionalShellStatus } from "../../components/shell/status";
 import { RecordedHolds } from "./RecordedHolds";
 import { fetchApprovals } from "./api";
@@ -95,150 +90,147 @@ export function ApprovalsPage() {
     : undefined;
   const heldInSelected = heldDecisions(selected).length;
 
+  const root = usePageMotion([selected.runId, list.status, desk.pending.length]);
+  const summary =
+    mode === "local"
+      ? data
+        ? `${number(desk.pending.length)} waiting for review · Dodo test mode ${data.testMode ? "on" : "off"}`
+        : "Paste the session token to see what is waiting"
+      : `${number(heldInSelected)} held in ${selected.runId} · read-only history`;
+
   return (
-    <>
-      <PageHeader
+    <Page ref={root}>
+      <SkyBand
         title="Approvals"
-        description="Money actions the agent held for a human, with the evidence it was missing and the trail that led there."
-        actions={
-          mode === "local" ? (
-            <>
-              <StatusPill tone="neutral">Live, local server</StatusPill>
-              {data && (
-                <StatusPill tone={data.testMode ? "safe" : "unsafe"}>
-                  {data.testMode ? "Dodo test mode on" : "Dodo test mode off"}
-                </StatusPill>
-              )}
-            </>
-          ) : (
-            <StatusPill tone="neutral">Read-only</StatusPill>
-          )
+        summary={summary}
+        action={
+          <Button asChild>
+            <Link to={withRun("/app/run", selected.runId)}>Open the run</Link>
+          </Button>
         }
       />
-
-      {mode === "hosted" ? (
-        <>
-          <p className="desk-note" role="note">
-            Read-only history. Approving or rejecting a held action happens only against a local{" "}
-            <code>notary serve</code> in Dodo test mode.
-          </p>
-          <RecordedHolds />
-        </>
-      ) : (
-        <section className="desk-local" aria-label="Local approvals">
-          <TokenForm token={token} setToken={setToken} error={tokenError} />
-          {data && !data.testMode && (
-            <p className="desk-gate" role="note">
-              Approvals are disabled: this <code>notary serve</code> is not in Dodo test mode, and
-              approvals execute only in test mode. Rejecting needs no external call and stays
-              available.
-            </p>
-          )}
-
-          {list.status === "loading" && (
-            <LoadingState title="Loading held actions…">
-              Asking the local <code>notary serve</code> for pending and decided approvals.
-            </LoadingState>
-          )}
-          {list.status === "error" && (
-            <ErrorState
-              title="Approvals unavailable"
-              actions={
-                <Button variant="outline" onClick={refresh}>
-                  Try again
-                </Button>
-              }
-            >
-              {list.error}
-            </ErrorState>
-          )}
-
-          {latestRow && (
-            <div className="desk-section" aria-live="polite">
-              <h2>Latest decision</h2>
-              <DecidedItem row={latestRow} highlight />
-            </div>
-          )}
-
-          {data && (
-            <div className="desk-section">
-              <div className="desk-section-head">
-                <h2>Awaiting a human</h2>
-                <span className="muted">
-                  {number(desk.pending.length)} pending across local runs
-                </span>
-              </div>
-              {desk.pending.length ? (
-                desk.pending.map((row, i) => {
-                  const ctx = {
-                    mode,
-                    testMode: data.testMode,
-                    token,
-                    bundle: row.bundle,
-                  };
-                  return (
-                    <PendingItem
-                      key={row.key}
-                      row={row}
-                      approve={approveGate(ctx, row.item)}
-                      reject={rejectGate(ctx)}
-                      onApprove={() => setDialog({ kind: "approve", row })}
-                      onReject={() => setDialog({ kind: "reject", row })}
-                      openTrail={i === 0}
-                    />
-                  );
-                })
-              ) : (
-                <EmptyState title="Nothing is waiting for a human">
-                  The local server lists held write actions only from verified, live, guarded runs
-                  under <code>runs/</code>. None are held right now
-                  {data.decided.length ? ", and every listed item has been decided" : ""}.
-                  {desk.droppedSample > 0 &&
-                    ` ${number(desk.droppedSample)} item(s) from fixture runs were not offered.`}
-                </EmptyState>
-              )}
-            </div>
-          )}
-
-          {data && desk.decided.length > 0 && (
-            <div className="desk-section">
-              <div className="desk-section-head">
-                <h2>Decided</h2>
-                <span className="muted">{number(desk.decided.length)} recorded</span>
-              </div>
-              {desk.decided
-                .filter((row) => row.record.id !== latest?.id)
-                .map((row) => (
-                  <DecidedItem key={row.record.id} row={row} />
-                ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      <div className="desk-section">
-        <div className="desk-section-head">
-          <h2>Held in {selected.runId}</h2>
-          <span className="muted">
-            {number(heldInSelected)} held
-            {desk.history.length !== heldInSelected &&
-              ` · ${number(desk.history.length)} not listed above`}
-          </span>
-        </div>
-        {desk.history.length ? (
-          desk.history.map((row, i) => (
-            <HistoryItem key={row.key} row={row} openTrail={i === 0} />
-          ))
-        ) : (
-          <EmptyState title={`Nothing else held in ${selected.runId}`}>
-            {heldInSelected
-              ? "Every held action of this run is listed above."
-              : selected.decisions.length
-                ? "Every decision in this run was executed, escalated or denied."
-                : "This run made no queue decisions."}
-          </EmptyState>
+      <PageBody>
+        {mode === "local" && data && (
+          <StatRow label="Approvals">
+            <Stat label="Waiting for review" value={desk.pending.length} />
+            <Stat label="Decided by a human" value={desk.decided.length} />
+            <Stat label={`Held in ${selected.runId}`} value={heldInSelected} />
+          </StatRow>
         )}
-      </div>
+
+        {mode === "hosted" ? (
+          <>
+            <Card padding="sm" className="desk-note" role="note">
+              Read-only history. Approving or rejecting a held action happens only against a local <code>notary serve</code>{" "}
+              in Dodo test mode. Start the server to approve live.
+            </Card>
+            <RecordedHolds />
+          </>
+        ) : (
+          <section className="desk-local" aria-label="Local approvals">
+            <TokenForm token={token} setToken={setToken} error={tokenError} />
+            {data && !data.testMode && (
+              <p className="desk-gate" role="note">
+                Approvals are disabled: this <code>notary serve</code> is not in Dodo test mode, and approvals execute only
+                in test mode. Rejecting needs no external call and stays available.
+              </p>
+            )}
+
+            {list.status === "loading" && (
+              <div className="desk-loading" role="status" aria-live="polite">
+                <span className="sr-only">Loading held actions…</span>
+                <Skeleton shape="card" />
+              </div>
+            )}
+            {list.status === "error" && (
+              <EmptyState
+                tone="error"
+                title="Approvals unavailable"
+                action={
+                  <Button variant="secondary" onClick={refresh}>
+                    Try again
+                  </Button>
+                }
+              >
+                <p>
+                  The local server did not return its approval list. Check that <code>pnpm notary serve</code> is running,
+                  then try again.
+                </p>
+                <p className="desk-muted">{list.error}</p>
+              </EmptyState>
+            )}
+
+            {latestRow && (
+              <Section title="Latest decision" aria-live="polite">
+                <DecidedItem row={latestRow} highlight />
+              </Section>
+            )}
+
+            {data && (
+              <Section title="Awaiting a human" description={`${number(desk.pending.length)} pending across local runs`}>
+                {desk.pending.length ? (
+                  desk.pending.map((row, i) => {
+                    const ctx = { mode, testMode: data.testMode, token, bundle: row.bundle };
+                    return (
+                      <PendingItem
+                        key={row.key}
+                        row={row}
+                        approve={approveGate(ctx, row.item)}
+                        reject={rejectGate(ctx)}
+                        onApprove={() => setDialog({ kind: "approve", row })}
+                        onReject={() => setDialog({ kind: "reject", row })}
+                        openTrail={i === 0}
+                      />
+                    );
+                  })
+                ) : (
+                  <EmptyState title="Nothing waiting for review.">
+                    The local server lists held write actions only from verified, live, guarded runs under{" "}
+                    <code>runs/</code>. None are held right now
+                    {data.decided.length ? ", and every listed item has been decided" : ""}.
+                    {desk.droppedSample > 0 && ` ${number(desk.droppedSample)} item(s) from fixture runs were not offered.`}
+                  </EmptyState>
+                )}
+              </Section>
+            )}
+
+            {data && desk.decided.length > 0 && (
+              <Section title="Decided" description={`${number(desk.decided.length)} recorded`}>
+                {desk.decided
+                  .filter((row) => row.record.id !== latest?.id)
+                  .map((row) => (
+                    <DecidedItem key={row.record.id} row={row} />
+                  ))}
+              </Section>
+            )}
+          </section>
+        )}
+
+        <Section
+          title={`Held in ${selected.runId}`}
+          description={
+            desk.history.length !== heldInSelected
+              ? `${number(heldInSelected)} held · ${number(desk.history.length)} not listed above`
+              : undefined
+          }
+        >
+          {desk.history.length ? (
+            <div className="desk-list">
+              {desk.history.map((row, i) => (
+                <HistoryItem key={row.key} row={row} openTrail={i === 0 && mode === "local"} />
+              ))}
+            </div>
+          ) : (
+            <EmptyState title={heldInSelected ? "Nothing else held" : "Nothing waiting for review."}>
+              {heldInSelected
+                ? "Every held action of this run is listed above."
+                : selected.decisions.length
+                  ? "Every decision in this run was executed, escalated or denied."
+                  : "This run made no queue decisions."}
+            </EmptyState>
+          )}
+        </Section>
+      </PageBody>
 
       {dialog && (
         <ConfirmDialog
@@ -256,6 +248,6 @@ export function ApprovalsPage() {
           onStale={refresh}
         />
       )}
-    </>
+    </Page>
   );
 }

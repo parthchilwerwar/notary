@@ -8,7 +8,7 @@ import { SealCheckIcon as SealCheck } from "@phosphor-icons/react/dist/csr/SealC
 import { ChatCircleDotsIcon as ChatCircleDots } from "@phosphor-icons/react/dist/csr/ChatCircleDots";
 import { WarningIcon as Warning } from "@phosphor-icons/react/dist/csr/Warning";
 import type { RunBundle } from "../../../../core/src/schema";
-import { StatusPill } from "../ui/status-pill";
+import { StatusPill } from "../../ui";
 import { useData } from "../../app/catalog";
 import { recordPath, withRun } from "../../app/links";
 import {

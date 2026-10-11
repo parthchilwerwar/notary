@@ -5,7 +5,8 @@
 import { useId, type ReactNode } from "react";
 import { Link } from "react-router";
 import { TAG_LABEL, type TrailLine } from "../../components/trail/model";
-import { Button } from "../../components/ui/button";
+import type { AgentId } from "../../../../core/src/schema/agents";
+import { AgentBadge, Button, WashCard } from "../../ui";
 import {
   clip,
   durationText,
@@ -139,7 +140,7 @@ export function HeldCardView({
   onReject?: () => void;
 }) {
   return (
-    <div className="run-held" data-kind={card.kind}>
+    <WashCard wash="peach" padding="sm" className="run-held" data-kind={card.kind}>
       <p className="run-held-reason" title={card.reason}>
         <span className="run-held-label">Held</span> {card.reason}
       </p>
@@ -153,10 +154,10 @@ export function HeldCardView({
       {card.kind === "actionable" && (
         <div className="run-held-actions">
           <span className="run-muted">Held amount {card.amountText}</span>
-          <Button type="button" size="sm" onClick={onApprove}>
+          <Button size="sm" onClick={onApprove}>
             Approve…
           </Button>
-          <Button type="button" size="sm" variant="outline" onClick={onReject}>
+          <Button size="sm" variant="secondary" onClick={onReject}>
             Reject…
           </Button>
         </div>
@@ -172,7 +173,7 @@ export function HeldCardView({
           {card.record.error ? ` · ${card.record.error}` : ""}
         </p>
       )}
-    </div>
+    </WashCard>
   );
 }
 
@@ -192,10 +193,30 @@ export type TranscriptRowProps = {
   certificateHref?: string;
 };
 
+/**
+ * Which of the five named agents (core/src/schema/agents.ts) acted in a row. Only the Executor,
+ * Reflector, Adversary and the Guard rule appear in a run; deterministic bookkeeping (beliefs,
+ * certificates, budget) shows no badge. Model ids come only from the recorded event.
+ */
+export function rowAgents(row: Pick<RunRow, "type" | "actor" | "held">): { id: AgentId; model?: string }[] {
+  switch (row.type) {
+    case "adversary.verdict":
+      return [{ id: "adversary", model: row.actor.kind === "model" && row.actor.name !== "model not recorded" ? row.actor.name : undefined }];
+    case "probe.committed":
+      return [{ id: "reflector" }];
+    case "decision":
+      return row.held ? [{ id: "executor" }, { id: "guard" }] : [{ id: "executor" }];
+    default:
+      return [];
+  }
+}
+
 export function TranscriptRow({ row, expanded = false, onToggle, details, card, entering, certificateHref }: TranscriptRowProps) {
   const detailsId = useId();
-  // Deterministic steps have no model or tool to name; only tools, models and humans are shown.
-  const actor = row.actor.kind === "code" ? undefined : row.actor;
+  const agents = rowAgents(row);
+  // Deterministic steps have no model or tool to name; tools and humans are named in text, agents
+  // by badge (the model id lives in the badge, so it is not repeated).
+  const actor = row.actor.kind === "code" || row.actor.kind === "model" ? undefined : row.actor;
   const meta = [actor?.name, row.durationMs !== undefined ? durationText(row.durationMs) : undefined, row.cost].filter(Boolean);
   const head = (
     <>
@@ -205,6 +226,9 @@ export function TranscriptRow({ row, expanded = false, onToggle, details, card, 
         {row.subject && <span className="run-row-subject">{clip(row.subject, 120)}</span>}
       </span>
       <span className="run-row-meta">
+        {agents.map((a) => (
+          <AgentBadge key={a.id} agent={a.id} model={a.model} />
+        ))}
         {row.provisional && <span className="run-pill" data-status="provisional">live</span>}
         {meta.map((m, i) => (
           <span key={i} data-actor={i === 0 && actor ? actor.kind : undefined}>

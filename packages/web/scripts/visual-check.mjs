@@ -1,6 +1,6 @@
 // Visual + behavior check of the app shell against a running dev/preview server (replay mode).
 //   NOTARY_PREVIEW_URL  base URL (default http://127.0.0.1:5175)
-//   NOTARY_SCREENSHOTS  output dir (default screenshots/R2; gitignored)
+//   NOTARY_SCREENSHOTS  output dir (default screenshots/K3; gitignored)
 //   NOTARY_VISUAL=quick only Certificates and one certificate at 1440 light + 390 dark
 // Uses the system Chrome (channel "chrome"); no browser download.
 import { chromium, expect } from "@playwright/test";
@@ -9,7 +9,7 @@ import { resolve } from "node:path";
 import { computeContentHash } from "../../core/src/bundle/hash.ts";
 
 const base = process.env.NOTARY_PREVIEW_URL ?? "http://127.0.0.1:5175";
-const out = resolve(process.env.NOTARY_SCREENSHOTS ?? "screenshots/R2");
+const out = resolve(process.env.NOTARY_SCREENSHOTS ?? "screenshots/K3");
 const quick = process.env.NOTARY_VISUAL === "quick";
 await mkdir(out, { recursive: true });
 
@@ -22,19 +22,18 @@ const changeCerts = await json("certificates/fixture/change-api/dodo.json").catc
 const q = (run) => `?run=${encodeURIComponent(run)}`;
 const enc = encodeURIComponent;
 
-// Every page in src/routes.tsx (Run belongs to R3 and is only smoke-checked), with record URLs
-// taken from the published fixture data.
+// Every page in src/routes.tsx, with record URLs taken from the published fixture data.
 const cert = certs.certificates[0];
 const revoked = changeCerts?.certificates.find((c) => c.status === "revoked");
 const allPages = [
-  { path: `/app/run${q(guarded.runId)}`, h1: null, slug: "run" },
-  { path: `/app/certificates${q(notarize.runId)}`, h1: "Certificates", slug: "certificates", detail: ".data-table" },
-  { path: `/app/certificates/${enc(cert.id)}${q(notarize.runId)}`, h1: cert.claimId, slug: "certificate", detail: ".finding" },
+  { path: `/app/run${q(guarded.runId)}`, h1: "Run", slug: "run", detail: ".run-held" },
+  { path: `/app/certificates${q(notarize.runId)}`, h1: "Certificates", slug: "certificates", detail: ".certs-grid" },
+  { path: `/app/certificates/${enc(cert.id)}${q(notarize.runId)}`, h1: cert.claimId, slug: "certificate", detail: ".cert-pair" },
   ...(revoked
     ? [{ path: `/app/certificates/${enc(revoked.id)}${q(changeApi.runId)}`, h1: revoked.claimId, slug: "certificate-revoked", detail: ".revocation-block" }]
     : []),
   { path: `/app/approvals${q(guarded.runId)}`, h1: "Approvals", slug: "approvals", detail: ".desk-item" },
-  { path: `/app/ask${q(guarded.runId)}`, h1: "Ask", slug: "ask", detail: ".ask-browse" },
+  { path: `/app/chat${q(guarded.runId)}`, h1: "Notary Chat", slug: "chat", detail: ".chat-suggestions" },
   { path: `/app/report${q(guarded.runId)}`, h1: "Report", slug: "report", detail: "#connections" },
 ];
 const pages = quick ? allPages.filter((p) => p.slug.startsWith("certificate")) : allPages;
@@ -46,6 +45,8 @@ const matrix = quick
   : [
       [1440, "light"],
       [1440, "dark"],
+      [1024, "light"],
+      [1024, "dark"],
       [390, "light"],
       [390, "dark"],
     ];
@@ -69,18 +70,20 @@ try {
     page.on("pageerror", (e) => errors.push(e.message));
     for (const p of pages) {
       await page.goto(`${base}${p.path}`);
-      if (p.h1) await expect(page.getByRole("heading", { level: 1, name: p.h1, exact: true })).toBeVisible();
+      if (p.h1) await expect(page.getByRole("heading", { level: 1, name: p.h1, exact: true })).toBeVisible({ timeout: 30000 });
       else await page.waitForLoadState("networkidle");
       await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
-      // Every page here shows a fixture run: the disclosure must be visible, and replay says so.
+      // Every page here shows a fixture run: the disclosure must be visible. The dashboard has no
+      // global mode chrome (K3): the replay banner is hidden, the sidebar has no mode item.
       await expect(page.locator(".fixture-banner").first()).toHaveText("Fixture data — simulated APIs, not a live run");
-      await expect(page.locator(".replay-banner")).toBeVisible();
-      // Sidebar: exactly four text items; footer shows the mode and links the Report.
+      await expect(page.locator(".replay-banner")).toBeHidden();
       if (width >= 768) {
-        await expect(page.locator(".sidebar-menu-button")).toHaveText([/^Run/, /^Certificates/, /^Approvals/, /^Ask/]);
-        await expect(page.locator(".sidebar-status")).toContainText("Replay");
-        await expect(page.locator(".sidebar-footer").getByRole("link", { name: "Report" })).toBeVisible();
+        await expect(page.locator(".side-nav .side-item")).toHaveText([/^Run/, /^Certificates/, /^Approvals/, /^Chat/]);
+        await expect(page.locator(".side")).not.toContainText(/Replay|Live/);
+        await expect(page.locator(".side-foot").getByRole("link", { name: "Report" })).toBeVisible();
       }
+      // Every page is built on the kit and opens with the sky band.
+      await expect(page.locator(".ui-band-sky").first()).toBeVisible();
       await settle(page);
       const metrics = await page.evaluate(() => ({
         viewport: innerWidth,
@@ -101,15 +104,17 @@ try {
       report.push({ ...metrics, path: p.path, file: `${p.slug}-${theme}-${width}.png` });
     }
 
-    // Phones: the navigation is a drawer opened by "Menu", closed by Escape.
+    // Phones: the navigation is a drawer opened by "Menu", closed by Escape (focus returns to Menu).
     if (width < 768) {
       await page.goto(`${base}/app/certificates${q(notarize.runId)}`);
       await page.getByRole("button", { name: "Menu" }).click();
-      await expect(page.locator(".sidebar.mobile")).toHaveAttribute("data-open", "true");
+      await expect(page.locator(".side-drawer")).toHaveAttribute("data-open", "true");
+      await expect(page.locator(".side-drawer .side-search")).toBeFocused();
       await settle(page);
       await page.screenshot({ path: resolve(out, `drawer-${theme}-${width}.png`), animations: "disabled" });
       await page.keyboard.press("Escape");
-      await expect(page.locator(".sidebar.mobile")).toHaveAttribute("data-open", "false");
+      await expect(page.locator(".side-drawer")).not.toHaveAttribute("data-open", "true");
+      await expect(page.getByRole("button", { name: "Menu" })).toBeFocused();
     }
 
     // Command palette lists records of the selected run.
@@ -123,13 +128,25 @@ try {
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(new RegExp(`/app/certificates/${cert.id}`));
 
-    // Ask panel (Ctrl+J) opens and closes with Escape.
-    await page.keyboard.press("Control+j");
-    await expect(page.getByRole("dialog", { name: "Ask" })).toBeVisible();
+    // The palette's Chat action opens Chat with the typed question prefilled (not sent).
+    await page.keyboard.press("Control+k");
+    await page.keyboard.type("Why was q02 held?");
+    await page.getByRole("option", { name: /Ask Notary Chat: Why was q02 held\?/ }).click();
+    await expect(page).toHaveURL(/\/app\/chat\?/);
+    await expect(page.getByRole("textbox", { name: "Message Notary" })).toHaveValue("Why was q02 held?");
+    await expect(page.locator(".chat-msg")).toHaveCount(0);
+
+    // Chat in replay: the banner, a streamed answer with steps that collapse, an unavailable step.
+    await page.goto(`${base}/app/chat${q(guarded.runId)}`);
+    await expect(page.locator(".chat-banner")).toContainText("Replay — answers come from the recorded run, no live lookups");
+    await page.getByRole("textbox", { name: "Message Notary" }).fill("Look up Acme Corp in Crustdata");
+    await page.keyboard.press("Enter");
+    await expect(page.locator(".chat-footer")).toBeVisible({ timeout: 20000 });
+    await expect(page.locator(".chat-work-toggle")).toContainText(/Checked \d+ sources?/);
+    await page.locator(".chat-work-toggle").click();
+    await expect(page.locator(".chat-step-fix", { hasText: "CRUSTDATA_API_KEY" }).first()).toBeVisible();
     await settle(page);
-    await page.screenshot({ path: resolve(out, `ask-panel-${theme}-${width}.png`), animations: "disabled" });
-    await page.keyboard.press("Escape");
-    await expect(page.getByRole("dialog", { name: "Ask" })).toHaveCount(0);
+    await page.screenshot({ path: resolve(out, `chat-answer-${theme}-${width}.png`), animations: "disabled" });
 
     expect(errors).toEqual([]);
     await context.close();
@@ -185,7 +202,7 @@ try {
   for (const run of liveRuns) await realPage.route(`**/bundles/${run.runId}.json`, (route) => route.fulfill({ json: run }));
   await realPage.goto(`${base}/app/report`);
   await expect(realPage.getByRole("combobox", { name: "Selected run" })).toHaveValue("visual-real-guarded");
-  await expect(realPage.locator(".sidebar-inset > .fixture-banner")).toHaveCount(0);
+  await expect(realPage.locator(".app-main > .fixture-banner")).toHaveCount(0);
   const groups = await realPage.locator(".run-picker optgroup").evaluateAll((els) =>
     els.map((g) => ({ label: g.label, runs: [...g.querySelectorAll("option")].map((o) => o.value) })),
   );
@@ -195,7 +212,7 @@ try {
 
   await writeFile(resolve(out, "checks.json"), JSON.stringify(report, null, 2));
   console.log(
-    `Reviewed ${report.length} route/theme/viewport combinations; no page errors or horizontal overflow. Drawer, palette, Ask panel, tamper rejection, redirects and cohort separation passed. Screenshots: ${out}`,
+    `Reviewed ${report.length} route/theme/viewport combinations; no page errors or horizontal overflow. Sky bands, drawer, palette, Chat prefill and replay answer, tamper rejection, redirects and cohort separation passed. Screenshots: ${out}`,
   );
 } finally {
   await browser.close();

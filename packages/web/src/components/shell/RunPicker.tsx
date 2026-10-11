@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router";
-import { SelectControl } from "../SelectControl";
+import { Select } from "../../ui";
 import { useData } from "../../app/catalog";
 import { withRun } from "../../app/links";
 import { matchAppRoute, routeById } from "../../routes";
@@ -21,7 +21,7 @@ export function RunPicker() {
   return (
     <label className="run-picker">
       <span className="sr-only">Selected run</span>
-      <SelectControl
+      <Select
         value={empty ? "" : (selectedRunId ?? "")}
         disabled={empty || loading}
         onChange={(e) => onChange(e.target.value)}
@@ -37,7 +37,7 @@ export function RunPicker() {
             ))}
           </optgroup>
         ))}
-      </SelectControl>
+      </Select>
     </label>
   );
 }

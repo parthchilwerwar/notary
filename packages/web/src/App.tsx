@@ -1,8 +1,7 @@
 // Dashboard under /app/*: one data provider, one shell, routes from src/routes.tsx.
 import { Link, Navigate, Route, Routes, useLocation, useParams } from "react-router";
 import { AppShell } from "./components/shell";
-import { EmptyState } from "./components/ui/states";
-import { Button } from "./components/ui/button";
+import { Button, EmptyState } from "./ui";
 import { DataProvider } from "./app/catalog";
 import { redirectTarget, redirects, relativePath, routes, type Redirect } from "./routes";
 
@@ -16,7 +15,7 @@ function NotFound() {
   return (
     <EmptyState
       title="Page not found"
-      actions={
+      action={
         <Button asChild>
           <Link to="/app/run">Open the run</Link>
         </Button>

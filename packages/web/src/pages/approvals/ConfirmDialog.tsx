@@ -3,7 +3,7 @@
 // the button that opened it. At phone width it is a full-width bottom sheet (approvals.css).
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import type { ApprovalRecord, PendingApproval } from "../../../../core/src/schema";
-import { Button } from "../../components/ui";
+import { Button } from "../../ui";
 import { notify } from "../../components/shell/notify";
 import { LocalApiError, label, number, type DataSource } from "../../data";
 import { submitDecision } from "./api";
@@ -110,13 +110,13 @@ export function ConfirmDialog({
       onClose={onClose}
     >
       <form onSubmit={submit} noValidate>
-        <span className="eyebrow">
+        <span className="approval-kicker">
           {item.runId} · {label(item.action)}
         </span>
         <h2 id={titleId}>
           {kind === "approve" ? "Approve" : "Reject"} {item.requestId}
         </h2>
-        <p id={descId} className="muted">
+        <p id={descId} className="desk-muted">
           {kind === "approve"
             ? "Approving executes this held action once, through the guarded path in Dodo test mode, as a human override of the certificate gate. Every guard still applies."
             : "Rejecting closes this held action without any external call. The reason is recorded with the decision."}
@@ -125,7 +125,7 @@ export function ConfirmDialog({
         {kind === "approve" ? (
           <>
             <div className="approval-held">
-              <span className="eyebrow">Held amount</span>
+              <span className="approval-kicker">Held amount</span>
               <strong>{amountText}</strong>
             </div>
             <label htmlFor={fieldId}>
@@ -181,7 +181,7 @@ export function ConfirmDialog({
         <div className="approval-dialog-actions">
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             onClick={() => ref.current?.close()}
             disabled={busy}
           >
@@ -189,10 +189,10 @@ export function ConfirmDialog({
           </Button>
           <Button
             type="submit"
-            className={kind === "reject" ? "approval-reject" : undefined}
+            variant={kind === "reject" ? "danger" : "primary"}
             disabled={!ready || busy}
           >
-            {busy && <span className="spinner" aria-hidden="true" />}
+            {busy && <span className="ui-spinner" aria-hidden="true" />}
             {busy
               ? "Sending…"
               : kind === "approve"

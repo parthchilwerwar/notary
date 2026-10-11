@@ -1,10 +1,27 @@
-// /app/certificates: every certificate of the selected run's world, its revocations and the claims
-// that have none. ?tool= filters by provider; ?belief= (old belief links) opens that belief's
-// certificate, or points at its claim when it has none.
+// /app/certificates: every certificate of the selected run's world as cards (seal, status, scope,
+// evidence), filtered by status (?status=active|revoked) and provider (?tool=); claims without a
+// certificate behind "Show details". ?belief= (old belief links) opens that belief's certificate,
+// or points at its claim when it has none.
 import { Link, Navigate, useSearchParams } from "react-router";
-import type { Certificate, NoCertificate, ReportCounts, Revocation } from "../../../../core/src/schema";
-import { PageHeader, StatusPill } from "../../components/ui";
-import { label, number, percent, type CertificateView } from "../../data";
+import type { Certificate, NoCertificate, Revocation } from "../../../../core/src/schema";
+import {
+  Button,
+  Card,
+  CertificateCard,
+  EmptyState,
+  Expander,
+  Page,
+  PageBody,
+  Pills,
+  Section,
+  SkyBand,
+  Stat,
+  StatRow,
+  StatusPill,
+  TableFrame,
+  usePageMotion,
+} from "../../ui";
+import { number, percent, type CertificateView } from "../../data";
 import { dateTime as date } from "../../lib/time";
 import { useData } from "../../app/catalog";
 import { recordPath, withRun } from "../../app/links";
@@ -12,16 +29,19 @@ import { WithCertificates } from "./WithCertificates";
 import { filterWorld, reasonText, resolveBelief, worldTools } from "./model";
 import "./certificates.css";
 
+type StatusFilter = "all" | "active" | "revoked";
+const parseStatus = (v: string | null): StatusFilter => (v === "active" || v === "revoked" ? v : "all");
+
 export function CertificatesPage() {
   return (
-    <>
-      <PageHeader
-        title="Certificates"
-        description="What each API was proven to do, within the scope it was tested. A certificate is revoked when new evidence contradicts it."
-      />
-      <WithCertificates>{(world) => <CertificatesView world={world} />}</WithCertificates>
-    </>
+    <WithCertificates title="Certificates">
+      {(world) => <CertificatesView world={world} />}
+    </WithCertificates>
   );
+}
+
+function clipScope(text: string, max = 110) {
+  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
 }
 
 function CertificatesView({ world }: { world: CertificateView }) {
@@ -30,219 +50,187 @@ function CertificatesView({ world }: { world: CertificateView }) {
   const tools = worldTools(world);
   const requestedTool = params.get("tool");
   const tool = requestedTool && tools.includes(requestedTool) ? requestedTool : null;
+  const status = parseStatus(params.get("status"));
   const beliefId = params.get("belief");
   const belief = beliefId ? resolveBelief(world, bundles, beliefId) : undefined;
+  const view = filterWorld(world, tool);
+  const root = usePageMotion([world, tool, status]);
   if (belief?.certificate)
     return <Navigate replace to={withRun(recordPath.certificate(belief.certificate.id), selectedRunId)} />;
-  const view = filterWorld(world, tool);
-  const filterPath = (t: string | null) => {
+
+  const shown = view.certificates.filter((c) => status === "all" || (status === "revoked") === (c.status === "revoked"));
+  const active = view.certificates.filter((c) => c.status !== "revoked").length;
+  const revoked = view.certificates.length - active;
+  const revocationOf = new Map<string, Revocation>(view.revocations.map((r) => [r.certificateId, r]));
+  const path = (patch: Record<string, string | null>) => {
     const next = new URLSearchParams(params);
     next.delete("belief");
-    if (t) next.set("tool", t);
-    else next.delete("tool");
+    for (const [k, v] of Object.entries(patch)) {
+      if (v) next.set(k, v);
+      else next.delete(k);
+    }
     return `/app/certificates?${next.toString()}`;
   };
+  const counts = view.counts;
+  const summary = [
+    `${number(active)} active`,
+    `${number(revoked)} revoked`,
+    counts ? `${number(counts.unproven)} claims still unproven` : undefined,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
-    <div className="certs">
-      <p className="world-note">
-        {world.report.header}
-        {world.scenarioReason && <> {world.scenarioReason}</>}
-      </p>
+    <Page ref={root}>
+      <SkyBand
+        title="Certificates"
+        summary={`${summary}${tool ? ` · ${tool}` : ""}`}
+        action={
+          <Button asChild>
+            <Link to={withRun("/app/chat", selectedRunId, { q: "Which certificates were revoked, and why?" })}>Ask about these</Link>
+          </Button>
+        }
+      />
+      <PageBody>
+        <StatRow label="Certificate counts">
+          <Stat label="Active certificates" value={active} />
+          <Stat label="Revoked" value={revoked} />
+          <Stat label="Claims without a certificate" value={view.noCertificates.length} />
+        </StatRow>
 
-      {beliefId && (
-        <p className="notice" role="status">
-          Belief <code>{beliefId}</code> has no certificate in this data world
-          {belief?.claimId ? (
-            <>
-              . Its claim <code>{belief.claimId}</code> is highlighted under Not certified.
-            </>
-          ) : (
-            ", and no run of this world records it."
-          )}
-        </p>
-      )}
-      {requestedTool && !tool && (
-        <p className="notice" role="status">
-          No provider named <code>{requestedTool}</code> in this data world. Showing every provider.
-        </p>
-      )}
-
-      {tools.length > 1 && (
-        <nav className="filter-links" aria-label="Filter by provider">
-          <Link to={filterPath(null)} aria-current={tool === null ? "page" : undefined}>
-            All providers
-          </Link>
-          {tools.map((t) => (
-            <Link key={t} to={filterPath(t)} aria-current={tool === t ? "page" : undefined}>
-              {t}
-            </Link>
-          ))}
-        </nav>
-      )}
-
-      {view.counts && <Counts counts={view.counts} />}
-
-      {view.revocations.length > 0 && <Revocations rows={view.revocations} />}
-
-      <section className="section" aria-labelledby="certs-issued">
-        <div className="section-head">
-          <div>
-            <h2 id="certs-issued">Certificates</h2>
-            <p>Missing proof never gets a certificate. Revoked ones stay on record.</p>
-          </div>
-        </div>
-        {view.certificates.length ? (
-          <CertificateTable rows={view.certificates} />
-        ) : (
-          <p className="muted">No claim{tool ? ` of ${tool}` : ""} in this data world has settled evidence and a review.</p>
+        {beliefId && !belief?.certificate && (
+          <Card padding="sm" role="status" className="certs-note">
+            Belief <code>{beliefId}</code> has no certificate in this data world
+            {belief?.claimId ? (
+              <>
+                . Its claim <code>{belief.claimId}</code> is highlighted under the claims without a certificate.
+              </>
+            ) : (
+              ", and no run of this world records it."
+            )}
+          </Card>
         )}
-      </section>
+        {requestedTool && !tool && (
+          <Card padding="sm" role="status" className="certs-note">
+            No provider named <code>{requestedTool}</code> in this data world. Showing every provider.
+          </Card>
+        )}
 
-      {view.noCertificates.length > 0 && (
-        <NotCertified rows={view.noCertificates} highlight={belief?.claimId} />
-      )}
-    </div>
-  );
-}
-
-function Counts({ counts }: { counts: ReportCounts }) {
-  return (
-    <dl className="figures" aria-label="Claim counts">
-      <div className="figure-cell">
-        <dt className="figure-label">Claims</dt>
-        <dd className="figure-value">{number(counts.claimsTotal)}</dd>
-      </div>
-      <div className="figure-cell">
-        <dt className="figure-label">Certified</dt>
-        <dd className="figure-value">{number(counts.certified)}</dd>
-      </div>
-      <div className="figure-cell">
-        <dt className="figure-label">Unproven</dt>
-        <dd className="figure-value">{number(counts.unproven)}</dd>
-      </div>
-      <div className="figure-cell">
-        <dt className="figure-label">Revoked</dt>
-        <dd className={`figure-value ${counts.revoked > 0 ? "text-unsafe" : ""}`}>{number(counts.revoked)}</dd>
-      </div>
-    </dl>
-  );
-}
-
-function CertificateTable({ rows }: { rows: Certificate[] }) {
-  const { selectedRunId } = useData();
-  return (
-    <div className="table-scroll">
-      <table className="data-table stack">
-        <thead>
-          <tr>
-            <th scope="col">Claim</th>
-            <th scope="col">Provider</th>
-            <th scope="col">Finding</th>
-            <th scope="col">Status</th>
-            <th scope="col" className="num">
-              P(docs hold)
-            </th>
-            <th scope="col">Issued</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((c) => (
-            <tr key={c.id}>
-              <td data-label="Claim" className="stack-title">
-                <Link className="row-link" to={withRun(recordPath.certificate(c.id), selectedRunId)}>
-                  {c.claimId}
-                </Link>
-              </td>
-              <td data-label="Provider">{c.tool}</td>
-              <td data-label="Finding">{label(c.verdictKind)}</td>
-              <td data-label="Status">
-                {c.status === "revoked" ? (
-                  <StatusPill tone="unsafe">Revoked</StatusPill>
-                ) : (
-                  <StatusPill tone="safe">Certified</StatusPill>
-                )}
-              </td>
-              <td className="num" data-label="P(docs hold)">{percent(c.confidence)}</td>
-              <td className="nowrap" data-label="Issued">{date(c.issuedAt)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function Revocations({ rows }: { rows: Revocation[] }) {
-  const { selectedRunId } = useData();
-  return (
-    <section className="section" aria-labelledby="certs-revoked">
-      <div className="section-head">
-        <div>
-          <h2 id="certs-revoked">Revocations</h2>
-          <p>Certificates withdrawn after contrary evidence. Guards built on them were retired.</p>
-        </div>
-      </div>
-      <ul className="revocation-list">
-        {rows.map((r) => (
-          <li key={r.id}>
-            <div className="revocation-head">
-              <StatusPill tone="unsafe">Revoked</StatusPill>
-              <Link className="row-link" to={withRun(recordPath.certificate(r.certificateId), selectedRunId)}>
-                {r.claimId}
-              </Link>
+        <Section
+          aria-label="Certificates"
+          title="Issued certificates"
+          description="Missing proof never gets a certificate. Revoked ones stay on record."
+        >
+          <div className="certs-filters">
+            <Pills
+              label="Filter by status"
+              items={[
+                { key: "all", label: "All", to: path({ status: null }), current: status === "all", count: view.certificates.length },
+                { key: "active", label: "Active", to: path({ status: "active" }), current: status === "active", count: active },
+                { key: "revoked", label: "Revoked", to: path({ status: "revoked" }), current: status === "revoked", count: revoked },
+              ]}
+            />
+            {tools.length > 1 && (
+              <Pills
+                label="Filter by provider"
+                items={[
+                  { key: "any", label: "All providers", to: path({ tool: null }), current: tool === null },
+                  ...tools.map((t) => ({ key: t, label: t, to: path({ tool: t }), current: tool === t })),
+                ]}
+              />
+            )}
+          </div>
+          {shown.length ? (
+            <div className="certs-grid">
+              {shown.map((c) => (
+                <CertificateItem key={c.id} certificate={c} revocation={revocationOf.get(c.id)} href={withRun(recordPath.certificate(c.id), selectedRunId)} />
+              ))}
             </div>
-            <p>{r.reason}</p>
-            <p className="muted">
-              {r.tool}, {date(r.revokedAt)}. Belief {label(r.from)} to {label(r.to)}, P(docs hold){" "}
-              {percent(r.confidence)}. {number(r.guardsRetired.length)} guards retired.
-            </p>
-          </li>
-        ))}
-      </ul>
-    </section>
+          ) : (
+            <EmptyState title={status === "revoked" ? "Nothing revoked" : "No certificates yet"}>
+              {status === "revoked"
+                ? "No certificate in this view was withdrawn by contrary evidence."
+                : `No claim${tool ? ` of ${tool}` : ""} in this data world has settled evidence and a review.`}
+            </EmptyState>
+          )}
+        </Section>
+
+        {view.noCertificates.length > 0 && (
+          <Card data-reveal>
+            <Expander
+              summary={`Show ${number(view.noCertificates.length)} claims without a certificate`}
+              defaultOpen={!!belief?.claimId}
+            >
+              <NotCertified rows={view.noCertificates} highlight={belief?.claimId} />
+            </Expander>
+          </Card>
+        )}
+
+        <Expander summary="Where these come from">
+          <p className="certs-source">
+            {world.report.header}
+            {world.scenarioReason && <> {world.scenarioReason}</>}
+          </p>
+        </Expander>
+      </PageBody>
+    </Page>
+  );
+}
+
+function CertificateItem({ certificate: c, revocation, href }: { certificate: Certificate; revocation?: Revocation; href: string }) {
+  const revoked = c.status === "revoked";
+  return (
+    <CertificateCard
+      tool={c.tool}
+      claimId={c.claimId}
+      revoked={revoked}
+      href={href}
+      verdict={c.verdictKind === "matches_docs" ? "Matches the docs" : "Contradicts the docs"}
+      scope={clipScope(c.scope.text)}
+      evidence={`${number(c.evidence.length)} ${c.evidence.length === 1 ? "probe" : "probes"} · P(docs hold) ${percent(c.confidence)}`}
+      sha256={c.sha256}
+      footer={
+        revoked && revocation ? (
+          <>Revoked {date(revocation.revokedAt)}: {clipScope(revocation.reason, 140)}</>
+        ) : (
+          <>Issued {date(c.issuedAt)}</>
+        )
+      }
+    />
   );
 }
 
 function NotCertified({ rows, highlight }: { rows: NoCertificate[]; highlight?: string }) {
   return (
-    <section className="section" aria-labelledby="certs-none">
-      <div className="section-head">
-        <div>
-          <h2 id="certs-none">Not certified</h2>
-          <p>Claims without a certificate, and why.</p>
-        </div>
-      </div>
-      <div className="table-scroll">
-        <table className="data-table stack">
-          <thead>
-            <tr>
-              <th scope="col">Claim</th>
-              <th scope="col">Provider</th>
-              <th scope="col">Why</th>
-              <th scope="col" className="num">
-                P(docs hold)
+    <TableFrame>
+      <table>
+        <caption className="sr-only">Claims without a certificate, and why</caption>
+        <thead>
+          <tr>
+            <th scope="col">Claim</th>
+            <th scope="col">Why</th>
+            <th scope="col" className="num">
+              P(docs hold)
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={`${row.tool}-${row.claimId}`} data-highlight={row.claimId === highlight ? "true" : undefined}>
+              <th scope="row" className="certs-claim">
+                <code>{row.claimId}</code>
               </th>
+              <td>
+                <span className="certs-why">
+                  <StatusPill value={row.kind} />
+                  {reasonText(row) && <span>{reasonText(row)}</span>}
+                </span>
+              </td>
+              <td className="num">{row.confidence === undefined ? "Not tested" : percent(row.confidence)}</td>
             </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={`${row.tool}-${row.claimId}`} data-highlight={row.claimId === highlight ? "true" : undefined}>
-                <td className="claim-cell stack-title" data-label="Claim">
-                  <code>{row.claimId}</code>
-                </td>
-                <td data-label="Provider">{row.tool}</td>
-                <td data-label="Why">
-                  <span className="why">
-                    <StatusPill value={row.kind} />
-                    {reasonText(row) && <span> {reasonText(row)}</span>}
-                  </span>
-                </td>
-                <td className="num" data-label="P(docs hold)">{row.confidence === undefined ? "Not tested" : percent(row.confidence)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
+          ))}
+        </tbody>
+      </table>
+    </TableFrame>
   );
 }

@@ -23,7 +23,7 @@ import {
 } from "../src/app/links";
 import { chooseScenario, verifyToolFile } from "../src/data";
 import { FixtureIndexSchema } from "../../core/src/schema";
-import { activeNavId } from "../src/components/shell/AppSidebar";
+import { activeNavId } from "../src/components/shell/Sidebar";
 import { latestHealth, modeLabel } from "../src/components/shell/status";
 
 const read = (path: string) =>
@@ -48,14 +48,14 @@ describe("route table", () => {
         "/app/certificates",
         "/app/certificates/:certificateId",
         "/app/approvals",
-        "/app/ask",
+        "/app/chat",
         "/app/report",
       ].sort(),
     );
     expect(new Set(routes.map((r) => r.id)).size).toBe(routes.length);
   });
   it("puts exactly four text-only items in the sidebar, in order", () => {
-    expect(navRoutes().map((r) => r.title)).toEqual(["Run", "Certificates", "Approvals", "Ask"]);
+    expect(navRoutes().map((r) => r.title)).toEqual(["Run", "Certificates", "Approvals", "Chat"]);
     expect(routes.filter((r) => r.badge).map((r) => r.id)).toEqual(["approvals"]);
     // Report is reached from the sidebar footer, not the menu.
     expect(routeById("report")?.nav).toBeFalsy();

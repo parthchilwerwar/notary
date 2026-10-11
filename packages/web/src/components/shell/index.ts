@@ -1,7 +1,8 @@
-// App shell: sidebar, top bar (trail, run picker, search, Ask), toasts, live status.
+// App shell: white sidebar (phones: top bar + drawer), canvas, command palette, toasts, live status.
 export { AppShell, RunReceipt, useCrumbs } from "./AppShell";
-export { AppSidebar, activeNavId } from "./AppSidebar";
-export { CommandPalette, paletteRoutes } from "./CommandPalette";
+export { Sidebar, MobileBar, activeNavId } from "./Sidebar";
+export { CommandPalette, chatPrefillPath, paletteRoutes } from "./CommandPalette";
+export { MOD_KEY_LABEL, IS_APPLE_PLATFORM } from "./keys";
 export { RunPicker } from "./RunPicker";
 export {
   ShellStatusProvider,

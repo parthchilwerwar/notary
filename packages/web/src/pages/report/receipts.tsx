@@ -1,7 +1,7 @@
 // Receipts shared by the Report and certificate pages: tool evidence entries (public evidence
 // file, through the data layer), live integration states (/api/health) and trace references.
 import type { IntegrationName, IntegrationStatus } from "../../../../core/src/schema";
-import { StatusPill, traceUrl } from "../../components/ui";
+import { StatusPill, traceUrl } from "../../ui";
 import { PUBLISHED_FILES, safeLink, useDataSource, type EvidenceEntry } from "../../data";
 import { latestHealth, useShellStatus } from "../../components/shell/status";
 import type { Loadable } from "../../app/catalog";
@@ -27,7 +27,7 @@ export function EvidenceEntryView({ entry, headingLevel = 3 }: { entry: Evidence
         <CodeText text={entry.purpose} />
       </p>
       {entry.notes && (
-        <p className="muted">
+        <p className="report-note">
           <CodeText text={entry.notes} />
         </p>
       )}
@@ -60,13 +60,13 @@ export function EvidenceFor({
   name: string;
   headingLevel?: 3 | 4;
 }) {
-  if (evidence.status === "loading") return <p className="muted">Reading the published evidence file…</p>;
-  if (evidence.status === "error") return <p className="text-unsafe">{evidence.error}</p>;
+  if (evidence.status === "loading") return <p className="report-note">Reading the published evidence file…</p>;
+  if (evidence.status === "error") return <p className="report-unsafe">{evidence.error}</p>;
   const entry =
     evidence.status === "ready" ? evidence.data.find((e) => e.name.toLowerCase() === name.toLowerCase()) : undefined;
   if (!entry)
     return (
-      <p className="muted">
+      <p className="report-note">
         No <span translate="no">{name}</span> entry in <code>{PUBLISHED_FILES.evidence}</code>.
       </p>
     );
@@ -78,7 +78,7 @@ export function EvidenceStatus({ evidence, name }: { evidence: Loadable<Evidence
   if (evidence.status !== "ready") return null;
   const entry = evidence.data.find((e) => e.name.toLowerCase() === name.toLowerCase());
   return (
-    <p className="muted">
+    <p className="report-note">
       <span translate="no">{name}</span> in the evidence file:{" "}
       {entry ? (entry.status === "live" ? "live" : "pending") : `no entry in ${PUBLISHED_FILES.evidence}`}. Details
       under Tool evidence below.
@@ -104,12 +104,12 @@ export function IntegrationLine({ name }: { name: IntegrationName }) {
   const latest = latestHealth(health);
   if (mode !== "live" || !latest)
     return (
-      <p className="muted">
+      <p className="report-note">
         Live status not checked: replay mode has no live integrations. Start <code>pnpm notary serve</code> and reload.
       </p>
     );
   const status = latest.integrations.find((i) => i.name === name);
-  if (!status) return <p className="muted">Not reported by notary serve.</p>;
+  if (!status) return <p className="report-note">Not reported by notary serve.</p>;
   return (
     <p className="integration-line">
       <StatusPill tone={integrationTone(status.state)}>{STATE_WORD[status.state]}</StatusPill>
@@ -122,7 +122,7 @@ export function IntegrationLine({ name }: { name: IntegrationName }) {
           </>
         )}
       </span>
-      <span className="muted">Checked {dateTime(status.checkedAt)}</span>
+      <span className="report-note">Checked {dateTime(status.checkedAt)}</span>
     </p>
   );
 }
@@ -131,21 +131,21 @@ export { STATE_WORD };
 
 /** A trace id: linked only when an http(s) URL was recorded for it, else text plus the receipt. */
 export function TraceRefView({ traceId, spanId, recorded }: { traceId?: string; spanId?: string; recorded?: string }) {
-  if (!traceId) return <span className="muted">Tracing was off</span>;
+  if (!traceId) return <span className="report-note">Tracing was off</span>;
   const href = traceUrl(recorded);
   return (
     <span className="trace-ref">
       {href ? (
-        <a className="trace" href={href} target="_blank" rel="noreferrer">
+        <a className="ui-trace" href={href} target="_blank" rel="noreferrer">
           {traceId}
           <span className="sr-only"> (opens in a new tab)</span>
         </a>
       ) : (
-        <code className="trace">{traceId}</code>
+        <code className="ui-trace">{traceId}</code>
       )}
-      {spanId && <span className="muted">span <code>{spanId}</code></span>}
+      {spanId && <span className="report-note">span <code>{spanId}</code></span>}
       {!href && (
-        <span className="muted">
+        <span className="report-note">
           {recorded ? (
             <>
               local receipt <code>{recorded}</code>
