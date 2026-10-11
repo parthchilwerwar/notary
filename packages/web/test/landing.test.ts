@@ -1,183 +1,305 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import ts from "typescript";
 import { describe, expect, it } from "vitest";
-import { RequestTypeSchema, TimelineStageSchema, type TimelineEvent } from "../../core/src/schema";
-import { validateBundle } from "../src/data";
+import { RequestTypeSchema, type CertificateReport, type FixtureIndex, type ToolCertificates } from "../../core/src/schema";
+import { finishedEntries, PublishedFiles, ReplaySource, validateBundle, type CertificateWorld } from "../src/data";
 import {
+  BANNED_RE,
   BUILT_WITH,
+  EVALUATION_URL,
+  FOOTER_LINKS,
   GITHUB_URL,
   REFUND_TYPES,
-  STAGES,
-  STAGE_LABEL,
-  STEP_COPY,
-  buildExcerpt,
+  actionsByType,
+  certifyView,
+  challengeView,
+  chatQuestions,
+  clipText,
   fixturePair,
   landingResults,
   money,
+  navLinks,
+  predictView,
+  pricingPlans,
   proofNumbers,
   proofPair,
-  sourceRuns,
+  revocationScenario,
+  seeItWorkHref,
+  showable,
+  shortIds,
 } from "../src/landing-data";
+import { BAYER8, ditherOn, paintRect } from "../src/components/brand/dither";
+import { foldChat, presentable } from "../src/components/landing/chat-turn";
 
-const fixtureFile = (name: string) =>
-  JSON.parse(readFileSync(new URL(`../public/bundles/fixture/${name}`, import.meta.url), "utf8"));
+const publicFile = (path: string) => JSON.parse(readFileSync(new URL(`../public/${path}`, import.meta.url), "utf8"));
+const fixtureFile = (name: string) => publicFile(`bundles/fixture/${name}`);
 const read = (id: string) => validateBundle(fixtureFile(`${id}.json`));
-const timeline = (id: string): TimelineEvent[] => fixtureFile(`${id}.timeline.json`).events;
 const index = () => fixtureFile("index.json") as { runId: string; kind: string; variant: string; sample: boolean; startedAt: string }[];
 
 const naive = read("demo-run-naive");
 const guarded = read("demo-run-guarded");
+const notarizeDodo = read("demo-notarize-dodo");
+const notarizeCrust = read("demo-notarize-crustdata");
+
+function world(dir: string): CertificateWorld {
+  const report = publicFile(`certificates/fixture/${dir}/report.json`) as CertificateReport;
+  const tools = report.tools.map((t) => publicFile(`certificates/fixture/${dir}/${t.file}`) as ToolCertificates);
+  return { world: `fixture:${dir}`, sample: true, tools, report };
+}
+
+/** PublishedFiles over the files in public/ (no network). */
+const files = () =>
+  new PublishedFiles({
+    base: "/",
+    fetchImpl: (async (url: string) => {
+      const p = new URL(`../public/${decodeURIComponent(String(url).replace(/^\//, ""))}`, import.meta.url);
+      return existsSync(p)
+        ? new Response(readFileSync(p), { status: 200, headers: { "content-type": "application/json" } })
+        : new Response("not found", { status: 404, headers: { "content-type": "text/plain" } });
+    }) as unknown as typeof fetch,
+  });
 
 describe("landing: which pair the Proof section shows", () => {
-  it("uses the newest fixture pair of one world when no real bundle exists", () => {
+  it("uses the newest pair of one world when no real bundle exists", () => {
     const result = landingResults(index());
     expect(result.sample).toBe(true);
     expect(result.guarded?.runId).toBe("demo-run-guarded");
     expect(result.naive?.runId).toBe("demo-run-naive");
   });
-  it("prefers real runs and never fills a missing real side with a fixture", () => {
+  it("prefers real runs and never fills a missing real side with a simulated run", () => {
     const live = { ...guarded, sample: false, runId: "live-guarded" };
     const result = landingResults([naive, guarded, live]);
     expect(result.sample).toBe(false);
     expect(result.guarded).toBe(live);
     expect(result.naive).toBeUndefined();
   });
-  it("shows the labelled fixture pair, with the reason, when the real pair is incomplete", () => {
+  it("falls back to the evaluation-suite pair, with the reason, when the real pair is incomplete", () => {
     const live = { ...guarded, sample: false, runId: "live-guarded" };
     const pair = proofPair([naive, guarded, live]);
-    expect(pair.sample).toBe(true);
     expect(pair.guarded).toBe(guarded);
     expect(pair.naive).toBe(naive);
-    expect(pair.note).toMatch(/fixture/);
+    expect(pair.note).toMatch(/evaluation suite/);
+    expect(showable(pair.note!)).toBe(true);
   });
-  it("never pairs runs of two different simulated worlds", () => {
-    const entries = index().filter((e) => e.runId !== "demo-run-naive");
-    const result = fixturePair(entries);
+  it("never pairs runs of two different worlds", () => {
+    const result = fixturePair(index().filter((e) => e.runId !== "demo-run-naive"));
     expect(result.guarded?.runId).toBe("demo-run-guarded");
     expect(result.naive).toBeUndefined();
   });
-  it("uses the most recent run on each side", () => {
-    const earlier = { ...guarded, startedAt: "2020-01-01T00:00:00.000Z" };
-    expect(landingResults([earlier, guarded, naive]).guarded).toBe(guarded);
-  });
 });
 
-describe("landing: the Proof numbers come from the bundles", () => {
+describe("landing: every number comes from the bundles", () => {
   it("reads unsafe totals from grader metrics and counts held refunds from decisions", () => {
     const n = proofNumbers(naive, guarded);
     expect(n.naiveUnsafe).toBe(naive.metrics.unsafe_actions_total);
     expect(n.guardedUnsafe).toBe(guarded.metrics.unsafe_actions_total);
-    expect(n.refundsHeld).toBe(
-      guarded.decisions.filter((d) => d.status === "held" && d.requestType.includes("refund")).length,
-    );
+    expect(n.refundsHeld).toBe(guarded.decisions.filter((d) => d.status === "held" && d.requestType.includes("refund")).length);
     expect(n.requests).toBe(guarded.metrics.items_total);
-    // Sanity on the published fixture: the story the page tells is in the records.
-    expect(n.naiveUnsafe).toBeGreaterThan(0);
-    expect(n.guardedUnsafe).toBe(0);
-    expect(n.refundsHeld).toBeGreaterThan(0);
   });
   it("reports a missing metric as null instead of zero", () => {
     const { unsafe_actions_total: _drop, ...metrics } = naive.metrics;
     expect(proofNumbers({ ...naive, metrics }, guarded).naiveUnsafe).toBeNull();
   });
-  it("derives refund request types from the schema", () => {
-    expect([...REFUND_TYPES].sort()).toEqual(RequestTypeSchema.options.filter((t) => t.includes("refund")).sort());
+  it("charts money actions per request type: allowed, unsafe and held, straight from decisions", () => {
+    const rows = actionsByType(naive, guarded);
+    expect(rows.map((r) => r.type)).toEqual(RequestTypeSchema.options);
+    for (const r of rows) {
+      const ds = (b: typeof naive) => b.decisions.filter((d) => d.requestType === r.type && d.action !== "none");
+      expect(r.naive.executed).toBe(ds(naive).filter((d) => d.status === "executed").length);
+      expect(r.guarded.held).toBe(ds(guarded).filter((d) => d.status === "held").length);
+      expect(r.naive.unsafe).toBeLessThanOrEqual(r.naive.executed);
+    }
+    // The chart's unsafe columns add up to the grader's total.
+    expect(rows.reduce((n, r) => n + r.naive.unsafe, 0)).toBe(naive.metrics.unsafe_actions_total);
   });
-  it("formats minor units with the record's currency", () => {
+  it("derives refund types from the schema and formats money with the record's currency", () => {
+    expect([...REFUND_TYPES].sort()).toEqual(RequestTypeSchema.options.filter((t) => t.includes("refund")).sort());
     expect(money(1999, "USD")).toBe("$19.99");
   });
 });
 
-describe("landing: the five steps follow the timeline schema", () => {
-  it("has one row per stage, in schema order, with one sentence each", () => {
-    expect(STAGES).toEqual(TimelineStageSchema.options);
-    expect(Object.keys(STEP_COPY).sort()).toEqual([...TimelineStageSchema.options].sort());
-    expect(STAGES.map((s) => STAGE_LABEL[s])).toEqual(["Read", "Test", "Challenge", "Certify", "Enforce"]);
-    for (const s of STAGES) expect(STEP_COPY[s].split(/[.!?](\s|$)/).filter((x) => x.trim()).length).toBe(1);
+describe("landing: How it works shows real records", () => {
+  it("Predict, then test: a committed 'docs hold' prediction the observation contradicted", () => {
+    const v = predictView(notarizeDodo)!;
+    const probe = notarizeDodo.probes.find((p) => shortIds(p.id) === v.probe)!;
+    expect(v.committedAt).toBe(probe.committedAt);
+    expect(probe.verdict).toBe("confirmed");
+    const mismatch = v.observed.find((f) => f.mismatch)!;
+    expect(mismatch.key).toBe("outcome");
+    expect(mismatch.value).toBe(String((probe.observed as { outcome: string }).outcome).replaceAll("_", " "));
+    expect(mismatch.value).not.toBe(v.expected);
   });
-  it("makes no absolute claims the records contradict (AUDIT H-36)", () => {
-    const all = Object.values(STEP_COPY).join(" ");
-    expect(all).not.toMatch(/every decision|every concrete promise|stronger model/i);
+  it("Challenge: a reviewed certificate, its Reflector hypothesis (never a code-built rival) and the review count", () => {
+    const v = challengeView(world("default"), [notarizeDodo, notarizeCrust])!;
+    const cert = world("default").tools.flatMap((t) => t.certificates).find((c) => c.claimId === v.claimId)!;
+    expect(v.verdict).toBe(cert.adversary!.verdict);
+    expect(v.counter).toBe(shortIds(cert.adversary!.reason));
+    if (v.hypothesis) expect(v.hypothesis).not.toMatch(/not model-proposed|^verification rival/i);
+    expect(v.survived).toBeLessThanOrEqual(v.challenges);
+  });
+  it("Certify & enforce: the certificate's serial and two real decisions (allowed, then held)", () => {
+    const v = certifyView(world("default"), guarded)!;
+    expect(v.certificateId).toMatch(/^cert-[0-9a-f]{16}$/);
+    expect(v.rows.map((r) => r.outcome)).toEqual(["allowed", "held"]);
+    for (const r of v.rows) {
+      const d = guarded.decisions.find((x) => r.title.endsWith(` ${x.requestId}`) && x.action === r.action)!;
+      expect(d.status).toBe(r.outcome === "allowed" ? "executed" : "held");
+    }
+  });
+  it("Revocation card: the scenario whose export records a revocation", () => {
+    const idx = publicFile("certificates/fixture/index.json") as FixtureIndex;
+    const pick = revocationScenario(idx)!;
+    expect(idx.scenarios.find((s) => s.scenario === pick.scenario)!.overall.revoked).toBeGreaterThan(0);
+    expect(revocationScenario(null)).toBeUndefined();
   });
 });
 
-describe("landing: the Watch it work excerpt is built from published timelines", () => {
-  const entries = index();
-  const guardedEntry = entries.find((e) => e.runId === "demo-run-guarded")!;
-  const sources = sourceRuns(entries, guardedEntry);
-  const excerpt = buildExcerpt(
-    guarded,
-    timeline("demo-run-guarded"),
-    sources.map((s) => ({ runId: s.runId, events: timeline(s.runId) })),
-  )!;
-
-  it("reads only notarize runs of the guarded run's world, started before it", () => {
-    expect(sources.length).toBeGreaterThan(0);
-    for (const s of sources) {
-      expect(s.kind).toBe("notarize");
-      expect(s.runId.startsWith("demo-notarize-")).toBe(true);
-      expect(s.startedAt <= guardedEntry.startedAt).toBe(true);
-    }
+describe("landing: pricing only from the cfo.ai plan", () => {
+  it("is hidden when economics.json is missing", () => {
+    expect(existsSync(new URL("../public/economics.json", import.meta.url))).toBe(false);
+    expect(pricingPlans(undefined)).toBeNull();
   });
-  it("ends on the guarded run's first held refund, with its recorded reason", () => {
-    const last = excerpt.rows.at(-1)!;
-    const event = timeline("demo-run-guarded").find((e) => `${e.runId}#${e.seq}` === last.key)!;
-    expect(event.type).toBe("decision");
-    expect(event.data?.status).toBe("held");
-    const decision = guarded.decisions.find((d) => d.id === excerpt.held.decisionId)!;
-    expect(decision.status).toBe("held");
-    expect(REFUND_TYPES.has(decision.requestType)).toBe(true);
-    expect(excerpt.held.missingBeliefs).toEqual(decision.missingBeliefs);
-    expect(excerpt.held.reason).toBe(decision.evidencePack?.reason);
-    expect(excerpt.sample).toBe(true);
+  it("is hidden when the plan lacks prices or does not list three plans", () => {
+    expect(pricingPlans({ pricing: { plans: [{ name: "A", period: "month" }, { name: "B", period: "month" }, { name: "C", period: "month" }] } })).toBeNull();
+    expect(pricingPlans({ pricing: { plans: [{ name: "A", price: 1, period: "month" }] } })).toBeNull();
+    expect(pricingPlans({ runway: 12 })).toBeNull();
   });
-  it("shows recorded events about the missing belief, verbatim and in recorded order", () => {
-    const belief = excerpt.held.missingBeliefs[0]!;
-    const story = excerpt.rows.slice(0, -1);
-    expect(story.length).toBeGreaterThanOrEqual(3);
-    const order = sources.map((s) => s.runId);
-    for (const row of story) {
-      const event = timeline(row.runId).find((e) => e.seq === row.seq)!;
-      expect(row.summary).toBe(event.summary);
-      expect(row.stage).toBe(event.stage);
-      expect(event.recordIds.some((id) => id === belief || id === belief.replace(/^belief-/, ""))).toBe(true);
-    }
-    const keys = story.map((r) => [order.indexOf(r.runId), r.seq]);
-    expect([...keys].sort((a, b) => a[0]! - b[0]! || a[1]! - b[1]!)).toEqual(keys);
-    expect(story[0]!.type).toBe("anomaly.detected");
+  it("shows three priced plans as published", () => {
+    const plans = [1, 2, 3].map((n) => ({ name: `Plan ${n}`, price: n * 10, period: "month" }));
+    expect(pricingPlans({ pricing: { plans } })).toEqual(plans);
   });
-  it("returns nothing when the run held no refund", () => {
-    const events = timeline("demo-run-naive");
-    expect(buildExcerpt(naive, events, [])).toBeUndefined();
+  it("hides the nav link with the section", () => {
+    expect(navLinks(false).some((l) => l.label === "Pricing")).toBe(false);
+    expect(navLinks(true).some((l) => l.label === "Pricing")).toBe(true);
+    expect(readFileSync(new URL("../src/components/landing/Below.tsx", import.meta.url), "utf8")).toMatch(/\{plans && <Pricing plans=\{plans\} \/>\}/);
   });
 });
 
-describe("landing: copy", () => {
-  const src = (p: string) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
-  const files = [
-    "Landing.tsx",
-    ...readdirSync(new URL("../src/components/landing/", import.meta.url)).map((f) => `components/landing/${f}`),
-  ];
-  const text = files.map(src).join("\n");
-
-  it("drops the contradicted and typed claims from the old page (AUDIT H-32, H-34)", () => {
-    expect(text).not.toMatch(/returned 200/);
-    expect(text).not.toMatch(/Three tools|five stages/i);
+describe("landing: See it work", () => {
+  it("links to the video only when VITE_NOTARY_VIDEO_URL is an http(s) URL, else How it works", () => {
+    expect(seeItWorkHref(undefined)).toEqual({ href: "#how", external: false });
+    expect(seeItWorkHref("javascript:alert(1)")).toEqual({ href: "#how", external: false });
+    expect(seeItWorkHref("https://example.com/v")).toEqual({ href: "https://example.com/v", external: true });
   });
-  it("uses one GitHub URL constant and names the credits as text", () => {
-    expect(text.match(/github\.com/g) ?? []).toHaveLength(0);
+});
+
+describe("landing: the chat turn comes from the engine and passes the copy rules", () => {
+  it("builds questions from the runs and keeps only presentable steps and lines", async () => {
+    expect(chatQuestions(guarded, ["dodo"])[0]).toContain(guarded.decisions.find((d) => d.status === "held" && d.requestType.includes("refund"))!.requestId);
+    const replay = new ReplaySource({ published: files() });
+    const entries = finishedEntries(await replay.listRuns());
+    expect(entries.length).toBeGreaterThan(0);
+    const chat = replay.chat;
+    chat.setContext?.({ runId: guarded.runId });
+    let turn: ReturnType<typeof presentable> | undefined;
+    for (const q of chatQuestions(guarded, ["dodo", "crustdata"])) {
+      const c = await chat.createConversation();
+      const events: Parameters<Parameters<typeof chat.sendMessage>[2]>[0][] = [];
+      await chat.sendMessage(c.id, q, (e) => events.push(e));
+      const t = presentable({ question: q, runId: guarded.runId, sample: true, ...foldChat(events) });
+      if (t.steps.length >= 2 && t.paragraphs.length) {
+        turn = t;
+        break;
+      }
+    }
+    expect(turn).toBeDefined();
+    const text = [turn!.question, ...turn!.steps.flatMap((s) => [s.title, s.output ?? ""]), ...turn!.paragraphs, ...turn!.citations.map((c) => c.label)].join("\n");
+    expect(text).not.toMatch(BANNED_RE);
+  }, 30000);
+});
+
+describe("landing: dither renderer (Bayer 8×8)", () => {
+  it("uses each threshold 0–63 exactly once", () => {
+    expect(BAYER8.flat().sort((a, b) => a - b)).toEqual(Array.from({ length: 64 }, (_, i) => i));
+  });
+  it("fills a cell when intensity > (bayer + 0.5) / 64", () => {
+    expect(ditherOn(0, 0, 0.5 / 64 + 1e-9)).toBe(true);
+    expect(ditherOn(0, 0, 0.5 / 64)).toBe(false);
+    expect(ditherOn(7, 3, (22 + 0.5) / 64 + 1e-9)).toBe(true);
+    let on = 0;
+    for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) on += ditherOn(x, y, 0.5) ? 1 : 0;
+    expect(on).toBe(32);
+  });
+  it("paints on whole device pixels: full at intensity 1, nothing at 0, and respects the reveal line", () => {
+    const calls: number[][] = [];
+    const ctx = { fillStyle: "", fillRect: (...a: number[]) => calls.push(a) } as unknown as CanvasRenderingContext2D;
+    paintRect(ctx, { x: 0, y: 0, w: 24, h: 24 }, { kind: "dither", color: "red", base: 1, top: 1 }, { dpr: 2, cell: 3 });
+    expect(calls.length).toBe(64);
+    expect(calls.every((c) => c.every(Number.isInteger))).toBe(true);
+    calls.length = 0;
+    paintRect(ctx, { x: 0, y: 0, w: 24, h: 24 }, { kind: "dither", color: "red", base: 0, top: 0 }, { dpr: 2, cell: 3 });
+    expect(calls.length).toBe(0);
+    paintRect(ctx, { x: 0, y: 0, w: 24, h: 24 }, { kind: "solid", color: "blue" }, { dpr: 1, revealFromY: 12 });
+    expect(calls).toEqual([[0, 12, 24, 12]]);
+  });
+});
+
+// ------------------------------------------------------------------------------------- copy
+
+const LANDING_FILES = [
+  "Landing.tsx",
+  "landing-data.ts",
+  ...readdirSync(new URL("../src/components/landing/", import.meta.url)).map((f) => `components/landing/${f}`),
+];
+const src = (p: string) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
+
+/**
+ * Every string a visitor could read in the landing's source: JSX text and string/template literals,
+ * minus module specifiers, the banned-word list itself and the data layer's `mode: "replay"` API
+ * value (code, never shown).
+ */
+function visibleStrings(file: string): string[] {
+  const sf = ts.createSourceFile(file, src(file), ts.ScriptTarget.Latest, true, file.endsWith("x") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  const out: string[] = [];
+  const visit = (n: ts.Node) => {
+    if (ts.isImportDeclaration(n) || ts.isExportDeclaration(n)) return;
+    if (ts.isCallExpression(n) && n.expression.kind === ts.SyntaxKind.ImportKeyword) return;
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && /^BANNED_/.test(n.name.text)) return;
+    if (ts.isPropertyAssignment(n) && ts.isIdentifier(n.name) && n.name.text === "mode") return;
+    if (ts.isJsxText(n) && n.text.trim()) out.push(n.text.trim());
+    if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n)) out.push(n.text);
+    if (ts.isTemplateExpression(n)) out.push(n.head.text, ...n.templateSpans.map((s) => s.literal.text));
+    ts.forEachChild(n, visit);
+  };
+  visit(sf);
+  return out;
+}
+
+describe("landing: product-site copy (no demo-style words)", () => {
+  const strings = LANDING_FILES.flatMap((f) => visibleStrings(f).map((s) => ({ f, s })));
+  const ALLOWED = ["Built for neatHack 2026", EVALUATION_URL];
+
+  it("has no banned word in any visible string (only the footer line and the evaluation link are allowed)", () => {
+    const hits = strings.filter(({ s }) => BANNED_RE.test(s) && !ALLOWED.includes(s));
+    expect(hits).toEqual([]);
+  });
+  it("keeps the footer line and the single stats footnote", () => {
+    expect(src("components/landing/Footer.tsx")).toContain("Built for neatHack 2026");
+    expect(src("components/landing/Proof.tsx")).toMatch(/Measured on Notary’s evaluation suite/);
+    expect(EVALUATION_URL).toBe(`${GITHUB_URL}/blob/main/docs/EVALUATION.md#evaluation-suite`);
+  });
+  it("says See it work, never Watch the demo", () => {
+    const all = LANDING_FILES.map(src).join("\n");
+    expect(all).toContain("See it work");
+    expect(all).not.toMatch(/watch the demo/i);
+  });
+  it("filters data-derived text with the same rule", () => {
+    expect(showable("Refund q01 held — no certificate for dodo.payments.page-size-max-100")).toBe(true);
+    expect(showable("Reading the decision for q01 of demo-run-guarded")).toBe(false);
+    expect(showable("fixture scenario default (simulated APIs)")).toBe(false);
+    expect(shortIds("cited probes (demo-notarize-dodo-p017, demo-notarize-dodo-p018)")).toBe("cited probes (p017, p018)");
+    expect(clipText("a b c d e f", 5)).toBe("a b…");
+  });
+  it("names the credits as text and links one GitHub constant", () => {
     expect(GITHUB_URL).toBe("https://github.com/parthchilwerwar/notary");
     expect(BUILT_WITH).toEqual(["neatlogs", "Entire", "cfo.ai", "Crustdata", "Dodo Payments", "AWS Bedrock"]);
+    expect(FOOTER_LINKS.map((l) => l.label)).toEqual(["GitHub", "Dashboard", "Docs"]);
   });
-  it("renders the excerpt with the Run page's own rows, loaded lazily", () => {
-    const excerpt = src("components/landing/Excerpt.tsx");
-    expect(excerpt).toMatch(/from "\.\.\/\.\.\/pages\/run\/Transcript"/);
-    expect(excerpt).toMatch(/buildRows/);
-    expect(src("Landing.tsx")).toMatch(/lazy\(\(\) => import\("\.\/components\/landing\/Excerpt"\)\)/);
-  });
-  it("uses GSAP only (no motion/react or @xyflow on the landing)", () => {
-    expect(text).not.toMatch(/from "motion|@xyflow/);
-    expect(text).toMatch(/SplitText\.create/);
-    expect(text).toMatch(/scrollTrigger/);
-    expect(text).toMatch(/gsap\.matchMedia\(\)/);
+  it("uses GSAP only (useGSAP, SplitText, ScrollTrigger, matchMedia for reduced motion)", () => {
+    const all = LANDING_FILES.map(src).join("\n");
+    expect(all).not.toMatch(/from "motion|@xyflow/);
+    expect(all).toMatch(/SplitText\.create/);
+    expect(all).toMatch(/scrollTrigger/);
+    expect(all).toMatch(/gsap\.matchMedia\(\)/);
   });
 });

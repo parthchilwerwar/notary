@@ -1,40 +1,108 @@
 // Data for the landing page (`/`). Every number the landing shows is derived here from data the
-// data layer (src/data) verified: run bundles (hash-checked) and timelines (tied to their bundle
-// by bundleHash). Nothing here fetches and no result is typed by hand. The only literals are copy
-// (step sentences, the "Built with" credits) and the repository URL.
-import { RequestTypeSchema, TimelineStageSchema } from "../../core/src/schema";
-import type { Decision, RunBundle, TimelineEvent, TimelineStage } from "../../core/src/schema";
-import { scenarioKey } from "./data";
+// data layer (src/data) verified: run bundles (hash-checked), timelines (tied to their bundle),
+// certificates (seals recomputed) and the optional cfo.ai plan (public/economics.json). Nothing
+// here fetches and no result is typed by hand. The only literals are copy (step and feature
+// sentences, the "Built with" credits) and links.
+import { z } from "zod";
+import { RequestTypeSchema } from "../../core/src/schema";
+import type { Certificate, Decision, FixtureIndex, RequestType, Revocation, RunBundle } from "../../core/src/schema";
+import { label, scenarioKey, type CertificateWorld } from "./data";
+import { GITHUB_URL } from "./lib/site";
 
-/** The repository, linked from the hero and the footer (one site-wide constant, AUDIT H-44). */
-export { GITHUB_URL } from "./lib/site";
+/** The repository, linked from the nav and the footer (one site-wide constant, AUDIT H-44). */
+export { GITHUB_URL };
 
-/** Credits line ("Built with"). Text only. Presentation, not data: no status is claimed. */
+/** Credits line ("Built with") and the chat showcase's chips. Text only; no status is claimed. */
 export const BUILT_WITH = ["neatlogs", "Entire", "cfo.ai", "Crustdata", "Dodo Payments", "AWS Bedrock"] as const;
 
 /** The Run page for one run (the dashboard reads `?run=`). */
 export const runHref = (runId: string) => `/app/run?run=${encodeURIComponent(runId)}`;
 
-// --------------------------------------------------------------------------- the five steps
+/** What the hero mockup's address bar shows: where this app is actually served, never a made-up domain. */
+export const mockupAddress = (origin: string) => `${origin.replace(/\/+$/, "")}/app/run`;
 
-/** Stage names from the timeline schema, so the steps can't drift from the records (AUDIT H-42). */
-export const STAGES: readonly TimelineStage[] = TimelineStageSchema.options;
+// --------------------------------------------------------------------------- navigation
 
-export const STAGE_LABEL = Object.fromEntries(
-  STAGES.map((s) => [s, s.charAt(0).toUpperCase() + s.slice(1)]),
-) as Record<TimelineStage, string>;
+export type NavLink = { label: string; href: string; external?: boolean };
+
+/** Center links of the nav. Pricing only when the pricing section is shown. */
+export function navLinks(showPricing: boolean): NavLink[] {
+  return [
+    { label: "How it works", href: "#how" },
+    { label: "Features", href: "#features" },
+    { label: "Chat", href: "#chat" },
+    ...(showPricing ? [{ label: "Pricing", href: "#pricing" }] : []),
+    { label: "GitHub", href: GITHUB_URL, external: true },
+  ];
+}
+
+export const FOOTER_LINKS: readonly NavLink[] = [
+  { label: "GitHub", href: GITHUB_URL, external: true },
+  { label: "Dashboard", href: "/app" },
+  { label: "Docs", href: `${GITHUB_URL}#readme`, external: true },
+];
+
+// --------------------------------------------------------------------------- copy
 
 /**
- * One sentence per stage, matching what packages/core does (README "How it works"). Copy only:
- * no counts, no provider names, no claim that code makes every decision (AUDIT H-36).
+ * How it works, in three columns. Copy only, matching what packages/core does (README "How it
+ * works"): no counts, no provider names, no claim that code makes every decision (AUDIT H-36).
  */
-export const STEP_COPY: Record<TimelineStage, string> = {
-  read: "Turns each API's documentation into checkable claims, then a deterministic checker compares recorded responses with them and flags every mismatch.",
-  test: "A model proposes rival explanations for each mismatch; each probe's prediction is committed before the API is called, and fixed rules turn the verdicts into a belief per claim.",
-  challenge: "A separate reviewer model reads only the raw probe records and tries to knock each belief down: uphold it, narrow its scope or downgrade it.",
-  certify: "Beliefs that survive become sha256-sealed certificates with a scope and their evidence, and later contrary evidence revokes them.",
-  enforce: "Guards built from the certificates wrap every API call, and a money action missing a certificate it depends on is held for a person, with its evidence.",
-};
+export const HOW_STEPS = [
+  {
+    id: "predict",
+    title: "Predict, then test",
+    body: "Every probe commits its prediction before the API is called. When the response disagrees, the mismatch is on the record.",
+    wash: "sky",
+  },
+  {
+    id: "challenge",
+    title: "Challenge",
+    body: "The Reflector explains each mismatch; the Adversary reads the raw records and tries to knock the belief down.",
+    wash: "lavender",
+  },
+  {
+    id: "certify",
+    title: "Certify & enforce",
+    body: "Beliefs that survive become sealed certificates. The Guard lets covered money actions through and holds the rest.",
+    wash: "mint",
+  },
+] as const;
+
+export type HowStepId = (typeof HOW_STEPS)[number]["id"];
+
+export type FeatureKey = "certificates" | "held" | "chat" | "revocation";
+
+export const FEATURES: readonly { key: FeatureKey; n: string; title: string; body: string; wash: string }[] = [
+  {
+    key: "certificates",
+    n: "01",
+    title: "Certificates",
+    body: "Every belief that survives testing and review becomes a sha256-sealed certificate, with the scope it was tested in and the probes behind it.",
+    wash: "lavender",
+  },
+  {
+    key: "held",
+    n: "02",
+    title: "Held actions",
+    body: "A refund that depends on a claim without a certificate waits for a person, evidence attached. Approve or reject it from the dashboard.",
+    wash: "peach",
+  },
+  {
+    key: "chat",
+    n: "03",
+    title: "Notary Chat",
+    body: "Ask about a certificate, a run or a held refund. Notary Chat answers from the records, shows every lookup it makes and cites its sources.",
+    wash: "mint",
+  },
+  {
+    key: "revocation",
+    n: "04",
+    title: "Revocation",
+    body: "When later evidence contradicts a certificate, Notary revokes it, retires its guards and holds the actions that relied on it.",
+    wash: "sky",
+  },
+];
 
 // --------------------------------------------------------------------------- run pairing
 
@@ -80,8 +148,18 @@ export function proofPair<T extends PairEntry>(all: readonly T[]) {
   const fixture = fixturePair(all);
   return {
     ...fixture,
-    note: "No complete recorded naive and guarded pair yet, so this shows the fixture pair.",
+    note: "No complete naive and guarded pair from your own runs yet, so these numbers come from the evaluation suite.",
   };
+}
+
+/**
+ * The fixture scenario whose certificate export records a revocation (today: change-api), and one
+ * of its source runs (to ask the data layer for that world's certificates). Undefined when no
+ * published scenario records one.
+ */
+export function revocationScenario(index: FixtureIndex | null): { scenario: string; runId: string } | undefined {
+  const s = index?.scenarios.find((x) => x.overall.revoked > 0 && x.sourceBundles.length > 0);
+  return s ? { scenario: s.scenario, runId: s.sourceBundles[0]! } : undefined;
 }
 
 // --------------------------------------------------------------------------- the numbers
@@ -114,6 +192,33 @@ export function proofNumbers(naive: RunBundle, guarded: RunBundle): ProofNumbers
   };
 }
 
+export type ActionCounts = { executed: number; held: number; unsafe: number };
+export type ActionRow = { type: RequestType; label: string; naive: ActionCounts; guarded: ActionCounts };
+
+/**
+ * Money actions by request type (schema order), naive vs guarded: decisions whose action is not
+ * "none", split into executed and held (held = waited for a person; drawn hatched). `unsafe` =
+ * executed decisions the deterministic grader marked unsafe.
+ */
+export function actionsByType(naive: RunBundle, guarded: RunBundle): ActionRow[] {
+  const count = (b: RunBundle, type: RequestType): ActionCounts => {
+    const ds = b.decisions.filter((d) => d.requestType === type && d.action !== "none");
+    return {
+      executed: ds.filter((d) => d.status === "executed").length,
+      held: ds.filter((d) => d.status === "held").length,
+      unsafe: ds.filter((d) => d.status === "executed" && (d.grade?.unsafe?.length ?? 0) > 0).length,
+    };
+  };
+  return RequestTypeSchema.options.map((type) => ({
+    type,
+    label: sentence(label(type)),
+    naive: count(naive, type),
+    guarded: count(guarded, type),
+  }));
+}
+
+const sentence = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
 /** Minor units → "$19.99" (currency from the record). */
 export function money(minor: number, currency = "USD") {
   try {
@@ -123,115 +228,313 @@ export function money(minor: number, currency = "USD") {
   }
 }
 
-// --------------------------------------------------------------------------- the excerpt
-
-/**
- * The notarize runs whose timelines can explain the guarded run's holds: same data world
- * (`sample` flag), started before it, and for fixtures the same simulated world (scenario key).
- * Oldest first.
- */
-export function sourceRuns<T extends PairEntry>(all: readonly T[], guarded: T): T[] {
-  return all
-    .filter(
-      (b) =>
-        b.kind === "notarize" &&
-        b.sample === guarded.sample &&
-        b.startedAt <= guarded.startedAt &&
-        (!guarded.sample || scenarioKey(b.runId) === scenarioKey(guarded.runId)),
-    )
-    .sort((a, b) => a.startedAt.localeCompare(b.startedAt));
+/** The guarded run's first held refund decision (by queue order), if any. */
+export function firstHeldRefund(guarded: RunBundle): Decision | undefined {
+  return guarded.decisions.find((d) => d.status === "held" && isRefund(d));
 }
 
-export type ExcerptRow = {
-  key: string;
-  runId: string;
-  seq: number;
-  stage: TimelineStage;
-  type: TimelineEvent["type"];
-  summary: string;
-};
+// --------------------------------------------------------------------------- certificates
 
-export type HeldCard = {
-  runId: string;
-  decisionId: string;
-  requestId: string;
-  requestType: string;
-  action: string;
-  amount?: number;
-  currency?: string;
-  missingBeliefs: string[];
-  reason?: string;
-};
+/** The certificate the Certificates card shows: the active one with the most evidence (ties: report order). */
+export function featuredCertificate(world: CertificateWorld): Certificate | undefined {
+  const active = world.tools.flatMap((t) => t.certificates).filter((c) => c.status === "active");
+  return active.reduce<Certificate | undefined>((best, c) => (!best || c.evidence.length > best.evidence.length ? c : best), undefined);
+}
 
-export type Excerpt = { rows: ExcerptRow[]; held: HeldCard; sample: boolean };
+/** The first recorded revocation of a world, with the certificate it revoked. */
+export function featuredRevocation(world: CertificateWorld): { revocation: Revocation; certificate?: Certificate } | undefined {
+  const revocation = world.tools.flatMap((t) => t.revocations)[0];
+  if (!revocation) return undefined;
+  const certificate = world.tools.flatMap((t) => t.certificates).find((c) => c.id === revocation.certificateId);
+  return { revocation, certificate };
+}
 
-const rowOf = (e: TimelineEvent): ExcerptRow => ({
-  key: `${e.runId}#${e.seq}`,
-  runId: e.runId,
-  seq: e.seq,
-  stage: e.stage,
-  type: e.type,
-  summary: e.summary,
-});
+// --------------------------------------------------------------------------- chat
 
 /**
- * A short story from published timelines, ending on a held refund:
- *   the guarded run's first held refund decision, its first missing belief, and from the source
- *   notarize runs the events about that belief's claim: the first anomaly, the first probe
- *   committed, the first verdict, the adversary's verdict, and the belief's last change.
- * Every row is a recorded event (summary generated by code), in recorded order. Returns
- * undefined when the guarded run held no refund.
+ * Questions the landing's chat turn tries, in order: why the guarded run's first held refund was
+ * held (with the naive vs guarded comparison, then alone), then what each tool's certificates say.
+ * All built from the runs; the first one with a presentable answer is shown.
  */
-export function buildExcerpt(
-  guarded: RunBundle,
-  guardedEvents: readonly TimelineEvent[],
-  sources: readonly { runId: string; events: readonly TimelineEvent[] }[],
-): Excerpt | undefined {
-  const heldEvent = guardedEvents.find(
-    (e) =>
-      e.type === "decision" &&
-      e.data?.status === "held" &&
-      typeof e.data?.requestType === "string" &&
-      REFUND_TYPES.has(e.data.requestType),
+export function chatQuestions(guarded: RunBundle, tools: readonly string[]): string[] {
+  const held = firstHeldRefund(guarded);
+  return [
+    ...(held
+      ? [`Why was ${held.requestId} held, and what changed between the naive and guarded runs?`, `Why was ${held.requestId} held?`]
+      : []),
+    ...tools.map((t) => `What do the ${t} certificates say?`),
+  ];
+}
+
+/** Answer markdown → paragraphs, minus the engine's "_Answering from …_" disclosure line. */
+export function answerParagraphs(markdown: string): { disclosure?: string; paragraphs: string[] } {
+  const blocks = markdown
+    .split(/\n{2,}/)
+    .map((b) => b.trim())
+    .filter(Boolean);
+  const first = blocks[0];
+  // The engine writes it in emphasis: _…_ or *…*.
+  const disclosure = first && /^([_*])[^_*\n]+\1$/.test(first) ? first.slice(1, -1) : undefined;
+  return { disclosure, paragraphs: disclosure ? blocks.slice(1) : blocks };
+}
+
+/** Text clipped at a sentence or word boundary, with an ellipsis when anything was cut. */
+export function clipText(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  const sentenceEnd = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("] "));
+  const at = sentenceEnd > max * 0.5 ? sentenceEnd + 1 : cut.lastIndexOf(" ");
+  return `${cut.slice(0, at > 0 ? at : max).trimEnd()}…`;
+}
+
+// --------------------------------------------------------------------------- pricing
+
+/**
+ * The pricing cards come from public/economics.json (the cfo.ai plan) and only when it lists
+ * exactly three plans that each carry a numeric price. Anything else hides the section: prices
+ * are never invented. Expected shape (no shared schema exists yet; DECISIONS note):
+ *   { "pricing": { "plans": [ { "name", "price", "currency"?, "period", "description"?, "features"? } × 3 ] } }
+ */
+const PlanSchema = z.object({
+  name: z.string().min(1),
+  price: z.number().finite().nonnegative(),
+  currency: z.string().length(3).optional(),
+  period: z.string().min(1),
+  description: z.string().optional(),
+  features: z.array(z.string()).max(8).optional(),
+});
+const PricingFileSchema = z.object({ pricing: z.object({ plans: z.array(PlanSchema).length(3) }) });
+
+export type PricingPlan = z.infer<typeof PlanSchema>;
+
+export function pricingPlans(raw: unknown): PricingPlan[] | null {
+  if (raw === undefined || raw === null) return null;
+  const parsed = PricingFileSchema.safeParse(raw);
+  return parsed.success ? parsed.data.pricing.plans : null;
+}
+
+/** "$49" from a plan's price (whole units) and currency. */
+export function planPrice(plan: PricingPlan): string {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: plan.currency ?? "USD",
+      maximumFractionDigits: Number.isInteger(plan.price) ? 0 : 2,
+    }).format(plan.price);
+  } catch {
+    return `${plan.price} ${plan.currency ?? ""}`.trim();
+  }
+}
+
+// --------------------------------------------------------------------------- how it works (real records)
+
+const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null;
+const words = (s: string) => s.replaceAll("_", " ");
+
+/** Probe ids carry their run id ("<run>-p004"); the landing shows the short probe id ("p004"). */
+export const shortIds = (text: string) => text.replace(/\b[\w.-]*-(p\d{3,})\b/g, "$1");
+
+export type ObservedField = { key: string; value: string; mismatch: boolean };
+export type PredictView = {
+  probe: string;
+  claimId: string;
+  template: string;
+  committedAt: string;
+  /** The outcome the "docs hold" rival predicted. */
+  expected: string;
+  call?: { op: string; args: string };
+  observed: ObservedField[];
+};
+
+const classOf = (v: unknown) => (isObj(v) && typeof v.class === "string" ? v.class : undefined);
+const outcomeOf = (v: unknown) =>
+  isObj(v) && Array.isArray(v.outcomes) && typeof v.outcomes[0] === "string" ? v.outcomes[0] : undefined;
+
+/**
+ * "Predict, then test": a probe whose committed "docs hold" prediction was contradicted (the
+ * winning hypothesis is a defect; the honored rival predicted another outcome). Fields come from
+ * the probe's treatment step and observation; `outcome` is the mismatched field.
+ */
+export function predictView(bundle: RunBundle): PredictView | undefined {
+  const views = bundle.probes.flatMap((p): (PredictView & { rich: boolean })[] => {
+    const obs = p.observed;
+    if (p.verdict !== "confirmed" || !isObj(obs) || typeof obs.outcome !== "string") return [];
+    const honored = Object.entries(p.prediction).find(([, v]) => classOf(v) === "honored");
+    const won = p.winningHypothesisId ? p.prediction[p.winningHypothesisId] : undefined;
+    const expected = honored ? outcomeOf(honored[1]) : undefined;
+    if (!expected || !won || classOf(won) === "honored" || expected === obs.outcome) return [];
+    const steps = Array.isArray(p.params.steps) ? (p.params.steps as unknown[]) : [];
+    const step = steps.find((x): x is Record<string, unknown> => isObj(x) && typeof x.tag === "string" && isObj(obs[x.tag]));
+    const tagged = step ? (obs[step.tag as string] as Record<string, unknown>) : {};
+    const fields = Object.entries(tagged).filter(
+      ([, v]) => typeof v === "number" || typeof v === "string" || typeof v === "boolean",
+    );
+    const args = step && isObj(step.params)
+      ? Object.entries(step.params)
+          .map(([k, v]) => `${k}=${typeof v === "object" ? JSON.stringify(v) : String(v)}`)
+          .join(" ")
+      : "";
+    return [
+      {
+        probe: shortIds(p.id),
+        claimId: p.claimId,
+        template: words(p.template),
+        committedAt: p.committedAt,
+        expected: words(expected),
+        ...(step && typeof step.op === "string" ? { call: { op: step.op, args } } : {}),
+        observed: [
+          ...fields.map(([k, v]) => ({ key: k === "length" ? "items" : words(k), value: String(v), mismatch: false })),
+          { key: "outcome", value: words(obs.outcome), mismatch: true },
+        ],
+        rich: fields.length > 0 && !!step,
+      },
+    ];
+  });
+  const pick = views.find((v) => v.rich) ?? views[0];
+  if (!pick) return undefined;
+  const { rich: _rich, ...view } = pick;
+  return view;
+}
+
+/** Commit time as HH:MM:SS in the viewer's time zone. */
+export const clockTime = (iso: string) =>
+  new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).format(
+    new Date(iso),
   );
-  const decision = heldEvent && guarded.decisions.find((d) => heldEvent.recordIds.includes(d.id));
-  if (!heldEvent || !decision) return undefined;
 
-  const held: HeldCard = {
-    runId: guarded.runId,
-    decisionId: decision.id,
-    requestId: decision.requestId,
-    requestType: decision.requestType,
-    action: decision.action,
-    ...(typeof heldEvent.data?.amount === "number" ? { amount: heldEvent.data.amount } : {}),
-    ...(typeof heldEvent.data?.currency === "string" ? { currency: heldEvent.data.currency } : {}),
-    missingBeliefs: decision.missingBeliefs,
-    ...(decision.evidencePack?.reason ? { reason: decision.evidencePack.reason } : {}),
+export type ChallengeView = {
+  claimId: string;
+  /** The Reflector's hypothesis behind the certified side, when the source bundles carry it. */
+  hypothesis?: string;
+  /** The Adversary's review as recorded (probe ids shortened). */
+  counter: string;
+  verdict: "uphold" | "narrow" | "downgrade";
+  /** Adversary reviews recorded for the belief, and how many it survived (upheld). */
+  challenges: number;
+  survived: number;
+};
+
+/**
+ * "Challenge": a certificate the Adversary reviewed (an upheld one that contradicts the docs
+ * first), the Reflector hypothesis behind its evidence probes, and the review count from the
+ * belief events.
+ */
+export function challengeView(world: CertificateWorld, sources: readonly RunBundle[]): ChallengeView | undefined {
+  const probes = new Map(sources.flatMap((b) => b.probes.map((p) => [p.id, p] as const)));
+  const hyps = sources.flatMap((b) => b.hypotheses);
+  const anomalies = sources.flatMap((b) => b.anomalies);
+  // Code-built verification rivals say so in their statement; only model-proposed ones are the Reflector's.
+  const byReflector = (statement: string) => !/not model-proposed|^verification rival/i.test(statement);
+  const reflectorHypothesis = (c: Certificate) => {
+    const winners = new Set(c.evidence.map((e) => probes.get(e.probeId)?.winningHypothesisId).filter(Boolean));
+    const anomalyIds = new Set(anomalies.filter((a) => a.claimId === c.claimId).map((a) => a.id));
+    const forClaim = hyps.filter((h) => winners.has(h.id) || anomalyIds.has(h.anomalyId));
+    const winnerClass = hyps.find((h) => winners.has(h.id))?.class;
+    return (
+      forClaim.find((h) => winners.has(h.id) && byReflector(h.statement)) ??
+      forClaim.find((h) => h.class === winnerClass && byReflector(h.statement)) ??
+      forClaim.find((h) => h.class !== "honored" && byReflector(h.statement))
+    )?.statement;
   };
+  const candidates = world.tools
+    .flatMap((t) => t.certificates)
+    .filter((c) => c.adversary)
+    .map((c) => ({ c, hypothesis: reflectorHypothesis(c) }));
+  const rank = ({ c, hypothesis }: (typeof candidates)[number]) =>
+    (c.adversary!.verdict === "uphold" ? 0 : 4) + (hypothesis ? 0 : 2) + (c.verdictKind === "contradicts_docs" ? 0 : 1);
+  const pick = [...candidates].sort((a, b) => rank(a) - rank(b))[0];
+  const adv = pick?.c.adversary;
+  if (!pick || !adv) return undefined;
+  const { c, hypothesis } = pick;
+  const reviews = sources
+    .flatMap((b) => b.beliefEvents)
+    .filter((e) => e.beliefId === c.beliefId && /^adversary\b/i.test(e.reason));
+  const challenges = Math.max(1, reviews.length);
+  return {
+    claimId: c.claimId,
+    ...(hypothesis ? { hypothesis: shortIds(hypothesis) } : {}),
+    counter: shortIds(adv.reason),
+    verdict: adv.verdict,
+    challenges,
+    survived: adv.verdict === "uphold" ? challenges : 0,
+  };
+}
 
-  const belief = decision.missingBeliefs[0];
-  const events = sources.flatMap((s) => s.events);
-  const claim =
-    belief &&
-    events.find((e) => e.type === "belief.changed" && e.data?.beliefId === belief && typeof e.data?.claimId === "string")
-      ?.data?.claimId;
-  const about = (e: TimelineEvent) =>
-    (!!belief && e.recordIds.includes(belief)) ||
-    (typeof claim === "string" && (e.data?.claimId === claim || e.recordIds.includes(claim)));
-  const related = events.filter(about);
-  const first = (type: TimelineEvent["type"]) => related.find((e) => e.type === type);
-  const last = (type: TimelineEvent["type"]) => related.filter((e) => e.type === type).at(-1);
-  const picked = [
-    first("anomaly.detected"),
-    first("probe.committed"),
-    first("probe.verdict"),
-    first("adversary.verdict"),
-    last("certificate.revoked") ?? last("certificate.issued"),
-    last("belief.changed"),
-  ].filter((e): e is TimelineEvent => !!e);
-  // Recorded order: by source run (oldest first), then seq.
-  const order = new Map(sources.map((s, i) => [s.runId, i]));
-  picked.sort((a, b) => (order.get(a.runId)! - order.get(b.runId)!) || a.seq - b.seq);
+export type GuardRow = { title: string; action: string; outcome: "allowed" | "held" };
+export type CertifyView = {
+  certificateId: string;
+  claimId: string;
+  scope: string;
+  evidence: number;
+  issuedAt: string;
+  rows: GuardRow[];
+};
 
-  return { rows: [...picked.map(rowOf), rowOf(heldEvent)], held, sample: guarded.sample };
+/**
+ * "Certify & enforce": the featured certificate, then two of the guarded run's real decisions:
+ * an executed money action (a refund when one exists) and a held refund.
+ */
+export function certifyView(world: CertificateWorld, guarded: RunBundle): CertifyView | undefined {
+  const c = featuredCertificate(world);
+  if (!c) return undefined;
+  const money = guarded.decisions.filter((d) => d.action !== "none");
+  const allowed = money.find((d) => d.status === "executed" && isRefund(d)) ?? money.find((d) => d.status === "executed");
+  const held = firstHeldRefund(guarded) ?? money.find((d) => d.status === "held");
+  const row = (d: Decision, outcome: GuardRow["outcome"]): GuardRow => ({
+    title: `${sentence(label(d.requestType))} ${d.requestId}`,
+    action: d.action,
+    outcome,
+  });
+  return {
+    certificateId: c.id,
+    claimId: c.claimId,
+    scope: c.scope.text,
+    evidence: c.evidence.length,
+    issuedAt: c.issuedAt,
+    rows: [...(allowed ? [row(allowed, "allowed")] : []), ...(held ? [row(held, "held")] : [])],
+  };
+}
+
+/** Notarize runs of the guarded run's world (same sample flag and, for simulated worlds, the same scenario). */
+export function worldNotarizeRuns<T extends PairEntry>(all: readonly T[], guarded: T): T[] {
+  return all.filter(
+    (b) =>
+      b.kind === "notarize" &&
+      b.sample === guarded.sample &&
+      (!guarded.sample || scenarioKey(b.runId) === scenarioKey(guarded.runId)),
+  );
+}
+
+// --------------------------------------------------------------------------- copy rules
+
+/**
+ * Words the landing never shows (it is a product site, not a sandbox). The footer line ("Built for
+ * neatHack 2026") and the evaluation-suite link are the only allowed occurrences; test/landing.test.ts
+ * greps the landing's copy for them and data-derived text is filtered with `showable`.
+ */
+export const BANNED_WORDS = [
+  "demo",
+  "fixture",
+  "replay",
+  "recorded",
+  "mock",
+  "sample",
+  "simulated",
+  "test mode",
+  "placeholder",
+  "hackathon",
+] as const;
+
+export const BANNED_RE = new RegExp(BANNED_WORDS.map((w) => w.replace(" ", "[\\s-]+")).join("|"), "i");
+
+/** True when a data-derived string may be shown on the landing. */
+export const showable = (text: string) => !BANNED_RE.test(text);
+
+/** The one footnote under the stats: the suite and its disclosure live in docs/EVALUATION.md. */
+export const EVALUATION_URL = `${GITHUB_URL}/blob/main/docs/EVALUATION.md#evaluation-suite`;
+
+/** "See it work": an optional video (VITE_NOTARY_VIDEO_URL, http(s) only), else the How it works section. */
+export function seeItWorkHref(videoUrl: string | undefined): { href: string; external: boolean } {
+  const v = videoUrl?.trim();
+  return v && /^https?:\/\//i.test(v) ? { href: v, external: true } : { href: "#how", external: false };
 }

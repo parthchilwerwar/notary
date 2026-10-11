@@ -1,9 +1,12 @@
-import { useRef } from "react";
-import { Link } from "react-router";
+import { useEffect, useRef } from "react";
 import type { RunBundle } from "../../../../core/src/schema";
-import { FIXTURE_BANNER } from "../../data";
-import { runHref, type ProofNumbers } from "../../landing-data";
+import { actionsByType, EVALUATION_URL, type ProofNumbers } from "../../landing-data";
+import { GridSection } from "../brand/GridFrame";
+import { ActionsChart } from "./ActionsChart";
+import { BrowserFrame } from "./BrowserFrame";
+import { fadeUp, revealTitle } from "./motion";
 import { gsap, MOTION_OK, useGSAP } from "./gsap";
+import { useNear } from "./useNear";
 
 export type ProofState =
   | { status: "loading" }
@@ -19,13 +22,14 @@ export type ProofState =
 
 const fmt = new Intl.NumberFormat("en-US");
 
-/** A figure that counts up once when scrolled into view (the final value is in the DOM). */
-function Figure({ value, label }: { value: number | null; label: string }) {
+/** A stat that counts up once when scrolled into view (the final value is always in the DOM). */
+function Stat({ value, label }: { value: number | null; label: string }) {
   return (
-    <div className="l-figure">
-      <dd className="l-figure-value">
+    <div className="l-stat">
+      <dt className="l-stat-label">{label}</dt>
+      <dd className="l-stat-value">
         {value === null ? (
-          <span>not recorded</span>
+          <span className="l-stat-missing">not available</span>
         ) : (
           <>
             <span className="l-count" data-count={value} aria-hidden="true">
@@ -35,20 +39,26 @@ function Figure({ value, label }: { value: number | null; label: string }) {
           </>
         )}
       </dd>
-      <dt className="l-figure-label">{label}</dt>
     </div>
   );
 }
 
-export function Proof({ state }: { state: ProofState }) {
+export function Proof({ state, onNear }: { state: ProofState; onNear?: () => void }) {
   const root = useRef<HTMLElement>(null);
+  // The bundles are fetched and hash-checked only when the section nears the viewport.
+  const near = useNear(root, 800);
+  useEffect(() => {
+    if (near) onNear?.();
+  }, [near, onNear]);
   const ready = state.status === "ready";
 
   useGSAP(
     () => {
-      if (!ready) return;
       const mm = gsap.matchMedia();
       mm.add(MOTION_OK, () => {
+        revealTitle(root.current!.querySelector(".l-h2"));
+        if (!ready) return;
+        fadeUp(gsap.utils.toArray<HTMLElement>(".l-stat, .l-chart-card", root.current), { stagger: 0.1 });
         const els = gsap.utils.toArray<HTMLElement>(".l-count", root.current);
         for (const el of els) {
           const target = Number(el.dataset.count);
@@ -79,67 +89,59 @@ export function Proof({ state }: { state: ProofState }) {
   );
 
   return (
-    <section className="l-section l-proof" ref={root} aria-labelledby="proof-title">
-      <h2 id="proof-title" className="l-h2">
-        Same queue, two agents
-      </h2>
-      {state.status === "loading" && (
-        <div className="l-proof-body" aria-busy="true">
-          <p className="l-lede">Loading the latest exported runs…</p>
-          <div className="l-figures l-figures-pending" aria-hidden="true">
-            <span />
-            <span />
-            <span />
+    <GridSection ref={root} id="proof" className="l-section l-proof" aria-labelledby="proof-title" rule>
+      <div className="grid-inner">
+        <header className="l-section-head">
+          <p className="section-label">Proof</p>
+          <h2 id="proof-title" className="display l-h2">
+            Same queue, two agents
+          </h2>
+        </header>
+        {state.status === "loading" && (
+          <div className="l-proof-body" aria-busy="true">
+            <p className="l-lede">Loading the latest exported runs…</p>
+            <div className="l-stats l-stats-pending" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </div>
           </div>
-        </div>
-      )}
-      {(state.status === "error" || state.status === "empty") && (
-        <p className="l-lede l-error" role={state.status === "error" ? "alert" : undefined}>
-          {state.message}
-        </p>
-      )}
-      {state.status === "ready" && <ProofBody state={state} />}
-    </section>
+        )}
+        {(state.status === "error" || state.status === "empty") && (
+          <p className="l-lede l-error" role={state.status === "error" ? "alert" : undefined}>
+            {state.message}
+          </p>
+        )}
+        {state.status === "ready" && <ProofBody state={state} />}
+      </div>
+    </GridSection>
   );
 }
 
 function ProofBody({ state }: { state: Extract<ProofState, { status: "ready" }> }) {
   const { naive, guarded, numbers, note } = state;
-  const sample = guarded.sample;
+  const rows = actionsByType(naive, guarded);
   return (
     <div className="l-proof-body">
-      {sample ? (
-        <p className="l-fixture" role="note">
-          {FIXTURE_BANNER}
-        </p>
-      ) : (
-        <p className="l-fixture" role="note">
-          Recorded runs, mode: {guarded.mode === naive.mode ? guarded.mode : `${naive.mode} and ${guarded.mode}`}
-        </p>
-      )}
       <p className="l-lede">
-        One queue of {fmt.format(numbers.requests)} customer requests, run twice against the same{" "}
-        {sample ? "simulated " : ""}APIs: once by an agent that trusts the docs, once by Notary.
-        Unsafe actions are duplicate writes, wrong-unit amounts and missed existing refunds, counted
-        by the deterministic grader from the API’s state after each run.
+        One queue of {fmt.format(numbers.requests)} customer requests, run twice against the same APIs: once by an
+        agent that trusts the docs, once by Notary. Unsafe actions (duplicate writes, wrong-unit amounts, missed
+        existing refunds) are counted by a deterministic grader from the API’s state after each run.
       </p>
       {note && <p className="l-note">{note}</p>}
-      <dl className="l-figures">
-        <Figure value={numbers.naiveUnsafe} label="unsafe money actions by the agent that trusts the docs" />
-        <Figure value={numbers.guardedUnsafe} label="unsafe money actions by Notary" />
-        <Figure value={numbers.refundsHeld} label="refunds Notary held for a person to approve" />
+      <dl className="l-stats">
+        <Stat value={numbers.naiveUnsafe} label="Unsafe actions without Notary" />
+        <Stat value={numbers.guardedUnsafe} label="Unsafe actions with Notary" />
+        <Stat value={numbers.refundsHeld} label="Refunds held for review" />
       </dl>
-      <p className="l-source">
-        From{" "}
-        <Link to={runHref(naive.runId)}>
-          <code>{naive.runId}</code>
-        </Link>{" "}
-        and{" "}
-        <Link to={runHref(guarded.runId)}>
-          <code>{guarded.runId}</code>
-        </Link>
-        , hash-verified in your browser.
+      <p className="l-footnote">
+        <a href={EVALUATION_URL} rel="noreferrer">
+          Measured on Notary’s evaluation suite
+        </a>
       </p>
+      <BrowserFrame className="l-chart-card" title="Money actions by request type">
+        <ActionsChart rows={rows} />
+      </BrowserFrame>
     </div>
   );
 }
