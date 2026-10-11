@@ -1,7 +1,7 @@
 // Record references shared by the app pages: links to other records of a run, and trace ids.
 import { Link } from "react-router";
-import type { RunBundle } from "../../../../core/src/schema";
-import { recordPath, withRun } from "../../app/links";
+import type { RunBundle } from "../../../core/src/schema";
+import { recordPath, withRun } from "../app/links";
 
 /** Links to other records of the same run (beliefs, probes, decisions); unknown ids stay plain text. */
 export function RecordLinks({
@@ -27,15 +27,15 @@ export function RecordLinks({
   ];
   if (!items.length) return null;
   return (
-    <span className="record-links">
+    <span className="ui-record-links">
       {items.map(([kind, id]) =>
         known[kind].has(id) ? (
-          <Link key={kind + id} className="record-chip" to={withRun(recordPath[kind](id), bundle.runId)}>
+          <Link key={kind + id} className="ui-record-chip" to={withRun(recordPath[kind](id), bundle.runId)}>
             <span>{kind}</span>
             {id}
           </Link>
         ) : (
-          <code key={kind + id} className="record-chip muted">
+          <code key={kind + id} className="ui-record-chip" data-unknown>
             <span>{kind}</span>
             {id}
           </code>
@@ -69,17 +69,17 @@ export function Trace({
   const href = traceUrl(recorded);
   const text = spanId || traceId || "Trace not recorded";
   return href ? (
-    <a className="trace" href={href} target="_blank" rel="noreferrer">
+    <a className="ui-trace" href={href} target="_blank" rel="noreferrer">
       {text}
       <span className="sr-only"> (opens in a new tab)</span>
     </a>
   ) : (
-    <code className="trace" title={recorded ? `Local receipt: ${recorded}` : "No trace link recorded"}>
+    <code className="ui-trace" title={recorded ? `Local receipt: ${recorded}` : "No trace link recorded"}>
       {text}
     </code>
   );
 }
 
 export function Json({ value }: { value: unknown }) {
-  return <pre className="json">{JSON.stringify(value, null, 2) ?? "Not recorded"}</pre>;
+  return <pre className="ui-json">{JSON.stringify(value, null, 2) ?? "Not recorded"}</pre>;
 }

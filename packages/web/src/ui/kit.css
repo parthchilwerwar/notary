@@ -1,0 +1,991 @@
+/* UI kit (K2). Extracted from the landing (src/landing.css, src/design/brand.css): the same
+   surfaces, type and spacing, as reusable classes. Colors and fonts only through the tokens in
+   src/design/tokens.css (no hex values, no font names here; test/ui-kit-boundary.test.ts). */
+
+/* ---------------------------------------------------------------- type */
+.ui-title {
+  margin: 0;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+.ui-title-page {
+  font-size: clamp(36px, 2.4vw + 18px, 48px);
+  letter-spacing: var(--display-tracking);
+  line-height: var(--display-leading);
+}
+.ui-title-section {
+  font-size: clamp(26px, 1vw + 18px, 32px);
+}
+.ui-title-card {
+  font-size: 24px;
+}
+.ui-section-label {
+  margin-bottom: 8px;
+}
+
+/* ---------------------------------------------------------------- cards */
+.ui-card {
+  min-width: 0;
+  border: 1px solid var(--hairline-color);
+  border-radius: 24px;
+  background: var(--card);
+  box-shadow: var(--shadow-float);
+}
+.ui-wash-card {
+  min-width: 0;
+  border: 1px solid var(--hairline-color);
+  border-radius: var(--r-section);
+}
+.ui-pad-none {
+  padding: 0;
+}
+.ui-pad-sm {
+  padding: 16px;
+}
+.ui-pad-md {
+  padding: 24px;
+}
+.ui-pad-lg {
+  padding: 32px;
+}
+@media (max-width: 639px) {
+  .ui-pad-md {
+    padding: 20px;
+  }
+  .ui-pad-lg {
+    padding: 24px;
+  }
+}
+
+/* ---------------------------------------------------------------- buttons (on brand.css .btn) */
+.ui-btn-primary {
+  background: var(--text);
+  color: var(--page);
+}
+.ui-btn-primary:hover {
+  background: var(--text-strong-muted);
+}
+.ui-btn-secondary {
+  border-color: var(--hairline-color);
+  background: var(--card);
+  color: var(--text);
+  box-shadow: var(--shadow-soft);
+}
+.ui-btn-secondary:hover {
+  border-color: var(--control-line);
+}
+.ui-btn-accent {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.ui-btn-accent:hover {
+  background: var(--accent-hover);
+}
+.ui-btn-ghost {
+  background: transparent;
+  color: var(--text);
+}
+.ui-btn-ghost:hover {
+  background: var(--surface-subtle);
+}
+.ui-btn-danger {
+  background: var(--status-unsafe);
+  color: var(--on-accent);
+}
+.ui-btn-danger:hover {
+  background: var(--status-unsafe-text);
+}
+.ui-btn-sm {
+  min-height: 34px;
+  padding: 0 14px;
+  font-size: 14px;
+}
+.ui-btn-lg {
+  min-height: 48px;
+  padding: 0 22px;
+  font-size: 16px;
+}
+@media (pointer: coarse) {
+  .ui-btn-sm {
+    min-height: 44px;
+  }
+}
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ---------------------------------------------------------------- status pill + agent badge */
+.ui-status {
+  max-width: 100%;
+}
+.ui-status-safe {
+  background: var(--status-certified-bg);
+  color: var(--status-certified-text);
+}
+.ui-status-safe::before {
+  background: var(--status-certified);
+}
+.ui-status-unsafe {
+  background: var(--status-unsafe-bg);
+  color: var(--status-unsafe-text);
+}
+.ui-status-held {
+  background: var(--status-held-bg);
+  color: var(--status-held-text);
+}
+.ui-status-held::before {
+  background: var(--status-held);
+}
+.ui-status-revoked {
+  border-color: var(--hairline-color);
+  background: var(--status-revoked-bg);
+  color: var(--status-revoked);
+}
+.ui-status-revoked .status-word {
+  text-decoration: line-through;
+}
+.ui-status-active {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.ui-status-active::before {
+  background: var(--accent);
+}
+.ui-status-neutral {
+  border-color: var(--hairline-color);
+  background: var(--card);
+  color: var(--text-strong-muted);
+}
+.ui-status-neutral::before {
+  background: var(--text-faint);
+}
+.ui-status .status-word {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ui-agent {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 22px;
+  padding: 0 9px;
+  border: 1px solid var(--hairline-color);
+  border-radius: var(--r-pill);
+  background: var(--card);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.ui-agent[data-kind="rule"] {
+  border-style: dashed;
+  border-color: var(--control-line);
+  background: transparent;
+  color: var(--text-strong-muted);
+}
+.ui-agent-model {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* ---------------------------------------------------------------- sky band */
+.ui-band {
+  position: relative;
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+  padding: 0 0 24px;
+}
+.ui-band-sky {
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 220px;
+  padding: 40px 40px calc(48px + 40px);
+  border-radius: var(--r-section);
+  /* The landing's sky, in its light register so the title and summary stay dark text (AA):
+     --text on --sky-3 is 9:1, --text-strong-muted 5.0:1. A deeper blue sits only behind the action. */
+  background:
+    radial-gradient(30% 110% at 100% 0%, var(--sky-2), transparent 75%),
+    radial-gradient(55% 100% at 0% 100%, var(--sky-lilac), transparent 72%),
+    linear-gradient(180deg, var(--sky-3) 0%, var(--sky-4) 48%, var(--wash-sky) 74%, var(--page) 100%);
+}
+.ui-band-art {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: -1;
+  height: 62%;
+  pointer-events: none;
+}
+.ui-band-clouds {
+  opacity: 0.9;
+}
+.ui-band-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px 32px;
+  min-width: 0;
+}
+.ui-band-copy {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  max-width: 68ch;
+}
+.ui-band-title {
+  overflow-wrap: anywhere;
+}
+.ui-band-label {
+  color: var(--text-strong-muted);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.ui-band-summary {
+  margin: 0;
+  color: var(--text-strong-muted);
+  font-size: 16px;
+  line-height: 1.5;
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+.ui-band-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.ui-band-extra {
+  min-width: 0;
+}
+:root[data-theme="dark"] .ui-band-sky {
+  background:
+    radial-gradient(38% 120% at 100% 0%, var(--accent-soft), transparent 72%),
+    var(--sky-band),
+    var(--card);
+}
+:root[data-theme="dark"] .ui-band-clouds {
+  opacity: 0.07;
+}
+@media (max-width: 639px) {
+  .ui-band-sky {
+    min-height: 0;
+    padding: 28px 20px calc(48px + 24px);
+    border-radius: var(--r-card);
+    background: linear-gradient(180deg, var(--sky-3) 0%, var(--sky-4) 48%, var(--wash-sky) 74%, var(--page) 100%);
+  }
+  :root[data-theme="dark"] .ui-band-sky {
+    background: var(--sky-band), var(--card);
+  }
+  .ui-band-art {
+    height: 48%;
+  }
+}
+
+/* Page layout: the band, then content overlapping its bottom by 48px. */
+.ui-page {
+  display: grid;
+  min-width: 0;
+}
+.ui-page-body {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 32px;
+  min-width: 0;
+}
+.ui-band-sky + .ui-page-body {
+  margin-top: calc(-48px - 24px);
+  padding: 0 24px;
+}
+@media (max-width: 639px) {
+  .ui-band-sky + .ui-page-body {
+    padding: 0 8px;
+  }
+}
+
+/* Sections inside a page. */
+.ui-section {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  scroll-margin-top: 24px;
+}
+.ui-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px 24px;
+}
+.ui-section-head > div:first-child {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  max-width: 72ch;
+}
+.ui-section-desc {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 15px;
+  text-wrap: pretty;
+}
+.ui-section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ---------------------------------------------------------------- stats */
+.ui-stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin: 0;
+}
+.ui-stat {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 0;
+}
+.ui-stat > dd {
+  margin: 0;
+}
+.ui-stat-label {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+.ui-stat-value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: clamp(44px, 2vw + 30px, 64px);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+  font-variant-numeric: tabular-nums;
+}
+.ui-stat-of {
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  letter-spacing: 0;
+}
+.ui-stat-missing {
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 20px;
+  letter-spacing: 0;
+}
+.ui-stat-note {
+  order: -1;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+/* column-reverse: the note sits under the label visually, so put it after both. */
+.ui-stat {
+  position: relative;
+}
+.ui-stat-art {
+  order: -2;
+}
+
+/* ---------------------------------------------------------------- timeline */
+.ui-timeline {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ui-tl-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 14px;
+  padding: 12px 0;
+}
+.ui-tl-item::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 9.5px;
+  width: 1px;
+  background: var(--hairline-color);
+}
+.ui-tl-item:first-child::before {
+  top: 22px;
+}
+.ui-tl-item:last-child::before {
+  bottom: calc(100% - 22px);
+}
+.ui-tl-item:only-child::before {
+  display: none;
+}
+.ui-tl-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border: 1px solid var(--hairline-color);
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--text-muted);
+}
+.ui-tl-mark[data-mark="dot"]::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.ui-tl-mark[data-mark="pending"] {
+  border-style: dashed;
+}
+.ui-tl-mark[data-tone="active"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.ui-tl-mark[data-tone="safe"] {
+  border-color: transparent;
+  background: var(--status-certified-bg);
+  color: var(--status-certified-text);
+}
+.ui-tl-mark[data-tone="unsafe"] {
+  border-color: transparent;
+  background: var(--status-unsafe-bg);
+  color: var(--status-unsafe-text);
+}
+.ui-tl-mark[data-tone="held"] {
+  border-color: transparent;
+  background: var(--status-held-bg);
+  color: var(--status-held-text);
+}
+.ui-tl-body {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.ui-tl-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  min-width: 0;
+}
+.ui-tl-title {
+  min-width: 0;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+.ui-tl-item[data-tone="unsafe"] .ui-tl-title {
+  color: var(--status-unsafe-text);
+}
+.ui-tl-meta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.ui-tl-sub {
+  color: var(--text-muted);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.ui-spinner {
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--accent-soft);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: ui-spin 800ms linear infinite;
+}
+@keyframes ui-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------------------------------------------------------------- certificate card + seal */
+.ui-cert {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+.ui-cert-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.ui-cert-kicker {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.ui-cert-claim {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.ui-cert-claim a {
+  color: var(--text);
+  text-decoration: none;
+}
+.ui-cert-claim a:hover {
+  color: var(--accent-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.ui-cert-claim a::after {
+  /* The whole card is the link target. */
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+}
+.ui-cert {
+  position: relative;
+}
+.ui-cert a:focus-visible {
+  outline: none;
+}
+.ui-cert:has(a:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.ui-cert[data-revoked] .ui-cert-claim code {
+  color: var(--status-revoked);
+  text-decoration: line-through;
+}
+.ui-cert-foot {
+  padding-top: 12px;
+  border-top: 1px solid var(--hairline-color);
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.ui-cert-compact {
+  gap: 10px;
+  padding: 16px;
+  border-radius: 20px;
+  box-shadow: var(--shadow-soft);
+}
+.ui-seal {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+}
+.ui-seal-ring {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--status-certified);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 3px var(--status-certified-bg);
+}
+.ui-seal[data-revoked] .ui-seal-ring {
+  border-color: var(--status-revoked);
+  box-shadow: none;
+}
+.ui-seal-hash {
+  overflow: hidden;
+  color: var(--text-strong-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- facts */
+.ui-facts {
+  display: grid;
+  gap: 14px 24px;
+  margin: 0;
+}
+.ui-facts > div {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-width: 0;
+}
+.ui-facts dt {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.ui-facts dd {
+  margin: 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+@media (min-width: 640px) {
+  .ui-facts-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ui-facts-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .ui-facts-wide {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ---------------------------------------------------------------- fixture note, pills, select */
+.ui-fixture {
+  justify-self: start;
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0;
+  padding: 4px 12px;
+  border: 1px solid var(--hairline-color);
+  border-radius: var(--r-pill);
+  background: var(--muted-surface);
+  color: var(--text-strong-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+.ui-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ui-pills a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 16px;
+  border: 1px solid var(--hairline-color);
+  border-radius: var(--r-pill);
+  background: var(--card);
+  color: var(--text-strong-muted);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: border-color 150ms ease-out, background-color 150ms ease-out;
+}
+.ui-pills a:hover {
+  border-color: var(--control-line);
+  color: var(--text);
+}
+.ui-pills a[aria-current="page"] {
+  border-color: var(--text);
+  background: var(--text);
+  color: var(--page);
+}
+.ui-pill-count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+@media (pointer: coarse) {
+  .ui-pills a {
+    min-height: 44px;
+  }
+}
+.ui-select {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+}
+.ui-select select {
+  appearance: none;
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  padding: 0 36px 0 14px;
+  border: 1px solid var(--control-line);
+  border-radius: var(--r-button);
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.ui-select select option,
+.ui-select select optgroup {
+  background: var(--card);
+  color: var(--text);
+}
+.ui-select::after {
+  content: "";
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin-top: -5px;
+  border-right: 1.5px solid var(--text);
+  border-bottom: 1.5px solid var(--text);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+.ui-select select:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ---------------------------------------------------------------- expander, tables */
+.ui-expander {
+  min-width: 0;
+}
+.ui-expander > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  color: var(--accent-text);
+  font-weight: 500;
+  list-style: none;
+  cursor: pointer;
+}
+.ui-expander > summary::-webkit-details-marker {
+  display: none;
+}
+.ui-expander > summary::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 150ms ease-out;
+}
+.ui-expander[open] > summary::after {
+  margin-top: 3px;
+  transform: rotate(-135deg);
+}
+.ui-expander > summary:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.ui-expander-body {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding-top: 12px;
+}
+.ui-table-frame {
+  position: relative;
+  min-width: 0;
+  overflow-x: auto;
+  border: 1px solid var(--hairline-color);
+  border-radius: 16px;
+}
+.ui-table-frame table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.ui-table-frame th,
+.ui-table-frame td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--hairline-color);
+  text-align: left;
+  vertical-align: top;
+}
+.ui-table-frame thead th {
+  background: var(--surface-subtle);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+.ui-table-frame tbody th {
+  font-weight: 400;
+}
+.ui-table-frame tbody tr:last-child > * {
+  border-bottom: 0;
+}
+.ui-table-frame .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- empty + skeleton */
+.ui-empty {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+}
+.ui-empty-text {
+  max-width: 64ch;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+.ui-empty[data-tone="error"] .ui-title {
+  color: var(--status-unsafe-text);
+}
+.ui-empty-action {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+.ui-skeleton {
+  display: block;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--muted-surface), var(--surface-subtle), var(--muted-surface));
+  background-size: 200% 100%;
+  animation: ui-shimmer 1.4s ease-in-out infinite;
+}
+.ui-skeleton-line {
+  height: 14px;
+}
+.ui-skeleton-block {
+  height: 72px;
+}
+.ui-skeleton-stat {
+  height: 132px;
+  border-radius: 24px;
+}
+.ui-skeleton-card {
+  height: 320px;
+  border-radius: 24px;
+}
+.ui-skeleton-band {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-height: 220px;
+  padding: 48px 40px;
+  border-radius: var(--r-section);
+  background: var(--surface-subtle);
+}
+.ui-skeleton-band .ui-skeleton-line:first-child {
+  height: 40px;
+}
+.ui-page-skeleton > .ui-page-body {
+  margin-top: -72px;
+  padding: 0 24px;
+}
+@keyframes ui-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-skeleton,
+  .ui-spinner {
+    animation: none;
+  }
+  .ui-expander > summary::after,
+  .ui-pills a {
+    transition: none;
+  }
+}
+
+/* ---------------------------------------------------------------- record references */
+.ui-record-links {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+.ui-record-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--hairline-color);
+  border-radius: var(--r-pill);
+  background: var(--card);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+a.ui-record-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+.ui-record-chip > span {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+}
+.ui-record-chip[data-unknown] {
+  border-style: dashed;
+  color: var(--text-strong-muted);
+}
+.ui-trace {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+code.ui-trace {
+  color: var(--text-strong-muted);
+}
+.ui-json {
+  max-height: 480px;
+  overflow: auto;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--hairline-color);
+  border-radius: 16px;
+  background: var(--surface-subtle);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+@media (max-width: 767px) {
+  a.ui-record-chip {
+    min-height: 40px;
+  }
+}
+
+/* Dark theme: the landing's feature washes are light-only tokens (the landing is pinned light), so
+   dark wash cards take a navy surface with a soft tint in the matching role color. */
+:root[data-theme="dark"] .ui-wash-card {
+  background-color: var(--card);
+  background-image: radial-gradient(120% 90% at 0% 0%, var(--accent-soft), transparent 70%);
+}
+:root[data-theme="dark"] .ui-wash-card.wash-peach {
+  background-image: radial-gradient(120% 90% at 0% 0%, var(--status-held-bg), transparent 70%);
+}
+:root[data-theme="dark"] .ui-wash-card.wash-mint {
+  background-image: radial-gradient(120% 90% at 100% 100%, var(--status-certified-bg), transparent 70%);
+}
