@@ -16,8 +16,11 @@
   --subtle: var(--n-50);
   --muted-bg: var(--n-100);
   --line: var(--n-200);
-  --control-line: var(--n-400); /* form-control borders: >= 3:1 against --bg */
-  --muted: var(--n-500); /* 4.74:1 on #fff — body-safe secondary text */
+  /* Form-control borders need >= 3:1 against --bg (WCAG 1.4.11): #a3a3a3 is only 2.52:1,
+     so controls use #737373 (4.74:1). --line stays a decorative hairline. */
+  --control-line: var(--n-500);
+  --muted: var(--n-500); /* 4.74:1 on #fff, 4.54:1 on --subtle; only 4.35:1 on --muted-bg, so text
+                           on --muted-bg uses --fg or --strong-muted */
   --strong-muted: var(--n-700);
   --primary: #0a0a0a; /* solid black primary buttons */
   --primary-fg: #ffffff;
@@ -41,6 +44,30 @@
   --space-6: 48px;
   --space-8: 64px;
   --hairline: 1px solid var(--line);
+
+  /* Type scale (px): 12 meta, 14 body, 16 lead, 20 section, 28 page title, 40 figures. */
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-md: 16px;
+  --text-lg: 20px;
+  --text-xl: 28px;
+  --text-2xl: 40px;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-strong: 600;
+  /* Layout */
+  --sidebar-width: 232px;
+  --topbar-height: 56px;
+  --content-max: 1120px;
+  --control-height: 36px;
+  --touch-target: 40px;
+  /* Fixed z-index scale */
+  --z-sticky: 10;
+  --z-topbar: 20;
+  --z-drawer: 40;
+  --z-overlay: 50;
+  --z-toast: 60;
+  --focus-ring: 2px solid var(--focus);
 }
 
 :root[data-theme="dark"] {
@@ -53,7 +80,7 @@
   --n-400: #525252;
   --n-500: #a3a3a3;
   --n-700: #d4d4d4;
-  --control-line: #737373;
+  --control-line: #737373; /* 4.18:1 on #0a0a0a */
   --primary: #ffffff; /* solid white primary buttons */
   --primary-fg: #0a0a0a;
   --focus: #fafafa;

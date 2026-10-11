@@ -1,36 +1,25 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router";
 import { Toaster } from "sonner";
-import { MoonIcon as Moon } from "@phosphor-icons/react/dist/csr/Moon";
-import { SunIcon as Sun } from "@phosphor-icons/react/dist/csr/Sun";
-import { GithubLogoIcon as GithubLogo } from "@phosphor-icons/react/dist/csr/GithubLogo";
-import { MagnifyingGlassIcon as MagnifyingGlass } from "@phosphor-icons/react/dist/csr/MagnifyingGlass";
-import { ShieldCheckIcon as ShieldCheck } from "@phosphor-icons/react/dist/csr/ShieldCheck";
-import { ArrowsClockwiseIcon as Reload } from "@phosphor-icons/react/dist/csr/ArrowsClockwise";
-import { CaretRightIcon as CaretRight } from "@phosphor-icons/react/dist/csr/CaretRight";
-import { ChatCircleTextIcon as ChatCircleText } from "@phosphor-icons/react/dist/csr/ChatCircleText";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "../ui/sidebar";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "../ui/sidebar";
 import { Button } from "../ui/button";
 import { FixtureBanner } from "../ui/fixture-banner";
 import { StatusPill } from "../ui/status-pill";
 import { EmptyState, ErrorState, LoadingState } from "../ui/states";
-import { AppSidebar, dataStatusLabel } from "./AppSidebar";
+import { AppSidebar } from "./AppSidebar";
 import { CommandPalette } from "./CommandPalette";
 import { RunPicker } from "./RunPicker";
+import { ShellStatusProvider } from "./status";
 import { ASK_KEYSHORTCUTS, ASK_SHORTCUT_LABEL, AskProvider, AskSheet, MOD_KEY_LABEL, useAsk } from "../ask";
 import { useTheme } from "../../useTheme";
-import { useData } from "../../state/DataProvider";
-import { LiveToasts } from "../../state/live";
-import { MODE_LABEL, withRun } from "../../state/data-mode";
+import { useData } from "../../app/catalog";
+import { LiveToasts } from "../../app/live-toasts";
+import { withRun } from "../../app/links";
 import { matchAppRoute, routeById, type AppRoute } from "../../routes";
-import { date } from "../../data";
+import { dateTime as date } from "../../lib/time";
 import "./shell.css";
 
-/** Breadcrumb trail for the current route: group › list page › record id. */
+/** Top-bar trail for the current route: list page › record id (or just the page title). */
 export function useCrumbs(): { label: string; path?: string }[] {
   const { pathname } = useLocation();
   const match = matchAppRoute(pathname);
@@ -42,87 +31,53 @@ export function useCrumbs(): { label: string; path?: string }[] {
     r = r.parent ? routeById(r.parent) : undefined;
   }
   const record = Object.values(match.params)[0];
-  return [
-    ...(chain[0]?.group ? [{ label: chain[0].group }] : []),
-    ...chain.map((c, i) => ({
-      label: i === chain.length - 1 && record ? decodeURIComponent(record) : c.title,
-      path: i === chain.length - 1 ? undefined : c.path,
-    })),
-  ];
+  return chain.map((c, i) => ({
+    label: i === chain.length - 1 && record ? decodeURIComponent(record) : c.title,
+    path: i === chain.length - 1 ? undefined : c.path,
+  }));
 }
 
-function TopBar({
-  onPalette,
-  dark,
-  setDark,
-}: {
-  onPalette: () => void;
-  dark: boolean;
-  setDark: (dark: boolean) => void;
-}) {
+function TopBar({ onPalette }: { onPalette: () => void }) {
   const crumbs = useCrumbs();
+  const { pathname } = useLocation();
+  // The Run page has its own run selector (?run=); a second picker here would duplicate it.
+  const ownPicker = matchAppRoute(pathname)?.route.id === "run";
   const { selectedRunId } = useData();
   const ask = useAsk();
   return (
     <header className="app-topbar">
       <SidebarTrigger />
-      <nav className="breadcrumb" aria-label="Breadcrumb">
+      <nav className="topbar-trail" aria-label="Breadcrumb">
         <ol>
           {crumbs.map((c, i) => (
             <li key={i} aria-current={i === crumbs.length - 1 ? "page" : undefined}>
-              {i > 0 && <CaretRight size={12} aria-hidden="true" />}
-              {c.path ? (
-                <Link to={withRun(c.path, selectedRunId)}>{c.label}</Link>
-              ) : (
-                <span>{c.label}</span>
-              )}
+              {c.path ? <Link to={withRun(c.path, selectedRunId)}>{c.label}</Link> : <span>{c.label}</span>}
             </li>
           ))}
         </ol>
       </nav>
       <div className="app-topbar-actions">
-        <RunPicker />
+        {!ownPicker && <RunPicker />}
         <button
           type="button"
-          className="palette-trigger"
+          className="topbar-button"
           onClick={onPalette}
           aria-haspopup="dialog"
           aria-keyshortcuts="Control+K Meta+K"
-          aria-label={`Open command palette (${MOD_KEY_LABEL} K)`}
         >
-          <MagnifyingGlass size={16} aria-hidden="true" />
-          <span className="palette-trigger-text">Search</span>
-          <kbd>{MOD_KEY_LABEL} K</kbd>
+          Search
+          <kbd aria-hidden="true">{MOD_KEY_LABEL} K</kbd>
         </button>
         <button
           type="button"
-          className="palette-trigger"
+          className="topbar-button"
           onClick={() => ask.setOpen(true)}
           aria-haspopup="dialog"
           aria-keyshortcuts={ASK_KEYSHORTCUTS}
-          aria-label={`Ask Notary (${ASK_SHORTCUT_LABEL})`}
         >
-          <ChatCircleText size={16} aria-hidden="true" />
-          <span className="palette-trigger-text">Ask</span>
-          <kbd>{ASK_SHORTCUT_LABEL}</kbd>
+          Ask
+          <kbd aria-hidden="true">{ASK_SHORTCUT_LABEL}</kbd>
         </button>
-        <button
-          type="button"
-          className="icon-button"
-          aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
-          onClick={() => setDark(!dark)}
-        >
-          {dark ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
-        <a
-          className="icon-button hide-mobile"
-          href="https://github.com/parthchilwerwar/notary"
-          target="_blank"
-          rel="noreferrer"
-          aria-label="Notary on GitHub"
-        >
-          <GithubLogo size={18} />
-        </a>
       </div>
     </header>
   );
@@ -134,72 +89,55 @@ export function RunReceipt() {
   if (!bundle) return null;
   return (
     <div className="run-receipt">
-      <span className="verified">
-        <ShieldCheck size={16} aria-hidden="true" />
-        Hash verified{" "}
+      <span>
+        Hash verified in this browser{" "}
         <code title={bundle.contentHash}>{bundle.contentHash.slice(0, 12)}…</code>
       </span>
       <span>
         {bundle.runId} · {bundle.kind} / {bundle.variant}
       </span>
       <StatusPill value={bundle.status} />
-      <span>{date(bundle.startedAt)} IST</span>
-      <details className="disclosures">
-        <summary>Run provenance</summary>
-        <div>
-          {bundle.disclosure.map((text, i) => (
-            <p key={i}>{text}</p>
-          ))}
-          <p>
-            Run: {bundle.runId} · Seed: {bundle.seed} · Mode: {bundle.mode}
-          </p>
-          <p>
-            Content hash: <code>{bundle.contentHash}</code>
-          </p>
-          {bundle.stopReason && <p>Stopped: {bundle.stopReason}</p>}
-          <p>
-            Finished: {bundle.finishedAt ? date(bundle.finishedAt) : "Not recorded"}
-          </p>
-        </div>
-      </details>
+      <span>{date(bundle.startedAt)}</span>
     </div>
   );
 }
 
-/** Routes about the whole data world rather than the selected run: no run receipt. */
-const NO_RECEIPT = new Set(["run", "evidence", "revocation-demo"]);
-
-function Gate({ children }: { children: ReactNode }) {
-  const { loading, error, bundles, missingRunId, reload, runs } = useData();
+function Gate({ children, ungated }: { children: ReactNode; ungated: boolean }) {
+  const { loading, error, bundles, missingRunId, reload, running } = useData();
+  if (ungated) return <>{children}</>;
   if (loading) return <LoadingState />;
   if (error)
     return (
-      <ErrorState
-        title="Bundle unavailable"
-        actions={<Button onClick={reload}><Reload /> Retry loading</Button>}
-      >
+      <ErrorState title="Runs withheld" actions={<Button onClick={reload}>Retry loading</Button>}>
         {error}
       </ErrorState>
     );
   if (!bundles.length)
     return (
-      <EmptyState title="No bundles published">
-        Publish verified exports (<code>pnpm notary export</code>) to inspect
-        recorded outcomes.
+      <EmptyState
+        title="No runs published"
+        actions={
+          <Button variant="outline" asChild>
+            <Link to="/app/report">Check connections</Link>
+          </Button>
+        }
+      >
+        Publish verified exports with <code>pnpm notary export</code>, or start <code>pnpm notary serve</code> for
+        live runs.
       </EmptyState>
     );
-  if (missingRunId)
+  // A live run that is still running has no bundle yet; it is not "unpublished".
+  if (missingRunId && !running.some((r) => r.runId === missingRunId))
     return (
       <ErrorState
         title={`Run ${missingRunId} is not published`}
         actions={
           <Button asChild>
-            <Link to={withRun("/app", undefined)}>Open the default run</Link>
+            <Link to="/app/run">Open the default run</Link>
           </Button>
         }
       >
-        The link names a run that is not in the {runs.length ? "" : "empty "}
-        hash-verified catalog.
+        The link names a run that is not in the hash-verified catalog.
       </ErrorState>
     );
   return <>{children}</>;
@@ -208,51 +146,36 @@ function Gate({ children }: { children: ReactNode }) {
 export function AppShell({ children }: { children: ReactNode }) {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [dark, setDark] = useTheme();
-  const { bundle, mode, loading, error } = useData();
+  const { bundle } = useData();
   const { pathname } = useLocation();
   const match = matchAppRoute(pathname);
   useEffect(() => {
-    const title = match?.route.title ?? "Not found";
-    document.title = `${title} · Notary`;
+    document.title = `${match?.route.title ?? "Not found"} · Notary`;
   }, [match?.route.title]);
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
   return (
-    <AskProvider>
-    <SidebarProvider>
-      <a className="skip" href="#main">
-        Skip to content
-      </a>
-      <AppSidebar />
-      <SidebarInset>
-        {bundle?.sample && <FixtureBanner />}
-        <TopBar
-          onPalette={() => setPaletteOpen(true)}
-          dark={dark}
-          setDark={setDark}
-        />
-        <main id="main" className="app-main">
-          <Gate>
-            {match && !NO_RECEIPT.has(match.route.id) && <RunReceipt />}
-            {children}
-          </Gate>
-          <footer className="page-footer">
-            <span>Notary · Evidence before action.</span>
-            <span>
-              {bundle
-                ? `${MODE_LABEL[mode]} data`
-                : `Data: ${dataStatusLabel({ bundle, loading, error, mode }).toLowerCase()}`}{" "}
-              · Browser-verified integrity
-            </span>
-          </footer>
-        </main>
-      </SidebarInset>
-      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
-      <AskSheet />
-      <Toaster theme={dark ? "dark" : "light"} position="bottom-right" />
-      <LiveToasts />
-    </SidebarProvider>
-    </AskProvider>
+    <ShellStatusProvider>
+      <AskProvider>
+        <SidebarProvider>
+          <a className="skip" href="#main">
+            Skip to content
+          </a>
+          <AppSidebar dark={dark} setDark={setDark} />
+          <SidebarInset>
+            {bundle?.sample && <FixtureBanner />}
+            <TopBar onPalette={() => setPaletteOpen(true)} />
+            <main id="main" className="app-main" tabIndex={-1}>
+              <Gate ungated={!!match?.route.ungated}>{children}</Gate>
+            </main>
+          </SidebarInset>
+          <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+          <AskSheet />
+          <Toaster theme={dark ? "dark" : "light"} position="bottom-right" />
+          <LiveToasts />
+        </SidebarProvider>
+      </AskProvider>
+    </ShellStatusProvider>
   );
 }

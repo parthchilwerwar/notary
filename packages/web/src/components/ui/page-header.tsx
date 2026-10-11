@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/** Page title block: very large light title, one-line description, optional actions on the right. */
+/** Page title block: title, one-line description, optional actions on the right. */
 export function PageHeader({
   title,
   description,

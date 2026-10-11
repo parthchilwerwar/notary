@@ -1,7 +1,8 @@
-// Approval desk (/app/approvals).
-// Local mode (a `notary serve` answered): pending items from GET /api/approvals with Approve (typed
+// Approvals (/app/approvals).
+// Live mode (a `notary serve` answered): pending items from GET /api/approvals with Approve (typed
 // amount) and Reject (reason), decided records, and the selected run's other held items as history.
-// Hosted mode: read-only history of the selected run's held items; no actions at all.
+// Replay: read-only. Held decisions of every recorded run (DataSource.approvals(), the same list the
+// sidebar counts), grouped by cohort, plus the selected run's held items; no actions at all.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ApprovalRecord, ApprovalsList } from "../../../../core/src/schema";
 import {
@@ -12,9 +13,10 @@ import {
   PageHeader,
   StatusPill,
 } from "../../components/ui";
-import { useData } from "../../state/DataProvider";
+import { useData } from "../../app/catalog";
 import { LocalApiError, number, useSessionToken } from "../../data";
-import { useBundle } from "../shared";
+import { useOptionalShellStatus } from "../../components/shell/status";
+import { RecordedHolds } from "./RecordedHolds";
 import { fetchApprovals } from "./api";
 import { ConfirmDialog, type DialogKind } from "./ConfirmDialog";
 import {
@@ -36,8 +38,9 @@ type ListState =
   | { status: "error"; error: string };
 
 export function ApprovalsPage() {
-  const { source, bundles, dataSource } = useData();
-  const selected = useBundle();
+  const { source, bundles, dataSource, bundle } = useData();
+  const shellStatus = useOptionalShellStatus();
+  const selected = bundle!;
   const mode = deskMode(source);
   const [token, setToken] = useSessionToken();
   const [list, setList] = useState<ListState>({ status: "idle" });
@@ -95,12 +98,12 @@ export function ApprovalsPage() {
   return (
     <>
       <PageHeader
-        title="Approval desk"
+        title="Approvals"
         description="Money actions the agent held for a human, with the evidence it was missing and the trail that led there."
         actions={
           mode === "local" ? (
             <>
-              <StatusPill tone="info">Local notary serve</StatusPill>
+              <StatusPill tone="neutral">Live, local server</StatusPill>
               {data && (
                 <StatusPill tone={data.testMode ? "safe" : "unsafe"}>
                   {data.testMode ? "Dodo test mode on" : "Dodo test mode off"}
@@ -114,10 +117,13 @@ export function ApprovalsPage() {
       />
 
       {mode === "hosted" ? (
-        <p className="desk-note" role="note">
-          Read-only history. Approving or rejecting a held action happens only against a local{" "}
-          <code>notary serve</code> in Dodo test mode.
-        </p>
+        <>
+          <p className="desk-note" role="note">
+            Read-only history. Approving or rejecting a held action happens only against a local{" "}
+            <code>notary serve</code> in Dodo test mode.
+          </p>
+          <RecordedHolds />
+        </>
       ) : (
         <section className="desk-local" aria-label="Local approvals">
           <TokenForm token={token} setToken={setToken} error={tokenError} />
@@ -245,6 +251,7 @@ export function ApprovalsPage() {
           onDecided={(record) => {
             setLatest(record);
             refresh();
+            shellStatus?.refreshApprovals();
           }}
           onStale={refresh}
         />

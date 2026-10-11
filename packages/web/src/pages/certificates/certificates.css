@@ -1,0 +1,211 @@
+/* Certificates list and detail. Tokens only. */
+.certs,
+.cert-detail {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.cert-detail .section,
+.certs .section {
+  margin-top: var(--space-3);
+}
+.filter-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.filter-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-height);
+  padding: 0 12px;
+  border: var(--hairline);
+  border-radius: var(--radius);
+  color: var(--strong-muted);
+  text-decoration: none;
+}
+.filter-links a:hover {
+  color: var(--fg);
+  border-color: var(--control-line);
+}
+.filter-links a[aria-current="page"] {
+  border-color: var(--fg);
+  background: var(--fg);
+  color: var(--bg);
+}
+.figures dd {
+  margin: 0;
+}
+.nowrap {
+  white-space: nowrap;
+}
+.why {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px var(--space-1);
+}
+.revocation-list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--unsafe);
+  border-radius: var(--radius);
+}
+.revocation-list li {
+  display: grid;
+  gap: 4px;
+  padding: var(--space-2);
+}
+.revocation-list li + li {
+  border-top: var(--hairline);
+}
+.revocation-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* Detail: the finding is set like a document, docs on the left, observation on the right. */
+.finding {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid var(--fg);
+  border-bottom: var(--hairline);
+}
+.finding > div {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-3) var(--space-3) 0;
+  min-width: 0;
+}
+.finding > div + div {
+  padding-left: var(--space-3);
+  border-left: var(--hairline);
+}
+.finding p {
+  font-size: var(--text-lg);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.finding-verdict {
+  color: var(--strong-muted);
+}
+.cert-facts {
+  padding: var(--space-2) 0;
+  border-bottom: var(--hairline);
+}
+.facts .span-all {
+  grid-column: 1 / -1;
+}
+.lead-text {
+  max-width: 72ch;
+  font-size: var(--text-md);
+}
+.doc-quote {
+  max-width: 80ch;
+  margin: 0;
+  padding: var(--space-1) 0 var(--space-1) var(--space-2);
+  border-left: 2px solid var(--line);
+  color: var(--strong-muted);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.review {
+  display: grid;
+  gap: var(--space-1);
+  max-width: 80ch;
+}
+.review-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+}
+.revocation-block {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--unsafe);
+  border-radius: var(--radius);
+}
+.revocation-block h2 {
+  color: var(--unsafe);
+}
+
+@media (max-width: 767px) {
+  .finding {
+    grid-template-columns: 1fr;
+  }
+  .finding > div,
+  .finding > div + div {
+    padding: var(--space-2) 0;
+    border-left: 0;
+  }
+  .finding > div + div {
+    border-top: var(--hairline);
+  }
+  .finding p {
+    font-size: var(--text-md);
+  }
+  .figures {
+    grid-template-columns: 1fr 1fr;
+  }
+  .figure-cell:nth-child(odd) {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .figure-cell:nth-child(n + 3) {
+    border-top: var(--hairline);
+  }
+  .figure-value {
+    font-size: var(--text-xl);
+  }
+}
+
+.cert-trail {
+  min-width: 0;
+  border: var(--hairline);
+  border-radius: var(--radius);
+  padding: 0 var(--space-2);
+}
+.cert-trail > summary {
+  display: grid;
+  gap: 4px;
+  min-height: var(--touch-target);
+  padding: var(--space-2) 0;
+  list-style: none;
+}
+.cert-trail > summary::-webkit-details-marker {
+  display: none;
+}
+.cert-trail-title {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-medium);
+}
+.cert-trail-title::after {
+  content: " +";
+  color: var(--muted);
+}
+.cert-trail[open] > .cert-trail-title::after,
+.cert-trail[open] > summary .cert-trail-title::after {
+  content: " −";
+}
+.cert-trail[open] {
+  padding-bottom: var(--space-2);
+}
+.claim-cell {
+  min-width: 15rem;
+}
+.claim-cell code {
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.cert-detail > .page-header {
+  margin-bottom: 0;
+}

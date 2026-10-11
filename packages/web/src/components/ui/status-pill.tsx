@@ -1,34 +1,26 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-export type StatusTone = "safe" | "unsafe" | "neutral" | "info";
-
 /**
- * Tone for a recorded status value. Green and red are reserved for safety outcomes:
- * "safe" for settled, trusted states, "unsafe" for revoked or unsafe ones, "info" (blue) for
- * states that need a human, everything else stays neutral.
+ * Color carries meaning only: green = safe / certified, red = unsafe / blocked, amber = held
+ * (waiting for a human). Everything else is neutral black and white.
  */
+export type StatusTone = "safe" | "unsafe" | "held" | "neutral";
+
+const SAFE = new Set(["notarized", "uphold", "active", "certified", "matches_docs", "connected", "executed_safe"]);
+const UNSAFE = new Set(["revoked", "unlearned", "refuted", "failed", "unsafe", "contradicts_docs", "blocked", "error", "missing", "rejected"]);
+const HELD = new Set(["held", "escalated", "pending"]);
+
+/** Tone for a recorded status value. Unknown values stay neutral. */
 export function toneFor(value: string): StatusTone {
   const v = value.toLowerCase();
-  if (["notarized", "uphold", "active", "matches_docs", "live"].includes(v))
-    return "safe";
-  if (
-    [
-      "revoked",
-      "unlearned",
-      "refuted",
-      "failed",
-      "unsafe",
-      "contradicts_docs",
-    ].includes(v)
-  )
-    return "unsafe";
-  if (["held", "escalated", "candidate", "downgrade", "pending"].includes(v))
-    return "info";
+  if (SAFE.has(v)) return "safe";
+  if (UNSAFE.has(v)) return "unsafe";
+  if (HELD.has(v)) return "held";
   return "neutral";
 }
 
-/** Small rounded status label with a dot. Pass `tone` explicitly or let `toneFor(value)` pick it. */
+/** Small rounded status word. Pass `tone` explicitly or let `toneFor(value)` pick it. */
 export function StatusPill({
   value,
   tone,
@@ -36,16 +28,15 @@ export function StatusPill({
   className,
 }: {
   value?: string;
-  tone?: StatusTone;
+  /** "info" is accepted for older callers and renders as neutral. */
+  tone?: StatusTone | "info";
   children?: ReactNode;
   className?: string;
 }) {
-  const resolved = tone ?? (value ? toneFor(value) : "neutral");
+  const picked = tone ?? (value ? toneFor(value) : "neutral");
+  const resolved: StatusTone = picked === "info" ? "neutral" : picked;
   return (
-    <span
-      className={cn("status-pill", `tone-${resolved}`, className)}
-      data-tone={resolved}
-    >
+    <span className={cn("status-pill", `tone-${resolved}`, className)} data-tone={resolved}>
       <span aria-hidden="true" className="status-dot" />
       {children ?? value?.replaceAll("_", " ")}
     </span>

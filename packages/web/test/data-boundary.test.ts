@@ -26,8 +26,8 @@ export function stripComments(source: string): string {
 
 const FORBIDDEN: { name: string; re: RegExp }[] = [
   { name: "bundles/", re: /\bbundles\// },
-  // Dashboard routes (/app/certificates/:id) are not data paths.
-  { name: "certificates/", re: /(?<!\/app\/)\bcertificates\// },
+  // Dashboard routes (/app/certificates/:id) and the page folder (pages/certificates/) are not data paths.
+  { name: "certificates/", re: /(?<!\/app\/|pages\/)\bcertificates\// },
   { name: "content/explain", re: /\bcontent\/explain/ },
   { name: "content/glossary", re: /\bcontent\/glossary/ },
   { name: "evidence/evidence", re: /\bevidence\/evidence/ },
@@ -69,6 +69,7 @@ describe("data boundary", () => {
     for (const line of [
       'path: "/app/certificates/:certificateId"',
       "certificate: (id) => `/app/certificates/${id}`",
+      'import { CertificatesPage } from "./pages/certificates/CertificatesPage";',
       "// reads public/bundles/index.json",
       "/* bundles/fixture */ const y = 1;",
       'const url = "https://example.com/x"; // bundles/',

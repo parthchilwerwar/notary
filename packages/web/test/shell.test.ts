@@ -4,8 +4,9 @@ import { BundleIndexSchema } from "../../core/src/schema/bundle";
 import type { BundleIndexEntry } from "../../core/src/schema";
 import { validateBundle } from "../src/data";
 import {
-  NAV_GROUPS,
   matchAppRoute,
+  navRoutes,
+  redirectTarget,
   redirects,
   routeById,
   routes,
@@ -16,11 +17,14 @@ import {
   heldCount,
   paletteEntries,
   pickBaseline,
+  recordPath,
   resolveDataMode,
   withRun,
-} from "../src/state/data-mode";
+} from "../src/app/links";
 import { chooseScenario, verifyToolFile } from "../src/data";
 import { FixtureIndexSchema } from "../../core/src/schema";
+import { activeNavId } from "../src/components/shell/AppSidebar";
+import { latestHealth, modeLabel } from "../src/components/shell/status";
 
 const read = (path: string) =>
   JSON.parse(readFileSync(new URL(`../public/${path}`, import.meta.url), "utf8"));
@@ -37,63 +41,76 @@ const real = (e: BundleIndexEntry, id: string): BundleIndexEntry => ({
 });
 
 describe("route table", () => {
-  it("covers every /app path of the shell spec", () => {
-    const required = [
-      "/app",
-      "/app/mission-control",
-      "/app/runs",
-      "/app/runs/:runId",
-      "/app/probes",
-      "/app/probes/:probeId",
-      "/app/beliefs",
-      "/app/beliefs/:beliefId",
-      "/app/certificates",
-      "/app/certificates/:certificateId",
-      "/app/reports",
-      "/app/reports/:tool",
-      "/app/queue",
-      "/app/queue/:decisionId",
-      "/app/approvals",
-      "/app/ask",
-      "/app/economics",
-      "/app/evidence",
-      "/app/revocation-demo",
-    ];
-    expect(routes.map((r) => r.path).sort()).toEqual([...required].sort());
+  it("has exactly the redesign's pages", () => {
+    expect(routes.map((r) => r.path).sort()).toEqual(
+      [
+        "/app/run",
+        "/app/certificates",
+        "/app/certificates/:certificateId",
+        "/app/approvals",
+        "/app/ask",
+        "/app/report",
+      ].sort(),
+    );
     expect(new Set(routes.map((r) => r.id)).size).toBe(routes.length);
   });
-  it("keeps the sidebar groups exact", () => {
-    const byGroup = Object.fromEntries(
-      NAV_GROUPS.map((g) => [
-        g,
-        routes.filter((r) => r.group === g).map((r) => r.title),
-      ]),
-    );
-    expect(byGroup).toEqual({
-      Monitor: ["Overview", "Mission control", "Runs", "Probe log"],
-      Trust: ["Certificates", "API reports"],
-      Act: ["Queue", "Approval desk", "Ask Notary"],
-      Business: ["Economics", "Evidence"],
-    });
-    expect(routes.filter((r) => r.badge === "held").map((r) => r.id)).toEqual([
-      "queue",
-      "approvals",
-    ]);
-    expect(routeById("certificates")?.badge).toBe("revocations");
+  it("puts exactly four text-only items in the sidebar, in order", () => {
+    expect(navRoutes().map((r) => r.title)).toEqual(["Run", "Certificates", "Approvals", "Ask"]);
+    expect(routes.filter((r) => r.badge).map((r) => r.id)).toEqual(["approvals"]);
+    // Report is reached from the sidebar footer, not the menu.
+    expect(routeById("report")?.nav).toBeFalsy();
   });
-  it("gives every record its own URL and a parent list", () => {
-    for (const kind of ["decision", "probe", "belief", "certificate"]) {
-      const route = routes.find((r) => r.record === kind)!;
-      expect(route.path).toMatch(/:/);
-      expect(routeById(route.parent!)).toBeDefined();
-    }
-    expect(matchAppRoute("/app/queue/demo-run-guarded%3Aq01")?.route.id).toBe(
-      "decision",
-    );
-    expect(matchAppRoute("/app/queue")?.route.id).toBe("queue");
-    expect(matchAppRoute("/app/")?.route.id).toBe("overview");
+  it("gives a certificate its own URL under its list page", () => {
+    const route = routes.find((r) => r.record === "certificate")!;
+    expect(route.path).toMatch(/:/);
+    expect(routeById(route.parent!)?.id).toBe("certificates");
+    expect(matchAppRoute("/app/certificates/cert-0123456789abcdef")?.route.id).toBe("certificate");
+    expect(matchAppRoute("/app/certificates/")?.route.id).toBe("certificates");
     expect(matchAppRoute("/app/nope")).toBeUndefined();
-    for (const r of redirects) expect(matchAppRoute(r.to)).toBeDefined();
+    expect(activeNavId("/app/certificates/cert-0123456789abcdef")).toBe("certificates");
+    expect(activeNavId("/app/report")).toBeUndefined();
+  });
+  it("redirects every old URL to a page that exists", () => {
+    for (const r of redirects) {
+      const params = Object.fromEntries([...r.from.matchAll(/:([A-Za-z]+)/g)].map((m) => [m[1], "x"]));
+      const target = redirectTarget(r, params);
+      expect(matchAppRoute(target.split("?")[0]!), `${r.from} -> ${target}`).toBeDefined();
+    }
+    const from = (path: string) => redirects.find((r) => r.from === path)!;
+    expect(redirectTarget(from("/app"), {})).toBe("/app/run");
+    for (const old of ["/app/overview", "/app/mission-control", "/app/runs", "/app/queue", "/app/probes"])
+      expect(redirectTarget(from(old), {})).toBe("/app/run");
+    for (const old of ["/app/economics", "/app/evidence", "/app/comparison"])
+      expect(redirectTarget(from(old), {})).toBe("/app/report");
+    for (const old of ["/app/beliefs", "/app/reports", "/app/revocation-demo"])
+      expect(redirectTarget(from(old), {})).toBe("/app/certificates");
+  });
+  it("carries record ids and the old query into the new URL", () => {
+    const from = (path: string) => redirects.find((r) => r.from === path)!;
+    expect(redirectTarget(from("/app/queue/:decisionId"), { decisionId: "demo-run-guarded:q01" }, "?run=demo-run-guarded")).toBe(
+      "/app/run?run=demo-run-guarded&decision=demo-run-guarded%3Aq01",
+    );
+    expect(redirectTarget(from("/app/probes/:probeId"), { probeId: "p1" }, "?run=r")).toBe("/app/run?run=r&probe=p1");
+    // The run named in the old path wins over the old ?run=.
+    expect(redirectTarget(from("/app/runs/:runId"), { runId: "b" }, "?run=a")).toBe("/app/run?run=b");
+    expect(redirectTarget(from("/app/reports/:tool"), { tool: "dodo" }, "?run=r")).toBe("/app/certificates?run=r&tool=dodo");
+    expect(redirectTarget(from("/app/beliefs/:beliefId"), { beliefId: "belief-x" })).toBe(
+      "/app/certificates?belief=belief-x",
+    );
+  });
+});
+
+describe("shell status", () => {
+  it("says Replay or Live, and flags a live server that stopped answering", () => {
+    expect(modeLabel({ state: "replay" })).toEqual({ text: "Replay", tone: "neutral" });
+    expect(modeLabel({ state: "checking", health: null }).text).toBe("Live");
+    const health = { ok: true as const, service: "notary serve" as const, integrations: [] };
+    expect(modeLabel({ state: "ok", health, checkedAt: "2026-10-11T00:00:00.000Z" })).toEqual({ text: "Live", tone: "neutral" });
+    expect(
+      modeLabel({ state: "unreachable", health, checkedAt: "2026-10-11T00:00:00.000Z", error: "refused" }),
+    ).toEqual({ text: "Live", detail: "server not responding", tone: "unsafe" });
+    expect(latestHealth({ state: "replay" })).toBeNull();
+    expect(latestHealth({ state: "ok", health, checkedAt: "x" })).toBe(health);
   });
 });
 
@@ -111,10 +128,16 @@ describe("data mode", () => {
     expect(defaultRunId(withReal)).toBe("real-1");
   });
   it("puts URLs and the selected run together", () => {
-    expect(withRun("/app/queue", "a b", { baseline: "x" })).toBe(
-      "/app/queue?run=a+b&baseline=x",
-    );
+    expect(withRun("/app/run", "a b", { baseline: "x" })).toBe("/app/run?run=a+b&baseline=x");
     expect(withRun("/app", undefined)).toBe("/app");
+    // A record path keeps its own query; the run comes first.
+    expect(withRun(recordPath.decision("r:q01"), "r")).toBe("/app/run?run=r&decision=r%3Aq01");
+    // A path that names its run keeps it.
+    expect(withRun(recordPath.run("b"), "a")).toBe("/app/run?run=b");
+  });
+  it("points every record kind at a page that exists", () => {
+    for (const make of Object.values(recordPath))
+      expect(matchAppRoute(make("x").split("?")[0]!)).toBeDefined();
   });
 });
 
@@ -169,7 +192,7 @@ describe("command palette", () => {
     );
     const probe = entries.find((e) => e.id === notarize.probes[0].id)!;
     expect(probe.path).toBe(
-      `/app/probes/${encodeURIComponent(probe.id)}?run=${notarize.runId}`,
+      `/app/run?run=${notarize.runId}&probe=${encodeURIComponent(probe.id)}`,
     );
     const decisions = paletteEntries(guarded).filter(
       (e) => e.group === "Decisions",
@@ -243,3 +266,23 @@ describe("certificate world", () => {
 
 
 // Data-source selection and the replay catalog moved to the data layer: test/data-layer.test.ts.
+
+describe("live toasts", () => {
+  it("toasts held decisions, revocations and finished runs, once per record", async () => {
+    const { toastFor } = await import("../src/app/live-toasts");
+    const { verifyTimelineFile } = await import("../src/data");
+    const entry = fixtureIndex.find((e) => e.runId === "demo-change-api-run-guarded")!;
+    const bundle = validateBundle(read(`bundles/fixture/${entry.runId}.json`), entry);
+    const events = verifyTimelineFile(read(`bundles/fixture/${entry.runId}.timeline.json`), bundle).events;
+    const held = events.find((e) => e.type === "decision" && e.data?.status === "held")!;
+    expect(toastFor(held)?.title).toBe("Decision held");
+    expect(toastFor(events.find((e) => e.type === "certificate.revoked")!)?.tone).toBe("error");
+    expect(toastFor(events.at(-1)!)?.title).toBe(`Run finished: ${String(events.at(-1)!.data?.status).replaceAll("_", " ")}`);
+    expect(toastFor(events.find((e) => e.type === "probe.verdict")!)).toBeNull();
+    expect(toastFor({ ...held, seq: 999, data: { ...held.data, live: true } })?.id).toBe(toastFor(held)?.id);
+    const finished = events.at(-1)!;
+    for (const status of ["failed", "stopped_budget", "blocked"])
+      expect(toastFor({ ...finished, data: { ...finished.data, status } })?.tone).toBe("error");
+    expect(toastFor({ ...finished, data: { ...finished.data, status: "completed" } })?.tone).toBe("success");
+  });
+});

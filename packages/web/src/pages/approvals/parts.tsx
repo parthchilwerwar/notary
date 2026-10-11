@@ -6,12 +6,12 @@ import type {
   Decision,
   RunBundle,
 } from "../../../../core/src/schema";
-import { Button, StatusPill } from "../../components/ui";
-import { RecordLinks, Trace } from "../../components";
+import { Button, RecordLinks, StatusPill, Trace } from "../../components/ui";
 import { DecisionTrail } from "../../components/trail";
-import { date, label, number, safeLink } from "../../data";
-import { recordPath, withRun } from "../../state/data-mode";
-import { useData } from "../../state/DataProvider";
+import { label, number } from "../../data";
+import { dateTime as date } from "../../lib/time";
+import { recordPath, withRun } from "../../app/links";
+import { useData } from "../../app/catalog";
 import {
   minorUnitsText,
   type DecidedRow,
@@ -282,7 +282,6 @@ export function RecordView({
   record: ApprovalRecord;
   bundle?: RunBundle;
 }) {
-  const traceHref = record.traceId ? safeLink(bundle?.traceLinks[record.traceId]) : undefined;
   return (
     <>
       <dl className="desk-facts">
@@ -316,13 +315,7 @@ export function RecordView({
           <dt>Trace</dt>
           <dd>
             {record.traceId ? (
-              traceHref ? (
-                <a className="trace" href={traceHref} target="_blank" rel="noreferrer">
-                  {record.traceId}
-                </a>
-              ) : (
-                <code className="trace muted">{record.traceId}</code>
-              )
+              <Trace bundle={bundle} traceId={record.traceId} />
             ) : (
               "Not recorded"
             )}

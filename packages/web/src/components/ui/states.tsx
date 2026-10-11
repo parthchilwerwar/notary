@@ -1,25 +1,22 @@
 import type { ReactNode } from "react";
-import { ShieldCheckIcon as ShieldCheck } from "@phosphor-icons/react/dist/csr/ShieldCheck";
-import { WarningCircleIcon as WarningCircle } from "@phosphor-icons/react/dist/csr/WarningCircle";
 import { cn } from "@/lib/utils";
 
-/** Nothing to show (yet). Copy should say what data would fill it, never promise a future phase. */
+/** Nothing to show (yet). Say what data would fill it and give one next action. */
 export function EmptyState({
   title,
   children,
   actions,
-  icon,
   className,
 }: {
   title: ReactNode;
   children?: ReactNode;
   actions?: ReactNode;
+  /** Ignored: decorative icons were removed in the redesign. */
   icon?: ReactNode;
   className?: string;
 }) {
   return (
     <div className={cn("empty state-card", className)}>
-      {icon ?? <ShieldCheck size={30} aria-hidden="true" />}
       <h2>{title}</h2>
       {children && <p>{children}</p>}
       {actions && <div className="state-actions">{actions}</div>}
@@ -55,7 +52,6 @@ export function ErrorState({
 }) {
   return (
     <div className="error state-card" role="alert">
-      <WarningCircle size={30} aria-hidden="true" />
       <h2>{title}</h2>
       {children && <p>{children}</p>}
       {actions && <div className="state-actions">{actions}</div>}

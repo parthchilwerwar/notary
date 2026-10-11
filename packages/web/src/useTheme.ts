@@ -22,7 +22,7 @@ export function useTheme() {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
     document
       .querySelector('meta[name="theme-color"]')
-      ?.setAttribute("content", dark ? "#14171a" : "#f3f3ef");
+      ?.setAttribute("content", dark ? "#0a0a0a" : "#ffffff");
   }, [dark]);
   // Only an explicit toggle is remembered, so an untouched page keeps following the OS.
   const choose = useCallback((next: boolean) => {

@@ -1,50 +1,14 @@
-// THE route table for /app. Sidebar, breadcrumbs, document titles, the command palette and the
-// router all read it. To build a page in a later phase, replace its `element` here; to add a
-// page, add a row (and a `group` if it belongs in the sidebar).
-import type { ComponentType, ReactElement } from "react";
+// THE route table for /app. Sidebar, top bar title, document titles, the command palette and the
+// router all read it. Four pages are in the sidebar (Run, Certificates, Approvals, Ask); Report is
+// linked from the sidebar footer; a certificate has its own page.
+import type { ReactElement } from "react";
 import { matchPath } from "react-router";
-import { SquaresFourIcon as SquaresFour } from "@phosphor-icons/react/dist/csr/SquaresFour";
-import { CrosshairIcon as Crosshair } from "@phosphor-icons/react/dist/csr/Crosshair";
-import { StackIcon as Stack } from "@phosphor-icons/react/dist/csr/Stack";
-import { FlaskIcon as Flask } from "@phosphor-icons/react/dist/csr/Flask";
-import { CertificateIcon as Certificate } from "@phosphor-icons/react/dist/csr/Certificate";
-import { FileTextIcon as FileText } from "@phosphor-icons/react/dist/csr/FileText";
-import { QueueIcon as QueueGlyph } from "@phosphor-icons/react/dist/csr/Queue";
-import { StampIcon as Stamp } from "@phosphor-icons/react/dist/csr/Stamp";
-import { ChatCircleTextIcon as ChatCircleText } from "@phosphor-icons/react/dist/csr/ChatCircleText";
-import { CurrencyDollarIcon as CurrencyDollar } from "@phosphor-icons/react/dist/csr/CurrencyDollar";
-import { ReceiptIcon as Receipt } from "@phosphor-icons/react/dist/csr/Receipt";
-import { ScalesIcon as Scales } from "@phosphor-icons/react/dist/csr/Scales";
-import { ProhibitIcon as Prohibit } from "@phosphor-icons/react/dist/csr/Prohibit";
-import { MissionControlPage } from "./pages/mission-control/MissionControlPage";
-import {
-  OverviewPage,
-  ProbeDetailPage,
-  ProbesPage,
-  RunDetailPage,
-  RunsPage,
-} from "./pages/monitor";
-import {
-  BeliefDetailPage,
-  BeliefsPage,
-  CertificateDetailPage,
-  CertificatesPage,
-  ReportDetailPage,
-  ReportsPage,
-  RevocationDemoPage,
-} from "./pages/trust";
+import { RunPage } from "./pages/run/RunPage";
+import { CertificatesPage } from "./pages/certificates/CertificatesPage";
+import { CertificateDetailPage } from "./pages/certificates/CertificateDetailPage";
 import { ApprovalsPage } from "./pages/approvals";
-import {
-  DecisionDetailPage,
-  QueuePage,
-} from "./pages/act";
 import { AskPage } from "./components/ask/AskPage";
-import { EconomicsPage, EvidencePage } from "./pages/business";
-
-export type NavGroup = "Monitor" | "Trust" | "Act" | "Business";
-export const NAV_GROUPS: NavGroup[] = ["Monitor", "Trust", "Act", "Business"];
-
-export type AppIcon = ComponentType<{ size?: number | string; className?: string }>;
+import { ReportPage } from "./pages/report/ReportPage";
 
 export type AppRoute = {
   id: string;
@@ -52,51 +16,72 @@ export type AppRoute = {
   path: string;
   title: string;
   description: string;
-  icon: AppIcon;
-  /** Sidebar group. Only list pages have one; record pages set `parent` instead. */
-  group?: NavGroup;
-  /** Sidebar badge: held decisions of the selected run, or revocations of its certificate world. */
-  badge?: "held" | "revocations";
-  /** Route id of the list page a record belongs to (breadcrumbs; switching runs returns there). */
+  /** In the sidebar (exactly four routes). */
+  nav?: boolean;
+  /** Sidebar count: approvals waiting for a human. */
+  badge?: "approvals";
+  /** Route id of the list page a record belongs to (top bar trail; switching runs returns there). */
   parent?: string;
   /** Record kind this route renders, for routes with a `:param`. */
-  record?: "decision" | "probe" | "belief" | "certificate" | "run" | "report";
+  record?: "certificate";
+  /** Renders without a selected, verified run (it handles empty and loading states itself). */
+  ungated?: boolean;
   element: ReactElement;
 };
 
 export const routes: AppRoute[] = [
-  // Monitor
-  { id: "overview", path: "/app", title: "Overview", description: "Money, decisions and trust for the selected run.", icon: SquaresFour, group: "Monitor", element: <OverviewPage /> },
-  { id: "mission-control", path: "/app/mission-control", title: "Mission control", description: "Where the selected run stands, stage by stage.", icon: Crosshair, group: "Monitor", element: <MissionControlPage /> },
-  { id: "runs", path: "/app/runs", title: "Runs", description: "Every published run, and comparisons within one cohort.", icon: Stack, group: "Monitor", element: <RunsPage /> },
-  { id: "run", path: "/app/runs/:runId", title: "Run", description: "One run's provenance and counts.", icon: Stack, parent: "runs", record: "run", element: <RunDetailPage /> },
-  { id: "probes", path: "/app/probes", title: "Probe log", description: "Predictions first. Observations second.", icon: Flask, group: "Monitor", element: <ProbesPage /> },
-  { id: "probe", path: "/app/probes/:probeId", title: "Probe", description: "One committed experiment.", icon: Flask, parent: "probes", record: "probe", element: <ProbeDetailPage /> },
-  // Trust
-  { id: "certificates", path: "/app/certificates", title: "Certificates", description: "API behavior, certified within a scope. Revocable.", icon: Certificate, group: "Trust", badge: "revocations", element: <CertificatesPage /> },
-  { id: "certificate", path: "/app/certificates/:certificateId", title: "Certificate", description: "One certificate and its evidence.", icon: Certificate, parent: "certificates", record: "certificate", element: <CertificateDetailPage /> },
-  { id: "reports", path: "/app/reports", title: "API reports", description: "Each provider's promises, evidence and coverage.", icon: FileText, group: "Trust", element: <ReportsPage /> },
-  { id: "report", path: "/app/reports/:tool", title: "API report", description: "One provider's certificate report.", icon: FileText, parent: "reports", record: "report", element: <ReportDetailPage /> },
-  { id: "beliefs", path: "/app/beliefs", title: "Beliefs", description: "Trust earned through evidence.", icon: Scales, parent: "certificates", element: <BeliefsPage /> },
-  { id: "belief", path: "/app/beliefs/:beliefId", title: "Belief", description: "One belief, its evidence and review.", icon: Scales, parent: "beliefs", record: "belief", element: <BeliefDetailPage /> },
-  { id: "revocation-demo", path: "/app/revocation-demo", title: "Revocation", description: "A changed API loses its certificate (fixture).", icon: Prohibit, parent: "certificates", element: <RevocationDemoPage /> },
-  // Act
-  { id: "queue", path: "/app/queue", title: "Queue", description: "Every money action, accountable.", icon: QueueGlyph, group: "Act", badge: "held", element: <QueuePage /> },
-  { id: "decision", path: "/app/queue/:decisionId", title: "Decision", description: "One decision, its guards, effects and evidence.", icon: QueueGlyph, parent: "queue", record: "decision", element: <DecisionDetailPage /> },
-  { id: "approvals", path: "/app/approvals", title: "Approval desk", description: "Held money actions awaiting a human.", icon: Stamp, group: "Act", badge: "held", element: <ApprovalsPage /> },
-  { id: "ask", path: "/app/ask", title: "Ask Notary", description: "Answers from records, with citations.", icon: ChatCircleText, group: "Act", element: <AskPage /> },
-  // Business
-  { id: "economics", path: "/app/economics", title: "Economics", description: "The cost of earning trust.", icon: CurrencyDollar, group: "Business", element: <EconomicsPage /> },
-  { id: "evidence", path: "/app/evidence", title: "Evidence", description: "Receipts behind the demonstration.", icon: Receipt, group: "Business", element: <EvidencePage /> },
+  { id: "run", path: "/app/run", title: "Run", description: "One run, step by step: what the agent did and why.", nav: true, ungated: true, element: <RunPage /> },
+  { id: "certificates", path: "/app/certificates", title: "Certificates", description: "API behavior certified within a scope, and revocable.", nav: true, element: <CertificatesPage /> },
+  { id: "certificate", path: "/app/certificates/:certificateId", title: "Certificate", description: "One certificate and the evidence behind it.", parent: "certificates", record: "certificate", element: <CertificateDetailPage /> },
+  { id: "approvals", path: "/app/approvals", title: "Approvals", description: "Held money actions waiting for a human.", nav: true, badge: "approvals", element: <ApprovalsPage /> },
+  { id: "ask", path: "/app/ask", title: "Ask", description: "Answers from records, with citations.", nav: true, element: <AskPage /> },
+  { id: "report", path: "/app/report", title: "Report", description: "Run comparison, cost per run, connections and receipts.", ungated: true, element: <ReportPage /> },
 ];
 
-/** Old U5/U6 screen paths, kept working for shared links. Query strings are preserved. */
-export const redirects: { from: string; to: string }[] = [
-  { from: "/app/overview", to: "/app" },
-  { from: "/app/comparison", to: "/app/runs" },
-  { from: "/app/api-report", to: "/app/reports" },
-  { from: "/app/revocation", to: "/app/revocation-demo" },
+/** The sidebar, in order. */
+export const navRoutes = () => routes.filter((r) => r.nav);
+
+export type Redirect = {
+  from: string;
+  /** Target path (may carry a query); `:param` values of `from` are substituted. */
+  to: string;
+};
+
+/**
+ * Old URLs, kept working for shared links. The old query string is kept and merged with the
+ * target's (the target's own params win, e.g. ?run= of /app/runs/:runId).
+ */
+export const redirects: Redirect[] = [
+  { from: "/app", to: "/app/run" },
+  { from: "/app/overview", to: "/app/run" },
+  { from: "/app/mission-control", to: "/app/run" },
+  { from: "/app/runs", to: "/app/run" },
+  { from: "/app/runs/:runId", to: "/app/run?run=:runId" },
+  { from: "/app/queue", to: "/app/run" },
+  { from: "/app/queue/:decisionId", to: "/app/run?decision=:decisionId" },
+  { from: "/app/probes", to: "/app/run" },
+  { from: "/app/probes/:probeId", to: "/app/run?probe=:probeId" },
+  { from: "/app/beliefs", to: "/app/certificates" },
+  { from: "/app/beliefs/:beliefId", to: "/app/certificates?belief=:beliefId" },
+  { from: "/app/reports", to: "/app/certificates" },
+  { from: "/app/reports/:tool", to: "/app/certificates?tool=:tool" },
+  { from: "/app/api-report", to: "/app/certificates" },
+  { from: "/app/revocation-demo", to: "/app/certificates" },
+  { from: "/app/revocation", to: "/app/certificates" },
+  { from: "/app/economics", to: "/app/report" },
+  { from: "/app/evidence", to: "/app/report" },
+  { from: "/app/comparison", to: "/app/report" },
 ];
+
+/** The target of a redirect for concrete params, old query merged (target params win). */
+export function redirectTarget(r: Redirect, params: Record<string, string | undefined>, search = ""): string {
+  const filled = r.to.replace(/:([A-Za-z]+)/g, (_, name: string) => encodeURIComponent(params[name] ?? ""));
+  const [path, query = ""] = filled.split("?", 2) as [string, string?];
+  const merged = new URLSearchParams(search);
+  for (const [k, v] of new URLSearchParams(query)) merged.set(k, v);
+  const q = merged.toString();
+  return q ? `${path}?${q}` : path;
+}
 
 export const routeById = (id: string) => routes.find((r) => r.id === id);
 
@@ -104,11 +89,8 @@ export const routeById = (id: string) => routes.find((r) => r.id === id);
 export function matchAppRoute(
   pathname: string,
 ): { route: AppRoute; params: Record<string, string | undefined> } | undefined {
-  const normalized =
-    pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
-  for (const route of [...routes].sort(
-    (a, b) => b.path.split("/").length - a.path.split("/").length,
-  )) {
+  const normalized = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
+  for (const route of [...routes].sort((a, b) => b.path.split("/").length - a.path.split("/").length)) {
     const m = matchPath({ path: route.path, end: true }, normalized);
     if (m) return { route, params: m.params };
   }
@@ -116,5 +98,4 @@ export function matchAppRoute(
 }
 
 /** Path relative to the /app/* splat, for <Route path>. */
-export const relativePath = (path: string) =>
-  path === "/app" ? "" : path.replace(/^\/app\//, "");
+export const relativePath = (path: string) => (path === "/app" ? "" : path.replace(/^\/app\//, ""));

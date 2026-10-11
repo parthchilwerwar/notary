@@ -160,15 +160,16 @@ describe("Ask Notary citations", () => {
     const run = "demo-change-api-run-guarded";
     expect(citationTarget({ kind: "decision", id: `${run}:q02`, runId: run })).toMatchObject({
       type: "link",
-      to: `/app/queue/${encodeURIComponent(`${run}:q02`)}?run=${run}`,
+      to: `/app/run?run=${run}&decision=${encodeURIComponent(`${run}:q02`)}`,
     });
-    expect(citationTarget({ kind: "probe", id: "p1", runId: run })).toMatchObject({ to: `/app/probes/p1?run=${run}` });
-    expect(citationTarget({ kind: "belief", id: "belief-x", runId: run })).toMatchObject({ to: `/app/beliefs/belief-x?run=${run}` });
-    expect(citationTarget({ kind: "belief_event", id: "belief-x#2", runId: run })).toMatchObject({ to: `/app/beliefs/belief-x?run=${run}` });
+    expect(citationTarget({ kind: "probe", id: "p1", runId: run })).toMatchObject({ to: `/app/run?run=${run}&probe=p1` });
+    expect(citationTarget({ kind: "belief", id: "belief-x", runId: run })).toMatchObject({ to: `/app/certificates?run=${run}&belief=belief-x` });
+    expect(citationTarget({ kind: "belief_event", id: "belief-x#2", runId: run })).toMatchObject({ to: `/app/certificates?run=${run}&belief=belief-x` });
     expect(citationTarget({ kind: "certificate", id: "cert-1", runId: run })).toMatchObject({ to: `/app/certificates/cert-1?run=${run}` });
-    expect(citationTarget({ kind: "claim", id: "dodo.refund.amount-minor-units", runId: run })).toMatchObject({ to: `/app/reports/dodo?run=${run}` });
-    expect(citationTarget({ kind: "guard", id: "grd-1", runId: run })).toMatchObject({ to: `/app/queue?run=${run}` });
-    expect(citationTarget({ kind: "probe", id: "p1" }, { fallbackRunId: "demo-run-guarded" })).toMatchObject({ to: "/app/probes/p1?run=demo-run-guarded" });
+    expect(citationTarget({ kind: "claim", id: "dodo.refund.amount-minor-units", runId: run })).toMatchObject({ to: `/app/certificates?run=${run}&tool=dodo` });
+    expect(citationTarget({ kind: "guard", id: "grd-1", runId: run })).toMatchObject({ to: `/app/run?run=${run}` });
+    expect(citationTarget({ kind: "timeline_event", id: `${run}#4` })).toMatchObject({ to: `/app/run?run=${run}` });
+    expect(citationTarget({ kind: "probe", id: "p1" }, { fallbackRunId: "demo-run-guarded" })).toMatchObject({ to: "/app/run?run=demo-run-guarded&probe=p1" });
   });
 
   it("sends revocations to their certificate when known, else the certificates list", () => {
@@ -195,7 +196,7 @@ describe("Ask Notary citations", () => {
     );
     expect(markup).toContain("appr-1");
     expect(markup).not.toMatch(/href="[^"]*appr-1/);
-    expect(markup).toContain('href="/app/queue/d1?run=r"');
+    expect(markup).toContain('href="/app/run?run=r&amp;decision=d1"');
   });
 
   it("deduplicates citations by kind, id and run", () => {

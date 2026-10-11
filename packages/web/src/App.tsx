@@ -1,14 +1,15 @@
 // Dashboard under /app/*: one data provider, one shell, routes from src/routes.tsx.
-import { Link, Navigate, Route, Routes, useLocation } from "react-router";
+import { Link, Navigate, Route, Routes, useLocation, useParams } from "react-router";
 import { AppShell } from "./components/shell";
 import { EmptyState } from "./components/ui/states";
 import { Button } from "./components/ui/button";
-import { DataProvider } from "./state/DataProvider";
-import { redirects, relativePath, routes } from "./routes";
+import { DataProvider } from "./app/catalog";
+import { redirectTarget, redirects, relativePath, routes, type Redirect } from "./routes";
 
-function RedirectKeepingQuery({ to }: { to: string }) {
+function RedirectTo({ redirect }: { redirect: Redirect }) {
   const { search } = useLocation();
-  return <Navigate to={`${to}${search}`} replace />;
+  const params = useParams();
+  return <Navigate to={redirectTarget(redirect, params, search)} replace />;
 }
 
 function NotFound() {
@@ -17,7 +18,7 @@ function NotFound() {
       title="Page not found"
       actions={
         <Button asChild>
-          <Link to="/app">Open the overview</Link>
+          <Link to="/app/run">Open the run</Link>
         </Button>
       }
     >
@@ -31,24 +32,16 @@ export default function App() {
     <DataProvider>
       <AppShell>
         <Routes>
-          {routes.map((route) =>
-            route.path === "/app" ? (
-              <Route key={route.id} index element={route.element} />
+          {routes.map((route) => (
+            <Route key={route.id} path={relativePath(route.path)} element={route.element} />
+          ))}
+          {redirects.map((r) =>
+            r.from === "/app" ? (
+              <Route key={r.from} index element={<RedirectTo redirect={r} />} />
             ) : (
-              <Route
-                key={route.id}
-                path={relativePath(route.path)}
-                element={route.element}
-              />
+              <Route key={r.from} path={relativePath(r.from)} element={<RedirectTo redirect={r} />} />
             ),
           )}
-          {redirects.map((r) => (
-            <Route
-              key={r.from}
-              path={relativePath(r.from)}
-              element={<RedirectKeepingQuery to={r.to} />}
-            />
-          ))}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </AppShell>

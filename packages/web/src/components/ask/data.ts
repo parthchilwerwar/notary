@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import type { ExplainAnswer } from "../../../../core/src/schema";
 import { LiveSource, type DataSource } from "../../data";
-import { useData } from "../../state/DataProvider";
+import { useData } from "../../app/catalog";
 
 export type ExplainState =
   | { status: "loading" }

@@ -3,11 +3,9 @@
 //  - With a local `notary serve` serving the selected run: free-form questions to POST /api/ask.
 // Read-only: no approve/execute/refund controls and no links to approval actions.
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { CaretLeftIcon as CaretLeft } from "@phosphor-icons/react/dist/csr/CaretLeft";
-import { CaretRightIcon as CaretRight } from "@phosphor-icons/react/dist/csr/CaretRight";
 import { Button } from "../ui/button";
 import { ErrorState, LoadingState } from "../ui/states";
-import { useData } from "../../state/DataProvider";
+import { useData } from "../../app/catalog";
 import { LocalApiError, useSessionToken } from "../../data";
 import { useExplainAnswers, useLocalAsk, type LocalAskAvailability } from "./data";
 import {
@@ -36,7 +34,7 @@ export function AskNotary({
   /** Called when a citation link is followed (the panel closes). */
   onNavigate?: () => void;
 }) {
-  const { bundle, bundles, certificates, mode } = useData();
+  const { bundle, bundles, certificates } = useData();
   const explain = useExplainAnswers();
   const local = useLocalAsk();
   const runId = bundle?.runId;
@@ -90,8 +88,7 @@ export function AskNotary({
   return (
     <div ref={root} className={`ask ask-${variant}`} data-selected={selected ? "true" : "false"}>
       <p className="ask-world">
-        <span className={`mode-dot mode-${mode}`} aria-hidden="true" />
-        {worldLabel(world)} · questions about <strong>{bundle.runId}</strong>
+        {worldLabel(world)}. Questions about <strong>{bundle.runId}</strong>
       </p>
 
       <LocalAsk availability={local} ctx={ctx} onNavigate={onNavigate} />
@@ -99,7 +96,7 @@ export function AskNotary({
       <section className="ask-suggested" aria-labelledby={`ask-suggested-${variant}`}>
         <h2 className="ask-section-title" id={`ask-suggested-${variant}`}>
           Precomputed answers
-          {explain.status === "ready" && <span> · {scoped.answers.length}</span>}
+          {explain.status === "ready" && <span> ({scoped.answers.length})</span>}
         </h2>
         {explain.status === "loading" ? (
           <LoadingState title="Loading answers…">Reading the published explain file.</LoadingState>
@@ -121,7 +118,7 @@ export function AskNotary({
               {groups.map((g) => (
                 <div className="ask-group" key={g.kind} role="group" aria-labelledby={`ask-${variant}-${g.kind}`}>
                   <h3 id={`ask-${variant}-${g.kind}`}>
-                    {g.title} <span>{g.answers.length}</span>
+                    {g.title} <span>({g.answers.length})</span>
                   </h3>
                   <ul>
                     {g.answers.map((a) => (
@@ -135,7 +132,6 @@ export function AskNotary({
                           onClick={() => pick(a.id)}
                         >
                           <span>{a.question}</span>
-                          <CaretRight size={14} aria-hidden="true" />
                         </button>
                       </li>
                     ))}
@@ -147,7 +143,7 @@ export function AskNotary({
               {selected ? (
                 <>
                   <button type="button" className="ask-back" onClick={() => pick(undefined)}>
-                    <CaretLeft size={14} aria-hidden="true" /> All questions
+                    All questions
                   </button>
                   <AnswerView key={cssId(selected.id)} answer={selected} ctx={ctx} onNavigate={onNavigate} />
                 </>
@@ -181,8 +177,9 @@ function LocalAsk({
   ctx: CitationContext;
   onNavigate?: () => void;
 }) {
-  const { dataSource } = useData();
+  const { dataSource, bundle } = useData();
   const [token, setToken] = useSessionToken();
+  const firstHeld = bundle?.decisions.find((d) => d.status === "held");
   const [draftToken, setDraftToken] = useState("");
   const [question, setQuestion] = useState("");
   const [inputError, setInputError] = useState<string>();
@@ -224,6 +221,7 @@ function LocalAsk({
         <div className="ask-input-row">
           <input
             id="ask-token-input"
+            name="session-token"
             type="password"
             autoComplete="off"
             spellCheck={false}
@@ -273,7 +271,7 @@ function LocalAsk({
           rows={2}
           maxLength={2000}
           value={question}
-          placeholder="Why was q02 held?"
+          placeholder={firstHeld ? `Why was ${firstHeld.requestId} held?` : "Ask about this run…"}
           aria-invalid={inputError ? "true" : undefined}
           aria-describedby={inputError ? "ask-question-error" : undefined}
           onChange={(e) => setQuestion(e.target.value)}

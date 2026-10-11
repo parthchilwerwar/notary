@@ -11,8 +11,8 @@ export function AskPage() {
   return (
     <>
       <PageHeader
-        title="Ask Notary"
-        description={`Answers built only from recorded records, each backed by citations. ${ASK_SHORTCUT_LABEL} opens it from any page.`}
+        title="Ask"
+        description={`Answers built only from records, each backed by citations. ${ASK_SHORTCUT_LABEL} opens the panel from any page.`}
       />
       <AskNotary
         variant="page"

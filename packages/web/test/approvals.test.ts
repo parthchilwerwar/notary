@@ -33,7 +33,7 @@ vi.mock("../src/components/trail", () => ({
 }));
 
 const mockData = { current: {} as Record<string, unknown> };
-vi.mock("../src/state/DataProvider", () => ({
+vi.mock("../src/app/catalog", () => ({
   useData: () => mockData.current,
 }));
 
@@ -346,7 +346,7 @@ describe("rendered desk", { timeout: 30_000 }, () => {
     // Related probes link to the run that recorded them.
     const probeId = heldDecisions(guarded)[0]!.evidencePack!.relatedProbeIds[0]!;
     expect(notarize.probes.some((p) => p.id === probeId)).toBe(true);
-    expect(html).toContain(`href="/app/probes/${probeId}?run=demo-notarize-dodo"`);
+    expect(html).toContain(`href="/app/run?run=demo-notarize-dodo&amp;probe=${encodeURIComponent(probeId)}"`);
     expect(html).not.toMatch(/Approve…|Reject…|Approve and execute/);
     const held = heldDecisions(guarded);
     for (const d of held) expect(html).toContain(`data-trail="${d.id}"`);

@@ -15,6 +15,7 @@ import {
   minorUnitsText,
   reasonValid,
 } from "./model";
+import "./approvals.css";
 
 export type DialogKind = "approve" | "reject";
 
@@ -191,6 +192,7 @@ export function ConfirmDialog({
             className={kind === "reject" ? "approval-reject" : undefined}
             disabled={!ready || busy}
           >
+            {busy && <span className="spinner" aria-hidden="true" />}
             {busy
               ? "Sending…"
               : kind === "approve"

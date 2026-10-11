@@ -1,88 +1,90 @@
-/* Approval desk. Tokens only (light/dark come from :root / [data-theme=dark]). */
+/* Approvals. Tokens only (src/design/tokens.css). */
 .desk-note {
-  margin: 0 0 var(--space-6);
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-inner);
-  background: var(--hover);
-  color: var(--muted);
+  max-width: 80ch;
+  margin: 0 0 var(--space-3);
+  padding: 12px var(--space-2);
+  border: var(--hairline);
+  border-radius: var(--radius);
+  color: var(--strong-muted);
 }
 .desk-local {
   display: grid;
-  gap: var(--space-5);
-  margin-bottom: var(--space-8);
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
 }
 .desk-section {
   display: grid;
-  gap: var(--space-4);
-  margin-bottom: var(--space-8);
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
   min-width: 0;
-}
-.desk-section h2 {
-  font-size: 20px;
-  font-weight: var(--weight-regular);
-  margin: 0;
 }
 .desk-section-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--space-3);
+  gap: var(--space-1) var(--space-2);
   flex-wrap: wrap;
+}
+.desk-cohort {
+  display: grid;
+  gap: var(--space-1);
 }
 .desk-item {
   display: grid;
-  gap: var(--space-4);
-  padding: var(--space-6);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-card);
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: var(--hairline);
+  border-radius: var(--radius);
   background: var(--surface);
   min-width: 0;
 }
 .desk-item.highlight {
-  border-color: var(--blue);
-  box-shadow: 0 0 0 1px var(--blue);
+  border-color: var(--fg);
 }
 .desk-item-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--space-3);
+  gap: var(--space-1) var(--space-2);
   flex-wrap: wrap;
 }
 .desk-item-head > div:first-child {
+  display: grid;
+  gap: 4px;
   min-width: 0;
 }
 .desk-item-head .eyebrow {
   overflow-wrap: anywhere;
 }
 .desk-item-head h3 {
-  margin: var(--space-1) 0 0;
-  font-size: 22px;
-  font-weight: var(--weight-light);
+  font-size: var(--text-lg);
   overflow-wrap: anywhere;
 }
 .desk-pills {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 .desk-facts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--space-3) var(--space-6);
+  gap: var(--space-2) var(--space-3);
   margin: 0;
 }
 .desk-facts > div {
+  display: grid;
+  align-content: start;
+  gap: 4px;
   min-width: 0;
 }
 .desk-facts dt {
   color: var(--muted);
-  font-size: 12px;
-  margin-bottom: 2px;
+  font-size: var(--text-xs);
 }
 .desk-facts dd {
   margin: 0;
   overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
 }
 .desk-facts .mono,
 .approval-input.mono {
@@ -90,52 +92,48 @@
 }
 .desk-evidence {
   display: grid;
-  gap: var(--space-3);
-  padding: var(--space-5);
-  border-radius: var(--radius-inner);
-  background: var(--blue-soft);
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius);
+  background: var(--subtle);
   min-width: 0;
 }
 .desk-evidence h4,
 .desk-effects h4 {
-  margin: 0;
-  font-size: 12px;
-  font-weight: var(--weight-regular);
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  color: var(--muted);
+  color: var(--strong-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+}
+.desk-evidence .desk-facts dt {
+  color: var(--strong-muted);
 }
 .desk-evidence .desk-facts .trace {
   display: flex;
   width: fit-content;
 }
-.desk-evidence p {
-  margin: 0;
-}
 .desk-effects ul {
-  margin: var(--space-2) 0 0;
-  padding-left: var(--space-5);
+  margin: var(--space-1) 0 0;
+  padding-left: var(--space-3);
 }
 .desk-effects li {
   overflow-wrap: anywhere;
 }
 .desk-effects p {
-  margin: var(--space-2) 0 0;
+  margin-top: var(--space-1);
 }
 .desk-trail {
-  border: 1px solid var(--line);
-  border-radius: var(--radius-inner);
-  padding: var(--space-3) var(--space-4);
   min-width: 0;
+  padding: 4px var(--space-2);
+  border: var(--hairline);
+  border-radius: var(--radius);
   overflow-x: auto;
 }
 .desk-trail > summary {
-  cursor: pointer;
-  color: var(--muted);
-  min-height: 40px;
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
+  min-height: var(--touch-target);
+  color: var(--strong-muted);
   list-style: none;
 }
 .desk-trail > summary::before {
@@ -145,7 +143,7 @@
   border-style: solid;
   border-width: 5px 0 5px 7px;
   border-color: transparent transparent transparent currentColor;
-  transition: transform 120ms;
+  transition: transform 120ms ease-out;
 }
 .desk-trail[open] > summary::before {
   transform: rotate(90deg);
@@ -153,182 +151,168 @@
 .desk-trail > summary::-webkit-details-marker {
   display: none;
 }
-.desk-trail > summary:focus-visible {
-  outline: 2px solid var(--blue);
-  outline-offset: 2px;
-  border-radius: 8px;
+.desk-trail > summary:hover {
+  color: var(--fg);
 }
 .desk-trail[open] > summary {
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-1);
 }
 .desk-item-foot {
   display: grid;
-  gap: var(--space-2);
-  border-top: 1px solid var(--line);
-  padding-top: var(--space-4);
+  gap: var(--space-1);
+  padding-top: var(--space-2);
+  border-top: var(--hairline);
 }
 .desk-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 .desk-gate {
-  margin: 0;
-  color: var(--muted);
-  font-size: 13px;
+  color: var(--strong-muted);
+  font-size: var(--text-sm);
 }
 .desk-error-text,
 .approval-error {
   color: var(--unsafe);
 }
 .approval-error {
-  margin: 0;
-  padding: var(--space-3) var(--space-4);
-  border-radius: 12px;
+  padding: 12px var(--space-2);
+  border: 1px solid var(--unsafe);
+  border-radius: var(--radius);
   background: var(--unsafe-bg);
   overflow-wrap: anywhere;
 }
 
-/* Token form */
+/* Session token */
 .desk-token {
   display: grid;
-  gap: var(--space-2);
-  padding: var(--space-5);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-card);
-  background: var(--surface);
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: var(--hairline);
+  border-radius: var(--radius);
 }
 .desk-token.saved {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-3);
+  gap: var(--space-2);
   flex-wrap: wrap;
-  color: var(--muted);
+  color: var(--strong-muted);
 }
 .desk-token-row {
   display: flex;
-  gap: var(--space-2);
+  gap: var(--space-1);
   flex-wrap: wrap;
 }
 .desk-token input,
 .approval-input {
   flex: 1 1 220px;
   min-width: 0;
-  height: 40px;
-  padding: 0 var(--space-4);
-  /* Inputs need a 3:1 boundary (WCAG 1.4.11); the hairline token is decorative only. */
-  border: 1px solid color-mix(in srgb, var(--muted) 80%, var(--surface));
-  border-radius: 12px;
-  background: var(--canvas);
+  height: var(--touch-target);
+  padding: 0 12px;
+  border: 1px solid var(--control-line);
+  border-radius: var(--radius);
+  background: var(--bg);
   color: var(--fg);
   font: inherit;
 }
 textarea.approval-input {
   height: auto;
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-1) 12px;
   resize: vertical;
-}
-.desk-token input:focus-visible,
-.approval-input:focus-visible {
-  outline: 2px solid var(--blue);
-  outline-offset: 1px;
 }
 .approval-input[aria-invalid="true"] {
   border-color: var(--unsafe);
 }
 
-/* Confirm dialog */
+/* Confirm dialog (reused inline by the Run page). */
 .approval-dialog {
-  /* Preflight zeroes margins; restore the centred modal. */
   margin: auto;
   width: min(520px, calc(100vw - 32px));
   max-height: calc(100dvh - 32px);
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: var(--radius-card);
-  background: var(--surface);
+  border-radius: var(--radius);
+  background: var(--bg);
   color: var(--fg);
+  overscroll-behavior: contain;
 }
 .approval-dialog::backdrop {
-  background: rgb(0 0 0 / 0.45);
+  background: rgb(0 0 0 / 0.5);
 }
 .approval-dialog form {
   display: grid;
-  gap: var(--space-3);
-  padding: var(--space-6);
+  gap: var(--space-2);
+  padding: var(--space-3);
 }
 .approval-dialog h2 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: var(--weight-light);
+  font-size: var(--text-lg);
   overflow-wrap: anywhere;
 }
-.approval-dialog p {
-  margin: 0;
+.approval-dialog .muted {
+  color: var(--strong-muted);
 }
 .approval-dialog label {
-  font-size: 13px;
+  font-weight: var(--weight-medium);
 }
 .approval-held {
   display: grid;
-  gap: 2px;
-  padding: var(--space-3) var(--space-4);
-  border-radius: 12px;
-  background: var(--blue-soft);
+  gap: 4px;
+  padding: 12px var(--space-2);
+  border-radius: var(--radius);
+  background: var(--held-bg);
+  color: var(--held);
+}
+.approval-held .eyebrow {
+  color: var(--held);
 }
 .approval-held strong {
+  color: var(--fg);
   font-family: var(--font-mono);
-  font-weight: var(--weight-regular);
-  font-size: 18px;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
 }
 .approval-hint {
-  font-size: 12px;
-  color: var(--muted);
+  color: var(--strong-muted);
+  font-size: var(--text-xs);
 }
 .approval-dialog-actions {
   display: flex;
   justify-content: flex-end;
-  gap: var(--space-2);
-  margin-top: var(--space-2);
+  gap: var(--space-1);
+  margin-top: var(--space-1);
 }
 .approval-reject {
   background: var(--unsafe);
-  color: var(--surface);
+  color: var(--bg);
 }
 .approval-reject:hover {
   background: var(--unsafe);
   opacity: 0.9;
 }
 
-@media (max-width: 700px) {
-  .desk-evidence a.record-chip {
-    min-height: 40px;
-    padding: 0 12px;
-  }
-}
-@media (max-width: 600px) {
+@media (max-width: 767px) {
+  .desk-evidence a.record-chip,
   .desk-evidence a.trace,
   .desk-facts a.trace {
-    min-height: 40px;
+    min-height: var(--touch-target);
     align-items: center;
   }
   .desk-item {
-    padding: var(--space-4);
-  }
-  .desk-evidence {
-    padding: var(--space-4);
+    padding: var(--space-2);
   }
   /* Full-width bottom sheet */
   .approval-dialog {
     width: 100%;
     max-width: 100%;
     margin: auto 0 0;
-    border-radius: var(--radius-card) var(--radius-card) 0 0;
+    border-radius: var(--radius) var(--radius) 0 0;
     border-bottom: 0;
   }
   .approval-dialog form {
-    padding: var(--space-5) var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom));
+    padding: var(--space-3) var(--space-2) calc(var(--space-3) + env(safe-area-inset-bottom));
   }
   .approval-dialog-actions {
     flex-direction: column-reverse;

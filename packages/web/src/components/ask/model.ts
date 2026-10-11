@@ -12,7 +12,7 @@ import {
   type ExplainQuestionKind,
   type RunBundle,
 } from "../../../../core/src/schema";
-import { recordPath, withRun } from "../../state/data-mode";
+import { recordPath, withRun } from "../../app/links";
 
 /** The only failure text an ask may show (AskResponseSchema's literal). */
 export const ASK_FAILED_TEXT = "couldn't answer from the evidence" as const;
@@ -170,24 +170,24 @@ export function citationTarget(c: Pick<Citation, "kind" | "id" | "runId">, ctx: 
         : link(withRun("/app/certificates", run), "Open certificates (revocations are listed there)");
     }
     case "claim": {
-      // Claim ids are "<tool>.<operation>.<claim>"; the tool's API report lists every claim.
+      // Claim ids are "<tool>.<operation>.<claim>"; the tool's certificates list every claim.
       const tool = c.id.split(".")[0] ?? "";
       return TOOLS.has(tool)
-        ? link(withRun(recordPath.report(tool), run), `Open the ${tool} API report (claim ${c.id})`)
+        ? link(withRun(recordPath.report(tool), run), `Open ${tool} certificates (claim ${c.id})`)
         : text("Claim");
     }
     case "guard":
-      // Guards are applied on decisions; the queue shows each decision's guards.
-      return link(withRun("/app/queue", run), `Open the queue of ${run ?? "the run"} (guard ${c.id})`);
+      // Guards are applied on decisions; the run's transcript shows each decision's guards.
+      return link(withRun("/app/run", run), `Open ${run ?? "the run"} (guard ${c.id})`);
     case "anomaly":
     case "hypothesis":
-      // Anomalies and rival hypotheses are what probes test; the probe log shows both.
-      return link(withRun("/app/probes", run), `Open the probe log of ${run ?? "the run"} (${kind} ${c.id})`);
+      // Anomalies and rival hypotheses are what probes test; the run's transcript shows both.
+      return link(withRun("/app/run", run), `Open ${run ?? "the run"} (${kind} ${c.id})`);
     case "timeline_event": {
       // "<runId>#<seq>"
       const timelineRun = c.id.replace(/#\d+$/, "");
       return timelineRun && timelineRun !== c.id
-        ? link(withRun("/app/mission-control", timelineRun), `Open mission control for ${timelineRun}`)
+        ? link(withRun("/app/run", timelineRun), `Open the run ${timelineRun}`)
         : text("Timeline event");
     }
     default:

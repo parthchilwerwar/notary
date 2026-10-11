@@ -1,19 +1,10 @@
-import type { ComponentProps, ReactNode } from "react";
-import { CaretDownIcon as CaretDown } from "@phosphor-icons/react/dist/csr/CaretDown";
-export function SelectControl({
-  icon,
-  children,
-  ...props
-}: ComponentProps<"select"> & { icon?: ReactNode }) {
+import type { ComponentProps } from "react";
+
+/** Native <select> with the design-system border and a CSS chevron (no icon dependency). */
+export function SelectControl({ children, ...props }: ComponentProps<"select">) {
   return (
-    <span className={`select-control ${icon ? "with-icon" : ""}`}>
-      {icon && (
-        <span className="select-leading" aria-hidden="true">
-          {icon}
-        </span>
-      )}
+    <span className="select-control">
       <select {...props}>{children}</select>
-      <CaretDown className="select-chevron" size={16} aria-hidden="true" />
     </span>
   );
 }

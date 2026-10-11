@@ -2,10 +2,8 @@
 // is trapped, Esc or the backdrop closes it, focus returns to where it was. Full screen at phone width.
 import { useEffect, useRef } from "react";
 import { Link } from "react-router";
-import { XIcon as X } from "@phosphor-icons/react/dist/csr/X";
-import { ArrowSquareOutIcon as ArrowSquareOut } from "@phosphor-icons/react/dist/csr/ArrowSquareOut";
-import { useData } from "../../state/DataProvider";
-import { withRun } from "../../state/data-mode";
+import { useData } from "../../app/catalog";
+import { withRun } from "../../app/links";
 import { ASK_SHORTCUT_LABEL, useAsk } from "./AskContext";
 import { AskNotary } from "./AskNotary";
 
@@ -85,15 +83,14 @@ export function AskSheet() {
       >
         <header className="ask-sheet-head">
           <div>
-            <h2 id="ask-sheet-title">Ask Notary</h2>
+            <h2 id="ask-sheet-title">Ask</h2>
             <p id="ask-sheet-description">Answers from records, with citations. {ASK_SHORTCUT_LABEL} toggles this panel.</p>
           </div>
           <Link className="ask-sheet-full" to={withRun("/app/ask", selectedRunId, { answer: selectedId })} onClick={close}>
-            <ArrowSquareOut size={16} aria-hidden="true" />
-            <span>Full page</span>
+            Full page
           </Link>
-          <button type="button" className="icon-button ask-sheet-close" aria-label="Close Ask Notary" onClick={close}>
-            <X size={18} aria-hidden="true" />
+          <button type="button" className="ask-sheet-close" onClick={close}>
+            Close
           </button>
         </header>
         <div className="ask-sheet-body">

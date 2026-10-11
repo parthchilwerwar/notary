@@ -1,0 +1,98 @@
+/* Report page. Tokens only. */
+.report {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.report .section {
+  margin-top: var(--space-4);
+  scroll-margin-top: calc(var(--topbar-height) + var(--space-2));
+}
+.report-toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: var(--hairline);
+}
+.report-toc a {
+  color: var(--strong-muted);
+  text-decoration: none;
+}
+.report-toc a:hover {
+  color: var(--fg);
+  text-decoration: underline;
+}
+.pair {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+.report .data-table tbody th {
+  font-weight: var(--weight-regular);
+  text-align: left;
+}
+.th-run {
+  display: block;
+  margin-top: 2px;
+  color: var(--strong-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.other-pairs {
+  margin-top: var(--space-1);
+}
+.cost-detail {
+  display: grid;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  min-width: 0;
+}
+.cost-detail h3 {
+  font-size: var(--text-md);
+}
+.cost-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--space-2);
+  align-items: start;
+}
+.fix {
+  margin-top: 4px;
+  color: var(--strong-muted);
+}
+.trace-list {
+  display: grid;
+  gap: 4px;
+  max-height: 280px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.evidence-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: var(--hairline);
+  border-radius: var(--radius);
+}
+.evidence-list > li {
+  padding: var(--space-2);
+}
+.evidence-list > li + li {
+  border-top: var(--hairline);
+}
+.notice > p + p {
+  margin-top: var(--space-1);
+}
+.nowrap {
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .cost-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}

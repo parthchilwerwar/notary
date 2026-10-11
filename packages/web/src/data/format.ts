@@ -15,12 +15,9 @@ export const number = (value: number) =>
 export const percent = (value: number) =>
   new Intl.NumberFormat("en-US", { style: "percent", maximumFractionDigits: 1 }).format(value);
 
+// The viewer's own locale and time zone (AUDIT H-44: no hardcoded zone).
 export const date = (value: string) =>
-  new Intl.DateTimeFormat("en-IN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Asia/Kolkata",
-  }).format(new Date(value));
+  new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 
 export const usd = (value: number) =>
   new Intl.NumberFormat("en-US", {
