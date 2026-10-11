@@ -152,3 +152,8 @@ Claude Code owns `packages/core` and `packages/web` (Codex out of quota). Phases
 - Verified: typecheck, **925 core + 221 web tests**, build, check:secrets, visual-check 42 page/theme/width combos, banned-word scan of the built landing (0 hits), accessibility 100.
 - [ ] Lighthouse performance on `/` below 90 (81–86 quiet, 50–57 under load).
 - [ ] BLOCKED live chat / two-turn verification and its neatlogs trace id: `LITELLM_API_KEY` empty in `.env`. Crustdata/Dodo chat lookups show "Not connected — set <VAR>".
+
+## Session 11 — showreel (Oct 11)
+
+- [x] `packages/showreel`: 15 s Remotion film (sky → page → sky, Read → Test → Challenge → Certify → Enforce, Notary Chat, close) in Notary's tokens and fonts, every value from `src/data.json` (`pnpm --filter @notary/showreel props`, hash-verified published records). `docs/media/notary-showreel.mp4` + `notary-showreel-poster.png`; storyboard in `packages/showreel/STORYBOARD.md` (DECISIONS #188–189).
+- [ ] Square 1080×1080 cut not made (needs its own layout, #188).

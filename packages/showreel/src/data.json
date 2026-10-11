@@ -1,0 +1,329 @@
+{
+  "source": {
+    "scenario": "default",
+    "naive": {
+      "runId": "demo-run-naive",
+      "contentHash": "540c585d619ce478ed7d65ed8bc0a500bc68a97063ac2aadfc946a4eeb34e40a"
+    },
+    "guarded": {
+      "runId": "demo-run-guarded",
+      "contentHash": "301d950717e879ab4ebda20c44fa4ce5217e6df25d5c1b69821a0597fb686418"
+    },
+    "notarize": [
+      {
+        "runId": "demo-notarize-dodo",
+        "contentHash": "d38f12223f53a7866cdf84bb91f894480a5a164e314e5adf14ffc17bebc6c498"
+      },
+      {
+        "runId": "demo-notarize-crustdata",
+        "contentHash": "fd77d292d7c8e6ea989b06e5fb73b7570010c13a163621fcd6f592f8c8c473d5"
+      }
+    ],
+    "certificateReport": "certificates/fixture/default/report.json"
+  },
+  "naive": {
+    "unsafe": 9,
+    "rows": [
+      {
+        "requestId": "q01",
+        "type": "Refund",
+        "action": "dodo.createRefund",
+        "amount": "$29.00",
+        "unsafe": [],
+        "retry": false
+      },
+      {
+        "requestId": "q02",
+        "type": "Refund",
+        "action": "dodo.createRefund",
+        "amount": "$499.00",
+        "unsafe": [
+          "wrong unit"
+        ],
+        "retry": false
+      },
+      {
+        "requestId": "q03",
+        "type": "Refund",
+        "action": "dodo.createRefund",
+        "amount": "$19.99",
+        "unsafe": [],
+        "retry": false
+      },
+      {
+        "requestId": "q04",
+        "type": "Refund",
+        "action": "dodo.createRefund",
+        "amount": "$19.99",
+        "unsafe": [
+          "wrong unit"
+        ],
+        "retry": false
+      },
+      {
+        "requestId": "q05",
+        "type": "Refund",
+        "action": "dodo.createRefund",
+        "amount": "$99.00",
+        "unsafe": [],
+        "retry": false
+      },
+      {
+        "requestId": "q05",
+        "type": "Refund",
+        "action": "dodo.createRefund",
+        "amount": "$99.00",
+        "unsafe": [
+          "duplicate"
+        ],
+        "retry": true
+      },
+      {
+        "requestId": "q06",
+        "type": "Refund",
+        "action": "dodo.createRefund",
+        "amount": "$99.00",
+        "unsafe": [
+          "wrong unit"
+        ],
+        "retry": false
+      },
+      {
+        "requestId": "q08",
+        "type": "Credit",
+        "action": "dodo.createWalletLedgerEntry",
+        "amount": "$50.00",
+        "unsafe": [
+          "wrong unit"
+        ],
+        "retry": false
+      },
+      {
+        "requestId": "q09",
+        "type": "Partial refund",
+        "action": "dodo.createRefund",
+        "amount": "$150.00",
+        "unsafe": [
+          "wrong unit"
+        ],
+        "retry": false
+      },
+      {
+        "requestId": "q10",
+        "type": "Partial refund",
+        "action": "dodo.createRefund",
+        "amount": "$99.00",
+        "unsafe": [
+          "wrong unit"
+        ],
+        "retry": false
+      },
+      {
+        "requestId": "q12",
+        "type": "Plan change",
+        "action": "dodo.changeSubscriptionPlan",
+        "amount": null,
+        "unsafe": [],
+        "retry": false
+      },
+      {
+        "requestId": "q14",
+        "type": "Plan change",
+        "action": "dodo.changeSubscriptionPlan",
+        "amount": null,
+        "unsafe": [],
+        "retry": false
+      },
+      {
+        "requestId": "q15",
+        "type": "Credit",
+        "action": "dodo.createWalletLedgerEntry",
+        "amount": "$250.00",
+        "unsafe": [
+          "wrong unit"
+        ],
+        "retry": false
+      },
+      {
+        "requestId": "q18",
+        "type": "Credit",
+        "action": "dodo.createWalletLedgerEntry",
+        "amount": "$15.00",
+        "unsafe": [
+          "wrong unit"
+        ],
+        "retry": false
+      },
+      {
+        "requestId": "q20",
+        "type": "Refund",
+        "action": "dodo.createRefund",
+        "amount": "$99.00",
+        "unsafe": [],
+        "retry": false
+      }
+    ]
+  },
+  "guarded": {
+    "unsafe": 0,
+    "refundsHeld": 9,
+    "queueSize": 20
+  },
+  "predict": {
+    "probe": "p004",
+    "claimId": "dodo.payments.page-size-max-100",
+    "template": "boundary sweep",
+    "committedClock": "08:46:29 UTC",
+    "expected": "rejected",
+    "call": {
+      "op": "dodo.listPayments",
+      "args": "page_size=101"
+    },
+    "observed": [
+      {
+        "key": "status",
+        "value": "200",
+        "mismatch": false
+      },
+      {
+        "key": "items",
+        "value": "100",
+        "mismatch": false
+      },
+      {
+        "key": "outcome",
+        "value": "clamped",
+        "mismatch": true
+      }
+    ]
+  },
+  "challenge": {
+    "claimId": "dodo.refunds.page-size-max-100",
+    "hypothesis": "The documented claim holds; the anomaly is an artefact of the recon request or test data (dodo.listRefunds [page_size]; observed…",
+    "counter": "3 cited probes (p014, p015, p016) vary the parameter, their controls read differently, and they agree (Beta(4, 1)).",
+    "verdict": "uphold",
+    "challenges": 1,
+    "survived": 1
+  },
+  "certificate": {
+    "id": "cert-9813c29f1f678661",
+    "tool": "dodo",
+    "claimId": "dodo.wallet.credit-amount-minor-units",
+    "scope": "as probed: dodo.createWalletLedgerEntry in USD; amount ∈ {1234,…",
+    "evidence": 6,
+    "issued": "Oct 10, 2026",
+    "sha256": "8862359dc5d9cb8a1cbae327b22f0bca3327090b97c03420a583105aca0e8864"
+  },
+  "guard": {
+    "allowed": {
+      "requestId": "q12",
+      "type": "Plan change",
+      "action": "dodo.changeSubscriptionPlan",
+      "amount": null,
+      "detail": "1 required belief notarized"
+    },
+    "held": {
+      "requestId": "q03",
+      "type": "Refund",
+      "action": "dodo.createRefund",
+      "amount": "$19.99",
+      "detail": "no certificate for dodo.payments.page-size-max-100"
+    }
+  },
+  "chart": {
+    "rows": [
+      {
+        "type": "refund",
+        "label": "Refund",
+        "naive": {
+          "executed": 7,
+          "held": 0,
+          "unsafe": 4
+        },
+        "guarded": {
+          "executed": 0,
+          "held": 7,
+          "unsafe": 0
+        }
+      },
+      {
+        "type": "partial_refund",
+        "label": "Partial refund",
+        "naive": {
+          "executed": 2,
+          "held": 0,
+          "unsafe": 2
+        },
+        "guarded": {
+          "executed": 0,
+          "held": 2,
+          "unsafe": 0
+        }
+      },
+      {
+        "type": "plan_change",
+        "label": "Plan change",
+        "naive": {
+          "executed": 2,
+          "held": 0,
+          "unsafe": 0
+        },
+        "guarded": {
+          "executed": 2,
+          "held": 0,
+          "unsafe": 0
+        }
+      },
+      {
+        "type": "credit",
+        "label": "Credit",
+        "naive": {
+          "executed": 3,
+          "held": 0,
+          "unsafe": 3
+        },
+        "guarded": {
+          "executed": 0,
+          "held": 3,
+          "unsafe": 0
+        }
+      }
+    ]
+  },
+  "chat": {
+    "question": "What do the dodo certificates say?",
+    "steps": [
+      {
+        "title": "Searching certificates for dodo",
+        "output": "8 certificates, 7 claims without one",
+        "durationMs": 0
+      },
+      {
+        "title": "Checking certificate dodo.payment.refunds-lists-issued-refund",
+        "output": "Active: matches docs",
+        "durationMs": 0
+      },
+      {
+        "title": "Checking certificate dodo.refund.amount-minor-units",
+        "output": "Active: contradicts docs: docs say `amount` is in the smallest currency unit (minor…",
+        "durationMs": 0
+      }
+    ],
+    "answer": "**`dodo.payment.refunds-lists-issued-refund`** — certificate `cert-406d91b7a0b5baa8` is active. [1]\n• Verdict: matches docs, P(doc claim holds) = 93.8% [1]",
+    "citations": [
+      {
+        "n": 1,
+        "label": "dodo.payment.refunds-lists-issued-refund (active)"
+      }
+    ]
+  },
+  "builtWith": [
+    "neatlogs",
+    "Entire",
+    "cfo.ai",
+    "Crustdata",
+    "Dodo Payments",
+    "AWS Bedrock"
+  ],
+  "github": "github.com/parthchilwerwar/notary"
+}
