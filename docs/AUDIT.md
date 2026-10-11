@@ -169,3 +169,29 @@ How to read the Status column:
 | H-44 | `Hero.tsx:23`, `FinalCTA.tsx:33`, `LandingFooter.tsx:14`, `AppShell.tsx:119` | The GitHub URL repeated four times. Timezone fixed to Asia/Kolkata ("IST"). | Low | Open → R2/R4: one constant (presentation, not data). |
 
 Checked with no issues: `ResultsStrip`, `Queue`, `Beliefs`, `ProbeLog`, `Comparison`, `CommandPalette`, `RunPicker`, `EventFeed`, `StageGraph`, `ReplayControls`, `approvals/parts`, `ui/*`. `Math.random` and `Date.now()` are never used as displayed data. `state/live.ts` uses `Date.now()` only to decide which live events are new enough to toast.
+
+## K1 — landing vs dashboard
+
+Playwright (system Chrome, 1440px, light) of `/` and every dashboard page (Run, Certificates, a certificate, Approvals, Chat, Report), screenshots in `packages/web/screenshots/K1/` (gitignored). The landing reads as one product; the dashboard as another. Every difference found:
+
+| Area | Landing (`/`) | Dashboard (`/app/*`, before K3) |
+| --- | --- | --- |
+| Title font | Instrument Serif 400, display tracking −0.03em, line-height 1.05; section titles 52px, card titles 26–28px serif | Sans (inherited) h1 28px weight 600 (`styles.css` base layer); section h2 20px weight 500; trail h2 28px weight 300 with −0.5px tracking |
+| Body type | Instrument Sans 15–17px, lede 17px muted, 1.55 line-height | 14px everywhere (`body` in `styles.css`), 12px meta, long monospace claim ids in tables |
+| Labels | Uppercase tracked blue section labels (`.section-label`), numbered feature labels in accent | Sentence-case muted `.eyebrow`; no section labels |
+| Color roles | Ink black primary buttons (`.btn-ink`), white secondary, blue only for links/labels/accent; status pills with tinted backgrounds | Blue primary (`--primary` = accent) on every action; filter pills and speed buttons inverted solid black; colors read through the R2 aliases (`--fg`, `--muted`, `--line`, `--n-*`) |
+| Radii | 20px cards (`--r-card`), 28px feature cards (`--r-section`), 10px buttons, pills | 12px on everything (`--radius`; `rounded-[12px]` in the shadcn-style `Button`/`Card`) |
+| Shadows | Soft floating shadow on every card (`--shadow-float`) | None — R2's "1px hairlines, no shadows" rule (DECISIONS #159); only toasts |
+| Surfaces | Sky gradient + drifting `<Clouds />` hero and CTA, feature washes (lavender/peach/mint/sky), grid-frame hairlines with nodes | Flat white page, a hairline under every block, no sky, no washes |
+| Spacing / density | 72–112px section padding, 24–28px card padding, 1200px max width, few large things | 8px grid, 24px panel padding, 1120px max beside a 232px sidebar; dense multi-column tables on first view (26-row certificate tables, 7-column report tables) |
+| Borders | Hairlines only where they separate (cards, how-it-works columns) | Hairline around and between everything; sticky black-underlined fixture bar; left-border notices |
+| Numbers | Huge serif stats (64–112px) that count up, hatched held bars in a browser-framed chart | Sans 40px `.figure-value` row between two rules; no charts at all |
+| Components only on the landing | `BrowserFrame`, `ActionsChart`, proof `Stat`, feature `WashCard`, certificate mini card with seal, chat window, GSAP motion (SplitText, fade-up, count-up) | — |
+| Components only in the dashboard | — | Sidebar, `PageHeader`, `.panel`, `.state-card`, `.figures`, `.data-table` (+ phone stack mode), `.record-chip`, `.notice`, R2 `StatusPill` (`.status-pill`), run-picker select, trail cards |
+| Leftover shadcn / defaults | — | `components/ui/button.tsx` (cva, `bg-primary/85` hover, shadcn variant names), `card.tsx` (shadcn API), `sidebar.tsx` (shadcn sidebar API rewritten by hand), Tailwind `@theme` mapping shadcn names (`--color-accent` = subtle gray, `--color-destructive`, …) |
+| Old CSS / tokens still in use | — | `tokens.css` legacy aliases (`--bg`, `--fg`, `--n-50…700`, `--line`, `--primary`, `--radius` 12px, `--sidebar-width`), the legacy `:root` block in `styles.css` (`--canvas`, `--blue` → ink, `--hatch-bg`, `--radius-inner`, `--radius-control`), `trail.css` reading those, page CSS headers still saying "black and white"; `useTheme` sets `theme-color` to `#0a0a0a` (old dark) instead of the navy page |
+| Raw hex outside tokens | `landing.css` (`#dfe5f0`, `#e3e8f1`, traffic-light dots, `#ffffff`), `brand.css` (`#222838`, `#ffffff`), `components/brand/brand.css` (`#ffffff` puffs) | `rgb(0 0 0 / .4–.5)` overlays in `shell.css`, `run.css`, `approvals.css` |
+
+**Root cause.** Two component sets on two CSS stacks. The landing (D2) was built on D1's tokens directly, with its own `l-*` classes in `landing.css` and the `brand.css` primitives (`.btn-*`, `.section-label`, `.sky`, `.wash-*`, `.status-*`). The dashboard is still the R2 black-and-white system: shadcn-style components in `components/ui`, global classes in `styles.css`, per-page CSS reading the R2 aliases. D1 only remapped the alias *colors* to the sky palette, so R2's geometry (12px radius, no shadows), type (sans 28/600 titles, 14px body), density (tables first) and chrome (sidebar mode block, sticky fixture bar) all survived. There was no shared kit: the landing borrows dashboard pieces (`TranscriptRow`, `Button`, `StatusPill`, the whole Run page in the hero mockup) but nothing flows the other way.
+
+**Fix (K2/K3).** One kit, `packages/web/src/ui/`, extracted from the landing (re-exporting `Clouds`, `BrowserFrame`, `ActionsChart` instead of forking them); every dashboard page rebuilt from it; `test/ui-kit-boundary.test.ts` keeps pages and shell on the kit, with no raw hex colors and no literal font families outside `tokens.css`.

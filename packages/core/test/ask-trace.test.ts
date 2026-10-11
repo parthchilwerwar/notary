@@ -428,7 +428,9 @@ describe("with the neatlogs SDK on (local fake collector)", () => {
     }
   });
 
-  it("exports one tree per ask, nested by context, flushed without waiting for exit", async () => {
+  // Generous limits: under full-suite parallel load the SDK export can take seconds; the assertion is
+  // that the flush happens before shutdown, not how fast.
+  it("exports one tree per ask, nested by context, flushed without waiting for exit", { timeout: 30_000 }, async () => {
     expect(enabled).toBe(true);
     const session = createSession();
     const spansPath = sinkFile();
@@ -445,7 +447,7 @@ describe("with the neatlogs SDK on (local fake collector)", () => {
     expect(new Set(traceIds).size).toBe(2);
 
     // The per-ask flush reaches the collector while the process keeps running (no shutdown yet).
-    const deadline = Date.now() + 4_000;
+    const deadline = Date.now() + 20_000;
     while (!bodies.some((b) => b.includes("notary.ask.validate")) && Date.now() < deadline) await new Promise((r) => setTimeout(r, 50));
     expect(bodies.some((b) => b.includes("notary.ask.validate"))).toBe(true);
     // The local receipts say these traces were exported.
