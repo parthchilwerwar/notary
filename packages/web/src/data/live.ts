@@ -34,9 +34,10 @@ import { canonicalJson, sha256Hex } from "../../../core/src/bundle/hash";
 import { globalFetch, type FetchImpl } from "./http";
 import { apiRequest, LocalApiError, readToken } from "./local-api";
 import { PublishedFiles, TimelineMissingError } from "./published";
+import { LiveChat } from "./chat-live";
 import { replayStream } from "./stream";
 import { byNewest, validateBundle, verifyTimelineFile, verifyToolRecords } from "./verify";
-import type { CertificateWorld, DataSource, EventStreamOptions, RunEntry } from "./types";
+import type { CertificateWorld, ChatSource, DataSource, EventStreamOptions, RunEntry } from "./types";
 
 /** Minimal EventSource surface LiveSource uses (the browser's, or a test double). */
 export type EventSourceLike = {
@@ -76,6 +77,8 @@ export class LiveSource implements DataSource {
   private readonly token: () => string | null;
   /** runId → its finished entry, from the last listRuns ("api" or the published fixture). */
   private known = new Map<string, { from: "api" | "fixture"; entry?: BundleIndexEntry }>();
+  /** Notary Chat over /api/chat (REST + SSE over POST), token required. */
+  readonly chat: ChatSource;
 
   constructor(opts: {
     base: string;
@@ -89,6 +92,7 @@ export class LiveSource implements DataSource {
     this.EventSourceImpl = opts.EventSourceImpl;
     this.published = opts.published ?? new PublishedFiles({ fetchImpl: this.fetchImpl });
     this.token = opts.token ?? readToken;
+    this.chat = new LiveChat({ base: this.base, fetchImpl: this.fetchImpl, token: this.token });
   }
 
   private async get(path: string, signal?: AbortSignal, auth: "required" | "optional" = "optional") {

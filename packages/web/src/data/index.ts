@@ -8,6 +8,12 @@ import type { RunEntry } from "./types";
 export * from "./types";
 export { LiveSource, RunStillRunningError, type EventSourceCtor, type EventSourceLike } from "./live";
 export { ReplaySource } from "./replay";
+export { LiveChat, readChatStream, CHAT_INVALID_EVENT, CHAT_STREAM_CLOSED, CHAT_MESSAGE_INVALID } from "./chat-live";
+export { ReplayChat, REPLAY_UNAVAILABLE, REPLAY_NO_MATCH, sentences, type ReplayChatData, type ReplayChatOptions } from "./chat-replay";
+export { routeQuestion, lookupSubject, type Intent, type Route, type RouteContext } from "./chat-route";
+export { SseParser, type SseMessage } from "./chat-sse";
+export { memoryChatStore, sessionChatStore, REPLAY_CHAT_STORAGE_KEY, type ChatStore, type StoredConversation } from "./chat-store";
+export { answerWorld, worldIndex, worldKeyOf, worldLabel, type WorldKey } from "./world";
 export {
   PublishedFiles,
   TimelineMissingError,

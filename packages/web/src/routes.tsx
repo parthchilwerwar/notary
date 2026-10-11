@@ -1,5 +1,5 @@
 // THE route table for /app. Sidebar, top bar title, document titles, the command palette and the
-// router all read it. Four pages are in the sidebar (Run, Certificates, Approvals, Ask); Report is
+// router all read it. Four pages are in the sidebar (Run, Certificates, Approvals, Chat); Report is
 // linked from the sidebar footer; a certificate has its own page.
 import type { ReactElement } from "react";
 import { matchPath } from "react-router";
@@ -7,7 +7,7 @@ import { RunPage } from "./pages/run/RunPage";
 import { CertificatesPage } from "./pages/certificates/CertificatesPage";
 import { CertificateDetailPage } from "./pages/certificates/CertificateDetailPage";
 import { ApprovalsPage } from "./pages/approvals";
-import { AskPage } from "./components/ask/AskPage";
+import { ChatPage } from "./pages/chat/ChatPage";
 import { ReportPage } from "./pages/report/ReportPage";
 
 export type AppRoute = {
@@ -34,7 +34,7 @@ export const routes: AppRoute[] = [
   { id: "certificates", path: "/app/certificates", title: "Certificates", description: "API behavior certified within a scope, and revocable.", nav: true, element: <CertificatesPage /> },
   { id: "certificate", path: "/app/certificates/:certificateId", title: "Certificate", description: "One certificate and the evidence behind it.", parent: "certificates", record: "certificate", element: <CertificateDetailPage /> },
   { id: "approvals", path: "/app/approvals", title: "Approvals", description: "Held money actions waiting for a human.", nav: true, badge: "approvals", element: <ApprovalsPage /> },
-  { id: "ask", path: "/app/ask", title: "Ask", description: "Answers from records, with citations.", nav: true, element: <AskPage /> },
+  { id: "chat", path: "/app/chat", title: "Chat", description: "Ask Notary about runs, certificates and the APIs it checks; answers cite records.", nav: true, ungated: true, element: <ChatPage /> },
   { id: "report", path: "/app/report", title: "Report", description: "Run comparison, cost per run, connections and receipts.", ungated: true, element: <ReportPage /> },
 ];
 
@@ -71,6 +71,7 @@ export const redirects: Redirect[] = [
   { from: "/app/economics", to: "/app/report" },
   { from: "/app/evidence", to: "/app/report" },
   { from: "/app/comparison", to: "/app/report" },
+  { from: "/app/ask", to: "/app/chat" },
 ];
 
 /** The target of a redirect for concrete params, old query merged (target params win). */

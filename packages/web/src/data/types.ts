@@ -13,6 +13,9 @@ import type {
   AskRequest,
   AskResponse,
   BundleIndexEntry,
+  ChatConversation,
+  ChatEvent,
+  ConversationDetail,
   CertificateReport,
   ExplainFile,
   HealthResponse,
@@ -68,7 +71,26 @@ export interface DataSource {
   approve(id: string, confirmedAmount: number): Promise<ApprovalRecord>;
   reject(id: string, reason: string): Promise<ApprovalRecord>;
   ask(req: AskRequest): Promise<AskResponse>;
+  /** Notary Chat (C1–C3). Live: /api/chat (sqlite on the server, real tools). Replay: the same event
+   *  shapes from a deterministic engine over the exported bundles (sessionStorage conversations;
+   *  fetch_doc / crustdata_lookup / dodo_lookup emit step_finished status "unavailable"). */
+  readonly chat: ChatSource;
 }
+
+export interface ChatSource {
+  listConversations(signal?: AbortSignal): Promise<ChatConversation[]>;
+  getConversation(id: string, signal?: AbortSignal): Promise<ConversationDetail>;
+  createConversation(): Promise<ChatConversation>;
+  deleteConversation(id: string): Promise<void>;
+  /** Streams ChatEvents in order until `done` or `error`; aborting `signal` is the Stop button. */
+  sendMessage(conversationId: string, content: string, onEvent: (e: ChatEvent) => void, signal?: AbortSignal): Promise<void>;
+  /** Replay only: the run selected in the dashboard. A new replay conversation is pinned to that
+   *  run's world (worlds never mix). Live ignores it (`notary serve` serves real runs only). */
+  setContext?(ctx: { runId?: string }): void;
+}
+
+/** Shown on the Chat page in replay mode. */
+export const REPLAY_CHAT_BANNER = "Replay — answers come from the recorded run, no live lookups";
 
 export class ReplayOnlyError extends Error {
   constructor(action: string) {

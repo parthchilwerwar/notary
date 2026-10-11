@@ -16,16 +16,20 @@ import type {
 import { PublishedFiles, type CertificateWorldDetail } from "./published";
 import { realTimers, replayStream, type Timers } from "./stream";
 import { approvalId } from "./verify";
+import { ReplayChat, type ReplayChatOptions } from "./chat-replay";
 import { ReplayOnlyError, type DataSource, type EventStreamOptions, type RunEntry } from "./types";
 
 export class ReplaySource implements DataSource {
   readonly mode = "replay" as const;
   readonly published: PublishedFiles;
   private readonly timers: Timers;
+  /** The deterministic replay chat engine over these files (no backend, no model). */
+  readonly chat: ReplayChat;
 
-  constructor(opts: { published?: PublishedFiles; timers?: Timers } = {}) {
+  constructor(opts: { published?: PublishedFiles; timers?: Timers; chat?: ReplayChatOptions } = {}) {
     this.published = opts.published ?? new PublishedFiles();
     this.timers = opts.timers ?? realTimers;
+    this.chat = new ReplayChat(this, { timers: this.timers, ...opts.chat });
   }
 
   async health(): Promise<null> {
