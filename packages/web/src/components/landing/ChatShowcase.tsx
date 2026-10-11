@@ -5,7 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import type { DataSource } from "../../data";
 import { clipText } from "../../landing-data";
-import { AgentBadge } from "./AgentBadge";
+import { AgentBadge } from "../../ui/AgentBadge";
+import "../../ui/kit.css";
 import {
   loadChatTurn,
   tokenize,
@@ -136,7 +137,7 @@ function Replay({ turn }: { turn: ChatTurn }) {
           header={
             <div className="l-chat-head">
               <span className="l-chat-title">Ask about your runs</span>
-              <AgentBadge id="chat" />
+              <AgentBadge agent="chat" showKind className="l-agent" />
             </div>
           }
           footer={

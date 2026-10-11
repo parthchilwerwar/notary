@@ -48,12 +48,6 @@
   scroll-margin-top: calc(var(--l-nav-h) + 8px);
 }
 
-/* The landing is a product page: the app-wide data-mode banner (rendered by main.tsx for every
-   route) stays in the dashboard. Reported to the orchestrator: main.tsx should not render it on "/". */
-:root[data-page="landing"] .replay-banner {
-  display: none;
-}
-
 .l-skip {
   position: absolute;
   left: 16px;
@@ -885,24 +879,14 @@
   white-space: nowrap;
 }
 
-/* Agent badges (names from core/src/schema/agents.ts). */
-.agent-badge {
-  display: inline-flex;
-  align-items: center;
-  min-height: 22px;
-  padding: 0 9px;
+/* Agent badges: the kit's AgentBadge (src/ui, .ui-agent, names from core/src/schema/agents.ts) with
+   a visible "· rule"; the landing sets them in muted ink with a solid hairline, Guard included. */
+.landing .ui-agent.l-agent {
+  gap: 0;
   border: 1px solid var(--hairline-color);
-  border-radius: 999px;
   background: var(--card);
   color: var(--text-strong-muted);
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-.agent-badge-kind {
-  color: var(--text-muted);
-  font-weight: 400;
+  line-height: inherit;
 }
 
 /* ---------------------------------------------------------------- key features */
@@ -1066,6 +1050,36 @@
 .l-mini-actions {
   display: flex;
   gap: 8px;
+}
+/* The kit's Button and StatusPill in the mini cards keep the cards' compact geometry (32px buttons
+   with 12px text, 8px-padded pills with a text-colored dot), the same pixels as before K4. */
+.l-mini-actions .btn {
+  height: 32px;
+  min-height: 0;
+  padding: 0 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  line-height: 16px;
+}
+.l-mini-actions .ui-btn-accent {
+  border: 0;
+}
+.l-mini-actions .ui-btn-secondary {
+  border-color: var(--control-line);
+  background: var(--page);
+  box-shadow: none;
+}
+@media (max-width: 767.98px) {
+  .l-mini-actions .btn {
+    height: 40px;
+  }
+}
+.l-mini .ui-status-safe {
+  padding: 0 8px;
+  font-weight: 400;
+}
+.l-mini .ui-status-safe::before {
+  background: currentColor;
 }
 .l-mini-chat {
   padding: 0;

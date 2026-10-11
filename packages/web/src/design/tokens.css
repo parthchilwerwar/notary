@@ -82,6 +82,8 @@
   --r-pill: 999px;
   --shadow-soft: 0 1px 2px rgb(11 15 25 / 0.04);
   --shadow-float: 0 1px 2px rgb(11 15 25 / 0.04), 0 8px 24px rgb(47 106 235 / 0.08);
+  /* Scrim under dialogs and the phone drawer (ink at 32%; the same in both themes). */
+  --overlay: rgb(11 15 25 / 0.32);
   /* Instrument Sans for body/UI, Instrument Serif for titles and display figures. The serif has a
      single 400 weight: display type is never bolded; it is set larger with gentle negative
      tracking instead. */

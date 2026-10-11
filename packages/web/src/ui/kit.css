@@ -31,7 +31,7 @@
 .ui-card {
   min-width: 0;
   border: 1px solid var(--hairline-color);
-  border-radius: 24px;
+  border-radius: var(--r-card);
   background: var(--card);
   box-shadow: var(--shadow-float);
 }
@@ -196,7 +196,8 @@
   background: transparent;
   color: var(--text-strong-muted);
 }
-.ui-agent-model {
+.ui-agent-model,
+.ui-agent-kind {
   color: var(--text-muted);
   font-weight: 400;
 }
@@ -284,7 +285,8 @@
 @media (max-width: 639px) {
   .ui-band-sky {
     min-height: 0;
-    padding: 28px 20px calc(48px + 24px);
+    /* 72px of the bottom is under the overlapping cards; 20px keeps the action clear of them. */
+    padding: 28px 20px calc(72px + 20px);
     border-radius: var(--r-card);
     background: linear-gradient(180deg, var(--sky-3) 0%, var(--sky-4) 48%, var(--wash-sky) 74%, var(--page) 100%);
   }
@@ -356,6 +358,16 @@
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 16px;
   margin: 0;
+}
+/* Phones: two stats a row (an odd last one spans), so three figures don't take a whole screen. */
+@media (max-width: 639px) {
+  .ui-stat-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .ui-stat-row > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
 }
 .ui-stat {
   display: flex;
@@ -570,7 +582,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  border-radius: 24px;
+  border-radius: var(--r-card);
 }
 .ui-cert {
   position: relative;
@@ -869,11 +881,11 @@
 }
 .ui-skeleton-stat {
   height: 132px;
-  border-radius: 24px;
+  border-radius: var(--r-card);
 }
 .ui-skeleton-card {
   height: 320px;
-  border-radius: 24px;
+  border-radius: var(--r-card);
 }
 .ui-skeleton-band {
   display: grid;
@@ -890,6 +902,15 @@
 .ui-page-skeleton > .ui-page-body {
   margin-top: -72px;
   padding: 0 24px;
+}
+/* Outside the shell (main.tsx): the dashboard chunk loading, and unknown addresses. */
+.app-loading {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1200px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: 32px 24px;
 }
 @keyframes ui-shimmer {
   from {

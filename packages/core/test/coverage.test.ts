@@ -52,7 +52,8 @@ describe("guards coverage on the real repo (tsc backend)", () => {
   });
 });
 
-describe("guards coverage on a fixture with deliberate raw calls", () => {
+// Each case runs the TypeScript compiler over a fixture project: seconds under full-suite load.
+describe("guards coverage on a fixture with deliberate raw calls", { timeout: 60_000 }, () => {
   let dir: string;
   const write = (rel: string, text: string) => {
     const full = join(dir, rel);

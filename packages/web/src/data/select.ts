@@ -1,6 +1,7 @@
 // Mode selection. LiveSource iff the API at VITE_NOTARY_API (default http://localhost:8787, the
 // `notary serve` default port) answers GET /api/health with a schema-valid HealthResponse;
-// otherwise ReplaySource (with the persistent REPLAY_BANNER).
+// otherwise ReplaySource. No global mode banner (K4): pages say "Start the server…" where a live
+// action fails, and fixture runs keep their fixture note.
 //
 // The hosted (production) build is ALWAYS replay and never probes anything: `notary serve`
 // accepts loopback requests only (DECISIONS #115), so a hosted page could never reach it and a

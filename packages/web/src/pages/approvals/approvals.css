@@ -249,7 +249,7 @@ textarea.approval-input {
   overscroll-behavior: contain;
 }
 .approval-dialog::backdrop {
-  background: rgb(11 15 25 / 0.32);
+  background: var(--overlay);
 }
 .approval-dialog form {
   display: grid;

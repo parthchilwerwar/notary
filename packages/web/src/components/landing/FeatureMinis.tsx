@@ -21,12 +21,13 @@ import {
 } from "../../landing-data";
 import { buildRows, heldCard, type HeldCard, type RunRow } from "../../pages/run/model";
 import { TranscriptRow } from "../../pages/run/Transcript";
-import { Button } from "../ui/button";
-import { StatusPill } from "../ui/status-pill";
+import { Button } from "../../ui/Button";
+import { StatusPill } from "../../ui/StatusPill";
 import { loadChatTurn, type ChatTurn } from "./chat-turn";
 import { ChatWindow } from "./ChatWindow";
 import { gsap, MOTION_OK, ScrollTrigger, useGSAP } from "./gsap";
-import { AgentBadge } from "./AgentBadge";
+import { AgentBadge } from "../../ui/AgentBadge";
+import "../../ui/kit.css";
 import { replayFor, replayPair } from "./replay";
 
 // ------------------------------------------------------------------------------- loaders
@@ -193,11 +194,11 @@ function HeldMini({ source }: { source: DataSource }) {
       {card.evidence.find(showable) && <p className="l-mini-text">{clipText(card.evidence.find(showable)!, 120)}</p>}
       {/* Shape of the dashboard's approval controls; inert here (approvals need a local test-mode server). */}
       <div className="l-mini-actions" aria-hidden="true" inert>
-        <AgentBadge id="guard" />
-        <Button type="button" size="sm" tabIndex={-1}>
+        <AgentBadge agent="guard" showKind className="l-agent" />
+        <Button variant="accent" size="sm" tabIndex={-1}>
           Approve…
         </Button>
-        <Button type="button" size="sm" variant="outline" tabIndex={-1}>
+        <Button variant="secondary" size="sm" tabIndex={-1}>
           Reject…
         </Button>
       </div>

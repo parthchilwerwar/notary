@@ -67,11 +67,14 @@ tr[data-highlight="true"] > * {
   color: var(--text-muted);
   font-size: 14px;
 }
+/* Recorded text (a claim, an observation) reads as body copy, like the landing's prediction card:
+   sans at the lede size. Serif stays for titles and figures. */
 .cert-pair-text {
   margin: 0;
-  font-family: var(--font-display);
-  font-size: 24px;
-  line-height: 1.25;
+  color: var(--text);
+  font-size: 17px;
+  line-height: 1.55;
+  text-wrap: pretty;
   overflow-wrap: anywhere;
 }
 .cert-review,

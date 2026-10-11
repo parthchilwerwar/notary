@@ -143,3 +143,12 @@ Claude Code owns `packages/core` and `packages/web` (Codex out of quota). Phases
 - [x] **R4** (`eb0fed4`) GSAP landing (SplitText hero, counting proof from exported runs, ScrollTrigger steps, transcript excerpt); @xyflow/react, motion, recharts, d3 removed.
 - Verified: typecheck, **866 core + 188 web tests**, build, check:secrets, visual check 28 route × theme × viewport combos (no page errors / overflow), Lighthouse a11y 100, perf median 94 (86–95).
 - [ ] BLOCKED live: integrations report `missing <VAR>` — LITELLM_API_KEY, CRUSTDATA_API_KEY, DODO_PAYMENTS_API_KEY (+ seed manifest via `seed:dodo`), Entire CLI. Start run, live approvals and model-backed Ask need them.
+
+## Session 10 — Chat, sky-blue redesign, polish and shared kit (Oct 11)
+
+- [x] C1 Notary Chat backend (`ee2c407`), C2 Chat UI + replay engine (`21c3675`); C3 landing excerpt folded into the landing chat showcase (#171).
+- [x] P1 fonts/tokens/navbar (`e347f12`), P2 agent names + evaluation-suite section (`02e2ebb`), P3 landing (`24b7b4f`), P5 Chat on the kit (`74bd2d0`).
+- [x] K1 audit (`bf33706`), K2 shared kit `src/ui/` (`d8326e8`), K3 dashboard rebuilt (`4e25ad5`), K4 visual loop + `docs/screenshots/` (see log).
+- Verified: typecheck, **925 core + 221 web tests**, build, check:secrets, visual-check 42 page/theme/width combos, banned-word scan of the built landing (0 hits), accessibility 100.
+- [ ] Lighthouse performance on `/` below 90 (81–86 quiet, 50–57 under load).
+- [ ] BLOCKED live chat / two-turn verification and its neatlogs trace id: `LITELLM_API_KEY` empty in `.env`. Crustdata/Dodo chat lookups show "Not connected — set <VAR>".

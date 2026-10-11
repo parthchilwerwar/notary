@@ -40,7 +40,6 @@ export {
   type SelectOptions,
 } from "./select";
 export {
-  DataModeBanner,
   DataSourceProvider,
   useDataSource,
   useHealth,

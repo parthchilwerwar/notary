@@ -166,10 +166,16 @@ export function runCost(b: RunBundle): RunCost {
   };
 }
 
-/** Bundles split by cohort (real first, fixture second); a table never mixes them. */
-export function byCohort(bundles: readonly RunBundle[]): { sample: boolean; runs: RunBundle[] }[] {
-  return [false, true]
-    .map((sample) => ({ sample, runs: bundles.filter((b) => b.sample === sample).sort(newestFirst) }))
+export type Cohort = "real" | "fixture" | "synthetic";
+
+/** Fixture runs are sample:true demo-world bundles; the synthetic SAMPLE bundle (kind "sample") is
+ *  neither real nor fixture and gets its own cohort with its own disclosure. */
+export const cohortOf = (b: RunBundle): Cohort => (!b.sample ? "real" : b.kind === "sample" ? "synthetic" : "fixture");
+
+/** Bundles split by cohort (real, fixture, synthetic — in that order); a list never mixes them. */
+export function byCohort(bundles: readonly RunBundle[]): { cohort: Cohort; sample: boolean; runs: RunBundle[] }[] {
+  return (["real", "fixture", "synthetic"] as const)
+    .map((cohort) => ({ cohort, sample: cohort !== "real", runs: bundles.filter((b) => cohortOf(b) === cohort).sort(newestFirst) }))
     .filter((g) => g.runs.length > 0);
 }
 

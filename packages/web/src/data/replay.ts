@@ -16,20 +16,75 @@ import type {
 import { PublishedFiles, type CertificateWorldDetail } from "./published";
 import { realTimers, replayStream, type Timers } from "./stream";
 import { approvalId } from "./verify";
-import { ReplayChat, type ReplayChatOptions } from "./chat-replay";
-import { ReplayOnlyError, type DataSource, type EventStreamOptions, type RunEntry } from "./types";
+import type { ReplayChat, ReplayChatData, ReplayChatOptions } from "./chat-replay";
+import type { ChatConversation, ChatEvent, ConversationDetail } from "../../../core/src/schema";
+import { ReplayOnlyError, type ChatSource, type DataSource, type EventStreamOptions, type RunEntry } from "./types";
+
+/**
+ * The replay chat engine (chat-replay.ts, ~900 lines with its router and store) loads on first use,
+ * so the landing (`/`), which builds a ReplaySource at startup, never downloads it up front (K4).
+ * Same ChatSource contract: setContext is synchronous, and every call applies the context that was
+ * current when it was made, so `setContext → createConversation → setContext → sendMessage` pins
+ * worlds exactly as on the engine itself.
+ */
+class LazyReplayChat implements ChatSource {
+  private engine: Promise<ReplayChat> | undefined;
+  private ctx: { runId?: string } = {};
+
+  constructor(
+    private readonly data: ReplayChatData,
+    private readonly opts: ReplayChatOptions,
+  ) {}
+
+  private async load(): Promise<ReplayChat> {
+    const ctx = this.ctx;
+    this.engine ??= import("./chat-replay").then((m) => new m.ReplayChat(this.data, this.opts));
+    this.engine.catch(() => (this.engine = undefined));
+    const engine = await this.engine;
+    engine.setContext(ctx);
+    return engine;
+  }
+
+  setContext(ctx: { runId?: string }): void {
+    this.ctx = { ...ctx };
+  }
+
+  async listConversations(): Promise<ChatConversation[]> {
+    return (await this.load()).listConversations();
+  }
+
+  async getConversation(id: string): Promise<ConversationDetail> {
+    return (await this.load()).getConversation(id);
+  }
+
+  async createConversation(): Promise<ChatConversation> {
+    return (await this.load()).createConversation();
+  }
+
+  async deleteConversation(id: string): Promise<void> {
+    return (await this.load()).deleteConversation(id);
+  }
+
+  async conversationWorld(id: string): ReturnType<ReplayChat["conversationWorld"]> {
+    return (await this.load()).conversationWorld(id);
+  }
+
+  async sendMessage(conversationId: string, content: string, onEvent: (e: ChatEvent) => void, signal?: AbortSignal): Promise<void> {
+    return (await this.load()).sendMessage(conversationId, content, onEvent, signal);
+  }
+}
 
 export class ReplaySource implements DataSource {
   readonly mode = "replay" as const;
   readonly published: PublishedFiles;
   private readonly timers: Timers;
-  /** The deterministic replay chat engine over these files (no backend, no model). */
-  readonly chat: ReplayChat;
+  /** The deterministic replay chat engine over these files (no backend, no model), loaded on first use. */
+  readonly chat: LazyReplayChat;
 
   constructor(opts: { published?: PublishedFiles; timers?: Timers; chat?: ReplayChatOptions } = {}) {
     this.published = opts.published ?? new PublishedFiles();
     this.timers = opts.timers ?? realTimers;
-    this.chat = new ReplayChat(this, { timers: this.timers, ...opts.chat });
+    this.chat = new LazyReplayChat(this, { timers: this.timers, ...opts.chat });
   }
 
   async health(): Promise<null> {

@@ -18,11 +18,6 @@ export default function Landing() {
 
   useEffect(() => {
     document.title = "Notary: no certificate, no money moves";
-    // Lets landing.css keep the app-wide data-mode banner off this page (cheaper than :has()).
-    document.documentElement.dataset.page = "landing";
-    return () => {
-      delete document.documentElement.dataset.page;
-    };
   }, []);
 
   // The cfo.ai plan: priced plans or nothing (the section and its nav link stay hidden).

@@ -50,6 +50,7 @@ Machine-readable copy for the dashboard: [packages/web/public/evidence/evidence.
 - V2–V4 dashboard shipped (Claude Code now owns `packages/web`): app shell with ⌘K palette and record URLs, Mission control (five-stage graph, event feed, budget meters, live SSE / fixture replay), decision trail with "Model said" / "Verified" tags, Ask Notary (⌘J, cited answers), Approval desk (typed-amount confirm, local test mode only). 138 web tests.
 - V5: landing page at `/`, full screenshot review (1440/390, light/dark) with contrast and state fixes, Vercel config (not deployed yet). Tests: 780 core + 152 web.
 - Session 8: LiteLLM provider, `notary doctor --llm`, actionable BLOCKED messages, `NOTARY_MAX_USD` cap, model-call and Ask rate limits, one neatlogs trace per Ask question (retrieve → model call → citation validation). 850 core + 152 web tests.
+- Sessions 9–10: real backend wiring (health, runs, events, certificates, approvals endpoints; one web data layer), Notary Chat (multi-turn, 11 read-only tools, citations validated, one trace per message, can never move money), sky-blue landing + dashboard on one shared UI kit, agent names from one source of truth, evaluation-suite section in docs/EVALUATION.md (simulated APIs disclosed). 925 core + 221 web tests. Screenshots in docs/screenshots/.
 - Blocked on keys: Ask answers (Bedrock executor model), live approvals (Dodo test key + real held items).
 
 ## Dashboard data (JSON only)

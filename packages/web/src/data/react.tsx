@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import type { HealthResponse, IntegrationName } from "../../../core/src/schema";
 import { integrationView, type IntegrationView } from "./integration";
 import { replaySelection, selectDataSource, type Selection, type SelectOptions } from "./select";
-import { REPLAY_BANNER, type DataMode, type DataSource } from "./types";
+import type { DataMode, DataSource } from "./types";
 
 export type DataSourceValue = {
   source: DataSource;
@@ -96,29 +96,4 @@ export function useHealth(): HealthResponse | null {
 export function useIntegration(name: IntegrationName): IntegrationView {
   const { health, mode } = useDataSource();
   return useMemo(() => integrationView(health, name, mode), [health, name, mode]);
-}
-
-/** REPLAY_BANNER with its backticked command rendered as code. */
-function BannerText({ text }: { text: string }) {
-  return (
-    <>
-      {text.split("`").map((part, i) => (i % 2 ? <code key={i}>{part}</code> : <span key={i}>{part}</span>))}
-    </>
-  );
-}
-
-/**
- * The persistent mode banner: shown at the top of every page in replay mode (always on the hosted
- * build, which says so). Renders nothing in live mode or before selection finished.
- */
-export function DataModeBanner() {
-  const { mode, ready, hosted, error } = useDataSource();
-  if (!ready || mode !== "replay") return null;
-  return (
-    <div className="replay-banner" role="status" data-mode="replay">
-      <BannerText text={REPLAY_BANNER} />
-      {hosted && <span className="replay-banner-note"> · Hosted build: always replay, never connects to a local API.</span>}
-      {error && <span className="replay-banner-note"> · {error}</span>}
-    </div>
-  );
 }

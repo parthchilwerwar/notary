@@ -207,6 +207,8 @@ function PairTable({ pair, rows }: { pair: ComparisonPair; rows: MetricRow[] }) 
 
 // ------------------------------------------------------------------------------ costs
 
+const COHORT_LABEL = { real: "Real runs", fixture: "Fixture runs", synthetic: "Synthetic sample" } as const;
+
 function UsdText({ cost }: { cost: ReturnType<typeof runCost> }) {
   if (cost.calls === 0 && cost.unknownRoles.length === 0) return <>{usd(0)}</>;
   if (cost.unknownRoles.length === 0) return <>{usd(cost.recordedUsd)}</>;
@@ -243,9 +245,10 @@ function Costs({ bundles, selected }: { bundles: RunBundle[]; selected?: RunBund
         </EmptyState>
       )}
       {cohorts.map((g) => (
-        <div className="report-cohort" key={String(g.sample)}>
-          {g.sample && <FixtureNote />}
-          <ul className="report-runs" aria-label={g.sample ? "Fixture runs: cost per run" : "Real runs: cost per run"}>
+        <div className="report-cohort" key={g.cohort}>
+          {g.cohort === "fixture" && <FixtureNote />}
+          {g.cohort === "synthetic" && <p className="report-cohort-note">{g.runs[0]!.disclosure[0] ?? "Synthetic sample data"}</p>}
+          <ul className="report-runs" aria-label={`${COHORT_LABEL[g.cohort]}: cost per run`}>
             {g.runs.map((b) => {
               const cost = runCost(b);
               return (

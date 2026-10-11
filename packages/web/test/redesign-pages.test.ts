@@ -124,6 +124,11 @@ describe("report: cost per run", () => {
     expect(cohorts.map((c) => c.sample)).toEqual([false, true]);
     expect(cohorts[0]!.runs.every((b) => !b.sample)).toBe(true);
     expect(cohorts[1]!.runs.every((b) => b.sample)).toBe(true);
+    // The synthetic SAMPLE bundle is neither real nor fixture: its own cohort, never in the fixture list.
+    const synthetic = { ...byId("demo-run-guarded"), runId: "sample-x", kind: "sample" as const, variant: "sample" as const };
+    const three = byCohort([realRun, ...fixtures, synthetic]);
+    expect(three.map((c) => c.cohort)).toEqual(["real", "fixture", "synthetic"]);
+    expect(three[1]!.runs.some((b) => b.kind === "sample")).toBe(false);
   });
   it("lists trace receipts as recorded, else the records' trace ids", () => {
     const guarded = byId("demo-run-guarded");

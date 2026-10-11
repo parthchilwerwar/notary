@@ -29,6 +29,11 @@ td.report-unsafe {
   display: grid;
   gap: 12px;
 }
+.report-cohort-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
 .report-runs {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -200,4 +205,9 @@ td.report-unsafe {
   align-items: baseline;
   gap: 4px 8px;
   min-width: 0;
+}
+
+/* The chart's fixture tag is a disclosure: it never truncates on phones (the title wraps instead). */
+.report-chart .l-frame-tag {
+  flex-shrink: 0;
 }

@@ -1,10 +1,11 @@
 // K2 lint rule: dashboard pages and the shell build their UI from the kit in src/ui only, and no
 // dashboard or kit file defines its own colors or fonts — raw hex colors and literal font families
-// belong in src/design/tokens.css alone.
+// belong in src/design/tokens.css alone. K4 adds rgb()/hsl() color literals and the theme-color.
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { THEME_COLOR } from "../src/useTheme";
 
 const SRC = fileURLToPath(new URL("../src/", import.meta.url));
 
@@ -43,6 +44,22 @@ describe("UI kit boundary (K2)", () => {
       .filter((p) => hex.test(code(p)))
       .map(rel);
     expect(offenders).toEqual([]);
+  });
+
+  it("no raw rgb()/rgba()/hsl()/hsla() color literal outside src/design/tokens.css in dashboard, trail or kit files", () => {
+    const fn = /\b(?:rgba?|hsla?)\(/;
+    const offenders = files(STYLED, /\.(tsx?|css)$/)
+      .filter((p) => fn.test(code(p)))
+      .map(rel);
+    expect(offenders).toEqual([]);
+    // The tokens file is where they belong (the overlay scrim is one).
+    expect(readFileSync(join(SRC, "design/tokens.css"), "utf8")).toMatch(/--overlay:\s*rgb\(/);
+  });
+
+  it("the browser theme-color matches the page token in both themes", () => {
+    const tokens = readFileSync(join(SRC, "design/tokens.css"), "utf8");
+    const pages = [...tokens.matchAll(/--page:\s*(#[0-9a-fA-F]{6})/g)].map((m) => m[1]!.toUpperCase());
+    expect(pages).toEqual([THEME_COLOR.light, THEME_COLOR.dark]);
   });
 
   it("font families come only from the token variables", () => {

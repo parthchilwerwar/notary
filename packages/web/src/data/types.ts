@@ -99,7 +99,5 @@ export class ReplayOnlyError extends Error {
   }
 }
 
-/** Shown persistently at the top in replay mode (and always on the hosted build). */
-export const REPLAY_BANNER = "Replay of a recorded run — start `pnpm notary serve` for live mode";
 /** Shown whenever the data on screen came from sample: true bundles (simulated APIs). */
 export const FIXTURE_BANNER = "Fixture data — simulated APIs, not a live run";

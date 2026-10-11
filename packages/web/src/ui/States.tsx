@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
-import { cn } from "../lib/utils";
+// clsx, not cn: kit classes never conflict, and main.tsx renders these states without pulling
+// tailwind-merge into the landing's first chunk (K4).
+import { clsx as cn } from "clsx";
 
 /**
  * Nothing to show, or something failed: a title, the fix in plain words and one next action.

@@ -6,12 +6,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { HealthResponse, RunBundle, TimelineEvent, TimelineFile } from "../../core/src/schema";
 import {
-  DataModeBanner,
   DataSourceProvider,
   FIXTURE_BANNER,
   LiveSource,
   PublishedFiles,
-  REPLAY_BANNER,
   ReplayOnlyError,
   ReplaySource,
   RunStillRunningError,
@@ -26,6 +24,7 @@ import {
   type EventSourceLike,
   type RunEntry,
   type Timers,
+  useDataSource,
 } from "../src/data";
 
 const PUBLIC = new URL("../public/", import.meta.url);
@@ -131,24 +130,26 @@ describe("mode selection", () => {
     expect(resolveApiBase({ VITE_NOTARY_API: "" })).toBe("");
     expect(resolveApiBase({ VITE_NOTARY_API: "/" })).toBe("");
   });
-  it("the provider is ready at once on the hosted build and shows the replay banner", () => {
+  // No global mode banner (K4, DECISIONS #182): the provider's state is what pages read.
+  const ModeProbe = () => {
+    const { mode, ready, hosted } = useDataSource();
+    return createElement("output", null, `${mode} ready=${ready} hosted=${hosted}`);
+  };
+  it("the provider is ready at once on the hosted build, in replay", () => {
     const html = renderToStaticMarkup(
-      createElement(DataSourceProvider, { options: { env: { PROD: true } }, children: createElement(DataModeBanner) }),
+      createElement(DataSourceProvider, { options: { env: { PROD: true } }, children: createElement(ModeProbe) }),
     );
-    expect(html).toContain("Replay of a recorded run");
-    expect(html).toContain("<code>pnpm notary serve</code>");
-    expect(html).toContain("Hosted build: always replay");
-    expect(REPLAY_BANNER).toBe("Replay of a recorded run — start `pnpm notary serve` for live mode");
+    expect(html).toBe("<output>replay ready=true hosted=true</output>");
     expect(FIXTURE_BANNER).toBe("Fixture data — simulated APIs, not a live run");
   });
-  it("no banner in live mode", () => {
+  it("an injected live source is live and ready", () => {
     const html = renderToStaticMarkup(
       createElement(
         DataSourceProvider,
-        { value: { source: new LiveSource({ base: "", fetchImpl: vi.fn() as never }) }, children: createElement(DataModeBanner) },
+        { value: { source: new LiveSource({ base: "", fetchImpl: vi.fn() as never }) }, children: createElement(ModeProbe) },
       ),
     );
-    expect(html).toBe("");
+    expect(html).toBe("<output>live ready=true hosted=false</output>");
   });
 });
 

@@ -286,7 +286,6 @@
 }
 
 /* ------------------------------------------------------------------ banners */
-.replay-banner,
 .fixture-banner {
   position: relative;
   z-index: var(--z-sticky);
@@ -300,15 +299,6 @@
   color: var(--fg);
   font-size: var(--text-xs);
   line-height: 1.5;
-}
-.replay-banner code {
-  padding: 1px 6px;
-  border: var(--hairline);
-  border-radius: 6px;
-  background: var(--bg);
-}
-.replay-banner-note {
-  color: var(--strong-muted);
 }
 .fixture-banner {
   position: sticky;

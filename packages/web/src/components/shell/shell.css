@@ -1,12 +1,9 @@
 /* Dashboard shell (K3): white sidebar on the subtle canvas, like the landing's surfaces. Tokens only
    (src/design/tokens.css); components from src/ui. */
 
-/* The dashboard states the data mode only where a live action would fail (the Run page's start
-   area, Approvals), so the global replay banner (src/data DataModeBanner, shared with the landing)
-   is not shown above the dashboard. Fixture runs keep their disclosure (.fixture-banner). */
-body:has(.app-shell) .replay-banner {
-  display: none;
-}
+/* No global mode chrome (DECISIONS #182): the dashboard states the data mode only where a live
+   action would fail (the Run page's start area, Approvals, Connections). Fixture runs keep their
+   disclosure (.fixture-banner). */
 body:has(.app-shell) {
   background: var(--surface-subtle);
 }
@@ -15,7 +12,7 @@ body:has(.app-shell) {
   display: flex;
   min-height: 100dvh;
   /* The sidebar column runs the full page height, even when the page outgrows the viewport. */
-  background: linear-gradient(90deg, var(--card) 0 248px, var(--hairline-color) 248px 249px, var(--surface-subtle) 249px);
+  background: linear-gradient(90deg, var(--card) 0 247px, var(--hairline-color) 247px 248px, var(--surface-subtle) 248px);
   color: var(--text);
   font-family: var(--font-sans);
   font-size: 15px;
@@ -251,7 +248,7 @@ body:has(.app-shell) {
   position: fixed;
   inset: 0;
   z-index: calc(var(--z-drawer) - 1);
-  background: rgb(11 15 25 / 0.32);
+  background: var(--overlay);
 }
 
 /* ---------------------------------------------------------------- canvas */
@@ -340,7 +337,7 @@ body:has(.app-shell) {
   justify-content: center;
   align-items: flex-start;
   padding: 12vh 16px 16px;
-  background: rgb(11 15 25 / 0.32);
+  background: var(--overlay);
 }
 .palette {
   width: min(640px, 100%);

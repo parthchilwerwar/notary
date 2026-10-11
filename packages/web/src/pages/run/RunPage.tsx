@@ -522,7 +522,7 @@ export function RunPage() {
               </button>
             )}
           </Card>
-          <CertificatesRail items={touched} runId={runId} world={worldView} worldError={world && world.runId === runId ? world.error : undefined} />
+          <CertificatesRail items={touched} runId={runId} streaming={streaming} world={worldView} worldError={world && world.runId === runId ? world.error : undefined} />
         </div>
       </PageBody>
 
@@ -677,11 +677,14 @@ function StartRun({
 function CertificatesRail({
   items,
   runId,
+  streaming,
   world,
   worldError,
 }: {
   items: TouchedCertificate[];
   runId?: string;
+  /** Still replaying or running: more certificates may arrive. */
+  streaming: boolean;
   world: CertificateView | null;
   worldError?: string;
 }) {
@@ -690,7 +693,7 @@ function CertificatesRail({
       <h2 className="ui-title ui-title-card">Certificates</h2>
       {worldError && <p className="run-error">Certificates withheld: {worldError}</p>}
       {items.length === 0 ? (
-        <p className="run-muted">No certificate issued or revoked in this run so far.</p>
+        <p className="run-muted">{streaming ? "No certificate issued or revoked in this run so far." : "This run issued or revoked no certificate."}</p>
       ) : (
         <ul className="run-rail-list">
           {items.map((c) => {

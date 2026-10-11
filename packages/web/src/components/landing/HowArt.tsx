@@ -18,7 +18,8 @@ import {
   type HowStepId,
   type PredictView,
 } from "../../landing-data";
-import { AgentBadge } from "./AgentBadge";
+import { AgentBadge } from "../../ui/AgentBadge";
+import "../../ui/kit.css";
 import { gsap, MOTION_OK, useGSAP } from "./gsap";
 import { replayFor, replayPair } from "./replay";
 
@@ -84,7 +85,7 @@ function Predict({ view }: { view: PredictView }) {
     <div ref={root} className="h-predict">
       <article className="h-card h-pred" aria-label="Prediction">
         <header className="h-card-head">
-          <AgentBadge id="reflector" />
+          <AgentBadge agent="reflector" showKind className="l-agent" />
           <span className="h-stamp">
             Committed <time dateTime={view.committedAt}>{clockTime(view.committedAt)}</time>
           </span>
@@ -150,7 +151,7 @@ function Challenge({ view }: { view: ChallengeView }) {
     <div ref={root} className="h-challenge">
       <article className="h-card h-hyp">
         <header className="h-card-head">
-          <AgentBadge id="reflector" />
+          <AgentBadge agent="reflector" showKind className="l-agent" />
           <span className="h-kicker">Hypothesis</span>
         </header>
         <p className="h-text">
@@ -160,7 +161,7 @@ function Challenge({ view }: { view: ChallengeView }) {
       <span className="h-link" aria-hidden="true" />
       <article className="h-card h-adv">
         <header className="h-card-head">
-          <AgentBadge id="adversary" />
+          <AgentBadge agent="adversary" showKind className="l-agent" />
           <span className="h-kicker">Counter-test</span>
         </header>
         <p className="h-text">{showable(view.counter) ? clipText(view.counter, 170) : "Review on file."}</p>
@@ -236,7 +237,7 @@ function Certify({ view }: { view: CertifyView }) {
       <ul className="h-guards">
         {view.rows.map((r) => (
           <li key={r.title} className="h-guard" data-outcome={r.outcome}>
-            <AgentBadge id="guard" />
+            <AgentBadge agent="guard" showKind className="l-agent" />
             <span className="h-guard-main">
               <span className="h-guard-title">{r.title}</span>
               <code className="h-guard-action">{r.action}</code>

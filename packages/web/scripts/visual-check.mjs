@@ -73,10 +73,10 @@ try {
       if (p.h1) await expect(page.getByRole("heading", { level: 1, name: p.h1, exact: true })).toBeVisible({ timeout: 30000 });
       else await page.waitForLoadState("networkidle");
       await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
-      // Every page here shows a fixture run: the disclosure must be visible. The dashboard has no
-      // global mode chrome (K3): the replay banner is hidden, the sidebar has no mode item.
+      // Every page here shows a fixture run: the disclosure must be visible. No global mode chrome
+      // (K3/K4): no app-wide replay banner is rendered at all, the sidebar has no mode item.
       await expect(page.locator(".fixture-banner").first()).toHaveText("Fixture data — simulated APIs, not a live run");
-      await expect(page.locator(".replay-banner")).toBeHidden();
+      await expect(page.locator(".replay-banner")).toHaveCount(0);
       if (width >= 768) {
         await expect(page.locator(".side-nav .side-item")).toHaveText([/^Run/, /^Certificates/, /^Approvals/, /^Chat/]);
         await expect(page.locator(".side")).not.toContainText(/Replay|Live/);
