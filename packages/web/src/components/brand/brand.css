@@ -1,0 +1,111 @@
+/* Brand components (D1): Clouds and GridFrame. Tokens only (src/design/tokens.css). */
+
+/* ---------------------------------------------------------------- clouds */
+.clouds {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+.clouds-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+.clouds-layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  overflow: visible;
+}
+.clouds-track {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: flex;
+  width: 300%;
+  height: 100%;
+  will-change: transform;
+}
+.clouds-half {
+  position: relative;
+  flex: 1 1 0;
+  height: 100%;
+}
+.clouds-puff {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, #ffffff 0%, #ffffff 52%, rgb(255 255 255 / 0.85) 70%, rgb(255 255 255 / 0) 100%);
+  transform: translate(-50%, -50%);
+}
+/* Solid white under the front layer, so the clouds melt into the white page below. */
+.clouds-base {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 22%;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0), #ffffff 70%);
+}
+
+/* ---------------------------------------------------------------- grid frame */
+/* White sections only: thin vertical hairlines at the content edges and 10px hollow circle nodes
+   where section boundaries cross them. Very low contrast (#E6EAF2). */
+.grid-frame {
+  --gf-max: 1200px;
+  --gf-edge: 12px; /* viewport edge → frame line */
+  --gf-pad: 12px; /* frame line → content */
+  position: relative;
+}
+@media (min-width: 768px) {
+  .grid-frame {
+    --gf-edge: 32px;
+    --gf-pad: 40px;
+  }
+}
+.grid-frame-lines,
+.grid-rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  width: min(100% - 2 * var(--gf-edge), var(--gf-max));
+  margin: 0 auto;
+  pointer-events: none;
+}
+.grid-frame-lines {
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid var(--hairline-color);
+  border-right: 1px solid var(--hairline-color);
+}
+.grid-section {
+  position: relative;
+}
+.grid-section[data-rule="true"] {
+  border-top: 1px solid var(--hairline-color);
+}
+.grid-rail {
+  top: 0;
+  height: 0;
+}
+.grid-node {
+  position: absolute;
+  top: -5px;
+  z-index: 1;
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--hairline-color);
+  border-radius: 50%;
+  background: var(--page);
+}
+.grid-node-l {
+  left: -5px;
+}
+.grid-node-r {
+  right: -5px;
+}
+/* Content box inside the frame lines. */
+.grid-inner {
+  width: min(100% - 2 * var(--gf-edge), var(--gf-max));
+  margin: 0 auto;
+  padding-left: var(--gf-pad);
+  padding-right: var(--gf-pad);
+}

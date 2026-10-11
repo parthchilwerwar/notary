@@ -1,40 +1,128 @@
-/* Redesign R2 design tokens — pure black and white. The only file that defines colors.
-   Neutral gray scale only; color appears only for meaning: red = unsafe/blocked,
-   green = safe/certified, amber = held. No gradients, glow, glass or shadows (1px hairlines only).
-   8px grid, 12px radius, Geist (Inter, system-ui fallback), tabular numbers for figures. */
-:root {
-  color-scheme: light;
-  --bg: #ffffff;
-  --fg: #0a0a0a;
-  --n-50: #fafafa;
-  --n-100: #f5f5f5;
-  --n-200: #e5e5e5;
-  --n-400: #a3a3a3;
-  --n-500: #737373;
-  --n-700: #404040;
-  --surface: var(--bg);
-  --subtle: var(--n-50);
-  --muted-bg: var(--n-100);
-  --line: var(--n-200);
-  /* Form-control borders need >= 3:1 against --bg (WCAG 1.4.11): #a3a3a3 is only 2.52:1,
-     so controls use #737373 (4.74:1). --line stays a decorative hairline. */
-  --control-line: var(--n-500);
-  --muted: var(--n-500); /* 4.74:1 on #fff, 4.54:1 on --subtle; only 4.35:1 on --muted-bg, so text
-                           on --muted-bg uses --fg or --strong-muted */
-  --strong-muted: var(--n-700);
-  --primary: #0a0a0a; /* solid black primary buttons */
-  --primary-fg: #ffffff;
-  --focus: #0a0a0a;
-  /* meaning only */
-  --unsafe: #b91c1c;
-  --unsafe-bg: #fef2f2;
-  --safe: #15803d;
-  --safe-bg: #f0fdf4;
-  --held: #a16207;
-  --held-bg: #fefce8;
+/* Design tokens (D1, "sky blue") — the only file that defines colors. Shared by the landing and
+   the dashboard; supersedes the R2 pure black-and-white tokens (DECISIONS #159).
 
-  --font-sans: "Geist Variable", "Geist", Inter, system-ui, sans-serif;
-  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+   Rules
+   - Sky gradient: hero and closing CTA only, never behind body text in the dashboard.
+   - Neutrals carry the page. Accent blue for actions, links and section labels.
+   - Status colors carry meaning only: certified/safe green, unsafe/blocked red, held amber,
+     revoked gray (with a struck-through label). Each has a darker *-text variant for AA text.
+   - Faint (#98A1B3, 2.60:1 on white) is for non-text marks (hairline nodes, disabled glyphs) and
+     never for text. Muted (#5B6475) is the smallest-text gray: 5.96:1 on page, 5.60:1 on subtle,
+     5.03–5.28:1 on every feature wash.
+   - Accent #2F6AEB is 4.79:1 on white (AA for text) but only 4.18:1 on accent-soft and ~4.2:1 on
+     the washes, so text on tinted surfaces uses --accent-text (#2457D1, 5.28–5.88:1).
+   - Type: Instrument Sans (body/UI, tabular figures via font-variant-numeric) and Instrument
+     Serif (titles/display, weight 400 only).
+   - Geometry: the legacy --radius (12px) stays for the current dashboard controls until D3;
+     new surfaces use --r-card 20px, --r-section 28px, --r-button 10px.
+
+   The light block is declared on :root AND .theme-light, so a subtree (the landing) can pin
+   itself to light even when the dashboard theme is dark (every alias is re-resolved there). */
+
+:root,
+.theme-light {
+  color-scheme: light;
+
+  /* ---- palette ---- */
+  --page: #ffffff;
+  --surface-subtle: #f6f8fc;
+  --card: #ffffff;
+  --hairline-color: #e6eaf2;
+  --text: #0b0f19;
+  --text-muted: #5b6475;
+  --text-faint: #98a1b3; /* non-text or ≥24px text only (2.60:1) */
+  --text-strong-muted: #3a4252;
+  --muted-surface: #eef1f7;
+
+  --accent: #2f6aeb;
+  --accent-hover: #2457d1;
+  --accent-soft: #e8f0fe;
+  --accent-text: #2457d1; /* accent-colored text on tinted surfaces */
+  --on-accent: #ffffff;
+
+  /* Feature-card washes (soft radial gradients over --surface-subtle). */
+  --wash-lavender: #efe9fb;
+  --wash-peach: #fcefe4;
+  --wash-mint: #e5f4ef;
+  --wash-sky: #e6effc;
+
+  /* Status: fills/marks use the base color, text uses the -text variant. */
+  --status-certified: #16a34a; /* 3.30:1 — marks only */
+  --status-certified-text: #15803d; /* 5.02:1 on white, 4.79:1 on its bg */
+  --status-certified-bg: #f0fdf4;
+  --status-unsafe: #dc2626; /* 4.83:1 on white */
+  --status-unsafe-text: #b91c1c; /* 5.91:1 on its bg */
+  --status-unsafe-bg: #fef2f2;
+  --status-held: #d97706; /* 3.19:1 — marks and hatching only */
+  --status-held-text: #b45309; /* 5.02:1 on white, 4.72:1 on its bg */
+  --status-held-bg: #fff7e8;
+  --status-revoked: #6b7280; /* 4.83:1 on white; label struck through */
+  --status-revoked-bg: #ffffff;
+
+  /* Sky gradient (hero + closing CTA). The lilac tint sits at the lower left at ~40%. */
+  --sky-1: #2f62e6;
+  --sky-2: #4f84ee;
+  --sky-3: #8db8f5;
+  --sky-4: #d6e6fb;
+  --sky-5: #ffffff;
+  --sky-lilac: rgb(233 221 251 / 0.4);
+  /* Behind the hero copy: 85% white needs ≥ 4.5:1, which #2F62E6 alone gives only 4.25:1, so a
+     soft darker ellipse centred on the copy block (measured in the browser: see the D2 report)
+     sits behind the headline, subhead and buttons. */
+  --sky-scrim: rgb(24 60 180 / 0.7);
+  --sky-gradient:
+    radial-gradient(70% 45% at 0% 100%, var(--sky-lilac), transparent 72%),
+    linear-gradient(180deg, var(--sky-1) 0%, var(--sky-1) 34%, var(--sky-2) 52%, var(--sky-3) 67%, var(--sky-4) 83%, var(--sky-5) 100%);
+  --sky-band: linear-gradient(180deg, var(--sky-4), transparent);
+
+  /* ---- shape, elevation, type ---- */
+  --r-card: 20px;
+  --r-section: 28px;
+  --r-button: 10px;
+  --r-pill: 999px;
+  --shadow-soft: 0 1px 2px rgb(11 15 25 / 0.04);
+  --shadow-float: 0 1px 2px rgb(11 15 25 / 0.04), 0 8px 24px rgb(47 106 235 / 0.08);
+  /* Instrument Sans for body/UI, Instrument Serif for titles and display figures. The serif has a
+     single 400 weight: display type is never bolded; it is set larger with gentle negative
+     tracking instead. */
+  --font-sans: "Instrument Sans Variable", "Instrument Sans", system-ui, sans-serif;
+  --font-display: "Instrument Serif", Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --display-tracking: -0.02em;
+  --display-leading: 1.05;
+  --display-weight: 400;
+  --text-hero: clamp(50px, 6vw + 20px, 104px);
+  --text-display: clamp(38px, 3vw + 22px, 64px);
+  --label-size: 12px;
+  --label-tracking: 0.12em;
+
+  /* ---- legacy names (current dashboard pages read these; mapped to the new palette) ---- */
+  --bg: var(--page);
+  --fg: var(--text);
+  --n-50: var(--surface-subtle);
+  --n-100: var(--muted-surface);
+  --n-200: var(--hairline-color);
+  --n-400: var(--text-faint);
+  --n-500: var(--text-muted);
+  --n-700: var(--text-strong-muted);
+  --surface: var(--card);
+  --subtle: var(--surface-subtle);
+  --muted-bg: var(--muted-surface);
+  --line: var(--hairline-color);
+  /* Form-control borders need ≥ 3:1 against the page (WCAG 1.4.11): #7D879B is 3.61:1. */
+  --control-line: #7d879b;
+  --muted: var(--text-muted);
+  --strong-muted: var(--text-strong-muted);
+  --primary: var(--accent); /* dashboard primary buttons are accent blue */
+  --primary-fg: var(--on-accent);
+  --focus: var(--accent);
+  --unsafe: var(--status-unsafe-text);
+  --unsafe-bg: var(--status-unsafe-bg);
+  --safe: var(--status-certified-text);
+  --safe-bg: var(--status-certified-bg);
+  --held: var(--status-held-text);
+  --held-bg: var(--status-held-bg);
+
   --radius: 12px;
   --space-1: 8px;
   --space-2: 16px;
@@ -70,26 +158,34 @@
   --focus-ring: 2px solid var(--focus);
 }
 
+/* Dark tokens (defined in D1, applied to the dashboard in D3): navy page, same accent. */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0a0a0a;
-  --fg: #fafafa;
-  --n-50: #0f0f0f;
-  --n-100: #171717;
-  --n-200: #262626;
-  --n-400: #525252;
-  --n-500: #a3a3a3;
-  --n-700: #d4d4d4;
-  --control-line: #737373; /* 4.18:1 on #0a0a0a */
-  --primary: #ffffff; /* solid white primary buttons */
-  --primary-fg: #0a0a0a;
-  --focus: #fafafa;
-  --unsafe: #f87171;
-  --unsafe-bg: #2a1212;
-  --safe: #4ade80;
-  --safe-bg: #0f2417;
-  --held: #facc15;
-  --held-bg: #2a2410;
+  --page: #0b1220;
+  --surface-subtle: #0e1627;
+  --card: #111a2e;
+  --hairline-color: #1f2a44;
+  --text: #e8ecf4; /* 15.8:1 */
+  --text-muted: #9aa6bf; /* 7.65:1 on page, 7.09:1 on card */
+  --text-faint: #56647f; /* non-text only */
+  --text-strong-muted: #c3cbdb;
+  --muted-surface: #16213a;
+  --accent: #2f6aeb; /* fills; 3.91:1 on navy, so never small text */
+  --accent-hover: #4a7ff0;
+  --accent-soft: #15254a;
+  --accent-text: #7ea6f8; /* 7.75:1 on page, 7.18:1 on card */
+  --status-certified-text: #4ade80;
+  --status-certified-bg: #0f2a1c;
+  --status-unsafe-text: #f87171;
+  --status-unsafe-bg: #2c1418;
+  --status-held-text: #fbbf24;
+  --status-held-bg: #2b2210;
+  --status-revoked: #9ca3af;
+  --status-revoked-bg: #111a2e;
+  --sky-band: linear-gradient(180deg, #13213f, transparent);
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow-float: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.35);
+  --control-line: #56647f; /* 3.14:1 on page */
 }
 
 .tabular,

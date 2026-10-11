@@ -6,9 +6,9 @@
     <meta name="theme-color" content="#ffffff" />
     <meta
       name="description"
-      content="Notary proves how its tools behave before money calls. Inspect committed predictions, guarded decisions and verified evidence."
+      content="Notary is an agent that won’t touch money until it has proven how its tools actually behave. No certificate, no money moves."
     />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Cstyle%3Etext%7Bfill:%230a0a0a%7D@media (prefers-color-scheme:dark)%7Btext%7Bfill:%23fafafa%7D%7D%3C/style%3E%3Ctext x=%2716%27 y=%2725%27 text-anchor=%27middle%27 font-family=%27Geist,Inter,system-ui,Arial,sans-serif%27 font-size=%2728%27 font-weight=%27600%27%3EN%3C/text%3E%3C/svg%3E" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Cstyle%3Etext%7Bfill:%230b0f19%7D@media (prefers-color-scheme:dark)%7Btext%7Bfill:%23e8ecf4%7D%7D%3C/style%3E%3Ctext x=%2716%27 y=%2725%27 text-anchor=%27middle%27 font-family=%27Instrument Serif,Georgia,Times New Roman,serif%27 font-size=%2730%27 font-weight=%27400%27%3EN%3C/text%3E%3C/svg%3E" />
     <title>Notary</title>
     <script>
       // Theme before first paint (same rule as src/useTheme.ts): stored choice, else the OS.
@@ -17,8 +17,10 @@
         if (t !== "dark" && t !== "light")
           t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
         document.documentElement.dataset.theme = t;
-        document.querySelector('meta[name="theme-color"]').setAttribute("content", t === "dark" ? "#0a0a0a" : "#ffffff");
+        document.querySelector('meta[name="theme-color"]').setAttribute("content", t === "dark" ? "#0b1220" : "#ffffff");
       } catch (e) {}
+      // The landing hides the app-wide data-mode banner from the first paint (landing.css).
+      if (location.pathname === "/") document.documentElement.dataset.page = "landing";
     </script>
   </head>
   <body>

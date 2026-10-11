@@ -1,0 +1,203 @@
+/* Brand primitives (D1): button variants, section label, sky surface, washes, status marks and
+   hatching. Built only from tokens.css; shared by the landing and (from D3) the dashboard.
+
+   Buttons
+     .btn                 base: 10px radius, 40px tall (44px on touch), medium weight
+     .btn-ink             landing primary — solid #0B0F19, white text
+     .btn-accent          dashboard primary — accent blue, white text
+     .btn-secondary       white with a hairline border
+     .btn-outline-light   over the sky gradient — white outline, white text
+     .btn-link-light      text link over the sky gradient
+   Tailwind sees the same colors as bg-ink / bg-brand / border-hairline (styles.css @theme). */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: var(--r-button);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out,
+    color 150ms ease-out;
+}
+@media (pointer: coarse) {
+  .btn {
+    min-height: 44px;
+  }
+}
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.btn-ink {
+  background: var(--text);
+  color: #ffffff;
+}
+.btn-ink:hover {
+  background: #222838;
+}
+.btn-accent {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.btn-accent:hover {
+  background: var(--accent-hover);
+}
+.btn-secondary {
+  border-color: var(--hairline-color);
+  background: var(--card);
+  color: var(--text);
+}
+.btn-secondary:hover {
+  border-color: var(--control-line);
+}
+.btn-outline-light {
+  border-color: rgb(255 255 255 / 0.7);
+  background: transparent;
+  color: #ffffff;
+}
+.btn-outline-light:hover {
+  border-color: #ffffff;
+  background: rgb(255 255 255 / 0.12);
+}
+.btn-link-light {
+  min-height: 40px;
+  padding: 0 4px;
+  background: none;
+  color: #ffffff;
+  text-decoration: underline;
+  text-decoration-color: rgb(255 255 255 / 0.5);
+  text-underline-offset: 4px;
+}
+.btn-link-light:hover {
+  text-decoration-color: #ffffff;
+}
+.btn-outline-light:focus-visible,
+.btn-link-light:focus-visible {
+  outline-color: #ffffff;
+}
+
+/* Section label: 12px, uppercase, 0.12em tracking, accent blue (4.79:1 on white). */
+.section-label {
+  display: block;
+  margin: 0;
+  color: var(--accent);
+  font-size: var(--label-size);
+  font-weight: 500;
+  letter-spacing: var(--label-tracking);
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+/* Display headline: Instrument Serif 400 (its only weight), gentle negative tracking. */
+.display {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-display);
+  font-weight: var(--display-weight);
+  letter-spacing: var(--display-tracking);
+  line-height: var(--display-leading);
+  text-wrap: balance;
+}
+
+/* The sky surface (hero and closing CTA only). */
+.sky {
+  position: relative;
+  isolation: isolate;
+  background: var(--sky-gradient);
+  color: #ffffff;
+}
+
+/* Feature-card washes: a soft radial tint over the subtle surface. */
+.wash {
+  background-color: var(--surface-subtle);
+  background-repeat: no-repeat;
+}
+.wash-lavender {
+  background-image: radial-gradient(120% 90% at 100% 0%, var(--wash-lavender), transparent 70%);
+}
+.wash-peach {
+  background-image: radial-gradient(120% 90% at 0% 0%, var(--wash-peach), transparent 70%);
+}
+.wash-mint {
+  background-image: radial-gradient(120% 90% at 100% 100%, var(--wash-mint), transparent 70%);
+}
+.wash-sky {
+  background-image: radial-gradient(120% 90% at 0% 100%, var(--wash-sky), transparent 70%);
+}
+
+/* Status pills (text variants keep AA on their backgrounds). */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.status-certified {
+  background: var(--status-certified-bg);
+  color: var(--status-certified-text);
+}
+.status-certified::before {
+  background: var(--status-certified);
+}
+.status-unsafe {
+  background: var(--status-unsafe-bg);
+  color: var(--status-unsafe-text);
+}
+.status-held {
+  background: var(--status-held-bg);
+  color: var(--status-held-text);
+}
+.status-held::before {
+  background: var(--status-held);
+}
+.status-revoked {
+  border-color: var(--hairline-color);
+  background: var(--status-revoked-bg);
+  color: var(--status-revoked);
+}
+.status-revoked .status-word {
+  text-decoration: line-through;
+}
+
+/* Diagonal hatching in the series color, for pending/held quantities in charts. */
+.hatch {
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--hatch-color, var(--accent)) 0 2px,
+    transparent 2px 6px
+  );
+  box-shadow: inset 0 0 0 1px var(--hatch-color, var(--accent));
+}
+
+/* Tabular numbers everywhere numbers appear. */
+.num,
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
