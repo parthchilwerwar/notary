@@ -157,3 +157,4 @@ Claude Code owns `packages/core` and `packages/web` (Codex out of quota). Phases
 
 - [x] `packages/showreel`: 15 s Remotion film (sky → page → sky, Read → Test → Challenge → Certify → Enforce, Notary Chat, close) in Notary's tokens and fonts, every value from `src/data.json` (`pnpm --filter @notary/showreel props`, hash-verified published records). `docs/media/notary-showreel.mp4` + `notary-showreel-poster.png`; storyboard in `packages/showreel/STORYBOARD.md` (DECISIONS #188–189).
 - [ ] Square 1080×1080 cut not made (needs its own layout, #188).
+- [x] Showreel v2: real web components, animated pointer (clicks, hover, typing), synthesized music + SFX (−15 LUFS), 3D camera, certificate fly-in, dither morph; `docs/media/notary-showreel.mp4` (v1 kept as `notary-showreel-v1.mp4`), DECISIONS #190–193.

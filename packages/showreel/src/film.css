@@ -1,0 +1,128 @@
+/* The web app's global base (packages/web/src/styles.css, base layer + helpers) for the film: the
+   real components below expect it. Colors and type only through the tokens in design/tokens.css. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+button {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+a {
+  color: var(--fg);
+  text-decoration: underline;
+  text-decoration-color: var(--n-400);
+  text-underline-offset: 3px;
+}
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+ol,
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+dl,
+dd {
+  margin: 0;
+}
+h1 {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 400;
+  letter-spacing: var(--display-tracking);
+  line-height: var(--display-leading);
+}
+h2 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 400;
+  letter-spacing: var(--display-tracking);
+  line-height: 1.15;
+}
+h3 {
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+  line-height: 1.4;
+}
+h4 {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+strong,
+b {
+  font-weight: var(--weight-medium);
+}
+code,
+pre,
+kbd {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+code {
+  overflow-wrap: anywhere;
+}
+svg {
+  flex-shrink: 0;
+}
+td,
+th,
+.tabular,
+.figure,
+.num {
+  font-variant-numeric: tabular-nums;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+[hidden] {
+  display: none !important;
+}
+
+/* Hover states the film's cursor triggers (the same rules as :hover in brand.css / kit.css / shell.css). */
+.btn.ui-btn-primary[data-film-hover] {
+  background: var(--text-strong-muted);
+}
+.btn-ink[data-film-hover] {
+  background: #222838;
+}
+.side-item[data-film-hover] {
+  background: var(--surface-subtle);
+  color: var(--text);
+}
+.chat-send[data-film-hover] {
+  filter: brightness(1.12);
+}

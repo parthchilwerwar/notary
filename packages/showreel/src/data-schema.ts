@@ -3,8 +3,31 @@
 // data.json with this schema before rendering a single frame, so a missing or malformed value
 // fails the render instead of being papered over.
 import { z } from "zod";
+import { ChatEventSchema } from "../../core/src/schema/chat";
 
 const Counts = z.object({ executed: z.number().int().nonnegative(), held: z.number().int().nonnegative(), unsafe: z.number().int().nonnegative() });
+
+const RunRowLike = z
+  .object({
+    key: z.string(),
+    type: z.string(),
+    title: z.string(),
+    mark: z.enum(["spinner", "check", "x"]),
+    tone: z.enum(["neutral", "safe", "unsafe", "held"]),
+    held: z.boolean(),
+    actor: z.object({ kind: z.enum(["tool", "model", "code", "human"]), name: z.string() }),
+  })
+  .passthrough();
+
+const DashboardRun = z.object({
+  rows: z.array(RunRowLike).min(4),
+  stages: z.array(z.object({ stage: z.string(), label: z.string(), count: z.number().int().nonnegative(), state: z.string() })).length(5),
+  credits: z.object({ used: z.number(), cap: z.number().nullable() }).nullable(),
+  toolCalls: z.number().nullable(),
+  decisions: z.number().int().nonnegative(),
+  held: z.number().int().nonnegative(),
+  unsafe: z.number().int().nonnegative(),
+});
 
 export const ShowreelDataSchema = z.object({
   /** Where every value came from (not shown on screen). */
@@ -63,6 +86,9 @@ export const ShowreelDataSchema = z.object({
     evidence: z.number().int().positive(),
     issued: z.string(),
     sha256: z.string(),
+    verdict: z.string(),
+    /** The request id of the allowed Guard row this certificate covers (null: featured instead). */
+    covers: z.string().nullable(),
   }),
   guard: z.object({
     allowed: z.object({ requestId: z.string(), type: z.string(), action: z.string(), amount: z.string().nullable(), detail: z.string() }),
@@ -76,6 +102,14 @@ export const ShowreelDataSchema = z.object({
     steps: z.array(z.object({ title: z.string(), output: z.string(), durationMs: z.number().nullable() })).min(2),
     answer: z.string(),
     citations: z.array(z.object({ n: z.number().int().positive(), label: z.string() })).min(1),
+    /** The turn's own events (steps, the answer, citations, done) for the chat's real MessageView. */
+    events: z.array(ChatEventSchema).min(4),
+  }),
+  /** The Run page's own rows, stage bar and budget for the two runs, and the held card shown. */
+  dashboard: z.object({
+    naive: DashboardRun,
+    guarded: DashboardRun,
+    held: z.object({ rowKey: z.string(), reason: z.string(), evidence: z.array(z.string()), amount: z.string().nullable() }),
   }),
   /** Credits line from the landing ("Built with"): text only, no status claimed. */
   builtWith: z.array(z.string()).min(3),

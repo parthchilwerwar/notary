@@ -4,9 +4,10 @@
 // the page, so the camera passes through it.
 import { useCurrentFrame } from "remotion";
 import { CloudFilter, Clouds, BACK, MID } from "../components/Clouds";
+import { Button } from "@web/ui";
 import { Frame } from "../components/Frame";
 import { C, SANS, SKY_GRADIENT, display, p, OUT, LINE, mix } from "../theme";
-import { T } from "../timeline";
+import { V as T } from "./timeline";
 
 const W = 1920;
 const H = 1080;
@@ -88,7 +89,7 @@ function Orbits({ draw, nodes, cy }: { draw: number; nodes: number; cy: number }
   );
 }
 
-export function Sky({ lift, github }: { lift: number; github: string }) {
+export function Sky({ lift, github, hover = false, press = 0 }: { lift: number; github: string; hover?: boolean; press?: number }) {
   const frame = useCurrentFrame();
   const opening = frame < T.pullStart;
   // Grid nodes and the wordmark settle in during the first second.
@@ -122,7 +123,7 @@ export function Sky({ lift, github }: { lift: number; github: string }) {
         {opening ? (
           <>
             <div style={{ position: "absolute", left: 160, top: 122, color: "#FFFFFF", ...display, fontSize: 48, opacity: grid }}>Notary</div>
-            <div style={{ position: "absolute", left: 0, right: 0, top: 262, textAlign: "center", color: "#FFFFFF", ...display, fontSize: 176 }}>
+            <div style={{ position: "absolute", left: 0, right: 0, top: 196, textAlign: "center", color: "#FFFFFF", ...display, fontSize: 176 }}>
               <RisingWords
                 start={T.headline}
                 size={176}
@@ -131,6 +132,26 @@ export function Sky({ lift, github }: { lift: number; github: string }) {
                   [{ text: "no" }, { text: "money" }, { text: "moves", italic: true, suffix: "." }],
                 ]}
               />
+            </div>
+            {/* The hero's actions (Landing Hero: "Open dashboard" in the kit's ink button, "See it work"). */}
+            <div
+              style={{
+                position: "absolute",
+                left: 0,
+                right: 0,
+                top: 628,
+                display: "flex",
+                justifyContent: "center",
+                gap: 20,
+                opacity: p(frame, T.heroActions, 14),
+                transform: `translateY(${(1 - p(frame, T.heroActions, 14)) * 16}px) scale(1.55)`,
+                transformOrigin: "50% 0",
+              }}
+            >
+              <Button className="btn-ink l-btn-lg" data-film-hover={hover || undefined} style={{ transform: `scale(${1 - 0.04 * press})` }}>
+                Open dashboard
+              </Button>
+              <span className="btn btn-link-light l-btn-lg">See it work</span>
             </div>
           </>
         ) : (

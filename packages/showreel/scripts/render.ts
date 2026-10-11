@@ -4,12 +4,15 @@
 import { copyFile, mkdir, stat } from "node:fs/promises";
 import { resolve } from "node:path";
 import { renderMedia, renderStill } from "@remotion/renderer";
+import { generateAudio } from "./audio";
 import { OUT, ROOT, setup } from "./lib";
 
 const MEDIA = resolve(ROOT, "../../docs/media");
 
 const mb = async (p: string) => `${((await stat(p)).size / 1024 / 1024).toFixed(2)} MB`;
 
+// The synthesized music and effects (deterministic) are written to public/audio first.
+await generateAudio();
 const { serveUrl, browser, browserExecutable, composition } = await setup("Showreel");
 await mkdir(OUT, { recursive: true });
 await mkdir(MEDIA, { recursive: true });
@@ -23,6 +26,8 @@ async function film(id: string, file: string) {
     serveUrl,
     composition: comp,
     codec: "h264",
+    audioCodec: "aac",
+    audioBitrate: "192k",
     crf: 20,
     x264Preset: "slow",
     pixelFormat: "yuv420p",

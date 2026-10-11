@@ -1,64 +1,90 @@
-# Notary showreel — storyboard
+# Notary showreel v2 — storyboard and cue sheet
 
-15.0 s · 30 fps (450 frames) · 1920×1080 · H.264 · silent. Frame numbers live in
-`src/timeline.ts`; this file is the plan they implement.
+15.0 s · 30 fps (450 frames) · 1920×1080 · H.264 + AAC. Frames live in `src/v2/timeline.ts`
+(120 BPM grid: one beat = 15 frames), sounds in `src/v2/cues.ts`. v1 (no sound, lookalike cards)
+is kept as `docs/media/notary-showreel-v1.mp4`.
 
 ## Idea
 
-One continuous vertical camera. The film opens in the landing's sky, dives down through the
-cloud bank onto the white page where the proof plays out, then rises back into the sky for the
-close. Nothing cuts: every beat hands over to the next in place, under one persistent five-step
-bar. The one bold thing is the dive through the clouds and back; everything on the page is quiet
-dashboard vocabulary (white cards, hairlines, status pills, the dither chart).
+The product shows itself. A pointer clicks "Open dashboard" in the landing hero, the camera dives
+through the clouds into the real dashboard (the web app's own components, rendered read-only from
+`packages/web/src`), plays the proof with the landing's How it works pieces, returns to the
+dashboard for the run with Notary, opens Notary Chat and types a question, then rises back into the
+sky. Every number and record is from `src/data.json` (scripts/props.ts, hash-verified records).
 
-## Style frame
+## Components (real, imported read-only)
 
-- **Color** — sky gradient `#2F62E6 → #4F84EE → #8DB8F5 → #D6E6FB → #FFFFFF` with the lilac tint
-  lower left; page white, hairline `#E6EAF2`, ink `#0B0F19`, muted `#5B6475`; accent `#2F6AEB`
-  (soft `#E8F0FE`); status color only for meaning (certified `#16A34A`/`#15803D`, unsafe
-  `#DC2626`/`#B91C1C`, held `#D97706`/`#B45309`). Tokens mirrored in `src/theme.ts`.
-- **Type** — Instrument Serif 400 (+ real italic) for display and big figures, −0.02em, 1.05
-  leading, never bolded; Instrument Sans for everything else, tabular figures. Nothing under 22 px.
-  Identifiers (claim ids, operations) in sans, never broken at their hyphens.
-- **Shape** — cards 20 px radius (28 large), buttons 10 px, the landing's soft float shadow.
-- **Motion** — one easing family: entrances `cubic-bezier(.2,.7,.1,1)`, exits a short ease-in,
-  the camera a long symmetric move; springs only where something stamps (the commit stamp, the
-  seal, verdict and mismatch pills), never on running text. Cards rise 40 px and fade in, lift
-  48 px and fade out; a beat's cards finish leaving before the next beat's arrive (no
-  half-transparent text overlaps). Everything is computed from the frame: no CSS animation,
-  no wall clock.
-- **Layout** — title-safe frame: hairlines at x 120/1800 and y 96/984 with hollow nodes at the
-  crossings (the landing's grid framework); content on x 160–1760.
+BrowserFrame, SkyBand (+ its Clouds), Page/PageBody, StatRow/Stat, Card, WashCard, Button,
+StatusPill, AgentBadge, CertificateCard, Seal, DitherCanvas/DitherSwatch + ActionsChart FILLS, the
+Run page's TranscriptRow and .run-held card styling, Notary Chat's UserMessage + MessageView with
+reduceChatEvents, navRoutes() for the sidebar, the shell/run/chat/landing/kit CSS. The film draws
+only what has no exported component: the sidebar markup (shell.css classes), the Run stage bar
+(RunPage markup), the chat composer (chat.css classes), the How it works layout (landing .h-*
+classes) and the pointer.
 
 ## Beats
 
-| # | Time | Frames | What happens |
+| Time | Frames | Picture | Pointer |
 | --- | --- | --- | --- |
-| 1 | 0.0–2.4 s | 0–72 | **Open on the sky.** Gradient, three cloud layers (blurred radial puffs + feTurbulence/feDisplacement edges, each drifting at its own speed), faint grid nodes, "Notary" wordmark. "No certificate, / no money *moves*." rises word by word (28 px, 2-frame stagger, 15 frames each); "moves" in the true italic; a soft darker ellipse keeps the white type AA. A slow upward drift keeps the camera alive. |
-| — | 1.8–3.1 s | 54–88 | **The dive.** The sky lifts out of frame (1460 px), back and middle cloud layers at their own depth, the front cloud bank sweeping over everything at 1.5× (the camera passes through it); the white page rises into place underneath with its grid. |
-| 2 | 2.3–4.4 s | 70–132 | **The problem.** "Without Notary, the agent trusts the docs." The naive run's money actions stream into a transcript card (15 rows in queue order, amounts as recorded; q05 goes out twice); red "Unsafe · wrong unit / duplicate" pills tick on as graded; the counter steps with each unsafe row and lands on the grader total (9). The dither chart grows the naive stacks per request type. Footnote: "Measured on Notary's evaluation suite". |
-| 3a | 4.5–6.0 s | 134–180 | **Predict, then test.** Five-step bar enters; Read, then Test light. Reflector prediction card (probe p004, boundary sweep, `dodo.payments.page-size-max-100`, "If the docs hold, the call is rejected") is stamped "Committed 08:46:29 UTC"; the call `dodo.listPayments page_size=101` runs along a hairline; the observation card slides in (status 200, items 100) and the outcome row glows red: clamped, expected rejected → "Mismatch". |
-| 3b | 6.0–7.3 s | 180–218 | **Challenge.** Reflector hypothesis card → dashed connector → Adversary counter-test card (both as recorded) → green "Survived 1 of 1 challenge". |
-| 3c | 7.3–8.7 s | 218–260 | **Certify.** The featured certificate builds line by line (Dodo certificate, cert-9813c29f1f678661, `dodo.wallet.credit-amount-minor-units`, scope, 6 probes, issued Oct 10, 2026, sha256 seal) while the "NOTARIZED · NOTARY ·" seal spins in, stamps with a small overshoot and draws its check. |
-| 4 | 8.7–11.4 s | 260–342 | **Enforce.** Guard rows land: plan change q12 → "Allowed" (1 required belief notarized); refund q03 · $19.99 → "Held for review" on a peach card with Approve / Reject (no certificate for `dodo.payments.page-size-max-100`). Stats: 9 unsafe without Notary (counts up) → 0 with Notary (lands on 0, no countdown) → 9 refunds held (counts up). The chart switches to "With Notary": naive stacks dissolve top-down through the dither threshold, amber held stacks rise; plan change stays allowed. |
-| 5 | 11.4–13.3 s | 342–400 | **Notary Chat.** "Ask why. Get the records." The chat window glides up; question "What do the dodo certificates say?" in the accent-soft bubble; three lookups tick from spinner to blue check with their one-line results; the cited answer streams in word by word with its numbered chip; the source list settles. The landing's "Built with" credits sit on both sides, on slow orbits, dashed connectors drawing in. |
-| 6 | 13.3–15.0 s | 400–450 | **Close.** The camera rises back into the sky (the page sinks, clouds sweep down). Dashed orbits draw around "Let your agent prove it first." (serif, word by word), then the "Notary" wordmark and `github.com/parthchilwerwar/notary`. Everything settles by frame 432; the last 0.6 s holds (poster frame). |
+| 0.0–1.7 s | 0–50 | Sky, three drifting cloud layers, "No certificate, / no money *moves*." word by word, hero actions | Enters (20), glides to "Open dashboard", hover, click (46) |
+| 1.7–2.9 s | 50–88 | Dive through the clouds; the browser frame rises from depth (rotateX 32° → 0) | — |
+| 2.9–4.9 s | 88–146 | Run page, agent without Notary: 20 transcript rows stream (unsafe ones red), Actions processed / Unsafe actions count with them, camera pushes in to 1.5× | — |
+| 4.9–6.5 s | 146–196 | Page recedes; five-step bar; Predict, then test: Reflector prediction stamped "Committed 08:46:29 UTC", `dodo.listPayments page_size=101`, observation slides in, outcome glows → Mismatch | — |
+| 6.5–7.6 s | 196–228 | Challenge: Reflector hypothesis → Adversary counter-test → "Survived 1 of 1 challenge" | — |
+| 7.6–8.7 s | 228–262 | Certify: CertificateCard for `dodo.subscription.change-plan-pending-409` + the seal spinning in and stamping | — |
+| 8.7–9.7 s | 262–292 | The certificate flies (arc, shrink, shadow) onto the row it covers in the run with Notary: plan change q12, "Covered by certificate …" | — |
+| 9.7–10.5 s | 292–314 | Transcript scrolls up to refund q03, held — no certificate for `dodo.payments.page-size-max-100` (the claim the prediction broke) | Glides to the row, click (306): card lifts and focuses; hovers "Approve…" (312) |
+| 10.5–11.5 s | 314–344 | Camera steps back; chart card in front, labelled "Without Notary" while the red stacks un-reveal row by row (318–328); only once no red row is left does it switch to "With Notary" as the amber held stacks rise (328–338). Unsafe 0 / Refunds held 9 | Leaves for the sidebar |
+| 11.5–13.5 s | 344–404 | Click "Chat" (348) → Notary Chat page; question typed char by char (358–376); send (380); three lookups tick to checks, cited answer streams | Click Chat, click composer (356), click send (380), drifts off |
+| 13.5–15.0 s | 404–450 | Camera rises into the sky; dashed orbits draw; "Let your agent prove it first."; "Notary"; GitHub URL; still from 434 | — |
 
-## Data
+## Audio
 
-Every value on screen is in `src/data.json`, written by `scripts/props.ts` from
-`packages/web/public` (bundles hash-verified, timelines tied to their bundle, certificate seals
-recomputed, chat from the web's replay chat engine). The composition parses it with
-`src/data-schema.ts` before rendering. Copy (headings, step sentences, labels) is the landing's.
+All synthesized by `scripts/audio.ts` (no samples): music bed at 120 BPM in D major — pads
+(Dmaj9 · Bm9 · Gmaj7 · Asus2 · Bm11 · Gmaj9 · Asus4 → Dmaj9), Karplus–Strong arpeggio with a
+ping-pong delay, sine bass, hats from beat 12, a noise riser into the payoff, kick from beat 18
+(frame 270 = Enforce), everything resolving at beat 27 (frame 405 = the close) with the last tail
+fading to 0 at 15.0 s; Schroeder reverb; −14 LUFS-ish, peak ≤ −1 dBFS. The music ducks 2.5 dB
+under each cue. Effects: click (press + release), move, type, pop, tick, blip, whoosh, dive,
+stamp, two-note chime, confirm.
+
+### Cue sheet (frame → sound)
+
+| Frame | Sound | Moment |
+| --- | --- | --- |
+| 20 | move | pointer enters |
+| 46 | click | Open dashboard |
+| 48 | dive | camera dives through the clouds |
+| 96–134 | tick ×11 / blip ×9 | each transcript row; blip on every graded-unsafe one |
+| 144 | whoosh | page recedes into the proof |
+| 160 / 161 | stamp / pop | prediction committed |
+| 176 | blip | Mismatch |
+| 194, 226 | whoosh | to Challenge, to Certify |
+| 210 | chime | Survived 1 of 1 challenge |
+| 238 | stamp | seal stamps |
+| 262 | whoosh | certificate flies |
+| 276 | pop | Refunds held counter |
+| 290 | chime | certificate lands: covered, allowed |
+| 292 / 306 / 307 | move / click / confirm | to the held refund, click, card focused |
+| 312 | pop | hover Approve… |
+| 314 / 328 | whoosh / pop | chart card in / held stacks rise |
+| 322 / 348 | move / click | to the sidebar, click Chat |
+| 350 | whoosh | Chat page |
+| 356 | click | composer |
+| 359–376 | type ×18 | the question, character by character |
+| 380 | click | Send |
+| 385, 389, 393 | tick | each lookup done |
+| 409 | chime | cited answer (as the camera rises) |
+| 402 | dive | camera rises to the sky |
+| 414 | pop | wordmark |
 
 ## Commands
 
 ```
-pnpm --filter @notary/showreel props    # rebuild src/data.json from the published records
-pnpm --filter @notary/showreel studio   # Remotion Studio
-pnpm --filter @notary/showreel still    # stills every 0.5 s → out/stills/ (or pass frame numbers)
-pnpm --filter @notary/showreel render   # MP4 + poster → out/ and docs/media/
+pnpm --filter @notary/showreel props          # src/data.json from the published records
+pnpm --filter @notary/showreel audio          # public/audio/*.wav + offline mix loudness
+pnpm --filter @notary/showreel still [frames] # stills → out/stills/
+pnpm --filter @notary/showreel still --check-chart # every morph frame: fails if "With Notary" shows next to red pixels
+pnpm --filter @notary/showreel render         # audio + MP4 (H.264/AAC) + poster → docs/media/
+pnpm --filter @notary/showreel verify-audio   # streams + loudness of docs/media/notary-showreel.mp4
 ```
-
-Rendering uses the installed Google Chrome (`CHROME_PATH` to override) in Remotion's
-chrome-for-testing mode, and Remotion's own ffmpeg; no browser is ever downloaded.

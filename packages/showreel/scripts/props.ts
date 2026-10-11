@@ -39,6 +39,7 @@ import { PublishedFiles } from "../../web/src/data/published.js";
 import { ReplaySource } from "../../web/src/data/replay.js";
 import { ReplayChat } from "../../web/src/data/chat-replay.js";
 import { memoryChatStore } from "../../web/src/data/chat-store.js";
+import { budgetView, buildRows, heldCard, stageProgress, unsafeDecisionIds, type RunRow } from "../../web/src/pages/run/model.js";
 import { ShowreelDataSchema, type ShowreelData } from "../src/data-schema.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -284,7 +285,13 @@ async function chatTurn(guarded: RunBundle, heldRequestId: string, tools: string
     `Why was ${heldRequestId} held?`,
     ...tools.map((t) => `What do the ${t} certificates say?`),
   ];
-  type Turn = { question: string; steps: { title: string; output: string; durationMs: number | null }[]; answer: string; citations: { n: number; label: string }[] };
+  type Turn = {
+    question: string;
+    steps: { title: string; output: string; durationMs: number | null }[];
+    answer: string;
+    citations: { n: number; label: string }[];
+    events: ChatEvent[];
+  };
   let best: Turn | undefined;
   for (const question of questions) {
     const conversation = await chat.createConversation();
@@ -314,17 +321,72 @@ async function chatTurn(guarded: RunBundle, heldRequestId: string, tools: string
     const answerLines = [lines[first]!, ...(lines[first + 1] && /\[\d+\]/.test(lines[first + 1]!) ? [lines[first + 1]!] : [])];
     const answer = answerLines.join("\n");
     const used = new Set([...answer.matchAll(/\[(\d+)\]/g)].map((m) => Number(m[1])));
+    // The same lines in the engine's own markdown ("- " items), for the chat's real Markdown view.
+    const rawLines = answerParagraphs(text)
+      .flatMap((p) => p.split("\n"))
+      .map((l) => l.trim())
+      .filter((l) => l && showable(l));
+    const markdown = rawLines.slice(first, first + answerLines.length).join("\n");
+    const kept = new Set(shown.slice(0, 3).map((s) => s.id));
     const turn: Turn = {
       question,
       steps: shown.slice(0, 3).map(({ title, output, durationMs }) => ({ title, output: clipText(output.split("\n")[0] ?? "", 90), durationMs })),
       answer,
       citations: citations.filter((c) => used.has(c.n) && showable(c.label)),
+      // The turn's own events, kept to what the film shows: the presentable steps (their data
+      // payloads are never expanded on screen, so not carried), the answer lines above, their
+      // citations, and done.
+      events: [
+        ...events.flatMap((e): ChatEvent[] => {
+          if (e.type === "step_started") return kept.has(e.id) ? [e] : [];
+          if (e.type === "step_finished") {
+            if (!kept.has(e.id)) return [];
+            const { data: _data, ...rest } = e;
+            return [rest];
+          }
+          return [];
+        }),
+        { type: "text_delta", text: markdown },
+        ...events.flatMap((e): ChatEvent[] => (e.type === "citations" ? [{ ...e, items: e.items.filter((c) => used.has(c.n) && showable(c.label)) }] : [])),
+        ...events.filter((e) => e.type === "done"),
+      ],
     };
     if (!best || turn.steps.length > best.steps.length) best = turn;
     if (best.steps.length >= 3) break;
   }
   if (best) return best;
   throw new Error("The replay chat engine gave no presentable answer for the guarded run");
+}
+
+// ------------------------------------------------------------------------------- dashboard
+// The Run page's own builders (packages/web/src/pages/run/model.ts): transcript rows, the stage bar
+// and the budget, from the verified bundle and its timeline. Rows keep what TranscriptRow renders.
+
+type FilmRow = Omit<RunRow, "event">;
+
+function dashboardRun(bundle: RunBundle, timeline: TimelineFile) {
+  const rows: FilmRow[] = buildRows(timeline.events, { bundle })
+    .filter((r) => r.type === "decision" && showable(`${r.title} ${r.subject ?? ""}`))
+    .map(({ event: _event, ...r }) => r);
+  const progress = stageProgress(timeline.events, unsafeDecisionIds(bundle));
+  const budget = budgetView(timeline.events, bundle.usageByRole);
+  return {
+    rows,
+    stages: progress.steps.map((s) => ({ stage: s.stage, label: s.label, count: s.count, state: s.state })),
+    credits: budget ? { used: budget.credits.used, cap: budget.credits.cap } : null,
+    toolCalls: budget ? budget.toolCalls.used : null,
+    decisions: bundle.decisions.length,
+    held: bundle.decisions.filter((d) => d.status === "held").length,
+    unsafe: need(bundle.metrics.unsafe_actions_total, `${bundle.runId} metrics.unsafe_actions_total`),
+  };
+}
+
+/** The held card under a held row, as the Run page builds it (reason and evidence as recorded). */
+function heldView(bundle: RunBundle, timeline: TimelineFile, requestId: string, amount: string | null) {
+  const row = buildRows(timeline.events, { bundle }).find((r) => r.held && r.title.includes(` ${requestId} `));
+  const card = row && heldCard(row, { mode: "replay", sample: bundle.sample, bundle, approvals: null });
+  if (!row || !card) throw new Error(`No held card for ${requestId}`);
+  return { rowKey: row.key, reason: must(card.reason, "held reason"), evidence: card.evidence.filter(showable), amount };
 }
 
 // ------------------------------------------------------------------------------- main
@@ -392,7 +454,13 @@ async function main() {
   // ---- challenge
   const challenge = need(challengeView(tools, sources), "an Adversary-reviewed certificate");
   // ---- certificate
-  const cert = need(featuredCertificate(tools), "an active certificate");
+  // The certificate the film certifies: the active one behind the allowed Guard row's required
+  // beliefs (so the card that lands on that row really covers it), else the landing's featured one.
+  const moneyEarly = guarded.decisions.filter((d) => d.action !== "none");
+  const allowedEarly = moneyEarly.find((d) => d.status === "executed" && isRefund(d)) ?? moneyEarly.find((d) => d.status === "executed");
+  const activeCerts = tools.flatMap((t) => t.certificates).filter((c) => c.status === "active");
+  const covering = activeCerts.find((c) => allowedEarly?.requiredBeliefs.includes(c.beliefId));
+  const cert = need(covering ?? featuredCertificate(tools), "an active certificate");
   // ---- Guard rows: an executed money action (refund first) and the first held refund with a recorded amount.
   const guardedAmounts = recordedAmounts(guardedTimeline);
   const moneyActions = guarded.decisions.filter((d) => d.action !== "none");
@@ -444,7 +512,9 @@ async function main() {
       id: cert.id,
       tool: cert.tool,
       claimId: cert.claimId,
-      scope: must(clipText(cert.scope.text, 64), "certificate scope"),
+      scope: must(clipText(cert.scope.text, 80), "certificate scope"),
+      verdict: must(cert.verdict, "certificate verdict"),
+      covers: covering && allowedEarly ? allowedEarly.requestId : null,
       evidence: cert.evidence.length,
       issued: dateUtc(cert.issuedAt),
       sha256: cert.sha256,
@@ -466,6 +536,11 @@ async function main() {
       },
     },
     chart: { rows: actionsByType(naive, guarded) },
+    dashboard: {
+      naive: dashboardRun(naive, naiveTimeline),
+      guarded: dashboardRun(guarded, guardedTimeline),
+      held: heldView(guarded, guardedTimeline, held.requestId, guardedAmounts.get(held.requestId) ?? null),
+    },
     chat,
     builtWith: BUILT_WITH,
     github: GITHUB,

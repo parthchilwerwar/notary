@@ -5,21 +5,24 @@
   "description": "The 15-second Notary showreel, rendered with Remotion from the published, hash-verified records",
   "type": "module",
   "scripts": {
-    "props": "tsx scripts/props.ts",
+    "props": "tsx --import ./scripts/node/vite-env.mjs scripts/props.ts",
     "studio": "remotion studio src/index.ts",
     "render": "tsx scripts/render.ts",
     "still": "tsx scripts/stills.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "audio": "tsx scripts/audio.ts",
+    "verify-audio": "tsx scripts/verify-audio.ts"
   },
   "dependencies": {
     "@fontsource-variable/instrument-sans": "5.3.0",
     "@fontsource/instrument-serif": "5.3.0",
+    "@remotion/bundler": "4.0.524",
     "@remotion/cli": "4.0.524",
     "@remotion/fonts": "4.0.524",
     "@remotion/renderer": "4.0.524",
-    "@remotion/bundler": "4.0.524",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "react-router": "8.4.0",
     "remotion": "4.0.524",
     "zod": "4.6.5"
   },

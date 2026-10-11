@@ -12,3 +12,6 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+// Web app CSS imports (bundled by Remotion's webpack).
+declare module "*.css";
