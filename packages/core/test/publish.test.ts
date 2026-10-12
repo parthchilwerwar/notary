@@ -252,8 +252,10 @@ describe("packages/web/public/evidence/evidence.json", () => {
     }
   });
 
-  const hasRunSpans = existsSync(fileURLToPath(new URL("../runs/", import.meta.url)));
-  it.skipIf(!hasRunSpans)("local-only: exported run traces match runs/*/spans.jsonl (skipped on a fresh clone: runs/ is gitignored)", () => {
+  // runs/ alone is not enough: `notary replay` and `notary demo` create it on a fresh clone too, but
+  // only the machine that recorded the live runs has their exported spans.
+  const hasRunSpans = existsSync(fileURLToPath(new URL("../runs/", import.meta.url))) && gatherEvidenceFacts().exportedRunTraces > 0;
+  it.skipIf(!hasRunSpans)("local-only: exported run traces match runs/*/spans.jsonl (skipped where the recorded live runs' spans are absent, e.g. a fresh clone)", () => {
     expect(snapshot!.exportedRunTraces).toBe(gatherEvidenceFacts().exportedRunTraces);
   });
 

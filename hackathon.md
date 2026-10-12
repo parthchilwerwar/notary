@@ -29,7 +29,7 @@ Machine-readable copy for the dashboard: [packages/web/public/evidence/evidence.
 | Sponsor | Status | Evidence |
 | --- | --- | --- |
 | neatlogs | **live** — UI trace link pending | Real notarize runs exported traces `9db41ecd43406cef291c93ef8c9ab1cd` (Crustdata) and `a0e6fda50d71a9eb2fec0f04843bff4d` (Dodo): AGENT, LLM, TOOL, GUARDRAIL and EVALUATOR spans, probe spans carrying the prediction committed before the call, incidents logged with the same ids as `packages/web/public/incidents/` (DECISIONS #204, #205). A real trace was read back from the ingest API (56 spans). Pending: one neatlogs UI URL for `pnpm notary trace-link --example <url> --trace-id <id>`, and `NEATLOGS_SERVICE_TOKEN` for neatlogs-cli |
-| Entire | **live** — enabled late | CLI 0.11.4 + entire-graph v0.4.0, enabled Oct 12 (DECISIONS #207). Checkpoints `01M4Q2CJDTHF76EE7QK11TEEV1` (commit `409fd51`) and `01M4Q2JS4B3N3B42W0X9MGNSS7` (commit `0f2406f`) under `refs/entire/checkpoints/`, pushed to origin. Only 2 of ~83 commits are checkpointed because Entire was enabled late. `guards coverage --backend entire`: 33 sites, 26 guarded, 7 raw-by-design, 0 unguarded (`packages/web/public/evidence/entire.json`) |
+| Entire | **live** — enabled late | CLI 0.11.4 + entire-graph v0.4.0, enabled Oct 12 (DECISIONS #207). Checkpoints on every commit since `409fd51` (first: `01M4Q2CJDTHF76EE7QK11TEEV1`; current list in `packages/web/public/evidence/entire.json`) under `refs/entire/checkpoints/`, pushed to origin. Only 2 of ~83 commits are checkpointed because Entire was enabled late. `guards coverage --backend entire`: 33 sites, 26 guarded, 7 raw-by-design, 0 unguarded (`packages/web/public/evidence/entire.json`) |
 | cfo.ai | **pending** — plan not imported | No REST API or key; MCP server with browser OAuth (DECISIONS #206). `notary economics` writes real costs (`packages/web/public/economics.json`, `docs/BUSINESS.md`, `export/cfo-inputs.csv`); Business tab shows $0.0316 + 15.5 credits per live run. `notary cfo connect` / `cfo sync` read the plan over MCP; no plan imported yet (`economics.json` → `plan: null`) |
 | Crustdata | **live** | Live notarize run `notarize-crustdata-20261012T011404Z`: 62 credits, $0.0394 in model calls; the deterministic checker found 3 doc contradictions (enrich no-match 400 vs documented 200; identify no-match 400 vs 200; identify invalid fields 403 vs 400), not yet certified; 1 certificate ("matches docs") |
 | Dodo Payments | **live (test mode)** — queue runs blocked | Two live notarize runs + one recon sweep; 4 certificates, all "matches docs", each narrowed by the adversary. Queue runs BLOCKED on the seed: `seed:dodo` + 12 hosted test-card checkouts by a person. `notarize-dodo-20261012T012315Z` can't replay (DECISIONS #200) |
@@ -45,7 +45,7 @@ Real (live APIs, Oct 12):
 - 3 Crustdata doc contradictions found by the deterministic checker; every one of the 19 live probes committed a hashed prediction before its call.
 - Belief precision 1, false beliefs 0 (n = 1 Crustdata, n = 4 Dodo; measured against the checker on the same recording, AUDIT A-14). Unguarded call sites 0.
 - Notary Chat as a tool-calling agent on LiteLLM (read-only tools, citations checked by code, never moves money); `/app/incidents`; `/app/business` with real computed costs.
-- Tests: `pnpm test` passes — core 1032, web 359 (core row in `docs/EVALUATION.md` → Checks that don't need API keys); typecheck clean; `pnpm check:secrets` clean.
+- Tests: `pnpm test` passes — core 1033 (+2 local-only skips on a fresh clone), web 360 (core row in `docs/EVALUATION.md` → Checks that don't need API keys); typecheck clean; `pnpm check:secrets` clean.
 
 Evaluation suite (simulated APIs, never mixed with real results):
 
@@ -76,7 +76,7 @@ Evaluation suite (simulated APIs, never mixed with real results):
 - [x] Live keys in `.env`; notarize runs recorded (Crustdata, Dodo) — queue runs still BLOCKED on the Dodo seed (12 hosted test-card checkouts)
 - [x] `pnpm notary replay` reproduces the recorded notarize runs offline (3 of 4; `notarize-dodo-20261012T012315Z` is unreplayable, DECISIONS #200); exit 0, the unreplayable run is reported as SKIPPED from `packages/core/fixtures/replay/known-unreplayable.json`
 - [x] `pnpm notary replay` from a fresh copy of the tracked files (no `.env`): exit 0, core tests pass (DECISIONS #210, #214)
-- [x] Entire installed, `entire enable`, checkpoint refs pushed (2 checkpoints; enabled late)
+- [x] Entire installed, `entire enable`, checkpoint refs pushed (every commit since `409fd51`; enabled late; list in `packages/web/public/evidence/entire.json`)
 - [x] No secrets in repo or cassettes (`pnpm check:secrets`)
 - [x] Seeded data, sample and fixture bundles, drift fixtures disclosed (README, bundle disclosures)
 - [ ] cfo.ai plan imported (`docs/BUSINESS.md` and `economics.json` exist with real costs; plan pending the user's cfo.ai workspace)

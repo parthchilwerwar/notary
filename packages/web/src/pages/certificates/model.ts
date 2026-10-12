@@ -9,9 +9,14 @@ import type {
 import type { CertificateView } from "../../data";
 import { label, number } from "../../data";
 
-/** The run (same cohort) that carries a probe record, for linking evidence to its run. */
+/**
+ * The run (same cohort) that carries a probe record, for linking evidence to its run. A replay
+ * re-serves its original's probe ids with the replay's own timestamps, so the live run that
+ * actually ran the probe wins; a replay is used only when no live run carries the probe.
+ */
 export function runWithProbe(bundles: readonly RunBundle[], probeId: string, sample: boolean): RunBundle | undefined {
-  return bundles.find((b) => b.sample === sample && b.probes.some((p) => p.id === probeId));
+  const carriers = bundles.filter((b) => b.sample === sample && b.probes.some((p) => p.id === probeId));
+  return carriers.find((b) => b.mode !== "replay") ?? carriers[0];
 }
 
 /** Tools present in the world's report, in report order. */

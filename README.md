@@ -113,7 +113,7 @@ These values are copied from [`docs/EVALUATION.md` → Checks that don't need AP
 
 | Command | Result (from EVALUATION.md) |
 | --- | --- |
-| [`pnpm test`](docs/EVALUATION.md#checks-that-dont-need-api-keys) | PASS: core 1032 passed, 0 failed ([EVALUATION.md](docs/EVALUATION.md#checks-that-dont-need-api-keys)); web 359 passed, 0 failed (`pnpm test` runs both) |
+| [`pnpm test`](docs/EVALUATION.md#checks-that-dont-need-api-keys) | PASS: core 1033 passed, 0 failed (2 local-only checks skip on a fresh clone) ([EVALUATION.md](docs/EVALUATION.md#checks-that-dont-need-api-keys)); web 360 passed, 0 failed (`pnpm test` runs both) |
 | [`pnpm notary guards coverage --json`](docs/EVALUATION.md#checks-that-dont-need-api-keys) | PASS: unguarded_call_sites = 0 (33 sites: 26 guarded, 7 raw-by-design; backend entire) |
 
 The `tsc` backend reports the same 33 sites and 0 unguarded call sites ([`docs/ENTIRE.md`](docs/ENTIRE.md)).
@@ -221,7 +221,7 @@ Run commands with `pnpm notary <command>` from the repo root, and see `pnpm nota
 - **Crustdata type claims may abstain.** `type_edge` has only two variants, so these claims can end between thresholds ([DECISIONS #47](docs/DECISIONS.md)).
 - **Some designed failures may not trip.** The "existing refund on a later page" case probably won't trip the naive agent ([DECISIONS #32](docs/DECISIONS.md)). Whatever happens will be reported as is.
 - **Entire graph is slow on a dirty tree.** Every `entire graph` query re-indexes the working tree (1-5 minutes here), so `guards coverage --backend entire` takes minutes where `--backend tsc` takes seconds. The `session` adversary's Entire checkpoint was verified in a scratch clone; no `--adversary session` review has run on `main` yet ([`docs/ENTIRE.md`](docs/ENTIRE.md)).
-- **Entire was enabled late.** Only the last 2 of ~83 commits carry Entire checkpoints; the build history before Oct 12 has none.
+- **Entire was enabled late.** Only the commits from Oct 12 on (starting at `409fd51`) carry Entire checkpoints; the build history before that has none. The current list is in [`packages/web/public/evidence/entire.json`](packages/web/public/evidence/entire.json) (`pnpm notary export --entire`).
 - **neatlogs evidence is still partly self-attested.** Spans reach neatlogs (real traces above), but the FR-10 evidence check reads Notary's own `spans.jsonl`, not neatlogs, and no neatlogs UI trace URL is recorded yet ([DECISIONS #48, #204](docs/DECISIONS.md)).
 - **`node:sqlite` is experimental** on Node 24 and prints a warning ([DECISIONS #34](docs/DECISIONS.md)).
 - **The dashboard is not deployed yet.** `packages/web` is complete and runs locally (`pnpm --filter @notary/web dev`); the Vercel config exists but no deploy has been run. The repo is private until submission.

@@ -189,3 +189,16 @@ describe("certificates", () => {
     }
   });
 });
+
+describe("certificate evidence links to the run that actually ran the probe", () => {
+  it("prefers the live run over its replay (a replay re-serves the probe ids with its own timestamps)", () => {
+    const realIndex = BundleIndexSchema.parse(pub("bundles/index.json"));
+    const real: RunBundle[] = realIndex.filter((e) => !e.sample).map((e) => validateBundle(pub(`bundles/${e.runId}.json`), e));
+    const live = real.find((b) => b.runId === "notarize-crustdata-20261012T011404Z")!;
+    const replay = real.find((b) => b.runId === "notarize-crustdata-20261012T011404Z-replay")!;
+    const probe = live.probes[0]!;
+    expect(replay.probes.some((p) => p.id === probe.id)).toBe(true); // the replay carries the same id
+    for (const order of [real, [...real].reverse()]) expect(runWithProbe(order, probe.id, false)?.runId).toBe(live.runId);
+    expect(runWithProbe([replay], probe.id, false)?.runId).toBe(replay.runId); // only a replay: it is used
+  });
+});
