@@ -105,7 +105,7 @@ describe("Business page renders from data", () => {
     const t = text(render(verifyEconomicsFile(JSON.parse(JSON.stringify(empty)))));
     expect(t).toContain("No real runs to cost yet");
     expect(t).toContain("No real run bundles yet");
-    expect(t).toContain("Import your cfo.ai plan");
+    expect(t).toContain("Sync the plan from cfo.ai");
     expect(t).toContain("pnpm notary economics --cfo-import <file>");
     expect(t).not.toMatch(/\$\d/); // no money figure without data
     const missing = text(render({ status: "missing" }));

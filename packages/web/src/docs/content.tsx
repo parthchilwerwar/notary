@@ -221,7 +221,7 @@ export const ENV_GROUPS: EnvGroup[] = [
   },
   {
     title: "Dashboard",
-    vars: [{ name: "VITE_NOTARY_API", purpose: "Where the dashboard looks for notary serve. Default http://localhost:8787." }],
+    vars: [{ name: "VITE_NOTARY_API", purpose: "Where the dashboard looks for notary serve. Default http://127.0.0.1:8787." }],
   },
 ];
 
@@ -371,7 +371,7 @@ const troubles: { symptom: ReactNode; fix: ReactNode }[] = [
     symptom: <>The dashboard stays in replay mode</>,
     fix: (
       <>
-        It switches to live only when <C>GET /api/health</C> answers at <C>VITE_NOTARY_API</C> (default <C>http://localhost:8787</C>) and the page
+        It switches to live only when <C>GET /api/health</C> answers at <C>VITE_NOTARY_API</C> (default <C>http://127.0.0.1:8787</C>) and the page
         itself is served from localhost. The hosted build never probes.
       </>
     ),
@@ -611,7 +611,7 @@ export const SECTIONS: DocSection[] = [
         </p>
         <CodeBlock code={`pnpm notary serve\n# in a second terminal\npnpm --filter @notary/web dev`} />
         <p>
-          The dashboard probes <C>GET /api/health</C> at <C>VITE_NOTARY_API</C> (default <C>http://localhost:8787</C>). When it answers, the
+          The dashboard probes <C>GET /api/health</C> at <C>VITE_NOTARY_API</C> (default <C>http://127.0.0.1:8787</C>). When it answers, the
           dashboard switches from the published files to live data and streams events over SSE. Reads need nothing more:
           <C>/api/health</C>, <C>/api/runs</C>, <C>/api/certificates</C>, <C>/api/bundles</C> and <C>/api/stream</C>.
         </p>

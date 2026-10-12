@@ -1,6 +1,6 @@
 # Deploying Notary's agents to AWS
 
-Status: **prepared, not yet run against AWS.** Every script stops with `BLOCKED: AWS credentials not set` (exit 3) until credentials exist. Nothing in this repo has created an AWS resource yet. The container entry point (`src/hosted-main.ts`) has been run locally against the real LiteLLM proxy, but the Docker image itself has not been built on this machine: the Docker daemon wasn't running.
+Status: **credentials configured and verified, not yet deployed.** AWS credentials for us-east-1 are set in `.env` (gitignored) and answered STS `GetCallerIdentity` on Oct 12. Every script still stops with `BLOCKED: AWS credentials not set` (exit 3) on a machine without them. Nothing has created an AWS resource yet: `deploy.sh` creates billable resources, so it runs only on purpose. The container entry point (`src/hosted-main.ts`) has been run locally against the real LiteLLM proxy, but the Docker image itself has not been built on this machine: the Docker daemon wasn't running.
 
 ## What runs where
 

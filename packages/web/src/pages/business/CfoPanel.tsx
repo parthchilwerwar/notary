@@ -51,9 +51,17 @@ export function PublishedSource({ file }: { file: EconomicsFile | null }) {
     );
   return (
     <p className="biz-note">
-      Not synced from cfo.ai yet. Connect once (you sign in to cfo.ai in your own browser), then sync: <Cmd>{CFO_CONNECT_COMMAND}</Cmd> <Cmd>{CFO_SYNC_COMMAND}</Cmd>
+      Connect cfo.ai once (you sign in to cfo.ai in your own browser), then sync: <Cmd>{CFO_CONNECT_COMMAND}</Cmd> <Cmd>{CFO_SYNC_COMMAND}</Cmd>
     </p>
   );
+}
+
+/** cfo.ai tool errors arrive as JSON text; show the sentence a person needs, not the payload. */
+export function readableSyncError(error: string): string {
+  const table = /No table_block named \\?"([^"\\]+)\\?" was found/.exec(error);
+  if (table) return `Your cfo.ai workspace has no "${table[1]}" table yet. Create it in cfo.ai (steps below), then press Sync from cfo.ai.`;
+  const msg = /"message":"((?:[^"\\]|\\.)*)"/.exec(error);
+  return `Last sync did not complete: ${msg ? msg[1]!.replace(/\\"/g, '"') : error.slice(0, 200)}`;
 }
 
 function TokenForm({ setToken, error }: { setToken: (t: string | null) => void; error?: string }) {
@@ -169,7 +177,7 @@ function LiveConnection({ apiBase, onSynced }: { apiBase: string; onSynced: () =
               },
             ]}
           />
-          {s.lastSync && !s.lastSync.ok && s.lastSync.error && sync.status !== "error" && <Note tone="warning">Last sync failed: {s.lastSync.error}</Note>}
+          {s.lastSync && !s.lastSync.ok && s.lastSync.error && sync.status !== "error" && <Note tone="warning">{readableSyncError(s.lastSync.error)}</Note>}
           <div className="biz-cfo-actions">
             <Button onClick={runSync} disabled={sync.status === "running"}>
               <ArrowsClockwise size={16} aria-hidden="true" /> {sync.status === "running" ? "Syncing from cfo.ai…" : "Sync from cfo.ai"}
@@ -222,7 +230,8 @@ export function CfoPanel({ file, live, onSynced }: { file: EconomicsFile | null;
       description="cfo.ai has no REST API or API key. Notary reads the plan over cfo.ai's MCP server, signed in through your own browser."
     >
       {live ? <LiveConnection apiBase={live.apiBase} onSynced={onSynced ?? (() => undefined)} /> : null}
-      <PublishedSource file={file} />
+      {/* Live, the connection above already says what to do; the published plan's source is shown once there is one. */}
+      {!live || file?.plan ? <PublishedSource file={file} /> : null}
     </Section>
   );
 }

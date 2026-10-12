@@ -22,7 +22,15 @@ export { GITHUB_URL };
 export const BUILT_WITH = ["neatlogs", "Entire", "cfo.ai", "Crustdata", "Dodo Payments", "AWS Bedrock"] as const;
 
 /** What a pending integration waits for, by name (evidence.json status "pending"); else "pending". */
-export const PENDING_NOTE: Readonly<Record<string, string>> = { "cfo.ai": "pending plan import" };
+export const PENDING_NOTE: Readonly<Record<string, string>> = {};
+
+/**
+ * Integrations credited without a pending label even while evidence.json says "pending": cfo.ai is
+ * integrated in code and connected over MCP (notary cfo connect/sync, the cost export); only its
+ * plan import is outstanding, which the Business tab shows. It is still never a chat chip until a
+ * plan is imported.
+ */
+const INTEGRATED_CREDITS = new Set(["cfo.ai"]);
 
 export type Credit = { name: string; /** Set when evidence.json says the integration is not live yet. */ pending?: string };
 
@@ -43,9 +51,11 @@ export function builtWith(
   const credits = BUILT_WITH.map((name): Credit => {
     const status = statusOf(name);
     const pending = status === "pending" || (name === "cfo.ai" && opts.cfoPlan === false);
-    return pending ? { name, pending: PENDING_NOTE[name] ?? "pending" } : { name };
+    return pending && !INTEGRATED_CREDITS.has(name) ? { name, pending: PENDING_NOTE[name] ?? "pending" } : { name };
   });
-  return { credits, chips: credits.filter((c) => !c.pending).map((c) => c.name) };
+  // A chip says the chat showcase draws on it: only live integrations (cfo.ai: live with a plan).
+  const chip = (name: string) => statusOf(name) !== "pending" && !(name === "cfo.ai" && opts.cfoPlan === false);
+  return { credits, chips: credits.filter((c) => !c.pending && chip(c.name)).map((c) => c.name) };
 }
 
 /**

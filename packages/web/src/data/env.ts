@@ -1,6 +1,7 @@
 // Build/runtime environment for mode selection (see select.ts). No I/O.
 
-export const DEFAULT_API_BASE = "http://localhost:8787";
+// 127.0.0.1, not localhost: `notary serve` binds 127.0.0.1, and on Windows "localhost" can resolve to ::1 first.
+export const DEFAULT_API_BASE = "http://127.0.0.1:8787";
 export type SelectEnv = {
   PROD?: boolean;
   VITE_NOTARY_API?: string;

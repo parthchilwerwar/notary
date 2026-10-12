@@ -25,6 +25,7 @@ import {
   usePageMotion,
 } from "../../ui";
 import { CFO_IMPORT_COMMAND, ECONOMICS_COMMAND, ECONOMICS_FILE, loadEconomics, type EconomicsState } from "../../data/economics";
+import { CFO_SYNC_COMMAND } from "../../data/cfo";
 import { useDataSource } from "../../data";
 import { CfoPanel } from "./CfoPanel";
 import { BarList, ColumnChart, DataTable, Legend, LineChart } from "./charts";
@@ -59,7 +60,7 @@ export function BusinessView({ state, cfo = null, onSynced }: { state: Load; cfo
     ? "Unit economics from real runs, and the business plan modeled in cfo.ai"
     : [
         file.computed ? `${file.computed.totals.liveRuns} live real run${file.computed.totals.liveRuns === 1 ? "" : "s"} costed` : "No real runs costed yet",
-        file.plan ? `plan modeled in cfo.ai, ${file.plan.source.mcp ? "synced" : "imported"} ${dateOnly(file.plan.source.importedAt)}` : "cfo.ai plan not imported yet",
+        file.plan ? `plan modeled in cfo.ai, ${file.plan.source.mcp ? "synced" : "imported"} ${dateOnly(file.plan.source.importedAt)}` : "cfo.ai integrated over MCP",
       ].join(" · ");
   return (
     <>
@@ -408,18 +409,12 @@ function Plan({ file }: { file: EconomicsFile }) {
     return (
       <Section id="plan" label={<SourceTag kind="cfo" />} title="The business plan" description="Pricing per monitored API contract, COGS, the cost of incidents prevented, runway and a revenue projection, built in cfo.ai from Notary's real costs.">
         <Attribution plan={null} />
-        <EmptyState title="Import your cfo.ai plan">
-          {file.planReason && !file.planReason.includes("--cfo-import <file>") ? (
-            <p>
-              <Prose text={file.planReason} />
-            </p>
-          ) : (
-            <p>No cfo.ai plan has been imported yet.</p>
-          )}
+        <EmptyState title="Sync the plan from cfo.ai">
+          <p>Notary reads the plan straight from your cfo.ai workspace over its MCP server, then shows it here next to the costs computed from runs.</p>
           <p>
-            <Cmd>{CFO_IMPORT_COMMAND}</Cmd>
+            <Cmd>{CFO_SYNC_COMMAND}</Cmd>
           </p>
-          <p>The steps below build it in cfo.ai from the inputs sheet of real runs.</p>
+          <p>The steps below build the plan in cfo.ai from the inputs sheet of real runs (or import an exported file: <Cmd>{CFO_IMPORT_COMMAND}</Cmd>).</p>
         </EmptyState>
       </Section>
     );

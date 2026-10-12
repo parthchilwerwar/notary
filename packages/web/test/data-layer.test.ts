@@ -73,7 +73,7 @@ describe("mode selection", () => {
     expect(s.mode).toBe("live");
     expect(s.source).toBeInstanceOf(LiveSource);
     expect(s.health).toEqual(health);
-    expect(fetchImpl).toHaveBeenCalledWith("http://localhost:8787/api/health", expect.anything());
+    expect(fetchImpl).toHaveBeenCalledWith("http://127.0.0.1:8787/api/health", expect.anything());
   });
   it("replay with a visible reason when /api/health answers something invalid", async () => {
     const s = await selectDataSource({
@@ -125,7 +125,7 @@ describe("mode selection", () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
   it("API base: default is the serve port; '' or '/' is same origin (dev proxy)", () => {
-    expect(resolveApiBase({})).toBe("http://localhost:8787");
+    expect(resolveApiBase({})).toBe("http://127.0.0.1:8787");
     expect(resolveApiBase({ VITE_NOTARY_API: "http://127.0.0.1:9999/" })).toBe("http://127.0.0.1:9999");
     expect(resolveApiBase({ VITE_NOTARY_API: "" })).toBe("");
     expect(resolveApiBase({ VITE_NOTARY_API: "/" })).toBe("");

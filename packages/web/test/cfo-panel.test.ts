@@ -50,7 +50,7 @@ describe("cfo.ai panel (replay / hosted: no API)", () => {
 
   it("a CSV import or no plan shows the exact connect and sync commands", () => {
     expect(render({ state: ready(csvPlan) })).toMatch(/imported from a cfo.ai export file.*pnpm notary cfo connect.*pnpm notary cfo sync/);
-    expect(render({ state: ready(null) })).toMatch(/Not synced from cfo.ai yet.*pnpm notary cfo connect/);
+    expect(render({ state: ready(null) })).toMatch(/Connect cfo.ai once.*pnpm notary cfo connect/);
   });
 
   it("live mode without a session token asks for it (nothing is fetched during render)", () => {
@@ -97,5 +97,15 @@ describe("data/cfo.ts", () => {
     expect(await syncFromCfo("", { token: "t".repeat(43), fetchImpl: f })).toEqual(result);
     expect(calls[0]!.init.method).toBe("POST");
     await expect(syncFromCfo("", { token: "t".repeat(43), fetchImpl: fake({ error: "cfo.ai plan rejected, nothing written: row \"Revenue\" has no unit" }, 422).f })).rejects.toThrow(/nothing written/);
+  });
+});
+
+describe("cfo.ai sync errors read as sentences", () => {
+  it("a missing table names the table and what to do; other errors show cfo.ai's message, not JSON", async () => {
+    const { readableSyncError } = await import("../src/pages/business/CfoPanel");
+    const live = 'cfo.ai inspect_table_blocks returned an error: {"error":{"code":"not_found","message":"No table_block named \\"Notary Plan\\" was found.","transient":false},"state_changed":"no"}';
+    expect(readableSyncError(live)).toBe('Your cfo.ai workspace has no "Notary Plan" table yet. Create it in cfo.ai (steps below), then press Sync from cfo.ai.');
+    expect(readableSyncError('cfo.ai x returned an error: {"error":{"code":"forbidden","message":"Not allowed here."}}')).toBe("Last sync did not complete: Not allowed here.");
+    expect(readableSyncError("socket hang up")).toBe("Last sync did not complete: socket hang up");
   });
 });

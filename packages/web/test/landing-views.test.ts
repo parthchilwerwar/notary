@@ -201,9 +201,9 @@ describe("Built with and the chat chips follow evidence.json", () => {
     { name: "neatlogs", status: "live" as const },
     { name: "cfo.ai", status },
   ];
-  it("a pending integration is a labelled credit, never a chip", () => {
+  it("cfo.ai is credited as integrated (MCP connection + cost export) but is never a chip until a plan is imported", () => {
     const { credits, chips } = builtWith(evidence("pending"), { cfoPlan: false });
-    expect(credits.find((c) => c.name === "cfo.ai")).toEqual({ name: "cfo.ai", pending: "pending plan import" });
+    expect(credits.find((c) => c.name === "cfo.ai")).toEqual({ name: "cfo.ai" });
     expect(chips).not.toContain("cfo.ai");
     expect(chips).toEqual(BUILT_WITH.filter((n) => n !== "cfo.ai"));
   });
@@ -218,7 +218,7 @@ describe("Built with and the chat chips follow evidence.json", () => {
     const cfo = published.find((e) => e.name === "cfo.ai");
     const { chips, credits } = builtWith(published, { cfoPlan: plan });
     expect(chips.includes("cfo.ai")).toBe(cfo?.status === "live" && plan);
-    if (cfo?.status === "pending") expect(credits.find((c) => c.name === "cfo.ai")?.pending).toBe("pending plan import");
+    expect(credits.find((c) => c.name === "cfo.ai")).toEqual({ name: "cfo.ai" });
   });
   it("the chips and credits are rendered from builtWith, not from the raw list", () => {
     const below = readFileSync(new URL("../src/components/landing/Below.tsx", import.meta.url), "utf8");

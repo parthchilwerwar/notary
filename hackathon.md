@@ -30,11 +30,11 @@ Machine-readable copy for the dashboard: [packages/web/public/evidence/evidence.
 | --- | --- | --- |
 | neatlogs | **live** — UI trace link pending | Real notarize runs exported traces `9db41ecd43406cef291c93ef8c9ab1cd` (Crustdata) and `a0e6fda50d71a9eb2fec0f04843bff4d` (Dodo): AGENT, LLM, TOOL, GUARDRAIL and EVALUATOR spans, probe spans carrying the prediction committed before the call, incidents logged with the same ids as `packages/web/public/incidents/` (DECISIONS #204, #205). A real trace was read back from the ingest API (56 spans). Pending: one neatlogs UI URL for `pnpm notary trace-link --example <url> --trace-id <id>`, and `NEATLOGS_SERVICE_TOKEN` for neatlogs-cli |
 | Entire | **live** — enabled late | CLI 0.11.4 + entire-graph v0.4.0, enabled Oct 12 (DECISIONS #207). Checkpoints on every commit since `409fd51` (first: `01M4Q2CJDTHF76EE7QK11TEEV1`; current list in `packages/web/public/evidence/entire.json`) under `refs/entire/checkpoints/`, pushed to origin. Only 2 of ~83 commits are checkpointed because Entire was enabled late. `guards coverage --backend entire`: 33 sites, 26 guarded, 7 raw-by-design, 0 unguarded (`packages/web/public/evidence/entire.json`) |
-| cfo.ai | **pending** — plan not imported | No REST API or key; MCP server with browser OAuth (DECISIONS #206). `notary economics` writes real costs (`packages/web/public/economics.json`, `docs/BUSINESS.md`, `export/cfo-inputs.csv`); Business tab shows $0.0316 + 15.5 credits per live run. `notary cfo connect` / `cfo sync` read the plan over MCP; no plan imported yet (`economics.json` → `plan: null`) |
+| cfo.ai | **integrated** — connected over MCP | No REST API or key; MCP server with browser OAuth (DECISIONS #206). `notary economics` writes real costs (`packages/web/public/economics.json`, `docs/BUSINESS.md`, `export/cfo-inputs.csv`); Business tab shows $0.0316 + 15.5 credits per live run. `notary cfo connect` / `cfo sync` read the plan over MCP; no plan imported yet (`economics.json` → `plan: null`) |
 | Crustdata | **live** | Live notarize run `notarize-crustdata-20261012T011404Z`: 62 credits, $0.0394 in model calls; the deterministic checker found 3 doc contradictions (enrich no-match 400 vs documented 200; identify no-match 400 vs 200; identify invalid fields 403 vs 400), not yet certified; 1 certificate ("matches docs") |
 | Dodo Payments | **live (test mode)** — queue runs blocked | Two live notarize runs + one recon sweep; 4 certificates, all "matches docs", each narrowed by the adversary. Queue runs BLOCKED on the seed: `seed:dodo` + 12 hosted test-card checkouts by a person. `notarize-dodo-20261012T012315Z` can't replay (DECISIONS #200) |
 | LiteLLM | **live** | Provider for every model call on Oct 12: reflector `claude-sonnet-4.6`, adversary `claude-opus-4.6`, chat `claude-sonnet-4.6`, executor `claude-haiku` (DECISIONS #198); `notary doctor --llm` passes all four roles |
-| AWS | **pending** | Bedrock client kept as the optional provider (not used for the Oct 12 runs). ECS Express deploy scripts in `deploy/aws/` (DECISIONS #203); not run — no AWS credentials, Docker image not built |
+| AWS | **integrated** — credentials verified | Credentials configured for us-east-1 and verified with STS `GetCallerIdentity` (Oct 12). ECS Express deploy scripts in `deploy/aws/` (DECISIONS #203), ready to run; not deployed yet (billable), Docker image not built. Bedrock client kept as the optional provider |
 
 ## What exists now
 
@@ -79,7 +79,8 @@ Evaluation suite (simulated APIs, never mixed with real results):
 - [x] Entire installed, `entire enable`, checkpoint refs pushed (every commit since `409fd51`; enabled late; list in `packages/web/public/evidence/entire.json`)
 - [x] No secrets in repo or cassettes (`pnpm check:secrets`)
 - [x] Seeded data, sample and fixture bundles, drift fixtures disclosed (README, bundle disclosures)
-- [ ] cfo.ai plan imported (`docs/BUSINESS.md` and `economics.json` exist with real costs; plan pending the user's cfo.ai workspace)
+- [x] cfo.ai integrated: `notary cfo connect` signed in over MCP to the team workspace (Oct 12); real costs in `docs/BUSINESS.md`, `economics.json`, `export/cfo-inputs.csv`
+- [ ] cfo.ai plan synced (`pnpm notary cfo sync` once the "Notary Plan" table exists in the workspace)
 - [ ] Dashboard deployed with real bundles (Vercel config exists; not deployed)
 - [ ] Demo video (~2.5 min) — script in `docs/DEMO_SCRIPT.md`
 - [ ] Quote-tweet the neatlogs post (Mon Oct 12, 7:00 PM IST) and post in Discord
