@@ -1,10 +1,10 @@
-// 04 · Entire, 05 · cfo.ai, 06 · the close. Entire's checkpoints and the real `notary guards
-// coverage --backend entire` output; the economics recording with the per-run cost and the cfo.ai
-// export; the evaluation-suite result (labelled) and the closing sky.
+// 06 · Entire, 07 · cfo.ai, 08 · what Notary proved. Entire's checkpoints and the real `notary guards
+// coverage --backend entire` output; the economics recording (camera on the cost figures) and the
+// cfo.ai export; the real results as kinetic type with count-ups, then the closing sky.
 import { useCurrentFrame } from "remotion";
 import { C, CAMERA, IN, MONO, SANS, display, mix, p } from "../../theme";
-import { ClipShot, Kicker, Panel, Pill, SceneShell } from "../kit";
-import { P } from "../plan";
+import { ClipShot, Kinetic, Panel, Pill, SceneShell } from "../kit";
+import { closeStats, P } from "../plan";
 import { A, section } from "../timeline";
 import { CheckpointList, DataFrame, Terminal } from "./records";
 import { CloseSky } from "./Sky";
@@ -22,36 +22,22 @@ export function EntireScene() {
   const term = p(frame, t.graph - 2, 18);
   const lines = cov?.lines ?? [];
   const typed = p(frame, t.graph + 8, 22);
-  // All but the two total lines stream before the voice says "zero"; the totals land on it.
   const body = Math.max(1, lines.length - 2);
   const streamed = frame >= t.zero - 2 ? 1 : (p(frame, t.graph + 32, Math.max(20, t.zero - t.graph - 40), (x) => x) * body) / lines.length;
   const zero = p(frame, t.zero, 14);
   const zeroLine = lines.find((l) => /unguarded_call_sites = 0/.test(l));
   return (
-    <SceneShell dur={s.dur}>
-      <Kicker n="4" label="Entire" />
-      <div style={{ position: "absolute", left: mix(toSide, 410, 120), top: mix(toSide, 150, 190), transformOrigin: "0 0", transform: `scale(${mix(toSide, 1, 0.62)})`, opacity: mix(toSide, 1, 0.55) }}>
+    <SceneShell id="entire" dur={s.dur}>
+      <div style={{ position: "absolute", left: mix(toSide, 410, 120), top: mix(toSide, 150, 190), transformOrigin: "0 0", transform: `scale(${mix(toSide, 1, 0.62)}) rotateY(${toSide * 6}deg)`, opacity: mix(toSide, 1, 0.5) }}>
         <CheckpointList checkpoints={e.checkpoints} reveal={p(frame, t.seven - 4, 30)} source={e.source.replace(/^packages\/showreel\//, "")} />
       </div>
       {term > 0 && (
-        <div style={{ position: "absolute", left: 640, top: 128, opacity: term, transform: `translateY(${(1 - term) * 40}px)` }}>
-          {cov ? (
-            <Terminal title={`entire ${e.cliVersion ?? ""} · code graph`.trim()} command={COVERAGE_COMMAND} lines={lines} typed={typed} streamed={streamed} highlight={isZeroLine} rows={22} width={1180} />
-          ) : (
-            e.coverage && (
-              <Panel style={{ width: 1100, padding: 40 }}>
-                <div style={{ ...display, fontSize: 48 }}>Guard coverage (Entire code graph)</div>
-                <div style={{ fontFamily: SANS, fontSize: 24, marginTop: 16, color: C.strongMuted }}>
-                  {e.coverage.sites} call sites · {e.coverage.guarded} guarded · {e.coverage.rawByDesign} raw by design · {e.coverage.unguardedCallSites} unguarded
-                </div>
-                <div style={{ fontFamily: SANS, fontSize: 16, marginTop: 10, color: C.muted }}>From {e.source} (commit {e.coverage.commit.slice(0, 7)})</div>
-              </Panel>
-            )
-          )}
+        <div style={{ position: "absolute", left: 640, top: 128, opacity: term, transform: `translateY(${(1 - term) * 50}px) scale(${mix(term, 0.96, 1)})` }}>
+          {cov && <Terminal title={`entire ${e.cliVersion ?? ""} · code graph`.trim()} command={COVERAGE_COMMAND} lines={lines} typed={typed} streamed={streamed} highlight={isZeroLine} rows={22} width={1180} />}
         </div>
       )}
       {zero > 0 && zeroLine && (
-        <div style={{ position: "absolute", right: 130, bottom: 210, opacity: zero, transform: `scale(${mix(zero, 1.25, 1)}) rotate(${mix(zero, -6, -2)}deg)`, transformOrigin: "50% 50%" }}>
+        <div style={{ position: "absolute", right: 130, bottom: 210, opacity: zero, transform: `scale(${mix(zero, 1.4, 1)}) rotate(${mix(zero, -8, -2)}deg)`, transformOrigin: "50% 50%" }}>
           <Panel style={{ padding: "18px 28px", border: `2px solid ${C.certified}`, background: C.certifiedBg, display: "flex", alignItems: "baseline", gap: 16 }}>
             <span style={{ ...display, fontSize: 92, color: C.certifiedText, lineHeight: 1 }}>0</span>
             <span style={{ fontFamily: SANS, fontSize: 28, fontWeight: 600, color: C.certifiedText }}>unguarded call sites</span>
@@ -70,72 +56,68 @@ export function CfoScene() {
   const s = section("cfo");
   const t = P.cfo;
   const e = A.data.economics;
-  const shot = P.cfo.shots[0]!;
-  const exp = p(frame, t.exports - 4, 18);
-  const chips = [
-    { at: t.cents, label: "per live run", value: `${usd(e.costPerRun.usd)} + ${credits(e.costPerRun.credits)}` },
-    { at: t.credits + 18, label: "per certificate", value: `${usd(e.costPerCertificate.usd)} + ${credits(e.costPerCertificate.credits)}` },
+  const exp = p(frame, t.exports - 4, 18, CAMERA);
+  // The export, as columns of the real file (run, stage, spend, tokens, credits, beliefs).
+  const head = e.exportHead.map((l) => l.split(","));
+  const cols = ["run_id", "stage", "model_usd", "tokens", "crustdata_credits", "notarized_beliefs"];
+  const idx = cols.map((c) => head[0]?.indexOf(c) ?? -1);
+  const rows = head.slice(1).map((r) => idx.map((i) => (i >= 0 ? (r[i] ?? "") : "")));
+  const figures = [
+    { label: "per run", usd: e.costPerRun.usd, credits: e.costPerRun.credits, at: t.cents },
+    { label: "per certificate", usd: e.costPerCertificate.usd, credits: e.costPerCertificate.credits, at: t.credits + 24 },
   ];
   return (
-    <SceneShell dur={s.dur}>
-      <Kicker n="5" label="cfo.ai" />
-      <div style={{ position: "absolute", inset: 0, opacity: 1 - exp * 0.75, transform: `translateX(${-exp * 260}px) scale(${mix(exp, 1, 0.86)})`, transformOrigin: "0 50%" }}>
-        <ClipShot
-          shot={shot}
-          fallback={
-            <DataFrame title="Business · unit economics" source={`Rendered from ${e.source.replace(/^packages\/showreel\//, "")}`}>
-              <div style={{ padding: "50px 60px", fontFamily: SANS, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
-                {[
-                  ["Cost per live run", `${usd(e.costPerRun.usd)}`, `+ ${credits(e.costPerRun.credits)} · ${e.liveRuns} live runs`],
-                  ["Cost per certificate", `${usd(e.costPerCertificate.usd)}`, `+ ${credits(e.costPerCertificate.credits)} · ${e.certified.reduce((n, c) => n + c.certified, 0)} certificates`],
-                ].map(([k, v, n]) => (
-                  <Panel key={k} style={{ padding: "26px 30px" }}>
-                    <div style={{ fontSize: 18, color: C.muted, fontWeight: 600 }}>{k}</div>
-                    <div style={{ ...display, fontSize: 72, marginTop: 6 }}>{v}</div>
-                    <div style={{ fontSize: 18, color: C.strongMuted }}>{n}</div>
-                  </Panel>
+    <SceneShell id="cfo" dur={s.dur}>
+      <div style={{ position: "absolute", inset: 0, opacity: 1 - exp, transform: `translateY(${-exp * 200}px) scale(${mix(exp, 1, 0.8)})`, transformOrigin: "50% 0" }}>
+        <div style={{ position: "absolute", left: 160, top: 170 }}>
+          <Kinetic id="cfo" phrase="measures what certainty costs:" size={84} emphasis={["certainty"]} at={30} />
+        </div>
+        <div style={{ position: "absolute", left: 160, top: 340, display: "flex", gap: 40 }}>
+          {figures.map((f) => {
+            const a = p(frame, f.at - 6, 14);
+            return (
+              <div key={f.label} style={{ opacity: a, transform: `translateY(${(1 - a) * 30}px)` }}>
+                <Panel style={{ width: 760, padding: "34px 40px" }}>
+                  <div style={{ fontFamily: SANS, fontSize: 26, fontWeight: 600, color: C.muted }}>Cost {f.label}</div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 20, marginTop: 6 }}>
+                    <CountUp value={f.usd} decimals={4} prefix="$" at={f.at - 2} size={150} />
+                    <span style={{ ...display, fontSize: 54, color: C.strongMuted }}>model spend</span>
+                  </div>
+                  <div style={{ fontFamily: SANS, fontSize: 30, color: C.text, marginTop: 10, opacity: p(frame, f.at + 14, 12) }}>+ {credits(f.credits)} on Crustdata</div>
+                </Panel>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ position: "absolute", left: 160, top: 760, fontFamily: SANS, fontSize: 20, color: C.faint, opacity: p(frame, t.cents, 12) }}>
+          Averaged over the {e.liveRuns} runs that spent; read from {e.source.replace(/^packages\/showreel\/explainer\/data\//, "")}
+        </div>
+      </div>
+      {exp > 0 && (
+        <div style={{ position: "absolute", left: 160, top: 200, width: 1600, opacity: exp, transform: `translateY(${(1 - exp) * 120}px)` }}>
+          <Panel style={{ padding: "32px 38px", boxShadow: "0 30px 80px rgb(11 15 25 / 0.18)" }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 24 }}>
+              <span style={{ ...display, fontSize: 64 }}>Exported for cfo.ai</span>
+              <span style={{ fontFamily: MONO, fontSize: 28, color: C.accentText }}>{e.exportPath}</span>
+            </div>
+            <div style={{ marginTop: 22, borderRadius: 14, background: "#0E1422", padding: "18px 24px", fontFamily: MONO, fontSize: 21, lineHeight: "40px", color: "#C9D2E3" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "520px 200px 150px 110px 250px 1fr", color: "#7DD3FC" }}>
+                {cols.map((c) => (
+                  <span key={c}>{c}</span>
                 ))}
               </div>
-            </DataFrame>
-          }
-          overlay={
-            <div style={{ position: "absolute", right: -40, bottom: -22, display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-end" }}>
-              {chips.map((c) => {
-                const a = p(frame, c.at - 2, 12);
-                if (a <= 0) return null;
+              {rows.map((r, i) => {
+                const k = p(frame, t.exports + 8 + i * 5, 10);
                 return (
-                  <div key={c.label} style={{ opacity: a, transform: `translateX(${(1 - a) * 40}px)` }}>
-                    <Panel style={{ padding: "14px 22px", display: "flex", alignItems: "baseline", gap: 14 }}>
-                      <span style={{ ...display, fontSize: 40, color: C.text }}>{c.value}</span>
-                      <span style={{ fontFamily: SANS, fontSize: 20, color: C.muted, fontWeight: 600 }}>{c.label}</span>
-                    </Panel>
+                  <div key={i} style={{ display: "grid", gridTemplateColumns: "520px 200px 150px 110px 250px 1fr", opacity: k, transform: `translateX(${(1 - k) * 20}px)` }}>
+                    {r.map((v, j) => (
+                      <span key={j} style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{v}</span>
+                    ))}
                   </div>
                 );
               })}
             </div>
-          }
-        />
-      </div>
-      {exp > 0 && (
-        <div style={{ position: "absolute", left: 700, top: 200, width: 1100, opacity: exp, transform: `translateX(${(1 - exp) * 80}px)` }}>
-          <Panel style={{ padding: "30px 34px", boxShadow: "0 30px 80px rgb(11 15 25 / 0.18)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <span style={{ ...display, fontSize: 52 }}>Exported for cfo.ai</span>
-              <span style={{ marginLeft: "auto" }}>
-                <Pill tone="accent" size={18}>
-                  real runs only
-                </Pill>
-              </span>
-            </div>
-            <div style={{ fontFamily: MONO, fontSize: 24, color: C.accentText, marginTop: 10 }}>{e.exportPath}</div>
-            <div style={{ marginTop: 18, borderRadius: 12, background: "#0E1422", padding: "16px 18px", fontFamily: MONO, fontSize: 14, lineHeight: "24px", color: "#C9D2E3" }}>
-              {e.exportHead.map((l, i) => (
-                <div key={i} style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: i === 0 ? "#7DD3FC" : undefined, opacity: p(frame, t.exports + 6 + i * 4, 8) }}>
-                  {l}
-                </div>
-              ))}
-            </div>
-            <div style={{ fontFamily: SANS, fontSize: 17, color: C.muted, marginTop: 14 }}>One row per real run: model USD by role, tokens, Crustdata credits. {e.planImported ? "" : "No cfo.ai plan imported yet."}</div>
+            <div style={{ fontFamily: SANS, fontSize: 20, color: C.muted, marginTop: 14 }}>Columns from the file: one row per run, the numbers straight from the run bundles.</div>
           </Panel>
         </div>
       )}
@@ -143,32 +125,48 @@ export function CfoScene() {
   );
 }
 
+/** A number that counts up to its value (eased), with a pop when it lands. */
+function CountUp({ value, decimals, prefix, at, size }: { value: number; decimals: number; prefix: string; at: number; size: number }) {
+  const frame = useCurrentFrame();
+  const k = p(frame, at, 20, (x) => 1 - (1 - x) ** 3);
+  const land = Math.sin(Math.PI * p(frame, at + 18, 12));
+  const shown = value * k;
+  return (
+    <span style={{ ...display, fontSize: size, lineHeight: 1, color: C.accentText, display: "inline-block", whiteSpace: "nowrap", minWidth: size * 0.7, transform: `scale(${1 + land * 0.08})`, transformOrigin: "100% 80%", fontVariantNumeric: "tabular-nums" }}>
+      {prefix}
+      {decimals ? shown.toFixed(decimals) : Math.round(shown)}
+    </span>
+  );
+}
+
 export function CloseScene() {
   const frame = useCurrentFrame();
   const s = section("close");
   const t = P.close;
-  const ev = A.data.evalSuite;
+  const stats = closeStats();
   const out = p(frame, t.sky + 6, 18, IN);
-  const nine = p(frame, t.nine - 2, 14);
-  const zero = p(frame, t.zero - 2, 14);
-  const held = p(frame, t.held - 2, 14);
   return (
     <>
-      <SceneShell dur={s.dur}>
-        <Kicker n="6" label="Result" />
-        <div style={{ position: "absolute", inset: 0, opacity: 1 - out }}>
-          <div style={{ position: "absolute", left: 0, right: 0, top: 150, display: "flex", justifyContent: "center", opacity: p(frame, 4, 14) }}>
-            <Pill tone="held" size={26}>
-              {ev.label}
-            </Pill>
+      <SceneShell id="close" dur={s.dur}>
+        <div style={{ position: "absolute", inset: 0, opacity: 1 - out, transform: `scale(${1 + out * 0.05})` }}>
+          <div style={{ position: "absolute", left: 160, top: 150 }}>
+            <Kinetic id="close" phrase="So here is what Notary proved." size={84} emphasis={["proved"]} at={30} />
           </div>
-          <div style={{ position: "absolute", left: 160, right: 160, top: 260, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 36 }}>
-            <Stat label="Without Notary" sub="unsafe money moves" value={Math.round(ev.naiveUnsafe * nine)} shown={nine} tone={C.unsafeText} bg={C.unsafeBg} />
-            <Stat label="With Notary" sub="unsafe money moves" value={ev.guardedUnsafe} shown={zero} tone={C.certifiedText} bg={C.certifiedBg} />
-            <Stat label="With Notary" sub="refunds held for review" value={Math.round(ev.held * held)} shown={held} tone={C.heldText} bg={C.heldBg} />
-          </div>
-          <div style={{ position: "absolute", left: 0, right: 0, top: 700, textAlign: "center", fontFamily: SANS, fontSize: 19, color: C.muted, opacity: p(frame, 10, 14) }}>
-            {ev.queueSize !== null ? `${ev.queueSize} queued requests per run · ` : ""}source: {ev.source}
+          {stats.map((st, i) => {
+            const a = p(frame, st.at - 6, 14);
+            const dim = stats[i + 1] ? p(frame, stats[i + 1]!.at - 4, 12) * 0.35 : 0;
+            if (a <= 0) return null;
+            return (
+              <div key={st.key} style={{ position: "absolute", left: 160, top: 280 + i * 150, display: "flex", alignItems: "baseline", gap: 34, whiteSpace: "nowrap", opacity: a * (1 - dim), transform: `translateX(${(1 - a) * -50}px)` }}>
+                <div style={{ width: 400, textAlign: "right" }}>
+                  <CountUp value={st.value} decimals={st.decimals} prefix={st.prefix} at={st.at - 2} size={130} />
+                </div>
+                <div style={{ ...display, fontSize: 60, color: C.text }}>{st.text}</div>
+              </div>
+            );
+          })}
+          <div style={{ position: "absolute", left: 0, right: 0, top: 980, textAlign: "center", fontFamily: SANS, fontSize: 16, color: C.faint, opacity: p(frame, t.three, 12) }}>
+            From the runs' incidents, certificates, coverage output and economics.json
           </div>
         </div>
       </SceneShell>
@@ -177,12 +175,3 @@ export function CloseScene() {
   );
 }
 
-function Stat({ label, sub, value, shown, tone, bg }: { label: string; sub: string; value: number; shown: number; tone: string; bg: string }) {
-  return (
-    <Panel style={{ padding: "30px 34px", background: shown > 0 ? bg : C.page, opacity: mix(shown, 0.35, 1), transform: `translateY(${(1 - shown) * 16}px)` }}>
-      <div style={{ fontFamily: SANS, fontSize: 26, fontWeight: 600, color: C.strongMuted }}>{label}</div>
-      <div style={{ ...display, fontSize: 220, lineHeight: 1, color: tone, marginTop: 8 }}>{shown > 0 ? value : "–"}</div>
-      <div style={{ fontFamily: SANS, fontSize: 24, color: C.strongMuted, marginTop: 6 }}>{sub}</div>
-    </Panel>
-  );
-}

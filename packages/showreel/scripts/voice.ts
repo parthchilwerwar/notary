@@ -8,7 +8,7 @@
 // Output (explainer/voice/):
 //   <sectionId>.mp3   mp3_44100_128
 //   <sectionId>.json  { sectionId, voiceId, voiceName, modelId, textHash, text, durationSec, words: [{ text, startSec, endSec }] }
-//   timing.json       sections back to back in manifest order with gapSec between them (not rewritten when it has "locked": true)
+//   timing.json       sections back to back in NARRATION.md order with gapSec between them (not rewritten when it has "locked": true)
 //   captions.srt      rebuilt from timing.json (see scripts/captions.ts)
 //
 // Cache: a section is skipped when its mp3 + json exist and the json's textHash, voiceId and modelId match,
@@ -26,8 +26,9 @@ const REPO = resolve(ROOT, "../..");
 const EXPLAINER = resolve(ROOT, "explainer");
 const VOICE_DIR = resolve(EXPLAINER, "voice");
 
-/** Daniel — Steady Broadcaster (ElevenLabs premade; British, formal, informative/educational). */
-export const VOICE = { id: "onwK4e9ZLuTAKqWW03F9", name: "Daniel - Steady Broadcaster" } as const;
+/** Lily — Velvety Actress (ElevenLabs premade; female, British, "narrations with warmth and clarity").
+ *  v1 used Daniel - Steady Broadcaster (onwK4e9ZLuTAKqWW03F9); those files are kept in explainer/voice/v1-daniel/. */
+export const VOICE = { id: "pFZP5JQG7iQjIQuC4Bku", name: "Lily - Velvety Actress" } as const;
 export const MODEL_ID = "eleven_multilingual_v2";
 const OUTPUT_FORMAT = "mp3_44100_128";
 const VOICE_SETTINGS = { stability: 0.5, similarity_boost: 0.75, style: 0.05, use_speaker_boost: true, speed: 1.0 };
@@ -133,7 +134,7 @@ export function mp3DurationSec(buf: Uint8Array): number {
 
 type Timing = { gapSec: number; locked?: boolean; note?: string; sections: { id: string; startSec: number | null; durationSec: number | null; missing?: string }[] };
 
-/** Sections back to back in manifest order; a section without audio is listed as missing and takes no time. */
+/** Sections back to back in NARRATION.md order; a section without audio is listed as missing and takes no time. */
 export function buildTiming(ids: string[], durations: Map<string, number>, gapSec = DEFAULT_GAP_SEC): Timing {
   let t = 0;
   const sections = ids.map((id) => {
@@ -143,7 +144,7 @@ export function buildTiming(ids: string[], durations: Map<string, number>, gapSe
     t += d + gapSec;
     return row;
   });
-  return { gapSec, note: "Sections play back to back in manifest order with gapSec between them. Edit startSec/gapSec freely and set locked: true so `voice` keeps your edits; then run `pnpm --filter @notary/showreel captions`.", sections };
+  return { gapSec, note: "Sections play back to back in NARRATION.md order with gapSec between them. Edit startSec/gapSec freely and set locked: true so `voice` keeps your edits; then run `pnpm --filter @notary/showreel captions`.", sections };
 }
 
 function arg(name: string): string[] {
@@ -159,9 +160,13 @@ async function main() {
   const headers = { "xi-api-key": key };
 
   const narration = parseNarration(await readFile(resolve(REPO, "docs/video/NARRATION.md"), "utf8"));
-  const ids = manifestSectionIds();
-  const missingText = ids.filter((id) => !narration.has(id));
-  if (missingText.length) throw new Error(`NARRATION.md has no section for: ${missingText.join(", ")}`);
+  // Playback order is NARRATION.md's; the manifest should list the same sections (warn, don't fail, when it lags).
+  const ids = [...narration.keys()];
+  const manifestIds = manifestSectionIds();
+  const notInManifest = ids.filter((id) => !manifestIds.includes(id));
+  const notInNarration = manifestIds.filter((id) => !narration.has(id));
+  if (notInManifest.length || notInNarration.length || manifestIds.join() !== ids.filter((id) => manifestIds.includes(id)).join())
+    console.warn(`warning: manifest sections (${manifestIds.join(", ")}) differ from NARRATION.md (${ids.join(", ")}); using NARRATION.md order`);
   const only = arg("only");
   const skip = new Set(arg("skip"));
   const wanted = ids.filter((id) => (only.length ? only.includes(id) : true) && !skip.has(id));

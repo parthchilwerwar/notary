@@ -1,41 +1,41 @@
 {
   "sectionId": "intro",
-  "voiceId": "onwK4e9ZLuTAKqWW03F9",
-  "voiceName": "Daniel - Steady Broadcaster",
+  "voiceId": "pFZP5JQG7iQjIQuC4Bku",
+  "voiceName": "Lily - Velvety Actress",
   "modelId": "eleven_multilingual_v2",
   "textHash": "753a8b1d48754857fa61001d1bd5c13e33c4d98fb8da3e41461d17fa176183fb",
   "text": "Notary. No certificate, no money moves.",
-  "durationSec": 4.023,
+  "durationSec": 3.736,
   "words": [
     {
       "text": "Notary.",
       "startSec": 0,
-      "endSec": 0.72
+      "endSec": 0.708
     },
     {
       "text": "No",
-      "startSec": 1.161,
-      "endSec": 1.324
+      "startSec": 1.149,
+      "endSec": 1.3
     },
     {
       "text": "certificate,",
-      "startSec": 1.393,
-      "endSec": 2.043
+      "startSec": 1.37,
+      "endSec": 2.055
     },
     {
       "text": "no",
-      "startSec": 2.426,
-      "endSec": 2.612
+      "startSec": 2.38,
+      "endSec": 2.531
     },
     {
       "text": "money",
-      "startSec": 2.694,
-      "endSec": 2.926
+      "startSec": 2.601,
+      "endSec": 2.821
     },
     {
       "text": "moves.",
-      "startSec": 2.984,
-      "endSec": 3.947
+      "startSec": 2.868,
+      "endSec": 3.669
     }
   ]
 }

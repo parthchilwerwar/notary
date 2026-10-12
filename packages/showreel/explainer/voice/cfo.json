@@ -1,171 +1,161 @@
 {
   "sectionId": "cfo",
-  "voiceId": "onwK4e9ZLuTAKqWW03F9",
-  "voiceName": "Daniel - Steady Broadcaster",
+  "voiceId": "pFZP5JQG7iQjIQuC4Bku",
+  "voiceName": "Lily - Velvety Actress",
   "modelId": "eleven_multilingual_v2",
-  "textHash": "77b232f47e16306fda9b725c9d25f2b3e343f48a933eae53697efe8d6a35e788",
-  "text": "And Notary measures what certainty costs: about three cents of model spend and fifteen Crustdata credits per live run. It exports those real numbers for cfo.ai to build the business plan on.",
-  "durationSec": 16.353,
+  "textHash": "4dc1b80db9c6764bd5cd071d8f0dd94ce53b33717bff9ffa1d6ff9fe60b126c1",
+  "text": "And Notary measures what certainty costs: about three cents of model spend and fifteen Crustdata credits per run. It exports those numbers for cfo.ai to build the business plan on.",
+  "durationSec": 13.401,
   "words": [
     {
       "text": "And",
       "startSec": 0,
-      "endSec": 0.186
+      "endSec": 0.163
     },
     {
       "text": "Notary",
-      "startSec": 0.244,
-      "endSec": 0.569
+      "startSec": 0.232,
+      "endSec": 0.592
     },
     {
       "text": "measures",
-      "startSec": 0.639,
-      "endSec": 1.01
+      "startSec": 0.65,
+      "endSec": 0.975
     },
     {
       "text": "what",
-      "startSec": 1.393,
-      "endSec": 1.614
+      "startSec": 1.057,
+      "endSec": 1.254
     },
     {
       "text": "certainty",
-      "startSec": 1.695,
-      "endSec": 2.183
+      "startSec": 1.324,
+      "endSec": 1.776
     },
     {
       "text": "costs:",
-      "startSec": 2.252,
-      "endSec": 2.949
+      "startSec": 1.846,
+      "endSec": 2.543
     },
     {
       "text": "about",
-      "startSec": 3.39,
-      "endSec": 3.68
+      "startSec": 2.984,
+      "endSec": 3.274
     },
     {
       "text": "three",
-      "startSec": 3.727,
-      "endSec": 3.971
+      "startSec": 3.32,
+      "endSec": 3.576
     },
     {
       "text": "cents",
-      "startSec": 4.017,
-      "endSec": 4.354
+      "startSec": 3.622,
+      "endSec": 3.913
     },
     {
       "text": "of",
-      "startSec": 4.412,
-      "endSec": 4.481
+      "startSec": 3.959,
+      "endSec": 4.017
     },
     {
       "text": "model",
-      "startSec": 4.551,
-      "endSec": 4.783
+      "startSec": 4.075,
+      "endSec": 4.296
     },
     {
       "text": "spend",
-      "startSec": 4.83,
-      "endSec": 5.259
+      "startSec": 4.342,
+      "endSec": 4.748
     },
     {
       "text": "and",
-      "startSec": 5.573,
-      "endSec": 5.805
+      "startSec": 4.957,
+      "endSec": 5.19
     },
     {
       "text": "fifteen",
-      "startSec": 5.886,
-      "endSec": 6.351
+      "startSec": 5.271,
+      "endSec": 5.689
     },
     {
       "text": "Crustdata",
-      "startSec": 6.444,
-      "endSec": 7.059
+      "startSec": 5.77,
+      "endSec": 6.385
     },
     {
       "text": "credits",
-      "startSec": 7.105,
-      "endSec": 7.535
+      "startSec": 6.432,
+      "endSec": 6.78
     },
     {
       "text": "per",
-      "startSec": 7.814,
-      "endSec": 8.011
-    },
-    {
-      "text": "live",
-      "startSec": 8.081,
-      "endSec": 8.394
+      "startSec": 6.827,
+      "endSec": 7.001
     },
     {
       "text": "run.",
-      "startSec": 8.452,
-      "endSec": 8.963
+      "startSec": 7.059,
+      "endSec": 7.535
     },
     {
       "text": "It",
-      "startSec": 9.66,
-      "endSec": 9.81
+      "startSec": 7.976,
+      "endSec": 8.115
     },
     {
       "text": "exports",
-      "startSec": 9.868,
-      "endSec": 10.391
+      "startSec": 8.162,
+      "endSec": 8.649
     },
     {
       "text": "those",
-      "startSec": 10.437,
-      "endSec": 10.716
-    },
-    {
-      "text": "real",
-      "startSec": 10.809,
-      "endSec": 11.064
+      "startSec": 8.696,
+      "endSec": 8.916
     },
     {
       "text": "numbers",
-      "startSec": 11.146,
-      "endSec": 11.598
+      "startSec": 8.975,
+      "endSec": 9.311
     },
     {
       "text": "for",
-      "startSec": 11.773,
-      "endSec": 11.923
+      "startSec": 9.358,
+      "endSec": 9.462
     },
     {
       "text": "cfo.ai",
-      "startSec": 11.981,
-      "endSec": 13.456
+      "startSec": 9.532,
+      "endSec": 10.635
     },
     {
       "text": "to",
-      "startSec": 13.839,
-      "endSec": 13.955
+      "startSec": 10.704,
+      "endSec": 10.774
     },
     {
       "text": "build",
-      "startSec": 14.025,
-      "endSec": 14.303
+      "startSec": 10.832,
+      "endSec": 11.029
     },
     {
       "text": "the",
-      "startSec": 14.35,
-      "endSec": 14.431
+      "startSec": 11.064,
+      "endSec": 11.134
     },
     {
       "text": "business",
-      "startSec": 14.466,
-      "endSec": 14.803
+      "startSec": 11.169,
+      "endSec": 11.494
     },
     {
       "text": "plan",
-      "startSec": 14.838,
-      "endSec": 15.105
+      "startSec": 11.529,
+      "endSec": 11.738
     },
     {
       "text": "on.",
-      "startSec": 15.197,
-      "endSec": 16.3
+      "startSec": 11.819,
+      "endSec": 13.328
     }
   ]
 }

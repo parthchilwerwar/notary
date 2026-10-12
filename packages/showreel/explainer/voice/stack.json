@@ -1,0 +1,511 @@
+{
+  "sectionId": "stack",
+  "voiceId": "pFZP5JQG7iQjIQuC4Bku",
+  "voiceName": "Lily - Velvety Actress",
+  "modelId": "eleven_multilingual_v2",
+  "textHash": "2ace78d2875ed0863eca847fcedfd90eda165350e0cedb072bff7ba86ac8e5c9",
+  "text": "Dodo Payments is where the money moves: refunds, credits and plan changes, run in test mode. Notary certified four Dodo behaviors before trusting them, from page limits to wallet credit units and idempotency keys. Crustdata tells the agent who each customer is, so the right policy applies. The models run through a LiteLLM gateway, with Claude as the Reflector and Adversary. And Notary is built to run on AWS: deploy scripts for a read-only hosted API on ECS, and Amazon Bedrock as a drop-in model provider, so the agents and their models can run inside a team's own AWS account.",
+  "durationSec": 43.52,
+  "words": [
+    {
+      "text": "Dodo",
+      "startSec": 0,
+      "endSec": 0.406
+    },
+    {
+      "text": "Payments",
+      "startSec": 0.476,
+      "endSec": 0.871
+    },
+    {
+      "text": "is",
+      "startSec": 0.906,
+      "endSec": 0.987
+    },
+    {
+      "text": "where",
+      "startSec": 1.022,
+      "endSec": 1.219
+    },
+    {
+      "text": "the",
+      "startSec": 1.254,
+      "endSec": 1.324
+    },
+    {
+      "text": "money",
+      "startSec": 1.37,
+      "endSec": 1.579
+    },
+    {
+      "text": "moves:",
+      "startSec": 1.637,
+      "endSec": 2.287
+    },
+    {
+      "text": "refunds,",
+      "startSec": 2.531,
+      "endSec": 3.077
+    },
+    {
+      "text": "credits",
+      "startSec": 3.111,
+      "endSec": 3.541
+    },
+    {
+      "text": "and",
+      "startSec": 3.599,
+      "endSec": 3.727
+    },
+    {
+      "text": "plan",
+      "startSec": 3.796,
+      "endSec": 4.063
+    },
+    {
+      "text": "changes,",
+      "startSec": 4.122,
+      "endSec": 4.783
+    },
+    {
+      "text": "run",
+      "startSec": 4.992,
+      "endSec": 5.306
+    },
+    {
+      "text": "in",
+      "startSec": 5.387,
+      "endSec": 5.515
+    },
+    {
+      "text": "test",
+      "startSec": 5.584,
+      "endSec": 5.886
+    },
+    {
+      "text": "mode.",
+      "startSec": 5.968,
+      "endSec": 6.525
+    },
+    {
+      "text": "Notary",
+      "startSec": 7.221,
+      "endSec": 7.674
+    },
+    {
+      "text": "certified",
+      "startSec": 7.732,
+      "endSec": 8.336
+    },
+    {
+      "text": "four",
+      "startSec": 8.417,
+      "endSec": 8.696
+    },
+    {
+      "text": "Dodo",
+      "startSec": 8.766,
+      "endSec": 9.067
+    },
+    {
+      "text": "behaviors",
+      "startSec": 9.137,
+      "endSec": 9.718
+    },
+    {
+      "text": "before",
+      "startSec": 9.787,
+      "endSec": 10.252
+    },
+    {
+      "text": "trusting",
+      "startSec": 10.298,
+      "endSec": 10.716
+    },
+    {
+      "text": "them,",
+      "startSec": 10.762,
+      "endSec": 11.111
+    },
+    {
+      "text": "from",
+      "startSec": 11.285,
+      "endSec": 11.459
+    },
+    {
+      "text": "page",
+      "startSec": 11.529,
+      "endSec": 11.819
+    },
+    {
+      "text": "limits",
+      "startSec": 11.865,
+      "endSec": 12.225
+    },
+    {
+      "text": "to",
+      "startSec": 12.434,
+      "endSec": 12.562
+    },
+    {
+      "text": "wallet",
+      "startSec": 12.655,
+      "endSec": 12.945
+    },
+    {
+      "text": "credit",
+      "startSec": 12.992,
+      "endSec": 13.259
+    },
+    {
+      "text": "units",
+      "startSec": 13.375,
+      "endSec": 13.723
+    },
+    {
+      "text": "and",
+      "startSec": 13.897,
+      "endSec": 14.106
+    },
+    {
+      "text": "idempotency",
+      "startSec": 14.176,
+      "endSec": 14.942
+    },
+    {
+      "text": "keys.",
+      "startSec": 15.012,
+      "endSec": 15.697
+    },
+    {
+      "text": "Crustdata",
+      "startSec": 16.51,
+      "endSec": 17.264
+    },
+    {
+      "text": "tells",
+      "startSec": 17.415,
+      "endSec": 17.717
+    },
+    {
+      "text": "the",
+      "startSec": 17.764,
+      "endSec": 17.833
+    },
+    {
+      "text": "agent",
+      "startSec": 17.903,
+      "endSec": 18.205
+    },
+    {
+      "text": "who",
+      "startSec": 18.24,
+      "endSec": 18.356
+    },
+    {
+      "text": "each",
+      "startSec": 18.437,
+      "endSec": 18.646
+    },
+    {
+      "text": "customer",
+      "startSec": 18.704,
+      "endSec": 19.099
+    },
+    {
+      "text": "is,",
+      "startSec": 19.168,
+      "endSec": 19.644
+    },
+    {
+      "text": "so",
+      "startSec": 19.853,
+      "endSec": 19.993
+    },
+    {
+      "text": "the",
+      "startSec": 20.051,
+      "endSec": 20.12
+    },
+    {
+      "text": "right",
+      "startSec": 20.19,
+      "endSec": 20.387
+    },
+    {
+      "text": "policy",
+      "startSec": 20.422,
+      "endSec": 20.782
+    },
+    {
+      "text": "applies.",
+      "startSec": 20.829,
+      "endSec": 21.595
+    },
+    {
+      "text": "The",
+      "startSec": 21.92,
+      "endSec": 22.036
+    },
+    {
+      "text": "models",
+      "startSec": 22.094,
+      "endSec": 22.384
+    },
+    {
+      "text": "run",
+      "startSec": 22.442,
+      "endSec": 22.605
+    },
+    {
+      "text": "through",
+      "startSec": 22.651,
+      "endSec": 22.86
+    },
+    {
+      "text": "a",
+      "startSec": 22.883,
+      "endSec": 22.918
+    },
+    {
+      "text": "LiteLLM",
+      "startSec": 23,
+      "endSec": 23.905
+    },
+    {
+      "text": "gateway,",
+      "startSec": 23.986,
+      "endSec": 24.695
+    },
+    {
+      "text": "with",
+      "startSec": 24.904,
+      "endSec": 25.101
+    },
+    {
+      "text": "Claude",
+      "startSec": 25.159,
+      "endSec": 25.565
+    },
+    {
+      "text": "as",
+      "startSec": 25.589,
+      "endSec": 25.658
+    },
+    {
+      "text": "the",
+      "startSec": 25.705,
+      "endSec": 25.774
+    },
+    {
+      "text": "Reflector",
+      "startSec": 25.832,
+      "endSec": 26.366
+    },
+    {
+      "text": "and",
+      "startSec": 26.436,
+      "endSec": 26.552
+    },
+    {
+      "text": "Adversary.",
+      "startSec": 26.645,
+      "endSec": 27.481
+    },
+    {
+      "text": "And",
+      "startSec": 27.864,
+      "endSec": 28.027
+    },
+    {
+      "text": "Notary",
+      "startSec": 28.108,
+      "endSec": 28.491
+    },
+    {
+      "text": "is",
+      "startSec": 28.538,
+      "endSec": 28.619
+    },
+    {
+      "text": "built",
+      "startSec": 28.665,
+      "endSec": 28.874
+    },
+    {
+      "text": "to",
+      "startSec": 28.921,
+      "endSec": 28.979
+    },
+    {
+      "text": "run",
+      "startSec": 29.072,
+      "endSec": 29.327
+    },
+    {
+      "text": "on",
+      "startSec": 29.385,
+      "endSec": 29.466
+    },
+    {
+      "text": "AWS:",
+      "startSec": 29.536,
+      "endSec": 30.558
+    },
+    {
+      "text": "deploy",
+      "startSec": 30.883,
+      "endSec": 31.301
+    },
+    {
+      "text": "scripts",
+      "startSec": 31.359,
+      "endSec": 31.719
+    },
+    {
+      "text": "for",
+      "startSec": 31.765,
+      "endSec": 31.893
+    },
+    {
+      "text": "a",
+      "startSec": 31.951,
+      "endSec": 31.974
+    },
+    {
+      "text": "read-only",
+      "startSec": 32.091,
+      "endSec": 32.741
+    },
+    {
+      "text": "hosted",
+      "startSec": 32.81,
+      "endSec": 33.193
+    },
+    {
+      "text": "API",
+      "startSec": 33.252,
+      "endSec": 33.797
+    },
+    {
+      "text": "on",
+      "startSec": 33.878,
+      "endSec": 33.995
+    },
+    {
+      "text": "ECS,",
+      "startSec": 34.076,
+      "endSec": 34.842
+    },
+    {
+      "text": "and",
+      "startSec": 35.016,
+      "endSec": 35.179
+    },
+    {
+      "text": "Amazon",
+      "startSec": 35.272,
+      "endSec": 35.666
+    },
+    {
+      "text": "Bedrock",
+      "startSec": 35.748,
+      "endSec": 36.212
+    },
+    {
+      "text": "as",
+      "startSec": 36.27,
+      "endSec": 36.328
+    },
+    {
+      "text": "a",
+      "startSec": 36.375,
+      "endSec": 36.409
+    },
+    {
+      "text": "drop-in",
+      "startSec": 36.491,
+      "endSec": 36.932
+    },
+    {
+      "text": "model",
+      "startSec": 37.013,
+      "endSec": 37.245
+    },
+    {
+      "text": "provider,",
+      "startSec": 37.292,
+      "endSec": 38
+    },
+    {
+      "text": "so",
+      "startSec": 38.151,
+      "endSec": 38.279
+    },
+    {
+      "text": "the",
+      "startSec": 38.337,
+      "endSec": 38.418
+    },
+    {
+      "text": "agents",
+      "startSec": 38.488,
+      "endSec": 38.906
+    },
+    {
+      "text": "and",
+      "startSec": 38.94,
+      "endSec": 39.01
+    },
+    {
+      "text": "their",
+      "startSec": 39.057,
+      "endSec": 39.207
+    },
+    {
+      "text": "models",
+      "startSec": 39.254,
+      "endSec": 39.579
+    },
+    {
+      "text": "can",
+      "startSec": 39.637,
+      "endSec": 39.765
+    },
+    {
+      "text": "run",
+      "startSec": 39.823,
+      "endSec": 40.02
+    },
+    {
+      "text": "inside",
+      "startSec": 40.113,
+      "endSec": 40.67
+    },
+    {
+      "text": "a",
+      "startSec": 40.705,
+      "endSec": 40.74
+    },
+    {
+      "text": "team's",
+      "startSec": 40.798,
+      "endSec": 41.181
+    },
+    {
+      "text": "own",
+      "startSec": 41.239,
+      "endSec": 41.506
+    },
+    {
+      "text": "AWS",
+      "startSec": 41.587,
+      "endSec": 42.249
+    },
+    {
+      "text": "account.",
+      "startSec": 42.296,
+      "endSec": 43.468
+    }
+  ]
+}

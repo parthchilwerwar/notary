@@ -2,7 +2,7 @@
 // Notary, neatlogs, Entire, cfo.ai, close), each as long as its voice line. Every record on screen
 // comes from src/explainer/assets.json (scripts/explainer-prep.ts); recordings of the real dashboard
 // replace the rendered views as soon as the recording agent delivers them.
-import { AbsoluteFill, Sequence } from "remotion";
+import { AbsoluteFill, Sequence, useCurrentFrame } from "remotion";
 import "../web";
 import "../fonts";
 import { C, SANS } from "../theme";
@@ -13,9 +13,12 @@ import { IntroSky } from "./scenes/Sky";
 import { Problem } from "./scenes/Problem";
 import { NotaryScene } from "./scenes/NotaryScene";
 import { Neatlogs } from "./scenes/Neatlogs";
+import { StackScene } from "./scenes/Stack";
+import { ProgressBar } from "./kit";
+import { P } from "./plan";
 import { CfoScene, CloseScene, EntireScene } from "./scenes/Closing";
 
-const SCENES = { intro: IntroSky, problem: Problem, notary: NotaryScene, neatlogs: Neatlogs, entire: EntireScene, cfo: CfoScene, close: CloseScene } as const;
+const SCENES = { intro: IntroSky, problem: Problem, notary: NotaryScene, stack: StackScene, neatlogs: Neatlogs, entire: EntireScene, cfo: CfoScene, close: CloseScene } as const;
 
 /** Assets still missing (shown as a small corner badge in previews; the final render has none). */
 export const PENDING = [
@@ -26,6 +29,10 @@ export const PENDING = [
 ];
 
 export function Explainer({ showPending = false }: { showPending?: boolean }) {
+  const frame = useCurrentFrame();
+  const intro = SECTIONS[0]!;
+  const close = SECTIONS.at(-1)!;
+  const onSky = frame < intro.from + intro.dur - 20 || frame >= close.from + P.close.sky + 16;
   return (
     <AbsoluteFill style={{ background: C.page, overflow: "hidden" }}>
       {SECTIONS.map((s, i) => {
@@ -37,6 +44,7 @@ export function Explainer({ showPending = false }: { showPending?: boolean }) {
           </Sequence>
         );
       })}
+      <ProgressBar frame={frame} onSky={onSky} />
       <Captions />
       <Sound />
       {showPending && PENDING.length > 0 && (

@@ -1,531 +1,546 @@
 {
   "sectionId": "notary",
-  "voiceId": "onwK4e9ZLuTAKqWW03F9",
-  "voiceName": "Daniel - Steady Broadcaster",
+  "voiceId": "pFZP5JQG7iQjIQuC4Bku",
+  "voiceName": "Lily - Velvety Actress",
   "modelId": "eleven_multilingual_v2",
-  "textHash": "554da43c7f7bfdbcfec9f6a3f9d1cad54add9f47ea544072a451c7e974ffa551",
-  "text": "Notary is an agent that won't touch money until it has proven how its tools behave. It reads the docs and turns every promise into a claim. Before each test call, it commits a prediction, hashed, so it can't change afterwards. Then it calls the live API and compares. A Reflector proposes explanations. A stronger Adversary, running on a different model, tries to refute them. On our live runs, it narrowed all five beliefs instead of rubber-stamping them. What survives becomes a certificate, valid only where it was tested. No certificate, no money moves: the Guard holds anything uncovered for a person to review.",
-  "durationSec": 48.823,
+  "textHash": "1a00d056c4033da2113c8013d10548dd0c5944109a46377913d5f76184b0db66",
+  "text": "Notary is an agent that won't touch money until it has proven how its tools behave. It reads the docs and turns every promise into a claim. Before each test call, it commits a prediction, hashed, so it can't change afterwards. Then it calls the API and compares. A Reflector proposes explanations. A stronger Adversary, running on a different model, tries to refute them. In our runs, it narrowed all five beliefs instead of rubber-stamping them. What survives becomes a certificate, valid only where it was tested. And the rule is simple. No certificate, no money moves. The Guard holds anything uncovered for a person to review.",
+  "durationSec": 44.278,
   "words": [
     {
       "text": "Notary",
       "startSec": 0,
-      "endSec": 0.499
+      "endSec": 0.511
     },
     {
       "text": "is",
-      "startSec": 0.569,
-      "endSec": 0.662
+      "startSec": 0.557,
+      "endSec": 0.639
     },
     {
       "text": "an",
-      "startSec": 0.708,
-      "endSec": 0.778
+      "startSec": 0.673,
+      "endSec": 0.743
     },
     {
       "text": "agent",
-      "startSec": 0.848,
-      "endSec": 1.207
+      "startSec": 0.813,
+      "endSec": 1.184
     },
     {
       "text": "that",
-      "startSec": 1.254,
-      "endSec": 1.405
+      "startSec": 1.219,
+      "endSec": 1.347
     },
     {
       "text": "won't",
-      "startSec": 1.474,
-      "endSec": 1.741
+      "startSec": 1.428,
+      "endSec": 1.707
     },
     {
       "text": "touch",
-      "startSec": 1.788,
-      "endSec": 2.032
+      "startSec": 1.753,
+      "endSec": 1.997
     },
     {
       "text": "money",
-      "startSec": 2.101,
-      "endSec": 2.392
+      "startSec": 2.067,
+      "endSec": 2.322
     },
     {
       "text": "until",
-      "startSec": 2.775,
-      "endSec": 3.053
+      "startSec": 2.415,
+      "endSec": 2.67
     },
     {
       "text": "it",
-      "startSec": 3.1,
-      "endSec": 3.158
+      "startSec": 2.717,
+      "endSec": 2.775
     },
     {
       "text": "has",
-      "startSec": 3.193,
-      "endSec": 3.286
+      "startSec": 2.81,
+      "endSec": 2.902
     },
     {
       "text": "proven",
-      "startSec": 3.355,
-      "endSec": 3.773
+      "startSec": 2.972,
+      "endSec": 3.402
     },
     {
       "text": "how",
-      "startSec": 4.098,
-      "endSec": 4.249
+      "startSec": 3.471,
+      "endSec": 3.576
     },
     {
       "text": "its",
-      "startSec": 4.307,
-      "endSec": 4.435
+      "startSec": 3.634,
+      "endSec": 3.762
     },
     {
       "text": "tools",
-      "startSec": 4.481,
-      "endSec": 4.807
+      "startSec": 3.808,
+      "endSec": 4.098
     },
     {
       "text": "behave.",
-      "startSec": 4.865,
-      "endSec": 5.608
+      "startSec": 4.156,
+      "endSec": 4.865
     },
     {
       "text": "It",
-      "startSec": 5.991,
-      "endSec": 6.13
+      "startSec": 5.248,
+      "endSec": 5.399
     },
     {
       "text": "reads",
-      "startSec": 6.211,
-      "endSec": 6.513
+      "startSec": 5.48,
+      "endSec": 5.759
     },
     {
       "text": "the",
-      "startSec": 6.56,
-      "endSec": 6.629
+      "startSec": 5.805,
+      "endSec": 5.886
     },
     {
       "text": "docs",
-      "startSec": 6.687,
-      "endSec": 7.082
+      "startSec": 5.956,
+      "endSec": 6.327
     },
     {
       "text": "and",
-      "startSec": 7.291,
-      "endSec": 7.465
+      "startSec": 6.374,
+      "endSec": 6.478
     },
     {
       "text": "turns",
-      "startSec": 7.523,
-      "endSec": 7.93
+      "startSec": 6.536,
+      "endSec": 6.885
     },
     {
       "text": "every",
-      "startSec": 8.081,
-      "endSec": 8.452
+      "startSec": 7.036,
+      "endSec": 7.43
     },
     {
       "text": "promise",
-      "startSec": 8.522,
-      "endSec": 9.079
+      "startSec": 7.5,
+      "endSec": 7.906
     },
     {
       "text": "into",
-      "startSec": 9.23,
-      "endSec": 9.509
+      "startSec": 7.964,
+      "endSec": 8.243
     },
     {
       "text": "a",
-      "startSec": 9.59,
-      "endSec": 9.613
+      "startSec": 8.324,
+      "endSec": 8.348
     },
     {
       "text": "claim.",
-      "startSec": 9.683,
-      "endSec": 10.31
+      "startSec": 8.406,
+      "endSec": 8.975
     },
     {
       "text": "Before",
-      "startSec": 10.913,
-      "endSec": 11.262
+      "startSec": 9.416,
+      "endSec": 9.752
     },
     {
       "text": "each",
-      "startSec": 11.32,
-      "endSec": 11.517
+      "startSec": 9.81,
+      "endSec": 10.031
     },
     {
       "text": "test",
-      "startSec": 11.575,
-      "endSec": 11.831
+      "startSec": 10.089,
+      "endSec": 10.356
     },
     {
       "text": "call,",
-      "startSec": 11.877,
-      "endSec": 12.307
+      "startSec": 10.414,
+      "endSec": 10.716
     },
     {
       "text": "it",
-      "startSec": 12.481,
-      "endSec": 12.608
+      "startSec": 10.751,
+      "endSec": 10.844
     },
     {
       "text": "commits",
-      "startSec": 12.655,
-      "endSec": 12.968
+      "startSec": 10.89,
+      "endSec": 11.18
     },
     {
       "text": "a",
-      "startSec": 13.015,
-      "endSec": 13.038
+      "startSec": 11.215,
+      "endSec": 11.238
     },
     {
       "text": "prediction,",
-      "startSec": 13.096,
-      "endSec": 13.804
+      "startSec": 11.285,
+      "endSec": 12.016
     },
     {
       "text": "hashed,",
-      "startSec": 14.013,
-      "endSec": 14.594
+      "startSec": 12.341,
+      "endSec": 12.98
     },
     {
       "text": "so",
-      "startSec": 14.768,
-      "endSec": 14.907
+      "startSec": 13.131,
+      "endSec": 13.258
     },
     {
       "text": "it",
-      "startSec": 14.977,
-      "endSec": 15.046
+      "startSec": 13.328,
+      "endSec": 13.386
     },
     {
       "text": "can't",
-      "startSec": 15.093,
-      "endSec": 15.371
+      "startSec": 13.433,
+      "endSec": 13.688
     },
     {
       "text": "change",
-      "startSec": 15.43,
-      "endSec": 15.929
+      "startSec": 13.734,
+      "endSec": 14.118
     },
     {
       "text": "afterwards.",
-      "startSec": 15.975,
-      "endSec": 16.823
+      "startSec": 14.152,
+      "endSec": 15.035
     },
     {
       "text": "Then",
-      "startSec": 17.183,
-      "endSec": 17.357
+      "startSec": 15.476,
+      "endSec": 15.697
     },
     {
       "text": "it",
-      "startSec": 17.403,
-      "endSec": 17.461
+      "startSec": 15.766,
+      "endSec": 15.824
     },
     {
       "text": "calls",
-      "startSec": 17.519,
-      "endSec": 17.798
+      "startSec": 15.871,
+      "endSec": 16.103
     },
     {
       "text": "the",
-      "startSec": 17.844,
-      "endSec": 17.902
-    },
-    {
-      "text": "live",
-      "startSec": 17.961,
-      "endSec": 18.262
+      "startSec": 16.138,
+      "endSec": 16.207
     },
     {
       "text": "API",
-      "startSec": 18.332,
-      "endSec": 19.04
+      "startSec": 16.265,
+      "endSec": 16.776
     },
     {
       "text": "and",
-      "startSec": 19.342,
-      "endSec": 19.505
+      "startSec": 16.858,
+      "endSec": 17.02
     },
     {
       "text": "compares.",
-      "startSec": 19.563,
-      "endSec": 20.375
+      "startSec": 17.101,
+      "endSec": 17.926
     },
     {
       "text": "A",
-      "startSec": 20.735,
-      "endSec": 20.817
+      "startSec": 18.367,
+      "endSec": 18.448
     },
     {
       "text": "Reflector",
-      "startSec": 20.909,
-      "endSec": 21.42
+      "startSec": 18.518,
+      "endSec": 19.017
     },
     {
       "text": "proposes",
-      "startSec": 21.618,
-      "endSec": 22.198
+      "startSec": 19.052,
+      "endSec": 19.516
     },
     {
       "text": "explanations.",
-      "startSec": 22.279,
-      "endSec": 23.348
+      "startSec": 19.597,
+      "endSec": 20.7
     },
     {
       "text": "A",
-      "startSec": 23.557,
-      "endSec": 23.626
+      "startSec": 20.979,
+      "endSec": 21.049
     },
     {
       "text": "stronger",
-      "startSec": 23.719,
-      "endSec": 24.114
+      "startSec": 21.13,
+      "endSec": 21.49
     },
     {
       "text": "Adversary,",
-      "startSec": 24.183,
-      "endSec": 24.996
+      "startSec": 21.548,
+      "endSec": 22.279
     },
     {
       "text": "running",
-      "startSec": 25.298,
-      "endSec": 25.588
+      "startSec": 22.454,
+      "endSec": 22.744
     },
     {
       "text": "on",
-      "startSec": 25.67,
-      "endSec": 25.762
+      "startSec": 22.79,
+      "endSec": 22.86
     },
     {
       "text": "a",
-      "startSec": 25.809,
-      "endSec": 25.832
+      "startSec": 22.895,
+      "endSec": 22.93
     },
     {
       "text": "different",
-      "startSec": 25.902,
-      "endSec": 26.204
+      "startSec": 22.999,
+      "endSec": 23.394
     },
     {
       "text": "model,",
-      "startSec": 26.262,
-      "endSec": 26.749
+      "startSec": 23.44,
+      "endSec": 23.893
     },
     {
       "text": "tries",
-      "startSec": 27.121,
-      "endSec": 27.504
+      "startSec": 23.986,
+      "endSec": 24.381
     },
     {
       "text": "to",
-      "startSec": 27.562,
-      "endSec": 27.632
+      "startSec": 24.427,
+      "endSec": 24.485
     },
     {
       "text": "refute",
-      "startSec": 27.713,
-      "endSec": 28.119
+      "startSec": 24.567,
+      "endSec": 24.95
     },
     {
       "text": "them.",
-      "startSec": 28.154,
-      "endSec": 28.502
+      "startSec": 24.984,
+      "endSec": 25.344
     },
     {
-      "text": "On",
-      "startSec": 29.071,
-      "endSec": 29.245
+      "text": "In",
+      "startSec": 25.786,
+      "endSec": 25.925
     },
     {
       "text": "our",
-      "startSec": 29.292,
-      "endSec": 29.408
-    },
-    {
-      "text": "live",
-      "startSec": 29.478,
-      "endSec": 29.756
+      "startSec": 25.995,
+      "endSec": 26.145
     },
     {
       "text": "runs,",
-      "startSec": 29.803,
-      "endSec": 30.348
+      "startSec": 26.204,
+      "endSec": 26.761
     },
     {
       "text": "it",
-      "startSec": 30.488,
-      "endSec": 30.639
+      "startSec": 26.877,
+      "endSec": 27.016
     },
     {
       "text": "narrowed",
-      "startSec": 30.697,
-      "endSec": 31.068
+      "startSec": 27.086,
+      "endSec": 27.457
     },
     {
       "text": "all",
-      "startSec": 31.138,
-      "endSec": 31.358
+      "startSec": 27.527,
+      "endSec": 27.771
     },
     {
       "text": "five",
-      "startSec": 31.44,
-      "endSec": 31.8
+      "startSec": 27.864,
+      "endSec": 28.166
     },
     {
       "text": "beliefs",
-      "startSec": 31.846,
-      "endSec": 32.334
+      "startSec": 28.2,
+      "endSec": 28.63
     },
     {
       "text": "instead",
-      "startSec": 32.601,
-      "endSec": 32.984
+      "startSec": 28.839,
+      "endSec": 29.245
     },
     {
       "text": "of",
-      "startSec": 33.031,
-      "endSec": 33.077
+      "startSec": 29.28,
+      "endSec": 29.326
     },
     {
       "text": "rubber-stamping",
-      "startSec": 33.193,
-      "endSec": 33.936
+      "startSec": 29.385,
+      "endSec": 30.035
     },
     {
       "text": "them.",
-      "startSec": 33.994,
-      "endSec": 34.296
+      "startSec": 30.093,
+      "endSec": 30.487
     },
     {
       "text": "What",
-      "startSec": 34.807,
-      "endSec": 35.016
+      "startSec": 30.929,
+      "endSec": 31.138
     },
     {
       "text": "survives",
-      "startSec": 35.074,
-      "endSec": 35.724
+      "startSec": 31.196,
+      "endSec": 31.718
     },
     {
       "text": "becomes",
-      "startSec": 36.049,
-      "endSec": 36.549
+      "startSec": 31.776,
+      "endSec": 32.078
     },
     {
       "text": "a",
-      "startSec": 36.874,
-      "endSec": 36.99
+      "startSec": 32.113,
+      "endSec": 32.148
     },
     {
       "text": "certificate,",
-      "startSec": 37.071,
-      "endSec": 37.895
+      "startSec": 32.194,
+      "endSec": 33.042
     },
     {
       "text": "valid",
-      "startSec": 38.406,
-      "endSec": 38.824
+      "startSec": 33.216,
+      "endSec": 33.553
     },
     {
       "text": "only",
-      "startSec": 38.917,
-      "endSec": 39.277
+      "startSec": 33.622,
+      "endSec": 33.959
     },
     {
       "text": "where",
-      "startSec": 39.335,
-      "endSec": 39.556
+      "startSec": 34.017,
+      "endSec": 34.191
     },
     {
       "text": "it",
-      "startSec": 39.59,
-      "endSec": 39.66
+      "startSec": 34.226,
+      "endSec": 34.272
     },
     {
       "text": "was",
-      "startSec": 39.695,
-      "endSec": 39.811
+      "startSec": 34.307,
+      "endSec": 34.4
     },
     {
       "text": "tested.",
-      "startSec": 39.881,
-      "endSec": 40.496
+      "startSec": 34.446,
+      "endSec": 35.155
     },
     {
-      "text": "No",
-      "startSec": 41.007,
-      "endSec": 41.204
-    },
-    {
-      "text": "certificate,",
-      "startSec": 41.274,
-      "endSec": 42.052
-    },
-    {
-      "text": "no",
-      "startSec": 42.435,
-      "endSec": 42.632
-    },
-    {
-      "text": "money",
-      "startSec": 42.748,
-      "endSec": 43.004
-    },
-    {
-      "text": "moves:",
-      "startSec": 43.097,
-      "endSec": 43.782
+      "text": "And",
+      "startSec": 35.596,
+      "endSec": 35.735
     },
     {
       "text": "the",
-      "startSec": 44.107,
-      "endSec": 44.211
+      "startSec": 35.782,
+      "endSec": 35.851
+    },
+    {
+      "text": "rule",
+      "startSec": 35.898,
+      "endSec": 36.107
+    },
+    {
+      "text": "is",
+      "startSec": 36.13,
+      "endSec": 36.211
+    },
+    {
+      "text": "simple.",
+      "startSec": 36.269,
+      "endSec": 36.861
+    },
+    {
+      "text": "No",
+      "startSec": 37.303,
+      "endSec": 37.488
+    },
+    {
+      "text": "certificate,",
+      "startSec": 37.558,
+      "endSec": 38.417
+    },
+    {
+      "text": "no",
+      "startSec": 38.626,
+      "endSec": 38.812
+    },
+    {
+      "text": "money",
+      "startSec": 38.905,
+      "endSec": 39.137
+    },
+    {
+      "text": "moves.",
+      "startSec": 39.195,
+      "endSec": 39.868
+    },
+    {
+      "text": "The",
+      "startSec": 40.251,
+      "endSec": 40.368
     },
     {
       "text": "Guard",
-      "startSec": 44.281,
-      "endSec": 44.629
+      "startSec": 40.437,
+      "endSec": 40.809
     },
     {
       "text": "holds",
-      "startSec": 44.699,
-      "endSec": 45.012
+      "startSec": 40.867,
+      "endSec": 41.122
     },
     {
       "text": "anything",
-      "startSec": 45.082,
-      "endSec": 45.523
+      "startSec": 41.192,
+      "endSec": 41.691
     },
     {
       "text": "uncovered",
-      "startSec": 45.651,
-      "endSec": 46.313
+      "startSec": 41.761,
+      "endSec": 42.202
     },
     {
       "text": "for",
-      "startSec": 46.638,
-      "endSec": 46.823
+      "startSec": 42.237,
+      "endSec": 42.341
     },
     {
       "text": "a",
-      "startSec": 46.881,
-      "endSec": 46.905
+      "startSec": 42.376,
+      "endSec": 42.411
     },
     {
       "text": "person",
-      "startSec": 46.974,
-      "endSec": 47.346
+      "startSec": 42.469,
+      "endSec": 42.817
     },
     {
       "text": "to",
-      "startSec": 47.415,
-      "endSec": 47.497
+      "startSec": 42.875,
+      "endSec": 42.933
     },
     {
       "text": "review.",
-      "startSec": 47.578,
-      "endSec": 48.762
+      "startSec": 43.015,
+      "endSec": 44.21
     }
   ]
 }

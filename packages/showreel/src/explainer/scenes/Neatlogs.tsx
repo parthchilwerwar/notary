@@ -6,7 +6,7 @@
 import { OffthreadVideo, Sequence, staticFile, useCurrentFrame } from "remotion";
 import { BrowserFrame } from "@web/ui";
 import { C, IN, MONO, SANS, display, p } from "../../theme";
-import { ClipShot, Kicker, Panel, Pill, SceneShell } from "../kit";
+import { ClipShot, Panel, Pill, SceneShell } from "../kit";
 import { P } from "../plan";
 import { A, section } from "../timeline";
 import { DataFrame, IncidentRow, TraceView } from "./records";
@@ -38,8 +38,7 @@ export function Neatlogs() {
   const advHi = frame >= t.narrowing ? (frame >= t.wallet && wallet ? [wallet.id] : advSpans.map((x) => x.id)) : [];
   const fadeCrust = p(frame, crustTo - 8, 10, IN);
   return (
-    <SceneShell dur={s.dur}>
-      <Kicker n="3" label="neatlogs · incidents" />
+    <SceneShell id="neatlogs" dur={s.dur}>
 
       {lead && user && frame < lead.to + 12 && (
         <div style={{ position: "absolute", left: 240, top: 112, width: 1440, opacity: 1 - p(frame, lead.to - 4, 12, IN) }}>
@@ -73,7 +72,7 @@ export function Neatlogs() {
               <DetailRow at={t.hash} label="Hash" value={`${probe.predictionHash.slice(0, 20)}…`} note="sha256 of the prediction" />
               <DetailRow at={t.before} label="Call returned" value={probe.ranAt ? `${probe.ranAt.slice(11, 23)} UTC` : "—"} note={`probe span ${probeSpan.id.slice(0, 8)} · time from the run bundle`} />
               {probeInc && probeInc.expected !== null && (
-                <DetailRow at={t.before + 20} label="Docs vs live" value={`docs ${probeInc.expected} · live ${probeInc.observed}`} note="the run's checker record" />
+                <DetailRow at={t.before + 20} label="Docs vs API" value={`docs ${probeInc.expected} · API ${probeInc.observed}`} note="the run's checker record" />
               )}
               <DetailRow at={t.inconclusive} label="Verdict" pill={<Pill tone="held" size={18}>{String(probeSpan.attrs["notary.verdict"] ?? probe.verdict)}</Pill>} note="local receipt of this span" />
               {probeInc && (

@@ -1,0 +1,171 @@
+{
+  "sectionId": "close",
+  "voiceId": "onwK4e9ZLuTAKqWW03F9",
+  "voiceName": "Daniel - Steady Broadcaster",
+  "modelId": "eleven_multilingual_v2",
+  "textHash": "375535936d941313daef0dca49c19a1d5cda458b9cd4600d5d0c25121cc66565",
+  "text": "On our evaluation suite, with simulated payment APIs, the agent without Notary made nine unsafe money moves. With Notary, zero, and nine refunds held for review. Notary. No certificate, no money moves.",
+  "durationSec": 18.599,
+  "words": [
+    {
+      "text": "On",
+      "startSec": 0,
+      "endSec": 0.209
+    },
+    {
+      "text": "our",
+      "startSec": 0.255,
+      "endSec": 0.36
+    },
+    {
+      "text": "evaluation",
+      "startSec": 0.406,
+      "endSec": 1.103
+    },
+    {
+      "text": "suite,",
+      "startSec": 1.184,
+      "endSec": 1.73
+    },
+    {
+      "text": "with",
+      "startSec": 1.939,
+      "endSec": 2.113
+    },
+    {
+      "text": "simulated",
+      "startSec": 2.159,
+      "endSec": 2.694
+    },
+    {
+      "text": "payment",
+      "startSec": 2.752,
+      "endSec": 3.088
+    },
+    {
+      "text": "APIs,",
+      "startSec": 3.146,
+      "endSec": 4.087
+    },
+    {
+      "text": "the",
+      "startSec": 4.528,
+      "endSec": 4.644
+    },
+    {
+      "text": "agent",
+      "startSec": 4.725,
+      "endSec": 5.074
+    },
+    {
+      "text": "without",
+      "startSec": 5.12,
+      "endSec": 5.445
+    },
+    {
+      "text": "Notary",
+      "startSec": 5.526,
+      "endSec": 6.026
+    },
+    {
+      "text": "made",
+      "startSec": 6.409,
+      "endSec": 6.664
+    },
+    {
+      "text": "nine",
+      "startSec": 6.757,
+      "endSec": 7.198
+    },
+    {
+      "text": "unsafe",
+      "startSec": 7.314,
+      "endSec": 7.964
+    },
+    {
+      "text": "money",
+      "startSec": 8.034,
+      "endSec": 8.278
+    },
+    {
+      "text": "moves.",
+      "startSec": 8.348,
+      "endSec": 9.044
+    },
+    {
+      "text": "With",
+      "startSec": 9.369,
+      "endSec": 9.555
+    },
+    {
+      "text": "Notary,",
+      "startSec": 9.636,
+      "endSec": 10.286
+    },
+    {
+      "text": "zero,",
+      "startSec": 10.53,
+      "endSec": 11.262
+    },
+    {
+      "text": "and",
+      "startSec": 11.436,
+      "endSec": 11.598
+    },
+    {
+      "text": "nine",
+      "startSec": 11.68,
+      "endSec": 11.993
+    },
+    {
+      "text": "refunds",
+      "startSec": 12.051,
+      "endSec": 12.69
+    },
+    {
+      "text": "held",
+      "startSec": 13.015,
+      "endSec": 13.305
+    },
+    {
+      "text": "for",
+      "startSec": 13.375,
+      "endSec": 13.491
+    },
+    {
+      "text": "review.",
+      "startSec": 13.549,
+      "endSec": 14.118
+    },
+    {
+      "text": "Notary.",
+      "startSec": 14.721,
+      "endSec": 15.372
+    },
+    {
+      "text": "No",
+      "startSec": 15.755,
+      "endSec": 15.952
+    },
+    {
+      "text": "certificate,",
+      "startSec": 16.022,
+      "endSec": 16.765
+    },
+    {
+      "text": "no",
+      "startSec": 17.09,
+      "endSec": 17.287
+    },
+    {
+      "text": "money",
+      "startSec": 17.403,
+      "endSec": 17.647
+    },
+    {
+      "text": "moves.",
+      "startSec": 17.717,
+      "endSec": 18.53
+    }
+  ]
+}

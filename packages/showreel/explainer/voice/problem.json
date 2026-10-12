@@ -1,366 +1,386 @@
 {
   "sectionId": "problem",
-  "voiceId": "onwK4e9ZLuTAKqWW03F9",
-  "voiceName": "Daniel - Steady Broadcaster",
+  "voiceId": "pFZP5JQG7iQjIQuC4Bku",
+  "voiceName": "Lily - Velvety Actress",
   "modelId": "eleven_multilingual_v2",
-  "textHash": "ea85ec61ef5e089596bf1edcd9cd19b5a4bf7d96669649512badc5033e4c7fba",
-  "text": "AI agents are starting to move real money: refunds, plan changes, credits. They learn how from API docs. But docs and real APIs disagree. We pointed our agent at two real APIs, Crustdata and Dodo Payments. Crustdata's own docs say a company lookup with no match returns an empty result. Live, it returned an error, on three separate documented claims. An agent that trusts the docs breaks on exactly these cases.",
-  "durationSec": 32.888,
+  "textHash": "5e7e31ffdae4dfad6c8000d9360d8159644b2f0ce262b85f3d96784fb3d74b98",
+  "text": "AI agents are starting to move real money: refunds, plan changes, credits. They learn how from API docs. But docs and real APIs disagree. We pointed our agent at two real APIs, Crustdata and Dodo Payments. Crustdata's own docs say a company lookup with no match returns an empty result. In our run, it returned an error instead, and three documented claims didn't hold. An agent that trusts the docs breaks on exactly these cases.",
+  "durationSec": 30.851,
   "words": [
     {
       "text": "AI",
       "startSec": 0,
-      "endSec": 0.441
+      "endSec": 0.464
     },
     {
       "text": "agents",
-      "startSec": 0.499,
-      "endSec": 0.859
+      "startSec": 0.522,
+      "endSec": 0.94
     },
     {
       "text": "are",
-      "startSec": 0.882,
-      "endSec": 0.952
+      "startSec": 0.975,
+      "endSec": 1.057
     },
     {
       "text": "starting",
-      "startSec": 0.975,
-      "endSec": 1.265
+      "startSec": 1.068,
+      "endSec": 1.44
     },
     {
       "text": "to",
-      "startSec": 1.312,
-      "endSec": 1.358
+      "startSec": 1.486,
+      "endSec": 1.533
     },
     {
       "text": "move",
-      "startSec": 1.428,
-      "endSec": 1.66
+      "startSec": 1.602,
+      "endSec": 1.8
     },
     {
       "text": "real",
-      "startSec": 1.707,
-      "endSec": 1.881
+      "startSec": 1.846,
+      "endSec": 2.02
     },
     {
       "text": "money:",
-      "startSec": 1.939,
-      "endSec": 2.392
+      "startSec": 2.078,
+      "endSec": 2.519
     },
     {
       "text": "refunds,",
-      "startSec": 2.682,
-      "endSec": 3.39
+      "startSec": 2.717,
+      "endSec": 3.251
     },
     {
       "text": "plan",
-      "startSec": 3.541,
-      "endSec": 3.808
+      "startSec": 3.286,
+      "endSec": 3.553
     },
     {
       "text": "changes,",
-      "startSec": 3.866,
-      "endSec": 4.435
+      "startSec": 3.622,
+      "endSec": 4.063
     },
     {
       "text": "credits.",
-      "startSec": 4.586,
-      "endSec": 5.201
+      "startSec": 4.11,
+      "endSec": 4.748
     },
     {
       "text": "They",
-      "startSec": 5.387,
-      "endSec": 5.538
+      "startSec": 4.853,
+      "endSec": 5.05
     },
     {
       "text": "learn",
-      "startSec": 5.596,
-      "endSec": 5.805
+      "startSec": 5.108,
+      "endSec": 5.317
     },
     {
       "text": "how",
-      "startSec": 5.875,
-      "endSec": 6.037
+      "startSec": 5.364,
+      "endSec": 5.503
     },
     {
       "text": "from",
-      "startSec": 6.118,
-      "endSec": 6.269
+      "startSec": 5.573,
+      "endSec": 5.7
     },
     {
       "text": "API",
-      "startSec": 6.397,
-      "endSec": 7.024
+      "startSec": 5.782,
+      "endSec": 6.2
     },
     {
       "text": "docs.",
-      "startSec": 7.105,
-      "endSec": 7.663
+      "startSec": 6.258,
+      "endSec": 6.827
     },
     {
       "text": "But",
-      "startSec": 8.046,
+      "startSec": 7.245,
+      "endSec": 7.43
+    },
+    {
+      "text": "docs",
+      "startSec": 7.477,
+      "endSec": 7.872
+    },
+    {
+      "text": "and",
+      "startSec": 7.964,
       "endSec": 8.197
     },
     {
-      "text": "docs",
-      "startSec": 8.243,
-      "endSec": 8.568
-    },
-    {
-      "text": "and",
-      "startSec": 8.638,
-      "endSec": 8.777
-    },
-    {
       "text": "real",
-      "startSec": 8.858,
-      "endSec": 9.056
+      "startSec": 8.278,
+      "endSec": 8.51
     },
     {
       "text": "APIs",
-      "startSec": 9.137,
-      "endSec": 9.892
+      "startSec": 8.58,
+      "endSec": 9.207
     },
     {
       "text": "disagree.",
-      "startSec": 10.101,
-      "endSec": 10.867
+      "startSec": 9.369,
+      "endSec": 10.147
     },
     {
       "text": "We",
-      "startSec": 11.401,
-      "endSec": 11.517
+      "startSec": 10.82,
+      "endSec": 10.983
     },
     {
       "text": "pointed",
-      "startSec": 11.575,
-      "endSec": 11.854
+      "startSec": 11.053,
+      "endSec": 11.378
     },
     {
       "text": "our",
-      "startSec": 11.889,
-      "endSec": 11.993
+      "startSec": 11.413,
+      "endSec": 11.517
     },
     {
       "text": "agent",
-      "startSec": 12.051,
-      "endSec": 12.341
+      "startSec": 11.575,
+      "endSec": 11.935
     },
     {
       "text": "at",
-      "startSec": 12.376,
-      "endSec": 12.446
+      "startSec": 11.981,
+      "endSec": 12.051
     },
     {
       "text": "two",
-      "startSec": 12.469,
-      "endSec": 12.666
+      "startSec": 12.098,
+      "endSec": 12.318
     },
     {
       "text": "real",
-      "startSec": 12.771,
-      "endSec": 12.957
+      "startSec": 12.434,
+      "endSec": 12.655
     },
     {
       "text": "APIs,",
-      "startSec": 13.038,
-      "endSec": 13.944
+      "startSec": 12.736,
+      "endSec": 13.607
     },
     {
       "text": "Crustdata",
-      "startSec": 14.129,
-      "endSec": 14.757
+      "startSec": 13.816,
+      "endSec": 14.501
     },
     {
       "text": "and",
-      "startSec": 14.966,
-      "endSec": 15.128
+      "startSec": 14.699,
+      "endSec": 14.884
     },
     {
       "text": "Dodo",
-      "startSec": 15.186,
-      "endSec": 15.453
+      "startSec": 14.942,
+      "endSec": 15.233
     },
     {
       "text": "Payments.",
-      "startSec": 15.535,
-      "endSec": 16.173
+      "startSec": 15.302,
+      "endSec": 15.976
     },
     {
       "text": "Crustdata's",
-      "startSec": 16.614,
-      "endSec": 17.241
+      "startSec": 16.394,
+      "endSec": 17.056
     },
     {
       "text": "own",
-      "startSec": 17.288,
-      "endSec": 17.415
+      "startSec": 17.125,
+      "endSec": 17.346
     },
     {
       "text": "docs",
-      "startSec": 17.473,
-      "endSec": 17.857
+      "startSec": 17.404,
+      "endSec": 17.729
     },
     {
       "text": "say",
-      "startSec": 18.008,
-      "endSec": 18.205
+      "startSec": 17.752,
+      "endSec": 17.903
     },
     {
       "text": "a",
-      "startSec": 18.263,
-      "endSec": 18.286
+      "startSec": 17.949,
+      "endSec": 17.973
     },
     {
       "text": "company",
-      "startSec": 18.344,
-      "endSec": 18.646
+      "startSec": 18.031,
+      "endSec": 18.333
     },
     {
       "text": "lookup",
-      "startSec": 18.692,
-      "endSec": 18.971
+      "startSec": 18.391,
+      "endSec": 18.658
     },
     {
       "text": "with",
-      "startSec": 19.018,
-      "endSec": 19.169
+      "startSec": 18.704,
+      "endSec": 18.832
     },
     {
       "text": "no",
-      "startSec": 19.25,
-      "endSec": 19.424
+      "startSec": 18.902,
+      "endSec": 19.029
     },
     {
       "text": "match",
-      "startSec": 19.517,
-      "endSec": 19.853
+      "startSec": 19.11,
+      "endSec": 19.366
     },
     {
       "text": "returns",
-      "startSec": 20.237,
-      "endSec": 20.84
+      "startSec": 19.424,
+      "endSec": 19.784
     },
     {
       "text": "an",
-      "startSec": 20.922,
-      "endSec": 21.049
+      "startSec": 19.819,
+      "endSec": 19.877
     },
     {
       "text": "empty",
-      "startSec": 21.107,
-      "endSec": 21.374
+      "startSec": 19.923,
+      "endSec": 20.19
     },
     {
       "text": "result.",
-      "startSec": 21.432,
-      "endSec": 22.071
+      "startSec": 20.26,
+      "endSec": 20.887
     },
     {
-      "text": "Live,",
-      "startSec": 22.768,
-      "endSec": 23.348
+      "text": "In",
+      "startSec": 21.398,
+      "endSec": 21.549
+    },
+    {
+      "text": "our",
+      "startSec": 21.607,
+      "endSec": 21.746
+    },
+    {
+      "text": "run,",
+      "startSec": 21.792,
+      "endSec": 22.083
     },
     {
       "text": "it",
-      "startSec": 23.476,
-      "endSec": 23.604
+      "startSec": 22.141,
+      "endSec": 22.257
     },
     {
       "text": "returned",
-      "startSec": 23.662,
-      "endSec": 24.08
+      "startSec": 22.303,
+      "endSec": 22.698
     },
     {
       "text": "an",
-      "startSec": 24.126,
-      "endSec": 24.184
+      "startSec": 22.733,
+      "endSec": 22.802
     },
     {
-      "text": "error,",
-      "startSec": 24.265,
-      "endSec": 24.753
+      "text": "error",
+      "startSec": 22.884,
+      "endSec": 23.174
     },
     {
-      "text": "on",
-      "startSec": 24.927,
-      "endSec": 25.101
+      "text": "instead,",
+      "startSec": 23.244,
+      "endSec": 23.917
+    },
+    {
+      "text": "and",
+      "startSec": 24.068,
+      "endSec": 24.23
     },
     {
       "text": "three",
-      "startSec": 25.182,
-      "endSec": 25.6
-    },
-    {
-      "text": "separate",
-      "startSec": 25.728,
-      "endSec": 26.146
+      "startSec": 24.3,
+      "endSec": 24.614
     },
     {
       "text": "documented",
-      "startSec": 26.193,
-      "endSec": 26.773
+      "startSec": 24.683,
+      "endSec": 25.229
     },
     {
-      "text": "claims.",
-      "startSec": 26.831,
-      "endSec": 27.551
+      "text": "claims",
+      "startSec": 25.275,
+      "endSec": 25.647
+    },
+    {
+      "text": "didn't",
+      "startSec": 25.705,
+      "endSec": 25.995
+    },
+    {
+      "text": "hold.",
+      "startSec": 26.053,
+      "endSec": 26.506
     },
     {
       "text": "An",
-      "startSec": 28.155,
-      "endSec": 28.306
+      "startSec": 26.75,
+      "endSec": 26.901
     },
     {
       "text": "agent",
-      "startSec": 28.375,
-      "endSec": 28.712
+      "startSec": 26.947,
+      "endSec": 27.284
     },
     {
       "text": "that",
-      "startSec": 28.747,
-      "endSec": 28.874
+      "startSec": 27.319,
+      "endSec": 27.435
     },
     {
       "text": "trusts",
-      "startSec": 28.898,
-      "endSec": 29.327
+      "startSec": 27.458,
+      "endSec": 27.748
     },
     {
       "text": "the",
-      "startSec": 29.385,
-      "endSec": 29.455
+      "startSec": 27.783,
+      "endSec": 27.853
     },
     {
       "text": "docs",
-      "startSec": 29.513,
-      "endSec": 29.885
+      "startSec": 27.911,
+      "endSec": 28.201
     },
     {
       "text": "breaks",
-      "startSec": 30.21,
-      "endSec": 30.581
+      "startSec": 28.259,
+      "endSec": 28.596
     },
     {
       "text": "on",
-      "startSec": 30.651,
-      "endSec": 30.744
+      "startSec": 28.631,
+      "endSec": 28.7
     },
     {
       "text": "exactly",
-      "startSec": 30.802,
-      "endSec": 31.313
+      "startSec": 28.747,
+      "endSec": 29.362
     },
     {
       "text": "these",
-      "startSec": 31.371,
-      "endSec": 31.568
+      "startSec": 29.42,
+      "endSec": 29.606
     },
     {
       "text": "cases.",
-      "startSec": 31.614,
-      "endSec": 32.833
+      "startSec": 29.652,
+      "endSec": 30.79
     }
   ]
 }

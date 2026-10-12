@@ -1,0 +1,41 @@
+{
+  "gapSec": 0.4,
+  "note": "Sections play back to back in manifest order with gapSec between them. Edit startSec/gapSec freely and set locked: true so `voice` keeps your edits; then run `pnpm --filter @notary/showreel captions`.",
+  "sections": [
+    {
+      "id": "intro",
+      "startSec": 0,
+      "durationSec": 4.023
+    },
+    {
+      "id": "problem",
+      "startSec": 4.423,
+      "durationSec": 32.888
+    },
+    {
+      "id": "notary",
+      "startSec": 37.711,
+      "durationSec": 48.823
+    },
+    {
+      "id": "neatlogs",
+      "startSec": 86.934,
+      "durationSec": 66.795
+    },
+    {
+      "id": "entire",
+      "startSec": 154.129,
+      "durationSec": 21.29
+    },
+    {
+      "id": "cfo",
+      "startSec": 175.819,
+      "durationSec": 16.353
+    },
+    {
+      "id": "close",
+      "startSec": 192.572,
+      "durationSec": 18.599
+    }
+  ]
+}

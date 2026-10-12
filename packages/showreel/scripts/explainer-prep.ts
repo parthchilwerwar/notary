@@ -61,6 +61,13 @@ function mirror(src: string, sub: string): string {
   const a = statSync(src);
   const b = existsSync(dest) ? statSync(dest) : null;
   if (!b || b.size !== a.size || b.mtimeMs < a.mtimeMs) copyFileSync(src, dest);
+  // Clips get a second copy for the focus lens, so its frames come from their own decoder (two
+  // simultaneous extractions from one source made Remotion's compositor miss frames).
+  if (sub === "clips") {
+    const lens = dest.replace(/.mp4$/, ".lens.mp4");
+    const c = existsSync(lens) ? statSync(lens) : null;
+    if (!c || c.size !== a.size || c.mtimeMs < a.mtimeMs) copyFileSync(src, lens);
+  }
   return `explainer/${sub}/${basename(src)}`;
 }
 
@@ -503,6 +510,39 @@ function certificates(): { list: Assets["data"]["certificates"]; source: string 
   return { list, source: files.join(", ") };
 }
 
+function models(traces: Trace[]): Assets["data"]["models"] {
+  const out: Assets["data"]["models"] = [];
+  for (const t of traces)
+    for (const s of t.spans) {
+      if (!s.agent || !s.model) continue;
+      const provider = str(s.attrs["llm.provider"]);
+      if (!out.some((m) => m.agent === s.agent && m.model === s.model)) out.push({ agent: s.agent, model: s.model, provider });
+    }
+  // The provider is on the local receipts of the same LLM spans (runs/<runId>/spans.jsonl).
+  for (const r of TRACE_RUNS) {
+    const f = join(RUNS, r.runId, "spans.jsonl");
+    if (!existsSync(f)) continue;
+    for (const line of readFileSync(f, "utf8").split(/\r?\n/)) {
+      if (!line.trim()) continue;
+      const a = flatAttrs((JSON.parse(line) as Obj).attrs);
+      const m = out.find((x) => x.model === a["llm.model_id"] && !x.provider);
+      if (m && str(a["llm.provider"])) m.provider = str(a["llm.provider"]);
+    }
+  }
+  return out;
+}
+
+function aws(): Assets["data"]["aws"] {
+  const dir = join(REPO, "deploy/aws");
+  const walk = (d: string, prefix = ""): string[] =>
+    readdirSync(d, { withFileTypes: true })
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .flatMap((e) => (e.isDirectory() ? walk(join(d, e.name), `${prefix}${e.name}/`) : [`${prefix}${e.name}`]));
+  const doc = readFileSync(join(REPO, "docs/DEPLOY_AWS.md"), "utf8");
+  const title = doc.match(/^# (.+)$/m)?.[1] ?? "";
+  return { docPath: "docs/DEPLOY_AWS.md", docTitle: title, dir: "deploy/aws/", files: walk(dir) };
+}
+
 // ------------------------------------------------------------------------------- main
 
 export function prepare(): Assets {
@@ -528,6 +568,8 @@ export function prepare(): Assets {
       evalSuite: evalSuite(),
       certificates: certificates().list,
       certificatesSource: certificates().source,
+      models: models(t.traces),
+      aws: aws(),
       github: d.github,
     },
   };

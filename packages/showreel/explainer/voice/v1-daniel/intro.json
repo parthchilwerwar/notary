@@ -1,0 +1,41 @@
+{
+  "sectionId": "intro",
+  "voiceId": "onwK4e9ZLuTAKqWW03F9",
+  "voiceName": "Daniel - Steady Broadcaster",
+  "modelId": "eleven_multilingual_v2",
+  "textHash": "753a8b1d48754857fa61001d1bd5c13e33c4d98fb8da3e41461d17fa176183fb",
+  "text": "Notary. No certificate, no money moves.",
+  "durationSec": 4.023,
+  "words": [
+    {
+      "text": "Notary.",
+      "startSec": 0,
+      "endSec": 0.72
+    },
+    {
+      "text": "No",
+      "startSec": 1.161,
+      "endSec": 1.324
+    },
+    {
+      "text": "certificate,",
+      "startSec": 1.393,
+      "endSec": 2.043
+    },
+    {
+      "text": "no",
+      "startSec": 2.426,
+      "endSec": 2.612
+    },
+    {
+      "text": "money",
+      "startSec": 2.694,
+      "endSec": 2.926
+    },
+    {
+      "text": "moves.",
+      "startSec": 2.984,
+      "endSec": 3.947
+    }
+  ]
+}

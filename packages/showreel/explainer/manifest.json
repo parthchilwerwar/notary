@@ -1,5 +1,5 @@
 {
-  "title": "Notary — neatHack submission video",
+  "title": "Notary \u2014 neatHack submission video",
   "fps": 30,
   "width": 1920,
   "height": 1080,
@@ -7,16 +7,61 @@
   "contract": {
     "voice": "explainer/voice/<sectionId>.mp3 + explainer/voice/<sectionId>.json  { sectionId, durationSec, words: [{ text, startSec, endSec }] }  (ElevenLabs with-timestamps; written by the voice agent)",
     "clips": "explainer/clips/<clipId>.mp4 (1920x1080, 30fps, no cursor drawn) + explainer/clips/<clipId>.json  { clipId, durationSec, url, events: [{ tSec, type: 'move'|'click'|'scroll'|'type', x, y, label? }] }  (Playwright recordings of the real dashboard; written by the recording agent)",
-    "data": "explainer/data/*.json — real artifacts for rendered scenes: traces.json (neatlogs spans fetched via the traces API), coverage.txt (real `notary guards coverage --backend entire` output), entire.json/economics.json/incidents copied from packages/web/public",
+    "data": "explainer/data/*.json \u2014 real artifacts for rendered scenes: traces.json (neatlogs spans fetched via the traces API), coverage.txt (real `notary guards coverage --backend entire` output), entire.json/economics.json/incidents copied from packages/web/public",
     "userSlots": "explainer/user/neatlogs-incidents.mp4 (optional: the user's own screen recording of neatlogs' critical-incidents view; when present it replaces the rendered trace scene)"
   },
   "sections": [
-    { "id": "intro", "visual": "motion graphic intro (showreel v2 sky + headline)", "clips": [] },
-    { "id": "problem", "visual": "Run page of the real Crustdata notarize run, its 3 checker anomalies / incidents", "clips": ["crustdata-anomalies"] },
-    { "id": "notary", "visual": "five steps; transcript row with committed prediction; certificate detail with Adversary 'narrowed'; certificates grid; held card (evaluation suite, labelled)", "clips": ["transcript-prediction", "certificate-adversary", "certificates-grid", "approvals-held"] },
-    { "id": "neatlogs", "visual": "neatlogs trace 9db41ecd43406cef291c93ef8c9ab1cd (prediction span before tool span, 400) then trace a0e6fda50d71… (Adversary narrowing); dashboard incidents with resolution", "clips": ["incidents-resolution"] },
-    { "id": "entire", "visual": "Entire checkpoints (7) from entire.json; terminal with real coverage output: 0 unguarded call sites", "clips": [] },
-    { "id": "cfo", "visual": "economics page with real per-run cost; cfo-inputs export", "clips": ["economics"] },
-    { "id": "close", "visual": "stats 9 → 0, 9 held — label 'Evaluation suite — simulated APIs, not a live run'; closing sky, wordmark, github URL", "clips": [] }
+    {
+      "id": "intro",
+      "visual": "motion graphic intro (showreel v2 sky + headline)",
+      "clips": []
+    },
+    {
+      "id": "problem",
+      "visual": "Run page of the real Crustdata notarize run, its 3 checker anomalies / incidents",
+      "clips": [
+        "crustdata-anomalies"
+      ]
+    },
+    {
+      "id": "notary",
+      "visual": "five steps; transcript row with committed prediction; certificate detail with Adversary 'narrowed'; certificates grid; Guard holding an uncovered action as a motion-graphic diagram (no data)",
+      "clips": [
+        "transcript-prediction",
+        "certificate-adversary",
+        "certificates-grid"
+      ]
+    },
+    {
+      "id": "stack",
+      "visual": "Dodo Payments (4 real certificates), Crustdata (customer tier), LiteLLM with Claude Sonnet (Reflector) / Opus (Adversary), AWS (deploy/aws scripts card + Bedrock as drop-in provider; no running deployment shown)",
+      "clips": [
+        "certificates-grid"
+      ]
+    },
+    {
+      "id": "neatlogs",
+      "visual": "neatlogs trace 9db41ecd43406cef291c93ef8c9ab1cd (25 spans, all SUCCESS, 0 errors): probe p001's notary.probe.committed log record (hash + time) before the call, docs 400 vs live 403, verdict inconclusive -> abstained; the two no-match mismatches from recon shown as OPEN via the incidents clip; then trace a0e6fda50d71... (3 Adversary spans from the API + 1 local receipt; root output narrow=4) and the narrowed-scope resolutions",
+      "clips": [
+        "incidents-resolution"
+      ]
+    },
+    {
+      "id": "entire",
+      "visual": "Entire checkpoints (7) from entire.json; terminal with real coverage output: 0 unguarded call sites",
+      "clips": []
+    },
+    {
+      "id": "cfo",
+      "visual": "economics page with real per-run cost; cfo-inputs export",
+      "clips": [
+        "economics"
+      ]
+    },
+    {
+      "id": "close",
+      "visual": "real results: 3 documented claims that didn't hold, 5 certificates each narrowed, 0 unguarded money calls, ~$0.03 per run; wordmark, github, Voice: ElevenLabs",
+      "clips": []
+    }
   ]
 }

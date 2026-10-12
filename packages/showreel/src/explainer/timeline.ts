@@ -10,8 +10,9 @@ export const FPS = 30;
 /** Each scene keeps drawing this many frames into the next one, which fades in over it. */
 export const OVERLAP = 12;
 
-const LEAD: Record<SectionId, number> = { intro: 0.9, problem: 0.6, notary: 0.45, neatlogs: 0.45, entire: 0.45, cfo: 0.45, close: 0.45 };
-const TAIL: Record<SectionId, number> = { intro: 1.5, problem: 0.6, notary: 0.6, neatlogs: 0.6, entire: 0.6, cfo: 0.6, close: 3.8 };
+// Sections after the intro open on a numbered title card (~1 s) before the voice starts.
+const LEAD: Record<SectionId, number> = { intro: 0.9, problem: 1.0, notary: 0.9, stack: 0.9, neatlogs: 0.9, entire: 0.9, cfo: 0.9, close: 0.9 };
+const TAIL: Record<SectionId, number> = { intro: 1.5, problem: 0.35, notary: 0.35, stack: 0.35, neatlogs: 0.35, entire: 0.35, cfo: 0.35, close: 3.8 };
 
 export const norm = (w: string) => w.toLowerCase().replace(/[’']/g, "").replace(/[^\p{L}\p{N}$.]/gu, "").replace(/\.$/, "");
 
@@ -123,4 +124,18 @@ export function srt(): string {
   return captionPages()
     .map((p, i) => `${i + 1}\n${ts(p.from)} --> ${ts(p.to)}\n${p.words.map((w) => w.text).join(" ")}\n`)
     .join("\n");
+}
+
+/**
+ * The words of `phrase` as the voice says them: each with the frame (relative to the section) it
+ * starts. When the line has no such phrase, the words are spread from `fallbackAt`, 4 frames apart.
+ */
+export function phraseWords(id: SectionId, phrase: string, fallbackAt = 0): { text: string; from: number }[] {
+  const s = section(id);
+  const want = phrase.split(/\s+/).filter(Boolean);
+  const n = want.map(norm);
+  for (let i = 0; i + n.length <= s.words.length; i++) {
+    if (n.every((w, k) => s.words[i + k]!.norm === w)) return want.map((t, k) => ({ text: t, from: s.words[i + k]!.from }));
+  }
+  return want.map((t, k) => ({ text: t, from: fallbackAt + k * 4 }));
 }

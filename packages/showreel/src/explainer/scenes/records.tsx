@@ -34,7 +34,7 @@ export function IncidentRow({ incident: i, compact = false }: { incident: Incide
         <span style={{ fontFamily: MONO, fontSize: 14, color: C.text }}>{i.claimId}</span>
         {i.expected !== null && i.observed !== null && (
           <span style={{ fontSize: 14, color: C.muted }}>
-            docs {i.expected} · live <b style={{ color: C.unsafeText }}>{i.observed}</b>
+            docs {i.expected} · API <b style={{ color: C.unsafeText }}>{i.observed}</b>
           </span>
         )}
         <span style={{ marginLeft: "auto" }}>
