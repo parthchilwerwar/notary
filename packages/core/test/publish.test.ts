@@ -276,7 +276,7 @@ describe("packages/web/public/evidence/evidence.json", () => {
     expect(by("neatlogs").notes).toMatch(/neatlogs-cli is (not installed|installed)/);
     expect(by("Entire").status).toBe(facts.entire.onPath && facts.entire.checkpointRefs.length > 0 ? "live" : "pending");
     expect(by("Entire").links.map((l) => l.url)).toEqual(["https://docs.entire.io/cli-reference/graph"]);
-    expect(by("cfo.ai").status).toBe(facts.businessPlan ? "live" : "pending");
+    expect(by("cfo.ai").status).toBe(facts.businessPlan && facts.cfoPlanImported ? "live" : "pending");
     expect(by("cfo.ai").links).toEqual([]);
     // The Entire docs URL is the one recorded in DECISIONS #61.
     const decisions = readFileSync(fileURLToPath(new URL("../../../docs/DECISIONS.md", import.meta.url)), "utf8");

@@ -5,7 +5,7 @@
  *     a trace link only if a trace link template exists (src/trace/links.ts), else the id stays text.
  *   - Entire "live" only if `entire` is on PATH AND a checkpoint ref exists in git
  *     (refs/entire/checkpoints/*, or the legacy entire/checkpoints/* branch).
- *   - cfo.ai "live" only if docs/BUSINESS.md exists.
+ *   - cfo.ai "live" only once a cfo.ai plan is imported (economics.json carries a non-null `plan`).
  * Schema rules: exactly the three sponsors, status "live" | "pending", and only links that exist
  * (https, no placeholders, never the private GitHub repo). test/publish.test.ts validates the file.
  */
@@ -79,6 +79,18 @@ export interface EvidenceFacts {
   entire: { onPath: boolean; checkpointRefs: string[] };
   businessPlan: boolean;
   economicsJson: boolean;
+  /** packages/web/public/economics.json carries an imported cfo.ai plan (`plan` not null). */
+  cfoPlanImported?: boolean;
+}
+
+/** True when the published economics.json holds an imported cfo.ai plan. */
+function cfoPlanImported(path: string): boolean {
+  try {
+    const raw = JSON.parse(readFileSync(path, "utf8")) as { plan?: unknown };
+    return raw.plan !== null && raw.plan !== undefined;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -150,6 +162,7 @@ export function gatherEvidenceFacts(
     entire: { onPath: entireOnPath, checkpointRefs: entireOnPath ? entireCheckpointRefs(root) : [] },
     businessPlan: existsSync(join(root, "docs", "BUSINESS.md")),
     economicsJson: existsSync(join(root, "packages", "web", "public", "economics.json")),
+    cfoPlanImported: cfoPlanImported(join(root, "packages", "web", "public", "economics.json")),
   };
 }
 
@@ -245,12 +258,21 @@ function cfoEntry(f: EvidenceFacts): SponsorEvidence {
       notes: `Not started. Planned for P10 as a manual step that produces docs/BUSINESS.md and packages/web/public/economics.json; ${missing}.`,
     };
   }
+  if (!f.cfoPlanImported) {
+    return {
+      name: "cfo.ai",
+      purpose,
+      status: "pending",
+      links: [],
+      notes: `docs/BUSINESS.md exists and \`notary economics\` exports the real run costs for cfo.ai (export/cfo-inputs.csv), but no cfo.ai plan has been imported yet (\`pnpm notary economics --cfo-import <file>\`).`,
+    };
+  }
   return {
     name: "cfo.ai",
     purpose,
     status: "live",
     links: [],
-    notes: `docs/BUSINESS.md exists${f.economicsJson ? " and packages/web/public/economics.json is published" : "; packages/web/public/economics.json does not exist yet"}. The repo is private, so the plan is not linked.`,
+    notes: `A cfo.ai plan is imported; docs/BUSINESS.md exists${f.economicsJson ? " and packages/web/public/economics.json is published" : "; packages/web/public/economics.json does not exist yet"}. The repo is private, so the plan is not linked.`,
   };
 }
 

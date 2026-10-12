@@ -14,20 +14,20 @@
   {
     "name": "Entire",
     "purpose": "Entire checkpoints the AI agent sessions that write this repo: with `entire enable --agent claude-code`, every commit made during a Claude Code session carries an Entire-Checkpoint trailer linking it to that session's transcript, prompts and files touched. The adversary's session backend is a headless Claude Code review whose verdict is committed, so each review is checkpointed next to its belief. `notary guards coverage --backend entire` runs one `entire graph edges` pass and fails on any caller of a money-moving tool method outside the guard wrapper. packages/web/public/evidence/entire.json (`notary export --entire`) lists the checkpoints and the coverage result.",
-    "status": "pending",
+    "status": "live",
     "links": [
       {
         "label": "Entire docs: entire graph command reference (DECISIONS #61)",
         "url": "https://docs.entire.io/cli-reference/graph"
       }
     ],
-    "notes": "The Entire CLI is on PATH, but no checkpoint exists yet (no ref under refs/entire/checkpoints and no entire/checkpoints branch). A checkpoint is created by the first commit made while Entire tracks a Claude Code session in this repo. The project repo (github.com/parthchilwerwar/notary) is private, so the checkpoint history is not public."
+    "notes": "The Entire CLI is on PATH and checkpoints exist (refs/entire/checkpoints); `notary export --entire` lists them in packages/web/public/evidence/entire.json with their sessions, commits and files touched. The project repo (github.com/parthchilwerwar/notary) is private, so the checkpoint history is not public."
   },
   {
     "name": "cfo.ai",
     "purpose": "Business plan: pricing per monitored API contract, COGS from bundle credits and tokens, the cost of incidents prevented, and runway.",
-    "status": "live",
+    "status": "pending",
     "links": [],
-    "notes": "docs/BUSINESS.md exists and packages/web/public/economics.json is published. The repo is private, so the plan is not linked."
+    "notes": "docs/BUSINESS.md exists and `notary economics` exports the real run costs for cfo.ai (export/cfo-inputs.csv), but no cfo.ai plan has been imported yet (`pnpm notary economics --cfo-import <file>`)."
   }
 ]

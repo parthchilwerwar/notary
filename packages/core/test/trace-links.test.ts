@@ -364,9 +364,10 @@ describe("buildEvidence: statuses follow the facts", () => {
     expect(live.notes).toContain("refs/heads/entire/checkpoints/v1");
   });
 
-  it("cfo.ai: live only when docs/BUSINESS.md exists", () => {
+  it("cfo.ai: live only when docs/BUSINESS.md exists and a cfo.ai plan is imported", () => {
     expect(by({ ...base, economicsJson: true }, "cfo.ai").status).toBe("pending");
-    expect(by({ ...base, businessPlan: true }, "cfo.ai").status).toBe("live");
+    expect(by({ ...base, businessPlan: true }, "cfo.ai").status).toBe("pending");
+    expect(by({ ...base, businessPlan: true, cfoPlanImported: true }, "cfo.ai").status).toBe("live");
     expect(by({ ...base, businessPlan: true }, "cfo.ai").links).toEqual([]);
   });
 
