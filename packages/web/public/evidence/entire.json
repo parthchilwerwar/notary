@@ -1,6 +1,6 @@
 {
   "kind": "notary-entire/1",
-  "repoHead": "1592c6e4b69856a75f9a8fcf890ab3633fa0d46f",
+  "repoHead": "e08acbcc40da9085dd42815e94b5ee4bd0f7f3b5",
   "branch": "main",
   "cli": {
     "installed": true,
@@ -16,6 +16,94 @@
     "commitLinking": "always"
   },
   "checkpoints": [
+    {
+      "id": "01M4QHYRRA305WSAFABGA55801",
+      "at": "2026-10-12T07:59:05.000Z",
+      "agent": "Claude Code",
+      "sessionIds": [
+        "ff1243e8-a2bc-405f-820f-cf11571bb5d5"
+      ],
+      "model": "claude-opus-5-5",
+      "commit": "e08acbcc40da9085dd42815e94b5ee4bd0f7f3b5",
+      "message": "Fix findings from the fresh-clone check",
+      "filesTouched": [],
+      "tokens": {
+        "input": 462,
+        "output": 171807,
+        "cacheRead": 71241593,
+        "cacheCreation": 891065,
+        "apiCalls": 208
+      },
+      "kind": "coding-session",
+      "review": null,
+      "logsOnly": true
+    },
+    {
+      "id": "01M4QGCEHN5Z2R0775S6EY114C",
+      "at": "2026-10-12T07:31:38.000Z",
+      "agent": "Claude Code",
+      "sessionIds": [
+        "ff1243e8-a2bc-405f-820f-cf11571bb5d5"
+      ],
+      "model": "claude-opus-5-5",
+      "commit": "5ad950271fb48d911aeab25f3fec18de410ab8be",
+      "message": "cfo.ai sync: resolve the workspace's real scenario name; plain error messages",
+      "filesTouched": [],
+      "tokens": {
+        "input": 436,
+        "output": 163770,
+        "cacheRead": 64807920,
+        "cacheCreation": 876289,
+        "apiCalls": 196
+      },
+      "kind": "coding-session",
+      "review": null,
+      "logsOnly": true
+    },
+    {
+      "id": "01M4QG2XWAW0V7W40SJR0NTCW7",
+      "at": "2026-10-12T07:26:26.000Z",
+      "agent": "Claude Code",
+      "sessionIds": [
+        "ff1243e8-a2bc-405f-820f-cf11571bb5d5"
+      ],
+      "model": "claude-opus-5-5",
+      "commit": "ba78a9fa5f259dfdbf901a562e5c3f28ee2bcca4",
+      "message": "cfo.ai: read the workspace id from org_id (the live list_orgs shape)",
+      "filesTouched": [],
+      "tokens": {
+        "input": 402,
+        "output": 152642,
+        "cacheRead": 56010243,
+        "cacheCreation": 853266,
+        "apiCalls": 179
+      },
+      "kind": "coding-session",
+      "review": null,
+      "logsOnly": true
+    },
+    {
+      "id": "01M4QFHA5QFV33NKTR8X3XBVJS",
+      "at": "2026-10-12T07:16:44.000Z",
+      "agent": "Claude Code",
+      "sessionIds": [
+        "ff1243e8-a2bc-405f-820f-cf11571bb5d5"
+      ],
+      "model": "claude-opus-5-5",
+      "commit": "aa0618327a2de52a7ca28b97c56284426a8d017d",
+      "message": "Evidence after the third Entire checkpoint (3 checkpoints, 0 unguarded call sites)",
+      "filesTouched": [],
+      "tokens": {
+        "input": 384,
+        "output": 146926,
+        "cacheRead": 51523568,
+        "cacheCreation": 842588,
+        "apiCalls": 170
+      },
+      "kind": "coding-session",
+      "review": null,
+      "logsOnly": true
+    },
     {
       "id": "01M4QFBNF7X6DEY607639689W2",
       "at": "2026-10-12T07:13:42.000Z",
@@ -565,12 +653,12 @@
     "command": "entire graph edges --repo . --format ndjson --worktree --relation CALLS,ASYNC_CALLS,CONSTRUCTS",
     "graphProvider": "entire-graph",
     "graphVersion": "v0.4.0",
-    "commit": "1592c6e4b69856a75f9a8fcf890ab3633fa0d46f",
+    "commit": "e08acbcc40da9085dd42815e94b5ee4bd0f7f3b5",
     "worktree": true,
     "completeness": "ok",
     "skippedFiles": [],
-    "callEdges": 8626,
-    "constructEdges": 400,
+    "callEdges": 8635,
+    "constructEdges": 402,
     "clientEdges": 2,
     "ops": 18,
     "sites": 33,
