@@ -29,20 +29,22 @@ main:has(> * > .chat-page) {
   margin-inline: auto;
 }
 
-/* ---------------------------------------------------------------------------- sky band */
+/* ------------------------------------------------------------------------------ header */
 
-/* Chat's band is the short one (about 140px): the conversation needs the height. */
+/* Chat's header is one compact line (title, the open conversation, actions) over a hairline:
+   the conversation needs the height. No band, no card. */
 .chat-band {
   margin-bottom: var(--space-3);
-}
-
-.chat-band.ui-band-sky {
-  min-height: 140px;
-  padding: 28px 32px;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--hairline-color);
 }
 
 .chat-band .ui-band-inner {
   align-items: center;
+}
+
+.chat-band .ui-band-title {
+  font-size: clamp(30px, 1vw + 22px, 38px);
 }
 
 .chat-band .ui-band-summary {
@@ -271,22 +273,21 @@ details[open] > summary > .chat-caret {
 
 /* --------------------------------------------------------------------------------- banner */
 
+/* The replay note: one quiet line above the thread (no tinted box). */
 .chat-banner {
   display: flex;
   flex-wrap: nowrap;
   align-items: baseline;
   gap: 2px var(--space-1);
   margin: 0 auto var(--space-3);
-  padding: 8px 14px;
-  border-radius: var(--r-button);
-  background: var(--accent-soft);
-  color: var(--accent-text);
-  font-size: var(--text-sm);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
   line-height: 1.45;
 }
 
 .chat-banner-main {
   flex: none;
+  color: var(--text-strong-muted);
   font-weight: var(--weight-medium);
 }
 
@@ -318,14 +319,13 @@ details[open] > summary > .chat-caret {
   padding-bottom: var(--space-3);
 }
 
-/* empty state */
+/* empty state: a title, one line, then suggested questions as a plain list */
 .chat-empty {
   display: grid;
-  justify-items: center;
-  gap: var(--space-2);
+  justify-items: start;
+  gap: 12px;
   margin-block: auto;
   padding-block: var(--space-4);
-  text-align: center;
 }
 
 .chat-empty-title {
@@ -350,43 +350,59 @@ details[open] > summary > .chat-caret {
 
 .chat-suggestions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
   width: 100%;
   margin: var(--space-2) 0 0;
   padding: 0;
+  border-top: 1px solid var(--hairline-color);
   list-style: none;
 }
 
 .chat-suggestions li {
   display: grid;
+  border-bottom: 1px solid var(--hairline-color);
 }
 
 .chat-suggestions button {
-  display: grid;
-  align-content: start;
-  gap: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
   width: 100%;
-  min-height: 84px;
-  padding: 14px 16px;
-  border: 1px solid var(--hairline-color);
-  border-radius: 16px;
-  background: var(--card);
-  box-shadow: var(--shadow-soft);
+  min-height: 56px;
+  padding: 12px 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--text);
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: border-color 150ms ease-out, background-color 150ms ease-out, transform 150ms ease-out;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
 }
 
 .chat-suggestions button:hover:not(:disabled) {
-  border-color: var(--accent);
-  background: var(--surface-subtle);
+  background: var(--accent-soft);
 }
 
-.chat-suggestions button:active:not(:disabled) {
-  transform: translateY(1px);
+.chat-suggestions button:hover:not(:disabled) .chat-suggestion-title,
+.chat-suggestions button:hover:not(:disabled) .chat-suggestion-go {
+  color: var(--accent-text);
+}
+
+.chat-page .chat-suggestions button:focus-visible {
+  outline-offset: -2px;
+}
+
+.chat-suggestion-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.chat-suggestion-go {
+  flex: none;
+  color: var(--text-faint);
+  transition: color 150ms ease-out;
 }
 
 .chat-suggestions button:disabled {
@@ -395,7 +411,7 @@ details[open] > summary > .chat-caret {
 }
 
 .chat-suggestion-title {
-  font-size: var(--text-sm);
+  font-size: var(--text-md);
   font-weight: var(--weight-medium);
   line-height: 1.4;
   overflow-wrap: anywhere;
@@ -404,13 +420,13 @@ details[open] > summary > .chat-caret {
 
 .chat-suggestion-detail {
   display: -webkit-box;
+  -webkit-line-clamp: 1;
   overflow: hidden;
   color: var(--text-muted);
   font-size: var(--text-xs);
   line-height: 1.45;
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
 }
 
 /* loading */
@@ -476,194 +492,18 @@ details[open] > summary > .chat-caret {
   align-items: center;
 }
 
-/* ----------------------------------------------------------------------- work timeline */
+/* --------------------------------------------------------------------- reasoning steps */
 
+/* An answer's steps are Reasoning Steps (src/components/ui/reasoning-steps.tsx, styled by its own
+   CSS against data-slot attributes). Chat styles only the content it passes in: a step's fix and
+   its expandable details below. */
 .chat-work {
-  display: grid;
-  gap: 6px;
   min-width: 0;
-}
-
-.chat-work-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-self: start;
-  gap: 8px;
-  max-width: 100%;
-  min-height: 32px;
-  margin-left: -8px;
-  padding: 4px 8px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text-muted);
-  font: inherit;
-  font-size: var(--text-sm);
-  text-align: left;
-  cursor: pointer;
-  transition: background-color 150ms ease-out, color 150ms ease-out;
-}
-
-.chat-work-toggle:hover {
-  background: var(--surface-subtle);
-  color: var(--text);
-}
-
-.chat-work:not([data-finished]) .chat-work-toggle {
-  color: var(--text-strong-muted);
-}
-
-.chat-work-label {
-  min-width: 0;
-  overflow-wrap: anywhere;
-  font-variant-numeric: tabular-nums;
-}
-
-.chat-steps[hidden] {
-  display: none;
-}
-
-/* Kit timeline rows, widened 8px each side so a highlighted step has room; the rail follows. */
-.chat-steps > .ui-tl-item {
-  margin-inline: -8px;
-  padding: 8px;
-  border-radius: 14px;
-  column-gap: 12px;
-}
-
-.chat-steps > .ui-tl-item::before {
-  left: calc(8px + 9.5px);
-}
-
-.chat-steps > .ui-tl-item:first-child::before {
-  top: 18px;
-}
-
-.chat-steps > .ui-tl-item:last-child::before {
-  bottom: calc(100% - 18px);
-}
-
-.chat-steps .ui-tl-mark {
-  z-index: 1;
-  margin-top: 0;
-}
-
-/* Unavailable: the neutral mark (dashed ring with a dash), visible on the shell's ground. */
-.chat-step[data-state="unavailable"] .ui-tl-mark {
-  border-color: var(--text-faint);
-  color: var(--text-muted);
-}
-
-.chat-step[data-state="unavailable"] .ui-tl-mark::after {
-  content: "";
-  width: 8px;
-  height: 2px;
-  border-radius: 1px;
-  background: currentColor;
-}
-
-.chat-steps .ui-tl-head {
-  flex-wrap: nowrap;
-  align-items: flex-start;
-}
-
-/* notes */
-.chat-note .ui-tl-title {
-  font-size: var(--text-sm);
-  line-height: 20px;
-}
-
-.chat-note-line {
-  color: var(--text-muted);
-  font-style: italic;
-  overflow-wrap: anywhere;
-  text-wrap: pretty;
-}
-
-.chat-note-tag {
-  display: inline-block;
-  margin-right: 4px;
-  padding: 0 7px;
-  border-radius: 6px;
-  background: var(--muted-surface);
-  color: var(--text-strong-muted);
-  font-size: 11px;
-  font-style: normal;
-  font-weight: var(--weight-medium);
-  line-height: 18px;
-  vertical-align: 1px;
-}
-
-.chat-note-tag[data-source="replay"] {
-  background: var(--accent-soft);
-  color: var(--accent-text);
-}
-
-/* steps */
-.chat-step {
-  scroll-margin-block: calc(var(--topbar-height) + var(--space-6)) 180px;
-  transition: background-color 200ms ease-out, box-shadow 200ms ease-out;
-}
-
-.chat-step[data-highlight] {
-  background: var(--chat-highlight);
-  box-shadow: inset 0 0 0 1px var(--accent);
-}
-
-.chat-step:focus {
-  outline: none;
-}
-
-.chat-step:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: 0;
-}
-
-.chat-step .ui-tl-title {
-  flex: 1;
-}
-
-.chat-step-head {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  max-width: 100%;
-  padding: 0;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.chat-step-head:disabled {
-  cursor: default;
-  color: var(--text);
-}
-
-.chat-step-head:hover:not(:disabled) .chat-step-title {
-  color: var(--accent-text);
-}
-
-.chat-step-head > .chat-caret {
-  align-self: center;
-}
-
-.chat-step-title {
-  min-width: 0;
-  overflow-wrap: anywhere;
-  transition: color 150ms ease-out;
-}
-
-.chat-step-meta {
-  white-space: nowrap;
 }
 
 .chat-step-fix,
 .chat-step-body {
-  margin: 4px 0 0;
+  margin: 0;
 }
 
 .chat-step-fix {
@@ -703,20 +543,11 @@ details[open] > summary > .chat-caret {
   font-size: var(--text-xs);
 }
 
-.chat-spinner {
-  flex: none;
-  width: 14px;
-  height: 14px;
-  border: 2px solid var(--accent-soft);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: chat-spin 800ms linear infinite;
-}
-
-/* step data cards (kit Card / CertificateCard / TableFrame, tightened for a step) */
+/* step data (kit Card / CertificateCard / TableFrame, flattened for a step: a hairline frame, no
+   float shadow) */
 .chat-step-body .ui-card {
-  border-radius: 16px;
-  box-shadow: var(--shadow-soft);
+  border-radius: 12px;
+  box-shadow: none;
 }
 
 .chat-card-flush {
@@ -865,8 +696,8 @@ details[open] > summary > .chat-caret {
 .chat-passage {
   margin: 0;
   padding: 10px 14px;
-  border-left: 3px solid var(--accent);
-  border-radius: 0 10px 10px 0;
+  border: 1px solid var(--hairline-color);
+  border-radius: var(--r-panel);
   background: var(--surface-subtle);
   color: var(--text-strong-muted);
   font-size: var(--text-sm);
@@ -1019,8 +850,9 @@ details[open] > summary > .chat-caret {
 }
 
 .chat-answer blockquote {
-  padding-left: 14px;
-  border-left: 3px solid var(--hairline-color);
+  padding: 10px 14px;
+  border-radius: var(--r-panel);
+  background: var(--surface-subtle);
   color: var(--text-strong-muted);
 }
 
@@ -1307,17 +1139,16 @@ button.chat-cite:hover,
   display: flex;
   align-items: flex-end;
   gap: var(--space-1);
-  padding: 10px 10px 10px 18px;
-  border: 1px solid var(--chat-composer-line);
-  border-radius: var(--r-card);
+  padding: 8px 8px 8px 16px;
+  border: 1px solid var(--control-line);
+  border-radius: 14px;
   background: var(--card);
-  box-shadow: var(--shadow-float);
   transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
 }
 
 .chat-composer:focus-within {
   border-color: var(--chat-composer-focus);
-  box-shadow: var(--shadow-float), 0 0 0 3px var(--chat-composer-halo);
+  box-shadow: 0 0 0 3px var(--chat-composer-halo);
 }
 
 .chat-page .chat-composer textarea:focus-visible {
@@ -1430,11 +1261,8 @@ button.chat-cite:hover,
 .chat-token {
   display: grid;
   gap: 8px;
-  padding: var(--space-2);
-  border: 1px solid var(--chat-composer-line);
-  border-radius: var(--r-card);
-  background: var(--card);
-  box-shadow: var(--shadow-float);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--hairline-color);
   font-size: var(--text-sm);
 }
 
@@ -1515,19 +1343,15 @@ button.chat-cite:hover,
   .chat-recent-menu {
     transform-origin: top left;
   }
-  .chat-suggestions {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 8px;
-  }
   .chat-suggestions button {
-    min-height: 0;
-    padding: 12px 14px;
+    padding: 12px 4px;
+  }
+  .chat-suggestion-detail {
+    -webkit-line-clamp: 2;
   }
   .chat-empty {
     justify-items: stretch;
-    gap: 12px;
     padding-block: var(--space-2);
-    text-align: left;
   }
   .chat-empty-title {
     font-size: 36px;
@@ -1535,11 +1359,8 @@ button.chat-cite:hover,
   .chat-user-bubble {
     max-width: 88%;
   }
-  .chat-steps .ui-tl-head {
-    flex-wrap: wrap;
-  }
-  .chat-band.ui-band-sky {
-    padding: 24px 20px;
+  .chat-band .ui-band-summary {
+    white-space: normal;
   }
   .chat-band .ui-band-action {
     width: 100%;
@@ -1557,12 +1378,6 @@ button.chat-cite:hover,
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .chat-spinner {
-    animation: none;
-    border-color: var(--accent-soft);
-    border-top-color: var(--accent);
-    border-right-color: var(--accent);
-  }
   .chat-recent-menu,
   .chat-jump {
     animation: none;

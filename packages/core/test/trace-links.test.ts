@@ -304,9 +304,13 @@ describe("with tracing on (fake neatlogs SDK)", () => {
   });
 });
 
-describe("the seeded doctor record", () => {
-  it("holds DECISIONS #93's real values", () => {
-    expect(readDoctorRecord()).toMatchObject({ traceId: ID, spanId: "1518e64a727d8bac", flushedAt: "2026-10-10" });
+describe("the committed doctor record", () => {
+  // Seeded from DECISIONS #93; every later successful `notary doctor` overwrites it with its own real ids.
+  it("is a valid record: DECISIONS #93's seed, or a later real doctor success", () => {
+    const rec = readDoctorRecord();
+    expect(rec).toBeDefined();
+    if (rec!.source.startsWith("seeded")) expect(rec).toMatchObject({ traceId: ID, spanId: "1518e64a727d8bac", flushedAt: "2026-10-10" });
+    else expect(rec).toMatchObject({ source: "notary doctor", flushedAt: expect.stringMatching(/^[0-9]{4}-[0-9]{2}-[0-9]{2}T/) });
   });
 });
 

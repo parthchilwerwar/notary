@@ -1,0 +1,22 @@
+# TEST FIXTURE: synthetic numbers for packages/core/test/economics.test.ts only.
+# This is NOT a cfo.ai export and NOT Notary's plan. Never import it into packages/web/public.
+section,key,label,period,value,unit,detail
+meta,workspace,Test workspace,,Test workspace,,
+meta,page,,,Test page,,
+meta,scenario,,,Main,,
+meta,currency,,,USD,,
+meta,share_url,,,https://example.test/share/fixture,,
+tier,starter,Starter,,10,USD/contract/month,"Test tier, with a comma"
+tier_feature,starter,Feature A,,,,
+tier,team,Team,,20,USD/contract/month,
+tier_feature,team,Feature A,,,,
+tier_feature,team,"Feature ""B""",,,,
+tier,scale,Scale,,30,USD/contract/month,
+series,revenue,Revenue,2027-01,100,USD,
+series,revenue,Revenue,2027-02,150,USD,
+series,cogs,COGS,2027-01,40,USD,
+series,cogs,COGS,2027-02,50,USD,
+series,cash,Cash balance,2027-01,1000,USD,
+series,cash,Cash balance,2027-02,950,USD,
+figure,runway_months,Runway,,19,months,test only
+figure,cost_per_incident,Cost per incident,,250,USD,

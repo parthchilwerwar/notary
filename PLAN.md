@@ -158,3 +158,18 @@ Claude Code owns `packages/core` and `packages/web` (Codex out of quota). Phases
 - [x] `packages/showreel`: 15 s Remotion film (sky → page → sky, Read → Test → Challenge → Certify → Enforce, Notary Chat, close) in Notary's tokens and fonts, every value from `src/data.json` (`pnpm --filter @notary/showreel props`, hash-verified published records). `docs/media/notary-showreel.mp4` + `notary-showreel-poster.png`; storyboard in `packages/showreel/STORYBOARD.md` (DECISIONS #188–189).
 - [ ] Square 1080×1080 cut not made (needs its own layout, #188).
 - [x] Showreel v2: real web components, animated pointer (clicks, hover, typing), synthesized music + SFX (−15 LUFS), 3D camera, certificate fly-in, dither morph; `docs/media/notary-showreel.mp4` (v1 kept as `notary-showreel-v1.mp4`), DECISIONS #190–193.
+
+## Session 12 — real runs, real agents, sponsors (Oct 12)
+
+- [x] Dashboard rebuilt flat (no sky band, no floating cards), dark theme removed, phosphor icons instead of accent bars, numbers in Instrument Serif (#194); landing nav transparent with a black CTA, readable horizontal chart, CTA and footer blended.
+- [x] Fixture runs hidden whenever real runs exist; `?fixtures=1` only, with the banner (#195).
+- [x] `/docs` guide on the landing look with the Rare UI Hook Sidebar; the Hook Sidebar also drives the dashboard nav and the Run transcript; Chat chain of thought on an original Reasoning Steps component (#196, #197).
+- [x] First real runs on live keys: notarize crustdata + dodo, 7 real bundles published (#199); recorder, export and explain bugs fixed (#200, #201).
+- [x] Notary Chat as a real tool-calling agent on LiteLLM; AWS deploy scripts ready (#202, #203).
+- [x] neatlogs agent monitoring + `/app/incidents` (#204, #205); cfo.ai round trip + `/app/business` (#206); Entire installed, enabled, coverage on the real CLI (#207).
+- Verified: typecheck (core, web, showreel), **990 core + 290 web tests**, check:secrets, production build, every page at 1440 and 390 with no page errors or overflow.
+- [ ] BLOCKED (user): Dodo seed: `pnpm --filter @notary/core seed:dodo --wait-minutes 60` + 12 hosted test-card checkouts; then notarize dodo, run --naive, run (guarded), export.
+- [ ] BLOCKED (user): cfo.ai workspace: upload `export/cfo-inputs.csv`, have Ari build the plan, `pnpm notary economics --cfo-import <file>`.
+- [ ] BLOCKED (user): AWS credentials for `deploy/aws/deploy.sh`; a running Docker daemon to build the image.
+- [ ] Open: neatlogs UI trace URL (`notary trace-link --example <url>`); `NEATLOGS_SERVICE_TOKEN` for neatlogs-cli read-back.
+- [ ] After this commit: `pnpm notary export --evidence` and `pnpm notary export --entire` (the first Entire checkpoint flips Entire to live), then a follow-up commit.

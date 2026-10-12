@@ -1,0 +1,49 @@
+{
+  "name": "notarize-crustdata-20261012T011404Z-inputs",
+  "tool": "notary",
+  "createdAt": "2026-10-12T01:15:23.268Z",
+  "exchanges": [
+    {
+      "id": "notary.inputs#47dc8ef60a3a#0",
+      "tool": "notary",
+      "op": "notary.inputs",
+      "method": "GET",
+      "url": "notary://inputs/notarize-crustdata-20261012T011404Z",
+      "requestHeaders": {},
+      "requestBody": {
+        "runId": "notarize-crustdata-20261012T011404Z"
+      },
+      "status": 200,
+      "responseHeaders": {},
+      "responseBody": {
+        "version": 1,
+        "runId": "notarize-crustdata-20261012T011404Z",
+        "kind": "notarize",
+        "variant": "notarize",
+        "tool": "crustdata",
+        "seed": 0,
+        "identityRunId": "notarize-crustdata-20261012T011404Z",
+        "params": {
+          "creditBudget": 200,
+          "maxProbesPerClaim": 5,
+          "lambda": 1,
+          "priorStrength": 2,
+          "adversary": "bedrock"
+        },
+        "files": {},
+        "paymentPool": [],
+        "subscriptionPool": [],
+        "store": {
+          "probes": [],
+          "hypotheses": []
+        }
+      },
+      "latencyMs": 0,
+      "credits": null,
+      "recordedAt": "2026-10-12T01:15:23.268Z",
+      "requestHash": "47dc8ef60a3a7b51c7443722931ce823fe78899046eaedb1ab98759696e15abd",
+      "occurrence": 0
+    }
+  ],
+  "contentHash": "3895a8e7be895310cf67fea91b01e7eaccd278102494f219c956bd33600b567e"
+}

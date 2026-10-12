@@ -35,6 +35,7 @@ import { RECON_PATH_PARAMS } from "../contracts/index.js";
 import type { Guard } from "../schema/index.js";
 import { ToolHttpError, ToolNetworkError } from "../tools/index.js";
 import type { ToolResult, Wrap } from "../tools/index.js";
+import { withSpan } from "../trace/index.js";
 import { contextRecorder } from "./context.js";
 import type { FiringRecorder } from "./context.js";
 import { GuardBlockedError, UnknownWriteOutcomeError } from "./errors.js";
@@ -289,9 +290,55 @@ export function guarded(registry: GuardRegistry, recorder: FiringRecorder = cont
     throw new GuardBlockedError(g.id, op, `outside the narrowed scope (currency ${label}): ${detail} is ${currency}; the belief's behavior is unverified there`);
   }
 
+  /**
+   * Every call that has active guards is one GUARDRAIL span: guard ids and kinds, the operation, the
+   * guards that fired, their belief ids and the decision (allow | transform | block). The span output
+   * is only the decision, never the tool response. (The incidents these firings cause are derived
+   * from the decision at the end of the run: src/incidents/derive.ts.)
+   */
   async function apply(op: string, fn: AnyAsyncFn, args: unknown[]): Promise<unknown> {
     const guards = registry.active(op);
     if (guards.length === 0) return fn(...args);
+    const fired: Guard[] = [];
+    const firing: FiringRecorder = {
+      fired: (g, o) => {
+        if (!fired.includes(g)) fired.push(g);
+        recorder.fired(g, o);
+      },
+      effect: (e) => recorder.effect(e),
+    };
+    let result: unknown;
+    let blocked: GuardBlockedError | undefined;
+    let set: (k: string, v: string | number | boolean) => void = () => {};
+    await withSpan(
+      "notary.guard.apply",
+      { "notary.agent": "Guard", "notary.agent_id": "guard", "notary.guard.op": op, "notary.guard.ids": guards.map((g) => g.id).join(","), "notary.guard.kinds": guards.map((g) => g.kind).join(",") },
+      async () => {
+        try {
+          result = await applyGuards(op, fn, args, guards, firing);
+        } catch (err) {
+          if (err instanceof GuardBlockedError) {
+            blocked = err;
+            set("notary.guard.decision", "block");
+            set("notary.guard.blockedBy", err.guardId);
+            return { decision: "block" };
+          }
+          throw err;
+        } finally {
+          if (fired.length) set("notary.guard.fired", fired.map((g) => g.id).join(","));
+          if (fired.length) set("notary.guard.beliefIds", [...new Set(fired.map((g) => g.beliefId))].join(","));
+        }
+        const transformed = fired.some((g) => g.kind === "transform" || g.kind === "require_param");
+        set("notary.guard.decision", transformed ? "transform" : "allow");
+        return { decision: transformed ? "transform" : "allow" };
+      },
+      { kind: "GUARDRAIL", onSpan: (_ids, setter) => (set = setter) },
+    );
+    if (blocked) throw blocked;
+    return result;
+  }
+
+  async function applyGuards(op: string, fn: AnyAsyncFn, args: unknown[], guards: readonly Guard[], recorder: FiringRecorder): Promise<unknown> {
     const idx = paramsIndex(op);
     const original = args[idx];
     const params: Record<string, unknown> =

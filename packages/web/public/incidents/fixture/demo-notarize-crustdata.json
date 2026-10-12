@@ -1,0 +1,105 @@
+{
+  "runId": "demo-notarize-crustdata",
+  "sample": true,
+  "bundleHash": "fd77d292d7c8e6ea989b06e5fb73b7570010c13a163621fcd6f592f8c8c473d5",
+  "sources": [
+    "bundle",
+    "timeline",
+    "spans"
+  ],
+  "incidents": [
+    {
+      "id": "inc-a05cb667b61ef6de",
+      "runId": "demo-notarize-crustdata",
+      "kind": "probe_contradiction",
+      "severity": "warning",
+      "at": "2026-10-10T08:46:28.780Z",
+      "agent": "reflector",
+      "tool": "crustdata",
+      "summary": "Probe demo-notarize-crustdata-p001 (type_edge) on crustdata.enrich.funding-total-investment-number: the committed prediction for \"silent_coercion\" won, so the documented behavior does not hold.",
+      "recordIds": [
+        "demo-notarize-crustdata-p001",
+        "crustdata.enrich.funding-total-investment-number",
+        "hyp-02fcd1baafb7"
+      ],
+      "claimId": "crustdata.enrich.funding-total-investment-number",
+      "beliefId": "belief-crustdata.enrich.funding-total-investment-number",
+      "traceId": "4c6cc52bcdb84bd9adfc29bc14b1906f",
+      "spanId": "2092b6126bbb4afd",
+      "exported": false,
+      "resolution": {
+        "status": "open",
+        "action": "belief_abstained",
+        "summary": "Notary abstained on belief-crustdata.enrich.funding-total-investment-number: not enough evidence to certify; no guard relies on it.",
+        "at": "2026-10-10T08:46:28.937Z",
+        "recordIds": [
+          "belief-crustdata.enrich.funding-total-investment-number"
+        ]
+      },
+      "data": {
+        "class": "silent_coercion",
+        "template": "type_edge",
+        "credits": 4
+      }
+    },
+    {
+      "id": "inc-08e70910ed6bedb0",
+      "runId": "demo-notarize-crustdata",
+      "kind": "probe_contradiction",
+      "severity": "warning",
+      "at": "2026-10-10T08:46:28.804Z",
+      "agent": "reflector",
+      "tool": "crustdata",
+      "summary": "Probe demo-notarize-crustdata-p002 (type_edge) on crustdata.enrich.funding-total-investment-number: the committed prediction for \"silent_coercion\" won, so the documented behavior does not hold.",
+      "recordIds": [
+        "demo-notarize-crustdata-p002",
+        "crustdata.enrich.funding-total-investment-number",
+        "hyp-02fcd1baafb7"
+      ],
+      "claimId": "crustdata.enrich.funding-total-investment-number",
+      "beliefId": "belief-crustdata.enrich.funding-total-investment-number",
+      "traceId": "c04f9412fa6e4582a5f4e524a2f4fc70",
+      "spanId": "9b971817495d45f1",
+      "exported": false,
+      "resolution": {
+        "status": "open",
+        "action": "belief_abstained",
+        "summary": "Notary abstained on belief-crustdata.enrich.funding-total-investment-number: not enough evidence to certify; no guard relies on it.",
+        "at": "2026-10-10T08:46:28.937Z",
+        "recordIds": [
+          "belief-crustdata.enrich.funding-total-investment-number"
+        ]
+      },
+      "data": {
+        "class": "silent_coercion",
+        "template": "type_edge",
+        "credits": 4
+      }
+    },
+    {
+      "id": "inc-393b9dc93f271221",
+      "runId": "demo-notarize-crustdata",
+      "kind": "checker_anomaly",
+      "severity": "warning",
+      "at": "2026-10-12T00:14:39.763Z",
+      "tool": "crustdata",
+      "summary": "The checker saw crustdata.enrich.funding-total-investment-number disagree with the docs: expected {\"field\":\"[].matches[].company_data.funding.total_investment_usd\",\"type\":\"number|null\"}, observed {\"field\":\"[].matches[].company_data.funding.total_investment_usd\",\"mismatches\":[{\"path\":\"[1].matche….",
+      "recordIds": [
+        "anom-925e2de064aa",
+        "crustdata.enrich.funding-total-investment-number"
+      ],
+      "claimId": "crustdata.enrich.funding-total-investment-number",
+      "beliefId": "belief-crustdata.enrich.funding-total-investment-number",
+      "exported": false,
+      "resolution": {
+        "status": "open",
+        "action": "belief_abstained",
+        "summary": "Notary abstained on belief-crustdata.enrich.funding-total-investment-number: not enough evidence to certify; no guard relies on it.",
+        "at": "2026-10-10T08:46:28.937Z",
+        "recordIds": [
+          "belief-crustdata.enrich.funding-total-investment-number"
+        ]
+      }
+    }
+  ]
+}

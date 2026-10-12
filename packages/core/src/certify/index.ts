@@ -29,7 +29,7 @@ import { fileURLToPath } from "node:url";
 import { canonicalJson, sha256Hex, verifyBundle } from "../bundle/hash.js";
 import { CHANGE_API_RUNS_DIR, DEMO_RUNS_DIR, DEMO_SCENARIOS, demoScenarioOf } from "../demo/index.js";
 import { fixturePublishRefusal } from "../demo/publish.js";
-import { classify, collectBundles, isDriftReplay } from "../export/collect.js";
+import { collectBundles, isCertificateSource } from "../export/collect.js";
 import type { SkippedBundle } from "../export/collect.js";
 import type { RunBundle } from "../schema/index.js";
 import { CERTIFICATES_FIXTURE_GENERATED_BY, FIXTURE_CERT_DISCLOSURE, TOOLS, buildCertificates } from "./certificates.js";
@@ -83,9 +83,7 @@ export interface CertificateExportResult {
 
 /** Real sources: full notarize bundles, and queue runs / drift replays that carry belief events (never sample, never compare-priors arms). */
 export function realCertificateSources(bundles: readonly RunBundle[]): RunBundle[] {
-  return bundles.filter(
-    (b) => !b.sample && (classify(b) === "notarize-full" || (b.beliefEvents.length > 0 && (b.kind === "run" || isDriftReplay(b)))),
-  );
+  return bundles.filter(isCertificateSource);
 }
 
 /** Fixture bundles under the demo run dirs (<dir>/<sub>/<file>.json), with the files skipped and why. */

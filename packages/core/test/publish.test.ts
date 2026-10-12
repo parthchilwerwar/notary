@@ -269,9 +269,10 @@ describe("packages/web/public/evidence/evidence.json", () => {
 
   it("status rules follow the facts: neatlogs live from the recorded doctor success; Entire and cfo.ai only with their facts", () => {
     const facts = gatherEvidenceFacts();
-    expect(facts.doctor?.traceId).toBe("8e4a01d2811652fa2e8c4e4334642137"); // seeded from DECISIONS #93
+    // The last recorded `notary doctor` success (seeded from DECISIONS #93, overwritten by later real runs).
+    expect(facts.doctor?.traceId).toMatch(/^[0-9a-f]{32}$/);
     expect(by("neatlogs").status).toBe("live");
-    expect(by("neatlogs").notes).toContain("8e4a01d2811652fa2e8c4e4334642137");
+    expect(by("neatlogs").notes).toContain(facts.doctor!.traceId);
     expect(by("neatlogs").notes).toMatch(/neatlogs-cli is (not installed|installed)/);
     expect(by("Entire").status).toBe(facts.entire.onPath && facts.entire.checkpointRefs.length > 0 ? "live" : "pending");
     expect(by("Entire").links.map((l) => l.url)).toEqual(["https://docs.entire.io/cli-reference/graph"]);

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useData } from "../../app/catalog";
 import type { CertificateView } from "../../data";
-import { EmptyState, Page, PageBody, PageSkeleton, SkyBand } from "../../ui";
+import { EmptyState, Page, PageBody, PageHeader, PageSkeleton } from "../../ui";
 
 /** Renders children with the selected run's certificate world, or the right state under the page's band. */
 export function WithCertificates({ title, children }: { title: string; children: (world: CertificateView) => ReactNode }) {
@@ -10,7 +10,7 @@ export function WithCertificates({ title, children }: { title: string; children:
   if (certificates.status === "ready") return <>{children(certificates.data)}</>;
   return (
     <Page>
-      <SkyBand title={title} />
+      <PageHeader title={title} />
       <PageBody>
         {certificates.status === "error" ? (
           <EmptyState tone="error" title="Certificates withheld">
@@ -18,11 +18,11 @@ export function WithCertificates({ title, children }: { title: string; children:
             <p className="certs-detail">{certificates.error}</p>
           </EmptyState>
         ) : (
-          <EmptyState title="No certificates for this run's world">
+          <EmptyState title="No certificates for this run yet">
             {bundle?.sample
-              ? "No fixture certificate export is published for this simulated world. "
-              : "No certificate export is published for recorded runs. "}
-            Certificates are built with <code>pnpm notary export --certificates</code>.
+              ? "No certificate export is published for this fixture scenario. "
+              : "No certificate export is published for these runs yet. "}
+            Certificates are built with <code>pnpm notary export --certificates</code> after a notarize run.
           </EmptyState>
         )}
       </PageBody>

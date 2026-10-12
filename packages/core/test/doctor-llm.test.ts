@@ -4,7 +4,7 @@
  */
 import type { ChatCompletion } from "openai/resources/chat/completions";
 import { describe, expect, it } from "vitest";
-import { runLlmDoctor } from "../src/llm/doctor.js";
+import { DOCTOR_TOOL_PROMPT, runLlmDoctor } from "../src/llm/doctor.js";
 import type { ChatRequest, ChatTransport, ConverseTransport } from "../src/llm/index.js";
 
 // Built at runtime so no committed line looks like a real key (pnpm check:secrets).
@@ -30,13 +30,25 @@ function reply(text = "OK"): ChatCompletion {
   };
 }
 
-function chat(fail?: (body: ChatRequest) => Error | undefined) {
+/** A tool-calling reply (the chat role's doctor check forces one call of notary_ping). */
+function toolReply(name = "notary_ping"): ChatCompletion {
+  return {
+    id: "c",
+    object: "chat.completion",
+    created: 0,
+    model: "m",
+    choices: [{ index: 0, message: { role: "assistant", content: null, refusal: null, tool_calls: [{ id: "call_1", type: "function", function: { name, arguments: '{"ok":true}' } }] }, finish_reason: "tool_calls", logprobs: null }],
+    usage: { prompt_tokens: 40, completion_tokens: 9, total_tokens: 49 },
+  };
+}
+
+function chat(fail?: (body: ChatRequest) => Error | undefined, opts: { tools?: boolean } = {}) {
   const calls: ChatRequest[] = [];
   const t: ChatTransport = async (body) => {
     calls.push(body);
     const e = fail?.(body);
     if (e) throw e;
-    return { completion: reply() };
+    return { completion: body.tools && opts.tools !== false ? toolReply() : reply() };
   };
   return { t, calls };
 }
@@ -65,13 +77,19 @@ describe("doctor --llm (litellm)", () => {
       ["test-haiku", 5, [{ role: "user", content: "Reply with OK" }]],
       ["test-sonnet", 5, [{ role: "user", content: "Reply with OK" }]],
       ["test-nova-pro", 5, [{ role: "user", content: "Reply with OK" }]],
+      ["test-sonnet", 60, [{ role: "user", content: DOCTOR_TOOL_PROMPT }]],
     ]);
+    // Notary Chat: falls back to the reflector model; its check is a real, forced tool call.
+    expect(text).toContain("  Notary Chat (NOTARY_MODEL_CHAT) = (not set; falls back to NOTARY_MODEL_REFLECTOR = test-sonnet)");
+    expect(calls[3]!.tools).toEqual([expect.objectContaining({ type: "function", function: expect.objectContaining({ name: "notary_ping" }) })]);
+    expect(calls[3]!.tool_choice).toEqual({ type: "function", function: { name: "notary_ping" } });
+    expect(text).toMatch(/ok {3}Notary Chat tool call: "test-sonnet" \d+ ms, 40 in \/ 9 out tokens, .* called notary_ping\(\{"ok":true\}\)/);
     expect(r.lines.at(-1)).toMatch(/^result: OK/);
     // P2: role lines name the agents from src/schema/agents.ts (env var names unchanged).
     expect(text).toContain("  Executor (NOTARY_MODEL_EXECUTOR) = test-haiku");
     expect(text).toContain("  Reflector (NOTARY_MODEL_REFLECTOR) = test-sonnet");
     expect(text).toContain("  Adversary (NOTARY_MODEL_ADVERSARY) = test-nova-pro");
-    expect(r.lines.at(-1)).toBe("result: OK — Executor, Reflector and Adversary answered");
+    expect(r.lines.at(-1)).toBe("result: OK — Executor, Reflector, Adversary and Notary Chat answered");
   });
 
   it("reports the USD cap and each role's price source; an unknown price is a WARN naming the env vars (exit unchanged)", async () => {
@@ -124,7 +142,7 @@ describe("doctor --llm (litellm)", () => {
     const text = r.lines.join("\n");
     expect(text).toContain('FAIL separation of duties: Reflector and Adversary are the same model ("test-sonnet")');
     expect(text).toContain("FIX: set NOTARY_MODEL_ADVERSARY to a different model, e.g. NOTARY_MODEL_ADVERSARY=test-micro");
-    expect(calls.map((c) => c.model)).toEqual(["test-haiku", "test-sonnet", "test-sonnet"]);
+    expect(calls.map((c) => c.model)).toEqual(["test-haiku", "test-sonnet", "test-sonnet", "test-sonnet"]);
   });
 
   it("missing variables are BLOCKED (exit 3) with one FIX line each, no network", async () => {
@@ -155,7 +173,27 @@ describe("doctor --llm (litellm)", () => {
     const r = await runLlmDoctor({ env: { ...ENV, NOTARY_MODEL_EXECUTOR: "" }, chatTransport: t, listModels: async () => LISTED });
     expect(r.exitCode).toBe(3);
     expect(r.lines.join("\n")).toContain("FIX: add NOTARY_MODEL_EXECUTOR=test-micro to .env");
-    expect(calls.map((c) => c.model)).toEqual(["test-sonnet", "test-nova-pro"]);
+    expect(calls.map((c) => c.model)).toEqual(["test-sonnet", "test-nova-pro", "test-sonnet"]);
+  });
+
+  it("Notary Chat: NOTARY_MODEL_CHAT wins over the fallback; a model that answers without the tool call FAILs", async () => {
+    const { t, calls } = chat();
+    const r = await runLlmDoctor({ env: { ...ENV, NOTARY_MODEL_CHAT: "test-micro" }, chatTransport: t, listModels: async () => LISTED });
+    expect(r.exitCode).toBe(0);
+    expect(r.lines.join("\n")).toContain("  Notary Chat (NOTARY_MODEL_CHAT) = test-micro");
+    expect(r.lines.join("\n")).toContain('ok   Notary Chat: "test-micro" is offered by the proxy');
+    expect(calls.at(-1)!.model).toBe("test-micro");
+
+    const noTools = await runLlmDoctor({ env: ENV, chatTransport: chat(undefined, { tools: false }).t, listModels: async () => LISTED });
+    expect(noTools.exitCode).toBe(1);
+    const text = noTools.lines.join("\n");
+    expect(text).toContain('FAIL Notary Chat tool call ("test-sonnet"): the model answered without calling the tool');
+    expect(text).toContain("FIX: Notary Chat needs a model with tool calling through the proxy; set NOTARY_MODEL_CHAT");
+
+    const blocked = await runLlmDoctor({ env: { ...ENV, NOTARY_MODEL_REFLECTOR: "" }, chatTransport: chat().t, listModels: async () => LISTED });
+    expect(blocked.exitCode).toBe(3);
+    expect(blocked.lines.join("\n")).toContain("BLOCKED: NOTARY_MODEL_CHAT not set (and NOTARY_MODEL_REFLECTOR, its fallback, is not set either)");
+    expect(blocked.lines.join("\n")).toContain("FIX: add NOTARY_MODEL_CHAT=test-micro to .env");
   });
 
   it("never prints the key, even when the HTTP client's errors contain it", async () => {
@@ -175,7 +213,7 @@ describe("doctor --llm (litellm)", () => {
     });
     expect(callLeak.exitCode).toBe(1);
     expect(callLeak.lines.join("\n")).not.toContain(KEY);
-    expect(callLeak.lines.filter((l) => l.startsWith("FAIL "))).toHaveLength(3);
+    expect(callLeak.lines.filter((l) => l.startsWith("FAIL "))).toHaveLength(4);
   });
 
   it("an unreachable proxy fails with a LITELLM_BASE_URL fix", async () => {
@@ -197,7 +235,7 @@ describe("doctor --llm (bedrock)", () => {
     const transport: ConverseTransport = async (input) => {
       seen.push(String(input.modelId));
       return {
-        output: { message: { role: "assistant", content: [{ text: "OK" }] } },
+        output: { message: { role: "assistant", content: input.toolConfig ? [{ toolUse: { toolUseId: "t1", name: "notary_ping", input: { ok: true } } }] : [{ text: "OK" }] } },
         usage: { inputTokens: 9, outputTokens: 1, totalTokens: 10 },
         stopReason: "end_turn",
         metrics: { latencyMs: 1 },
@@ -215,7 +253,8 @@ describe("doctor --llm (bedrock)", () => {
     const text = r.lines.join("\n");
     expect(text).toContain("provider: bedrock (NOTARY_LLM_PROVIDER unset: default)");
     expect(text).toContain("skip model listing: not available for bedrock");
-    expect(seen).toHaveLength(3);
+    expect(seen).toHaveLength(4);
+    expect(text).toMatch(/ok {3}Notary Chat tool call: "anthropic.claude-sonnet-4-20250514-v1:0" .* called notary_ping/);
   });
 
   it("is BLOCKED without AWS_REGION", async () => {

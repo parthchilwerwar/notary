@@ -1,0 +1,14 @@
+[
+  {
+    "checkpoint_id": "01M4PYAG60V4ZBFR9WN79VAWB1",
+    "session_id": "f5cf4a6a-3f07-4c6d-8b51-e9ecce71d467",
+    "agent": "Claude Code",
+    "date": "2026-10-12T07:45:49+05:30",
+    "message": "adversary: downgrade belief-crustdata.enrich.headcount-total-integer",
+    "is_logs_only": true,
+    "session_count": 1,
+    "session_ids": [
+      "f5cf4a6a-3f07-4c6d-8b51-e9ecce71d467"
+    ]
+  }
+]

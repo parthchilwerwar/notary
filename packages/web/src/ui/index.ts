@@ -10,11 +10,11 @@ export { AgentBadge } from "./AgentBadge";
 export { Button, type ButtonVariant } from "./Button";
 export { StatusPill, toneFor, type StatusTone } from "./StatusPill";
 export { Title, SectionLabel, Section } from "./Title";
-export { SkyBand, SkyBandContext, Page, PageBody } from "./SkyBand";
+export { PageHeader, PageHeaderContext, SkyBand, SkyBandContext, Page, PageBody } from "./PageHeader";
 export { Stat, StatRow } from "./Stat";
 export { Seal, CertificateCard } from "./CertificateCard";
-export { EmptyState, Skeleton, PageSkeleton, Expander } from "./States";
-export { FixtureNote, Facts, Pills, Select, TableFrame } from "./Bits";
+export { EmptyState, NoRunsYet, Skeleton, PageSkeleton, Expander } from "./States";
+export { Note, FixtureNote, Facts, Pills, Select, TableFrame, type NoteTone } from "./Bits";
 export { RecordLinks, Trace, Json, traceUrl } from "./Records";
 export { usePageMotion, slideIn } from "./motion";
 // The landing's own components, re-exported rather than forked.
@@ -23,3 +23,5 @@ export { BrowserFrame } from "../components/landing/BrowserFrame";
 // The landing's dithered naive-vs-guarded chart (Proof section) and the shared dither renderer.
 export { ActionsChart as DitherChart } from "../components/landing/ActionsChart";
 export { DitherCanvas, DitherSwatch, type DitherFill } from "../components/brand/DitherCanvas";
+// Rare UI's Hook Sidebar (docs/CREDITS.md): the dashboard navigation and the Run transcript's event rail.
+export { HookSidebar, type HookSidebarItem } from "../components/ui/hook-sidebar";

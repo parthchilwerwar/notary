@@ -12,8 +12,8 @@
   --chat-rail-gap: 10px;
   --chat-indent: calc(var(--chat-rail) + var(--chat-rail-gap));
 
-  /* The ground the thread sits on: the dashboard shell paints the page --surface-subtle. */
-  --chat-ground: var(--surface-subtle);
+  /* The ground the thread sits on: the dashboard shell paints the main column --page. */
+  --chat-ground: var(--page);
   --chat-bubble: var(--accent-soft);
   --chat-bubble-text: var(--text);
   --chat-cite-bg: var(--accent-soft);

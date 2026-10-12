@@ -481,7 +481,7 @@ export class ReplayChat implements ChatSource {
     const claimIds = [...new Set([...world.certificates.map((c) => c.claimId), ...world.noCertificates.map((c) => c.claimId)])];
     const route = routeQuestion(question, { runIds: world.runs.map((r) => r.runId), claimIds, previous });
     const blocks: string[] = [];
-    if (world.key !== "real") blocks.push(`*Answering from ${world.label}, not live data.*`);
+    if (world.key !== "real") blocks.push("*Answering from recorded scenario runs, not live data.*");
     if (!route.intents.length) {
       await turn.note(`Nothing in the question matched a recorded record of ${world.label}; listing what is recorded.`);
       await this.listRuns(turn, world);

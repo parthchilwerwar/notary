@@ -20,7 +20,10 @@
 import { RECON_PATH_PARAMS, contractFor } from "../contracts/index.js";
 import type { ContractEntry, ReconStep } from "../contracts/types.js";
 import type { Anomaly, Tool } from "../schema/index.js";
-import { withSpan } from "../trace/index.js";
+import { tracingEnabled, withSpan } from "../trace/index.js";
+import type { SpanIds } from "../trace/index.js";
+import { anomalySummary } from "../incidents/derive.js";
+import { reportIncident } from "../incidents/live.js";
 import {
   BudgetExceededError,
   CRUSTDATA_OPS,
@@ -177,9 +180,12 @@ export async function runRecon(opts: ReconOptions): Promise<ReconResult> {
   const steps: ReconStepReport[] = [];
   let stoppedReason: string | undefined;
 
+  // Each claim's recon span (exported spans only), so its anomalies point at the span whose exchanges they read.
+  const reconSpans = new Map<string, SpanIds>();
   for (const entry of entries) {
     if (stoppedReason !== undefined) break;
     const claimId = entry.claim.id;
+    const sdkOn = tracingEnabled();
     await withSpan("notary.recon", { "notary.claimId": claimId, "notary.tool": opts.tool }, async () => {
       const bodies: Array<unknown | undefined> = [];
       for (let i = 0; i < entry.recon.length; i++) {
@@ -236,8 +242,35 @@ export async function runRecon(opts: ReconOptions): Promise<ReconResult> {
           }
         }
       }
-    });
+    }, { onSpan: (ids) => void (sdkOn && reconSpans.set(claimId, ids)) });
   }
+
+  // The deterministic checker as one EVALUATOR span; each anomaly is an incident (warn log) in neatlogs.
+  let anomalies: Anomaly[] = [];
+  let setCheckerAttr: ((k: string, v: string | number | boolean) => void) | undefined;
+  await withSpan(
+    "notary.checker",
+    { "notary.tool": opts.tool, "notary.checker.observations": observations.length, "notary.checker.claims": entries.length },
+    () => {
+      anomalies = checkAll(entries, observations).map((a) => {
+        const ids = reconSpans.get(a.claimId);
+        return a.traceId || !ids ? a : { ...a, traceId: ids.traceId, spanId: ids.spanId };
+      });
+      setCheckerAttr?.("notary.checker.anomalies", anomalies.length);
+      for (const a of anomalies) {
+        reportIncident({
+          kind: "checker_anomaly",
+          subject: a.id,
+          severity: "warning",
+          summary: anomalySummary(a),
+          ...(a.traceId && a.spanId ? { span: { traceId: a.traceId, spanId: a.spanId } } : {}),
+          attrs: { "notary.claimId": a.claimId, "notary.tool": a.tool, "notary.anomalyId": a.id },
+        });
+      }
+      return { anomalies: anomalies.length };
+    },
+    { kind: "EVALUATOR", onSpan: (_ids, set) => (setCheckerAttr = set) },
+  );
 
   const cassetteHash =
     opts.mode === "replay"
@@ -250,7 +283,7 @@ export async function runRecon(opts: ReconOptions): Promise<ReconResult> {
     cassetteHash,
     entries,
     observations,
-    anomalies: checkAll(entries, observations),
+    anomalies,
     steps,
     creditsUsed: ledger.total,
     creditsByEndpoint: ledger.byEndpoint,

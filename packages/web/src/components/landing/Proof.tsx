@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { RunBundle } from "../../../../core/src/schema";
-import { actionsByType, EVALUATION_URL, type ProofNumbers } from "../../landing-data";
+import { actionsByType, EVALUATION_TAG, EVALUATION_URL, type ProofNumbers } from "../../landing-data";
 import { GridSection } from "../brand/GridFrame";
 import { ActionsChart } from "./ActionsChart";
 import { BrowserFrame } from "./BrowserFrame";
@@ -11,13 +11,12 @@ import { useNear } from "./useNear";
 export type ProofState =
   | { status: "loading" }
   | { status: "error"; message: string }
-  | { status: "empty"; message: string }
+  | { status: "empty"; message: string; title?: string; commands?: readonly string[] }
   | {
       status: "ready";
       naive: RunBundle;
       guarded: RunBundle;
       numbers: ProofNumbers;
-      note?: string;
     };
 
 const fmt = new Intl.NumberFormat("en-US");
@@ -107,10 +106,25 @@ export function Proof({ state, onNear }: { state: ProofState; onNear?: () => voi
             </div>
           </div>
         )}
-        {(state.status === "error" || state.status === "empty") && (
-          <p className="l-lede l-error" role={state.status === "error" ? "alert" : undefined}>
+        {state.status === "error" && (
+          <p className="l-lede l-error" role="alert">
             {state.message}
           </p>
+        )}
+        {state.status === "empty" && (
+          <div className="l-proof-body l-proof-empty">
+            {state.title && <h3 className="l-proof-empty-title">{state.title}</h3>}
+            <p className="l-lede">{state.message}</p>
+            {state.commands && (
+              <ol className="l-proof-steps">
+                {state.commands.map((c) => (
+                  <li key={c}>
+                    <code>{c}</code>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
         )}
         {state.status === "ready" && <ProofBody state={state} />}
       </div>
@@ -119,7 +133,7 @@ export function Proof({ state, onNear }: { state: ProofState; onNear?: () => voi
 }
 
 function ProofBody({ state }: { state: Extract<ProofState, { status: "ready" }> }) {
-  const { naive, guarded, numbers, note } = state;
+  const { naive, guarded, numbers } = state;
   const rows = actionsByType(naive, guarded);
   return (
     <div className="l-proof-body">
@@ -128,7 +142,6 @@ function ProofBody({ state }: { state: Extract<ProofState, { status: "ready" }> 
         agent that trusts the docs, once by Notary. Unsafe actions (duplicate writes, wrong-unit amounts, missed
         existing refunds) are counted by a deterministic grader from the API’s state after each run.
       </p>
-      {note && <p className="l-note">{note}</p>}
       <dl className="l-stats">
         <Stat value={numbers.naiveUnsafe} label="Unsafe actions without Notary" />
         <Stat value={numbers.guardedUnsafe} label="Unsafe actions with Notary" />
@@ -139,7 +152,11 @@ function ProofBody({ state }: { state: Extract<ProofState, { status: "ready" }> 
           Measured on Notary’s evaluation suite
         </a>
       </p>
-      <BrowserFrame className="l-chart-card" title="Money actions by request type">
+      <BrowserFrame
+        className="l-chart-card"
+        title="Money actions by request type"
+        tag={guarded.sample ? EVALUATION_TAG : undefined}
+      >
         <ActionsChart rows={rows} />
       </BrowserFrame>
     </div>

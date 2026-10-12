@@ -64,23 +64,28 @@
   border-radius: 16px;
   border: 1px solid var(--hairline-color);
   background: var(--card);
-  border-left: 4px solid var(--accent);
   box-shadow: var(--shadow-soft);
 }
-.trail-decided[data-kind="revoked_certificate"],
-.trail-decided[data-kind="missing_certificate"] {
-  border-left-color: var(--status-unsafe-text);
+/* "Decided by" leads with an icon (no rule): accent for a guard or policy, red for a certificate
+   problem or an unsafe grade. */
+.trail-decided-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
-.trail-decided[data-kind="guard"] {
-  border-left-color: var(--accent);
+.trail-decided-icon {
+  flex: none;
+  color: var(--accent);
+}
+.trail-decided[data-kind="revoked_certificate"] .trail-decided-icon,
+.trail-decided[data-kind="missing_certificate"] .trail-decided-icon,
+.trail-decided[data-unsafe] .trail-decided-icon {
+  color: var(--status-unsafe-text);
 }
 .trail-decided p {
   margin: 6px 0 0;
   font-size: 15px;
   overflow-wrap: anywhere;
-}
-.trail-decided[data-unsafe] {
-  border-left-color: var(--status-unsafe-text);
 }
 .trail-decided .trail-unsafe {
   display: flex;
@@ -177,7 +182,6 @@
 }
 .trail-line[data-decisive] {
   background: var(--accent-soft);
-  box-shadow: inset 3px 0 0 var(--accent);
 }
 .trail-line-key,
 .trail-line-value {

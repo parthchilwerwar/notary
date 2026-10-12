@@ -1,18 +1,14 @@
-/* Approvals (K3): layout only; surfaces and type come from src/ui. The confirm dialog is reused
-   by the Run page. */
-.desk-note {
-  color: var(--text-strong-muted);
+/* Approvals: full-page layout. No cards — held actions are rows between hairlines, notes are kit
+   Notes (icon + quiet tint), the token form sits on the page. Type and status colors come from src/ui and
+   the tokens. The confirm dialog at the end is reused by the Run page. */
+.desk-note code,
+.desk-shared-note code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
 }
 .desk-muted {
   color: var(--text-muted);
   font-size: 14px;
-}
-.desk-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 460px), 1fr));
-  align-items: start;
-  gap: 16px;
-  min-width: 0;
 }
 .desk-local,
 .desk-cohort {
@@ -20,67 +16,114 @@
   gap: 16px;
   min-width: 0;
 }
+.desk-cohort + .desk-cohort {
+  margin-top: 8px;
+}
+.desk-cohort-title {
+  margin: 0;
+  color: var(--text-strong-muted);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Recorded runs: one row per run, the count right-aligned. */
 .desk-runs {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 12px;
   margin: 0;
   padding: 0;
+  border-top: 1px solid var(--hairline-color);
   list-style: none;
 }
 .desk-run {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  height: 100%;
-  box-shadow: var(--shadow-soft);
+  padding: 12px 12px;
+  border-bottom: 1px solid var(--hairline-color);
 }
+/* The selected run: a check icon, a "Selected" tag and a soft accent tint (no rule). */
 .desk-run[data-selected] {
-  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 .desk-run-id {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
   min-width: 0;
+  color: var(--text);
   overflow-wrap: anywhere;
   font-weight: 500;
+  text-decoration: none;
+}
+a.desk-run-id:hover {
+  color: var(--accent-text);
+}
+a.desk-run-id:hover > span {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.desk-run-icon {
+  flex: none;
+  color: var(--text-muted);
+}
+.desk-run[data-selected] .desk-run-icon {
+  color: var(--accent-text);
+}
+.desk-run-tag {
+  color: var(--accent-text);
+  font-size: 13px;
+  font-weight: 400;
 }
 .desk-run-count {
-  font-family: var(--font-display);
-  font-size: 28px;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  flex: none;
+  align-items: baseline;
+  gap: 6px;
 }
-.desk-run-count span {
+.desk-run-count .num-display {
+  font-size: 30px;
+  line-height: 1;
+}
+.desk-run-unit {
   color: var(--text-muted);
-  font-family: var(--font-sans);
   font-size: 13px;
 }
 
-/* One held action */
-.desk-item,
-.desk-decided {
+/* Held actions and decided records: rows between hairlines. */
+.desk-rows {
   display: grid;
-  gap: 14px;
   min-width: 0;
+  border-top: 1px solid var(--hairline-color);
 }
-.desk-item[data-highlight],
-.desk-decided[data-highlight] {
-  border-color: var(--accent);
+.desk-item {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 24px 4px;
+  border-bottom: 1px solid var(--hairline-color);
+}
+.desk-item[data-highlight] {
+  margin: 0 -12px;
+  padding-inline: 12px;
+  border-radius: var(--r-panel);
+  background: var(--accent-soft);
 }
 .desk-item-head {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 8px 16px;
+  gap: 8px 24px;
 }
-.desk-item-head > div:first-child {
+.desk-item-id {
   display: grid;
+  justify-items: start;
   gap: 4px;
   min-width: 0;
 }
 .desk-kicker {
-  color: var(--text-strong-muted);
+  color: var(--text-muted);
   font-size: 13px;
   overflow-wrap: anywhere;
 }
@@ -98,31 +141,57 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+  margin-top: 4px;
 }
 .desk-amount {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 10px;
+  display: grid;
+  justify-items: end;
+  gap: 2px;
   margin: 0;
+  text-align: right;
 }
 .desk-amount-value {
   font-family: var(--font-display);
-  font-size: clamp(40px, 2vw + 28px, 56px);
-  letter-spacing: -0.02em;
+  font-size: clamp(36px, 1.5vw + 26px, 48px);
+  font-style: italic; /* the italic 1 has a flag: "11" never reads as "ll" (see .ui-stat-value) */
+  font-weight: 400;
+  letter-spacing: 0.06em;
   line-height: 1;
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: lining-nums tabular-nums;
 }
 .desk-amount-unit,
 .desk-amount-missing {
   margin: 0;
-  color: var(--text-strong-muted);
-  font-size: 14px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.desk-amount-missing {
+  max-width: 22ch;
+  padding-top: 4px;
+  text-align: right;
+}
+@media (max-width: 639px) {
+  .desk-item-head {
+    flex-direction: column;
+  }
+  .desk-amount {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 10px;
+    text-align: left;
+  }
+  .desk-amount-missing {
+    max-width: none;
+    padding-top: 0;
+    text-align: left;
+  }
 }
 .desk-why {
   max-width: 72ch;
   margin: 0;
   font-size: 16px;
+  line-height: 1.55;
   overflow-wrap: anywhere;
   text-wrap: pretty;
 }
@@ -136,9 +205,19 @@
   gap: 8px;
 }
 .desk-gate {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 80ch;
   margin: 0;
-  color: var(--text-strong-muted);
+  color: var(--text-muted);
   font-size: 14px;
+  line-height: 1.5;
+}
+.desk-gate-icon {
+  flex: none;
+  margin-top: 2px;
+  color: var(--text-muted);
 }
 .desk-evidence,
 .desk-trail,
@@ -149,12 +228,12 @@
 }
 .desk-evidence {
   padding: 16px;
-  border: 1px solid var(--hairline-color);
-  border-radius: 16px;
-  background: var(--card);
+  border-radius: var(--r-panel);
+  background: var(--surface-subtle);
 }
 .desk-evidence p {
   margin: 0;
+  overflow-wrap: anywhere;
 }
 .desk-evidence h4,
 .desk-trail h4,
@@ -188,11 +267,18 @@
   background: var(--status-unsafe-bg);
   overflow-wrap: anywhere;
 }
+.desk-loading {
+  display: grid;
+  gap: 12px;
+}
 
-/* Session token */
+/* Session token: a labelled field on the page, not a card. */
 .desk-token {
   display: grid;
   gap: 10px;
+  max-width: 640px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--hairline-color);
 }
 .desk-token.saved {
   display: flex;
@@ -200,6 +286,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  max-width: none;
+  padding-bottom: 16px;
   color: var(--text-strong-muted);
 }
 .desk-token label {
@@ -221,6 +309,11 @@
   background: var(--card);
   color: var(--text);
   font: inherit;
+}
+.desk-token input:focus-visible,
+.approval-input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
 }
 textarea.approval-input {
   height: auto;

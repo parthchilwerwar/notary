@@ -1,0 +1,38 @@
+{
+  "name": "notarize-dodo-20261012T014032Z-llm",
+  "tool": "llm",
+  "createdAt": "2026-10-12T01:40:36.626Z",
+  "exchanges": [
+    {
+      "id": "llm.models#e9592ad0bec6#0",
+      "tool": "llm",
+      "op": "llm.models",
+      "method": "POST",
+      "url": "llm://models",
+      "requestHeaders": {},
+      "requestBody": {},
+      "responseHeaders": {},
+      "credits": null,
+      "recordedAt": "2026-10-12T01:40:36.626Z",
+      "requestHash": "e9592ad0bec60e1b973bf96d2b8851c2063376274c59b57947e94e0443c0296f",
+      "occurrence": 0,
+      "status": 200,
+      "responseBody": {
+        "metered": true,
+        "models": {
+          "executor": {
+            "modelId": "claude-haiku"
+          },
+          "reflector": {
+            "modelId": "claude-sonnet-4.6"
+          },
+          "adversary": {
+            "modelId": "claude-opus-4.6"
+          }
+        }
+      },
+      "latencyMs": 0
+    }
+  ],
+  "contentHash": "e78eb7c4098518bd6f09c3cd8bb953ca0bd91133dcc782bce44e9088eef99641"
+}

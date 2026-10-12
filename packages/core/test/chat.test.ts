@@ -15,7 +15,7 @@ import { publishTimeline } from "../src/timeline/write.js";
 import { ConversationDetailSchema, ConversationsListSchema } from "../src/schema/chat.js";
 import type { ChatEvent } from "../src/schema/chat.js";
 import type { RunBundle } from "../src/schema/index.js";
-import { FINAL, LOOPBACK, act, events, makeApp, newConversation, req, scriptedLlm, send } from "./chat-helpers.js";
+import { FINAL, LOOPBACK, act, events, makeApp, newConversation, rawCall, req, scriptedLlm, send } from "./chat-helpers.js";
 
 let root: string;
 let realDir: string;
@@ -128,7 +128,7 @@ describe("NOTARY_ASK_RPM applies to message sends", () => {
     expect(second.res.status).toBe(429);
     expect(Number(second.res.headers.get("Retry-After"))).toBeGreaterThanOrEqual(1);
     expect(second.text).toContain("NOTARY_ASK_RPM");
-    expect(llm.calls).toHaveLength(2);
+    expect(llm.calls).toHaveLength(1);
     expect(store.messages(id).map((m) => m.content)).toEqual(["first", "One."]);
     t += 61_000;
     // Listing and creating are not rate limited.
@@ -138,7 +138,7 @@ describe("NOTARY_ASK_RPM applies to message sends", () => {
 
 describe("no model configured", () => {
   it("the stream carries one error naming the variable and pointing to doctor --llm; nothing fake", async () => {
-    const env = { NOTARY_LLM_PROVIDER: "litellm", LITELLM_BASE_URL: "http://127.0.0.1:4000", NOTARY_MODEL_EXECUTOR: "claude-haiku" };
+    const env = { NOTARY_LLM_PROVIDER: "litellm", LITELLM_BASE_URL: "http://127.0.0.1:4000", NOTARY_MODEL_CHAT: "claude-haiku" };
     const { app, session, store } = makeApp({ chatOpts: { env } });
     const id = await newConversation(app, session);
     const { res, frames } = await send(app, session, id, "what certificates exist?");
@@ -155,6 +155,19 @@ describe("no model configured", () => {
     expect(msgs.map((m) => m.role)).toEqual(["user", "assistant"]);
     expect(msgs[1]!.content).toBe("");
     expect(msgs[1]!.events).toEqual([e]);
+  });
+
+  it("the chat model: NOTARY_MODEL_CHAT, else NOTARY_MODEL_REFLECTOR; neither set names both", async () => {
+    const base = { NOTARY_LLM_PROVIDER: "litellm", LITELLM_BASE_URL: "http://127.0.0.1:4000", LITELLM_API_KEY: "k-test-0000000000", NOTARY_MODEL_EXECUTOR: "claude-haiku" };
+    const { app, session } = makeApp({ chatOpts: { env: base } });
+    const id = await newConversation(app, session);
+    const e = (await send(app, session, id, "hi")).frames[0]!.data;
+    if (e.type !== "error") throw new Error("expected the BLOCKED error");
+    expect(e.message).toMatch(/BLOCKED: NOTARY_MODEL_CHAT not set \(and NOTARY_MODEL_REFLECTOR, its fallback, is not set either\)/);
+    expect(e.fix).toContain("NOTARY_MODEL_CHAT");
+    const { chatBlockedEvent } = await import("../src/api/chat.js");
+    expect(chatBlockedEvent({ ...base, NOTARY_MODEL_REFLECTOR: "claude-haiku" })).toBeNull();
+    expect(chatBlockedEvent({ ...base, NOTARY_MODEL_CHAT: "claude-sonnet-4.6" })).toBeNull();
   });
 });
 
@@ -208,8 +221,16 @@ describe("SSE contract and the agent loop", () => {
     ]);
     const done = ev[ev.length - 1]!;
     if (done.type !== "done") throw new Error("not done");
-    expect(done).toMatchObject({ mode: "live", steps: 2, tokens: { input: 40, output: 20 } });
-    expect(done.costUsd).toBeCloseTo(0.004, 9);
+    // Three model calls: two tool-calling replies and the answer (a reply with no tool call).
+    expect(done).toMatchObject({ mode: "live", steps: 2, tokens: { input: 30, output: 15 } });
+    expect(done.costUsd).toBeCloseTo(0.003, 9);
+    // Native tool calling: every call offers the chat tools; results go back as `tool` messages.
+    expect(llm.calls).toHaveLength(3);
+    expect(llm.calls[0]!.tools).toEqual(expect.arrayContaining(["list_runs", "get_run_events", "get_guard_coverage", "explain_decision"]));
+    expect(llm.calls[0]!.system).toContain("You are Notary Chat");
+    expect(llm.calls[1]!.messages.slice(-2).map((m) => m.role)).toEqual(["assistant", "tool"]);
+    expect(llm.calls[1]!.messages.at(-2)!.toolCalls).toEqual(["list_runs"]);
+    expect(llm.calls[1]!.messages.at(-1)!.content).toContain("Result of step s1 (list_runs");
     expect(done.traceId).toMatch(/^[0-9a-f]{32}$/);
   });
 
@@ -292,7 +313,7 @@ describe("SSE contract and the agent loop", () => {
     const id = await newConversation(app, session);
     await send(app, session, id, "which runs exist?");
     const { frames } = await send(app, session, id, "what is the status of that one?");
-    const second = llm.calls[3]!.messages;
+    const second = llm.calls[2]!.messages;
     expect(second[0]).toEqual({ role: "user", content: "which runs exist?" });
     expect(second[1]!.role).toBe("assistant");
     expect(second[1]!.content).toContain(`The real run is ${real.runId} [1].`);
@@ -303,25 +324,38 @@ describe("SSE contract and the agent loop", () => {
     expect(cites.items[0]!.valid).toBe(true);
   });
 
-  it("a malformed action gets one retry; a second malformed reply ends with an error event (steps kept)", async () => {
-    const ok = scriptedLlm(["sure! let me look", act("list_runs"), FINAL, answer("Done [1].", [{ n: 1, type: "api_response", id: "s1" }])]);
+  it("an invalid tool call runs nothing and is reported back; two invalid rounds in a row end with an error (steps kept)", async () => {
+    const ok = scriptedLlm([rawCall("list_runs", "{not json"), act("list_runs"), FINAL, answer("Done [1].", [{ n: 1, type: "api_response", id: "s1" }])]);
     let app = makeApp(opts(ok));
     let id = await newConversation(app.app, app.session);
     let r = await send(app.app, app.session, id, "runs?");
     expect(events(r.frames).at(-1)!.type).toBe("done");
-    expect(ok.calls[1]!.messages.at(-1)!.content).toContain("not a valid action");
+    expect(events(r.frames).filter((e) => e.type === "step_started")).toHaveLength(1);
+    expect(ok.calls[1]!.messages.at(-1)).toMatchObject({ role: "tool" });
+    expect(ok.calls[1]!.messages.at(-1)!.content).toContain("not valid JSON");
 
-    const bad = scriptedLlm([act("list_runs"), "nope", JSON.stringify({ tool: "refund_everything", args: {} })]);
+    const bad = scriptedLlm([act("list_runs"), rawCall("refund_everything", "{}"), act("get_run", { id: "../etc" })]);
     app = makeApp(opts(bad));
     id = await newConversation(app.app, app.session);
     r = await send(app.app, app.session, id, "runs?");
     const ev = events(r.frames);
-    expect(ev.map((e) => e.type)).toEqual(["note", "step_started", "step_finished", "error"]);
+    expect(ev.map((e) => e.type)).toEqual(["note", "step_started", "step_finished", "note", "error"]);
     const err = ev.at(-1)!;
     if (err.type !== "error") throw new Error("unreachable");
-    expect(err.message).toMatch(/not a valid action twice/);
+    expect(err.message).toMatch(/invalid 2 rounds in a row/);
     expect(err.fix).toBeTruthy();
+    expect(bad.calls[2]!.messages.at(-1)!.content).toContain('no tool named "refund_everything"');
     expect(app.store.messages(id)[1]!.events).toEqual(ev);
+  });
+
+  it("a repeated call is not run twice; the model is pointed at the earlier step", async () => {
+    const llm = scriptedLlm([act("list_runs"), act("list_runs"), FINAL, answer("One run [1].", [{ n: 1, type: "run", id: real.runId, stepId: "s1" }])]);
+    const { app, session } = makeApp(opts(llm));
+    const id = await newConversation(app, session);
+    const ev = events((await send(app, session, id, "runs?")).frames);
+    expect(ev.filter((e) => e.type === "step_started")).toHaveLength(1);
+    expect(llm.calls[2]!.messages.at(-1)!.content).toContain("already ran list_runs");
+    expect(ev.at(-1)!.type).toBe("done");
   });
 
   it("bounded: at most 8 tool steps per turn, then the answer", async () => {
@@ -333,6 +367,10 @@ describe("SSE contract and the agent loop", () => {
     const ev = events(frames);
     expect(ev.filter((e) => e.type === "step_started")).toHaveLength(8);
     expect(llm.calls).toHaveLength(9);
+    // At the cap the last call forbids tools and asks for the answer.
+    expect(llm.calls.slice(0, 8).every((c) => c.toolChoice === "auto")).toBe(true);
+    expect(llm.calls[8]!.toolChoice).toBe("none");
+    expect(llm.calls[8]!.messages.at(-1)!.content).toContain("limit of 8 tool calls");
     expect(ev.at(-1)!.type).toBe("done");
   });
 
@@ -349,9 +387,9 @@ describe("SSE contract and the agent loop", () => {
 
   it("a model failure (USD cap) becomes an error event with a fix", async () => {
     const llm = {
-      async complete() {
+      async completeTools(): Promise<never> {
         const { UsdCapExceededError } = await import("../src/llm/budget.js");
-        throw new UsdCapExceededError("executor", 0.01, 0.01, 0.002);
+        throw new UsdCapExceededError("chat", 0.01, 0.01, 0.002);
       },
     };
     const { app, session } = makeApp({ chatOpts: { llm: () => llm, env: {} } });
@@ -440,27 +478,26 @@ describe("Stop: client abort mid-stream", () => {
     expect(llm2Reply.res.status).toBe(200);
   });
 
-  it("a stop during the streamed answer cancels the model call and keeps the partial text", async () => {
+  it("a stop during a model call cancels it: no answer, no citations, no done", async () => {
     let modelSawAbort = false;
     let call = 0;
     const llm = {
-      async complete(r: import("../src/llm/client.js").CompleteRequest) {
+      async completeTools(r: import("../src/llm/client.js").ToolCompleteRequest): Promise<import("../src/llm/client.js").ToolCompleteResult> {
         call += 1;
-        if (call === 1) return { text: FINAL, inputTokens: 1, outputTokens: 1, usd: 0, modelId: "m", stopReason: "end_turn" };
-        r.onText?.("Partial answer so far");
+        if (call === 1) return { text: "Listing runs", toolCalls: [{ id: "c1", name: "list_runs", arguments: "{}" }], inputTokens: 1, outputTokens: 1, usd: 0, modelId: "m", stopReason: "tool_use" };
         await new Promise<void>((resolve) => r.signal!.addEventListener("abort", () => resolve(), { once: true }));
         modelSawAbort = true;
         throw new DOMException("aborted", "AbortError");
       },
     };
-    const { app, session, store } = makeApp({ chatOpts: { llm: () => llm, env: {} } });
+    const { app, session, store } = makeApp({ bundleDirs: [realDir], chatOpts: { llm: () => llm, env: {} } });
     const id = await newConversation(app, session);
     const ac = new AbortController();
     const res = await app.fetch(req(session, "POST", `/api/chat/${id}/messages`, { content: "explain" }, { signal: ac.signal }), LOOPBACK);
     const reader = res.body!.getReader();
     const decoder = new TextDecoder();
     let seen = "";
-    while (!seen.includes("event: text_delta")) {
+    while (!seen.includes("event: step_finished")) {
       const { value, done } = await reader.read();
       if (done) break;
       seen += decoder.decode(value);
@@ -473,8 +510,9 @@ describe("Stop: client abort mid-stream", () => {
       msgs = store.messages(id);
     }
     expect(modelSawAbort).toBe(true);
-    expect(msgs[1]!.content).toBe("Partial answer so far");
+    expect(msgs[1]!.content).toBe("");
     const types = msgs[1]!.events!.map((e) => e.type);
+    expect(types).toEqual(["note", "step_started", "step_finished", "error"]);
     expect(types.at(-1)).toBe("error");
     expect(types).not.toContain("done");
     expect(types).not.toContain("citations");

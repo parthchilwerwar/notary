@@ -72,3 +72,23 @@ New dependencies are exact: motion 14.1.0, d3-scale 4.0.2, d3-shape 3.2.0,
 @types/d3-scale 4.0.9 and @types/d3-shape 3.2.0. Recharts was removed after the
 chart replacement. Select controls retain native keyboard/touch behavior and use
 the existing Phosphor icon library; no additional icon dependency was added.
+
+## Hook Sidebar (Rare UI)
+
+The guide's table of contents (`/docs`) and the dashboard's left navigation use Rare UI's
+[Hook Sidebar](https://www.rareui.com/components/hooksidebar), ported from its source.
+
+| Component    | Source URL                                                                                                                            | Adapted file                         | License                                              |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | ---------------------------------------------------- |
+| Hook Sidebar | [rare-ui/components/ui/hook-sidebar.tsx](https://github.com/swamimalode07/rare-ui/blob/main/components/ui/hook-sidebar.tsx) | src/components/ui/hook-sidebar.tsx   | MIT + Commons Clause License Condition v1.0 + Attribution |
+| Hook Sidebar (Run transcript event rail) | [rareui.com/components/hooksidebar](https://www.rareui.com/components/hooksidebar) | used unmodified by src/pages/run/Transcript.tsx (one rail per stage; visible "Event rail: Hook Sidebar by Rare UI" credit linking rareui.com under the transcript) | MIT + Commons Clause License Condition v1.0 + Attribution |
+
+Copyright (c) 2026 Swami Malode. The copyright and permission notice are kept in the header of the
+adapted file, and the required visible credit ("Sidebar component by Rare UI", linking to
+[rareui.com](https://rareui.com)) is shown at the bottom of the `/docs` sidebar and content
+column. The Commons Clause forbids selling or redistributing the component itself; Notary only
+ships it as part of the app. Adaptations: react-router instead of `next/link`/`usePathname`,
+in-page `#id` items driven by the page's controlled `value`/`onChange`, an `as="div"` group mode,
+item badges, and Notary token colors (muted inactive rows, ink active rows, accent rail). The
+motion springs and reduced-motion handling are unchanged. New dependency: `motion` **13.4.6**,
+pinned exactly.

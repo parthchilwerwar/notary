@@ -1,0 +1,643 @@
+{
+  "runId": "demo-change-api-notarize-dodo",
+  "sample": true,
+  "bundleHash": "8972e6baa147901d9d4f7e0628d31beca65cfd30a4b1670eee20f1e0db426459",
+  "sources": [
+    "bundle",
+    "timeline",
+    "spans"
+  ],
+  "incidents": [
+    {
+      "id": "inc-6faf6ecb4a5d4310",
+      "runId": "demo-change-api-notarize-dodo",
+      "kind": "probe_contradiction",
+      "severity": "warning",
+      "at": "2026-10-10T08:46:15.288Z",
+      "agent": "reflector",
+      "tool": "dodo",
+      "summary": "Probe demo-change-api-notarize-dodo-p001 (retry_after_timeout) on dodo.wallet.idempotency-key-no-duplicate: the committed prediction for \"idempotency_hazard\" won, so the documented behavior does not hold.",
+      "recordIds": [
+        "demo-change-api-notarize-dodo-p001",
+        "dodo.wallet.idempotency-key-no-duplicate",
+        "hyp-ed833c3b0682"
+      ],
+      "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+      "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
+      "traceId": "6910a84770a34521bbe23b0671509cc1",
+      "spanId": "c9cd15b1248b43f6",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "guard_compiled",
+        "summary": "Guard grd-6b98c720d1cb (retry_policy on dodo.createWalletLedgerEntry) was compiled from the notarized belief belief-dodo.wallet.idempotency-key-no-duplicate.",
+        "at": "2026-10-10T08:46:20.400Z",
+        "recordIds": [
+          "grd-6b98c720d1cb",
+          "belief-dodo.wallet.idempotency-key-no-duplicate"
+        ]
+      },
+      "data": {
+        "class": "idempotency_hazard",
+        "template": "retry_after_timeout",
+        "credits": 0
+      }
+    },
+    {
+      "id": "inc-4cc996e40a3af321",
+      "runId": "demo-change-api-notarize-dodo",
+      "kind": "probe_contradiction",
+      "severity": "warning",
+      "at": "2026-10-10T08:46:15.310Z",
+      "agent": "reflector",
+      "tool": "dodo",
+      "summary": "Probe demo-change-api-notarize-dodo-p002 (retry_after_timeout) on dodo.wallet.idempotency-key-no-duplicate: the committed prediction for \"idempotency_hazard\" won, so the documented behavior does not hold.",
+      "recordIds": [
+        "demo-change-api-notarize-dodo-p002",
+        "dodo.wallet.idempotency-key-no-duplicate",
+        "hyp-ed833c3b0682"
+      ],
+      "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+      "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
+      "traceId": "673cef2f997c4c8d9f403b08c02a4049",
+      "spanId": "1be21b8e96c748c4",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "guard_compiled",
+        "summary": "Guard grd-6b98c720d1cb (retry_policy on dodo.createWalletLedgerEntry) was compiled from the notarized belief belief-dodo.wallet.idempotency-key-no-duplicate.",
+        "at": "2026-10-10T08:46:20.400Z",
+        "recordIds": [
+          "grd-6b98c720d1cb",
+          "belief-dodo.wallet.idempotency-key-no-duplicate"
+        ]
+      },
+      "data": {
+        "class": "idempotency_hazard",
+        "template": "retry_after_timeout",
+        "credits": 0
+      }
+    },
+    {
+      "id": "inc-d9b66e3150678bd9",
+      "runId": "demo-change-api-notarize-dodo",
+      "kind": "probe_contradiction",
+      "severity": "warning",
+      "at": "2026-10-10T08:46:15.333Z",
+      "agent": "reflector",
+      "tool": "dodo",
+      "summary": "Probe demo-change-api-notarize-dodo-p003 (retry_after_timeout) on dodo.wallet.idempotency-key-no-duplicate: the committed prediction for \"idempotency_hazard\" won, so the documented behavior does not hold.",
+      "recordIds": [
+        "demo-change-api-notarize-dodo-p003",
+        "dodo.wallet.idempotency-key-no-duplicate",
+        "hyp-ed833c3b0682"
+      ],
+      "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+      "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
+      "traceId": "ecdf29ba494545a9b0cf904f85263f09",
+      "spanId": "2869865e9f0745d7",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "guard_compiled",
+        "summary": "Guard grd-6b98c720d1cb (retry_policy on dodo.createWalletLedgerEntry) was compiled from the notarized belief belief-dodo.wallet.idempotency-key-no-duplicate.",
+        "at": "2026-10-10T08:46:20.400Z",
+        "recordIds": [
+          "grd-6b98c720d1cb",
+          "belief-dodo.wallet.idempotency-key-no-duplicate"
+        ]
+      },
+      "data": {
+        "class": "idempotency_hazard",
+        "template": "retry_after_timeout",
+        "credits": 0
+      }
+    },
+    {
+      "id": "inc-2bb5e057ccd8b6a2",
+      "runId": "demo-change-api-notarize-dodo",
+      "kind": "probe_contradiction",
+      "severity": "warning",
+      "at": "2026-10-10T08:46:15.355Z",
+      "agent": "reflector",
+      "tool": "dodo",
+      "summary": "Probe demo-change-api-notarize-dodo-p004 (unit_roundtrip) on dodo.wallet.credit-amount-minor-units: the committed prediction for \"unit_mismatch\" won, so the documented behavior does not hold.",
+      "recordIds": [
+        "demo-change-api-notarize-dodo-p004",
+        "dodo.wallet.credit-amount-minor-units",
+        "hyp-187b99cbd7ac"
+      ],
+      "claimId": "dodo.wallet.credit-amount-minor-units",
+      "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+      "traceId": "11c1c629e9784517903d03da5d344f8d",
+      "spanId": "f4f2f0efb4a248d6",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "guard_compiled",
+        "summary": "Guard grd-3e9c0bf4b81e (block on dodo.createWalletLedgerEntry) was compiled from the notarized belief belief-dodo.wallet.credit-amount-minor-units.",
+        "at": "2026-10-10T08:46:20.400Z",
+        "recordIds": [
+          "grd-3e9c0bf4b81e",
+          "belief-dodo.wallet.credit-amount-minor-units"
+        ]
+      },
+      "data": {
+        "class": "unit_mismatch",
+        "template": "unit_roundtrip",
+        "credits": 0
+      }
+    },
+    {
+      "id": "inc-97823214e9688f53",
+      "runId": "demo-change-api-notarize-dodo",
+      "kind": "probe_contradiction",
+      "severity": "warning",
+      "at": "2026-10-10T08:46:15.397Z",
+      "agent": "reflector",
+      "tool": "dodo",
+      "summary": "Probe demo-change-api-notarize-dodo-p006 (unit_roundtrip) on dodo.wallet.credit-amount-minor-units: the committed prediction for \"unit_mismatch\" won, so the documented behavior does not hold.",
+      "recordIds": [
+        "demo-change-api-notarize-dodo-p006",
+        "dodo.wallet.credit-amount-minor-units",
+        "hyp-187b99cbd7ac"
+      ],
+      "claimId": "dodo.wallet.credit-amount-minor-units",
+      "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+      "traceId": "5f2b90148685462abe2d23ee48014b07",
+      "spanId": "5df265005c9d499b",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "guard_compiled",
+        "summary": "Guard grd-3e9c0bf4b81e (block on dodo.createWalletLedgerEntry) was compiled from the notarized belief belief-dodo.wallet.credit-amount-minor-units.",
+        "at": "2026-10-10T08:46:20.400Z",
+        "recordIds": [
+          "grd-3e9c0bf4b81e",
+          "belief-dodo.wallet.credit-amount-minor-units"
+        ]
+      },
+      "data": {
+        "class": "unit_mismatch",
+        "template": "unit_roundtrip",
+        "credits": 0
+      }
+    },
+    {
+      "id": "inc-a3ec7626289c4d4f",
+      "runId": "demo-change-api-notarize-dodo",
+      "kind": "probe_contradiction",
+      "severity": "warning",
+      "at": "2026-10-10T08:46:15.417Z",
+      "agent": "reflector",
+      "tool": "dodo",
+      "summary": "Probe demo-change-api-notarize-dodo-p007 (unit_roundtrip) on dodo.wallet.credit-amount-minor-units: the committed prediction for \"unit_mismatch\" won, so the documented behavior does not hold.",
+      "recordIds": [
+        "demo-change-api-notarize-dodo-p007",
+        "dodo.wallet.credit-amount-minor-units",
+        "hyp-187b99cbd7ac"
+      ],
+      "claimId": "dodo.wallet.credit-amount-minor-units",
+      "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+      "traceId": "2f1522a53f914251bc560a346d76bafa",
+      "spanId": "152caa2b026c4702",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "guard_compiled",
+        "summary": "Guard grd-3e9c0bf4b81e (block on dodo.createWalletLedgerEntry) was compiled from the notarized belief belief-dodo.wallet.credit-amount-minor-units.",
+        "at": "2026-10-10T08:46:20.400Z",
+        "recordIds": [
+          "grd-3e9c0bf4b81e",
+          "belief-dodo.wallet.credit-amount-minor-units"
+        ]
+      },
+      "data": {
+        "class": "unit_mismatch",
+        "template": "unit_roundtrip",
+        "credits": 0
+      }
+    },
+    {
+      "id": "inc-f4a27c2e05a70a28",
+      "runId": "demo-change-api-notarize-dodo",
+      "kind": "probe_contradiction",
+      "severity": "warning",
+      "at": "2026-10-10T08:46:15.436Z",
+      "agent": "reflector",
+      "tool": "dodo",
+      "summary": "Probe demo-change-api-notarize-dodo-p008 (unit_roundtrip) on dodo.wallet.credit-amount-minor-units: the committed prediction for \"unit_mismatch\" won, so the documented behavior does not hold.",
+      "recordIds": [
+        "demo-change-api-notarize-dodo-p008",
+        "dodo.wallet.credit-amount-minor-units",
+        "hyp-187b99cbd7ac"
+      ],
+      "claimId": "dodo.wallet.credit-amount-minor-units",
+      "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+      "traceId": "867f359a03764ca1a2c79ff287e12b4e",
+      "spanId": "c2791941e1134da0",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "guard_compiled",
+        "summary": "Guard grd-3e9c0bf4b81e (block on dodo.createWalletLedgerEntry) was compiled from the notarized belief belief-dodo.wallet.credit-amount-minor-units.",
+        "at": "2026-10-10T08:46:20.400Z",
+        "recordIds": [
+          "grd-3e9c0bf4b81e",
+          "belief-dodo.wallet.credit-amount-minor-units"
+        ]
+      },
+      "data": {
+        "class": "unit_mismatch",
+        "template": "unit_roundtrip",
+        "credits": 0
+      }
+    },
+    {
+      "id": "inc-067a21a8d2661531",
+      "runId": "demo-change-api-notarize-dodo",
+      "kind": "probe_contradiction",
+      "severity": "warning",
+      "at": "2026-10-10T08:46:15.459Z",
+      "agent": "reflector",
+      "tool": "dodo",
+      "summary": "Probe demo-change-api-notarize-dodo-p009 (unit_roundtrip) on dodo.wallet.credit-amount-minor-units: the committed prediction for \"unit_mismatch\" won, so the documented behavior does not hold.",
+      "recordIds": [
+        "demo-change-api-notarize-dodo-p009",
+        "dodo.wallet.credit-amount-minor-units",
+        "hyp-187b99cbd7ac"
+      ],
+      "claimId": "dodo.wallet.credit-amount-minor-units",
+      "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+      "traceId": "7797f11645e44668a2b517aa80624ee5",
+      "spanId": "620aac5103694f8a",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "guard_compiled",
+        "summary": "Guard grd-3e9c0bf4b81e (block on dodo.createWalletLedgerEntry) was compiled from the notarized belief belief-dodo.wallet.credit-amount-minor-units.",
+        "at": "2026-10-10T08:46:20.400Z",
+        "recordIds": [
+          "grd-3e9c0bf4b81e",
+          "belief-dodo.wallet.credit-amount-minor-units"
+        ]
+      },
+      "data": {
+        "class": "unit_mismatch",
+        "template": "unit_roundtrip",
+        "credits": 0
+      }
+    },
+    {
+      "id": "inc-1eb9c5bcf3acaa2d",
+      "runId": "demo-change-api-notarize-dodo",
+      "kind": "probe_contradiction",
+      "severity": "warning",
+      "at": "2026-10-10T08:46:16.277Z",
+      "agent": "reflector",
+      "tool": "dodo",
+      "summary": "Probe demo-change-api-notarize-dodo-p020 (unit_roundtrip) on dodo.refund.amount-minor-units: the committed prediction for \"unit_mismatch\" won, so the documented behavior does not hold.",
+      "recordIds": [
+        "demo-change-api-notarize-dodo-p020",
+        "dodo.refund.amount-minor-units",
+        "hyp-e9e37af8b503"
+      ],
+      "claimId": "dodo.refund.amount-minor-units",
+      "beliefId": "belief-dodo.refund.amount-minor-units",
+      "traceId": "d5c142ffe864444cab49eb5364f36056",
+      "spanId": "4846db86d2844cab",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "guard_compiled",
+        "summary": "Guard grd-4a311973a512 (transform on dodo.createRefund) was compiled from the notarized belief belief-dodo.refund.amount-minor-units.",
+        "at": "2026-10-10T08:46:20.400Z",
+        "recordIds": [
+          "grd-4a311973a512",
+          "belief-dodo.refund.amount-minor-units"
+        ]
+      },
+      "data": {
+        "class": "unit_mismatch",
+        "template": "unit_roundtrip",
+        "credits": 0
+      }
+    },
+    {
+      "id": "inc-49b0615a304a6597",
+      "runId": "demo-change-api-notarize-dodo",
+      "kind": "probe_contradiction",
+      "severity": "warning",
+      "at": "2026-10-10T08:46:16.303Z",
+      "agent": "reflector",
+      "tool": "dodo",
+      "summary": "Probe demo-change-api-notarize-dodo-p021 (unit_roundtrip) on dodo.refund.amount-minor-units: the committed prediction for \"unit_mismatch\" won, so the documented behavior does not hold.",
+      "recordIds": [
+        "demo-change-api-notarize-dodo-p021",
+        "dodo.refund.amount-minor-units",
+        "hyp-e9e37af8b503"
+      ],
+      "claimId": "dodo.refund.amount-minor-units",
+      "beliefId": "belief-dodo.refund.amount-minor-units",
+      "traceId": "e9c3433fd9704f6fa695c36dca19004a",
+      "spanId": "ea31c1cf57d44353",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "guard_compiled",
+        "summary": "Guard grd-4a311973a512 (transform on dodo.createRefund) was compiled from the notarized belief belief-dodo.refund.amount-minor-units.",
+        "at": "2026-10-10T08:46:20.400Z",
+        "recordIds": [
+          "grd-4a311973a512",
+          "belief-dodo.refund.amount-minor-units"
+        ]
+      },
+      "data": {
+        "class": "unit_mismatch",
+        "template": "unit_roundtrip",
+        "credits": 0
+      }
+    },
+    {
+      "id": "inc-13c8109d41aacae3",
+      "runId": "demo-change-api-notarize-dodo",
+      "kind": "probe_contradiction",
+      "severity": "warning",
+      "at": "2026-10-10T08:46:16.332Z",
+      "agent": "reflector",
+      "tool": "dodo",
+      "summary": "Probe demo-change-api-notarize-dodo-p022 (unit_roundtrip) on dodo.refund.amount-minor-units: the committed prediction for \"unit_mismatch\" won, so the documented behavior does not hold.",
+      "recordIds": [
+        "demo-change-api-notarize-dodo-p022",
+        "dodo.refund.amount-minor-units",
+        "hyp-e9e37af8b503"
+      ],
+      "claimId": "dodo.refund.amount-minor-units",
+      "beliefId": "belief-dodo.refund.amount-minor-units",
+      "traceId": "0941b6321f74424dbbfc3a70a0348ed2",
+      "spanId": "7a071e17903744e7",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "guard_compiled",
+        "summary": "Guard grd-4a311973a512 (transform on dodo.createRefund) was compiled from the notarized belief belief-dodo.refund.amount-minor-units.",
+        "at": "2026-10-10T08:46:20.400Z",
+        "recordIds": [
+          "grd-4a311973a512",
+          "belief-dodo.refund.amount-minor-units"
+        ]
+      },
+      "data": {
+        "class": "unit_mismatch",
+        "template": "unit_roundtrip",
+        "credits": 0
+      }
+    },
+    {
+      "id": "inc-f2c1d54292e52dc4",
+      "runId": "demo-change-api-notarize-dodo",
+      "kind": "probe_contradiction",
+      "severity": "warning",
+      "at": "2026-10-10T08:46:17.389Z",
+      "agent": "reflector",
+      "tool": "dodo",
+      "summary": "Probe demo-change-api-notarize-dodo-p023 (retry_after_timeout) on dodo.refund.full-retry-no-duplicate: the committed prediction for \"idempotency_hazard\" won, so the documented behavior does not hold.",
+      "recordIds": [
+        "demo-change-api-notarize-dodo-p023",
+        "dodo.refund.full-retry-no-duplicate",
+        "hyp-6fcbaf9b0468"
+      ],
+      "claimId": "dodo.refund.full-retry-no-duplicate",
+      "beliefId": "belief-dodo.refund.full-retry-no-duplicate",
+      "traceId": "9e9096ff36ce47e7af5496cb4ff1266f",
+      "spanId": "12bbfd1a8eaa4d5a",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "guard_compiled",
+        "summary": "Guard grd-20de13827cc6 (retry_policy on dodo.createRefund) was compiled from the notarized belief belief-dodo.refund.full-retry-no-duplicate.",
+        "at": "2026-10-10T08:46:20.400Z",
+        "recordIds": [
+          "grd-20de13827cc6",
+          "belief-dodo.refund.full-retry-no-duplicate"
+        ]
+      },
+      "data": {
+        "class": "idempotency_hazard",
+        "template": "retry_after_timeout",
+        "credits": 0
+      }
+    },
+    {
+      "id": "inc-64ab668d95a08c75",
+      "runId": "demo-change-api-notarize-dodo",
+      "kind": "probe_contradiction",
+      "severity": "warning",
+      "at": "2026-10-10T08:46:18.946Z",
+      "agent": "reflector",
+      "tool": "dodo",
+      "summary": "Probe demo-change-api-notarize-dodo-p024 (retry_after_timeout) on dodo.refund.full-retry-no-duplicate: the committed prediction for \"idempotency_hazard\" won, so the documented behavior does not hold.",
+      "recordIds": [
+        "demo-change-api-notarize-dodo-p024",
+        "dodo.refund.full-retry-no-duplicate",
+        "hyp-6fcbaf9b0468"
+      ],
+      "claimId": "dodo.refund.full-retry-no-duplicate",
+      "beliefId": "belief-dodo.refund.full-retry-no-duplicate",
+      "traceId": "54fae924434948ed8cbd152a31d3517c",
+      "spanId": "0470c23f44314f02",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "guard_compiled",
+        "summary": "Guard grd-20de13827cc6 (retry_policy on dodo.createRefund) was compiled from the notarized belief belief-dodo.refund.full-retry-no-duplicate.",
+        "at": "2026-10-10T08:46:20.400Z",
+        "recordIds": [
+          "grd-20de13827cc6",
+          "belief-dodo.refund.full-retry-no-duplicate"
+        ]
+      },
+      "data": {
+        "class": "idempotency_hazard",
+        "template": "retry_after_timeout",
+        "credits": 0
+      }
+    },
+    {
+      "id": "inc-afc3a4ff4c171fc5",
+      "runId": "demo-change-api-notarize-dodo",
+      "kind": "probe_contradiction",
+      "severity": "warning",
+      "at": "2026-10-10T08:46:19.999Z",
+      "agent": "reflector",
+      "tool": "dodo",
+      "summary": "Probe demo-change-api-notarize-dodo-p025 (retry_after_timeout) on dodo.refund.full-retry-no-duplicate: the committed prediction for \"idempotency_hazard\" won, so the documented behavior does not hold.",
+      "recordIds": [
+        "demo-change-api-notarize-dodo-p025",
+        "dodo.refund.full-retry-no-duplicate",
+        "hyp-6fcbaf9b0468"
+      ],
+      "claimId": "dodo.refund.full-retry-no-duplicate",
+      "beliefId": "belief-dodo.refund.full-retry-no-duplicate",
+      "traceId": "a002180928e54c6aa211a14304d25136",
+      "spanId": "a38800b76fa64a71",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "guard_compiled",
+        "summary": "Guard grd-20de13827cc6 (retry_policy on dodo.createRefund) was compiled from the notarized belief belief-dodo.refund.full-retry-no-duplicate.",
+        "at": "2026-10-10T08:46:20.400Z",
+        "recordIds": [
+          "grd-20de13827cc6",
+          "belief-dodo.refund.full-retry-no-duplicate"
+        ]
+      },
+      "data": {
+        "class": "idempotency_hazard",
+        "template": "retry_after_timeout",
+        "credits": 0
+      }
+    },
+    {
+      "id": "inc-fe7cc6f2273ea88d",
+      "runId": "demo-change-api-notarize-dodo",
+      "kind": "adversary_downgrade",
+      "severity": "warning",
+      "at": "2026-10-10T08:46:20.378Z",
+      "agent": "adversary",
+      "tool": "dodo",
+      "summary": "The Adversary narrowed belief-dodo.wallet.credit-amount-minor-units instead of upholding it (model fixture.adversary-double).",
+      "recordIds": [
+        "belief-dodo.wallet.credit-amount-minor-units",
+        "dodo.wallet.credit-amount-minor-units"
+      ],
+      "claimId": "dodo.wallet.credit-amount-minor-units",
+      "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+      "traceId": "d0398fa85e2a4af3a48e99b8c1b05d46",
+      "spanId": "ab4fa7b3c7094153",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "certified",
+        "summary": "Certified only within the narrowed scope (USD only: dodo.createWalletLedgerEntry was probed with USD amounts; other curre…); guards refuse calls outside it.",
+        "at": "2026-10-10T08:46:20.379Z",
+        "recordIds": [
+          "belief-dodo.wallet.credit-amount-minor-units"
+        ]
+      },
+      "data": {
+        "verdict": "narrow",
+        "backend": "bedrock"
+      }
+    },
+    {
+      "id": "inc-38158e6695907b71",
+      "runId": "demo-change-api-notarize-dodo",
+      "kind": "adversary_downgrade",
+      "severity": "warning",
+      "at": "2026-10-10T08:46:20.389Z",
+      "agent": "adversary",
+      "tool": "dodo",
+      "summary": "The Adversary narrowed belief-dodo.wallet.idempotency-key-no-duplicate instead of upholding it (model fixture.adversary-double).",
+      "recordIds": [
+        "belief-dodo.wallet.idempotency-key-no-duplicate",
+        "dodo.wallet.idempotency-key-no-duplicate"
+      ],
+      "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+      "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
+      "traceId": "dd46394fa11d4f2c97b9607835edf063",
+      "spanId": "86c1b7bdf72f4f00",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "certified",
+        "summary": "Certified only within the narrowed scope (USD only: dodo.createWalletLedgerEntry was probed with USD amounts; other curre…); guards refuse calls outside it.",
+        "at": "2026-10-10T08:46:20.391Z",
+        "recordIds": [
+          "belief-dodo.wallet.idempotency-key-no-duplicate"
+        ]
+      },
+      "data": {
+        "verdict": "narrow",
+        "backend": "bedrock"
+      }
+    },
+    {
+      "id": "inc-5be67105acd703b2",
+      "runId": "demo-change-api-notarize-dodo",
+      "kind": "checker_anomaly",
+      "severity": "warning",
+      "at": "2026-10-10T10:01:01.407Z",
+      "tool": "dodo",
+      "summary": "The checker saw dodo.wallet.idempotency-key-no-duplicate disagree with the docs: expected {\"maxItems\":1}, observed {\"listKey\":\"items\",\"listLength\":3,\"status\":200}.",
+      "recordIds": [
+        "anom-3b041ef0c326",
+        "dodo.wallet.idempotency-key-no-duplicate"
+      ],
+      "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+      "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "guard_compiled",
+        "summary": "Guard grd-6b98c720d1cb (retry_policy on dodo.createWalletLedgerEntry) was compiled from the notarized belief belief-dodo.wallet.idempotency-key-no-duplicate.",
+        "at": "2026-10-10T08:46:20.400Z",
+        "recordIds": [
+          "grd-6b98c720d1cb",
+          "belief-dodo.wallet.idempotency-key-no-duplicate"
+        ]
+      }
+    },
+    {
+      "id": "inc-cd73ddad2e684d2c",
+      "runId": "demo-change-api-notarize-dodo",
+      "kind": "checker_anomaly",
+      "severity": "warning",
+      "at": "2026-10-10T10:01:01.407Z",
+      "tool": "dodo",
+      "summary": "The checker saw dodo.refunds.page-size-max-100 disagree with the docs: expected {\"maxItems\":100,\"onRequestAboveMax\":\"non-2xx (limit enforced)\"}, observed {\"param\":\"page_size\",\"requested\":101,\"status\":200,\"listLength\":31}.",
+      "recordIds": [
+        "anom-ee2f1cba997d",
+        "dodo.refunds.page-size-max-100"
+      ],
+      "claimId": "dodo.refunds.page-size-max-100",
+      "beliefId": "belief-dodo.refunds.page-size-max-100",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "certified",
+        "summary": "The documented behavior was notarized at P(holds)=0.938.",
+        "at": "2026-10-10T08:46:20.354Z",
+        "recordIds": [
+          "belief-dodo.refunds.page-size-max-100"
+        ]
+      }
+    },
+    {
+      "id": "inc-ef73de9c3d712147",
+      "runId": "demo-change-api-notarize-dodo",
+      "kind": "checker_anomaly",
+      "severity": "warning",
+      "at": "2026-10-10T10:01:01.407Z",
+      "tool": "dodo",
+      "summary": "The checker saw dodo.wallet.credit-amount-minor-units disagree with the docs: expected {\"unit\":\"minor\",\"echoed\":1000}, observed {\"sentPath\":\"amount\",\"sent\":1000,\"echoedPath\":\"balance\",\"echoed\":100000,\"ratio\":100}.",
+      "recordIds": [
+        "anom-ec08f8ac8c77",
+        "dodo.wallet.credit-amount-minor-units"
+      ],
+      "claimId": "dodo.wallet.credit-amount-minor-units",
+      "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "guard_compiled",
+        "summary": "Guard grd-3e9c0bf4b81e (block on dodo.createWalletLedgerEntry) was compiled from the notarized belief belief-dodo.wallet.credit-amount-minor-units.",
+        "at": "2026-10-10T08:46:20.400Z",
+        "recordIds": [
+          "grd-3e9c0bf4b81e",
+          "belief-dodo.wallet.credit-amount-minor-units"
+        ]
+      }
+    }
+  ]
+}

@@ -5,25 +5,31 @@
  *   docs/EVALUATION.md     every metric with the command that produced it, plus the separate
  *                          "Evaluation suite" section read from the published FIXTURE bundles
  *                          (packages/web/public/bundles/fixture/, src/export/suite.ts)
- * and copy the newest real bundle per category into packages/web/public/bundles/ (writeBundle
+ * and copy the newest real bundle per category, plus every certificate source bundle, into packages/web/public/bundles/ (writeBundle
  * upserts index.json; nothing is ever removed, so the SAMPLE bundle stays).
  */
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
-import { basename, isAbsolute, join, relative, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { FIXTURE_BUNDLES_SUBDIR, writeBundle } from "../bundle/index.js";
 import { publishTimeline } from "../timeline/write.js";
+import { publishIncidents, rebuildIncidentsIndex } from "../incidents/record.js";
+
+/** Incidents live next to the bundles directory, never inside it: <public>/incidents for <public>/bundles. */
+function incidentsDirFor(webBundlesDir: string): string {
+  return join(dirname(resolve(webBundlesDir)), "incidents");
+}
 import { BundleIndexSchema } from "../schema/bundle.js";
 import type { RunBundle } from "../schema/index.js";
 import type { ChecksRunner, CheckResult } from "./checks.js";
-import { collectBundles, latestPerCategory, type SkippedBundle } from "./collect.js";
+import { collectBundles, dashboardBundles, type SkippedBundle } from "./collect.js";
 import { renderEvaluationMd } from "./evaluation.js";
 import type { EvaluationSuite } from "./suite.js";
 import { buildGuardsJson } from "./guards-json.js";
 import { renderToolsMd } from "./tools-md.js";
 
-export { collectBundles, classify, latestPerCategory } from "./collect.js";
+export { collectBundles, classify, dashboardBundles, latestPerCategory } from "./collect.js";
 export { commandFor } from "./commands.js";
 export { compareValues } from "./compare.js";
 export { renderEvaluationMd } from "./evaluation.js";
@@ -130,10 +136,11 @@ export async function runExport(opts: ExportOptions = {}): Promise<ExportResult>
   );
 
   const copied: string[] = [];
+  let incidentsIndex: { path: string; runs: number; incidents: number } | null = null;
   const notCopied: ExportResult["notCopied"] = [];
   if (webDir !== null) {
     const samples = sampleIds(webDir);
-    for (const b of latestPerCategory(bundles)) {
+    for (const b of dashboardBundles(bundles)) {
       if (samples.has(b.runId)) {
         notCopied.push({ runId: b.runId, reason: "runId collides with a SAMPLE bundle in the dashboard index" });
         continue;
@@ -141,8 +148,12 @@ export async function runExport(opts: ExportOptions = {}): Promise<ExportResult>
       await writeBundle(b, webDir); // re-verifies schema + hash before writing
       // Its timeline next to it (derived + any approvals in runs/<runId>/timeline.jsonl); real data only.
       await publishTimeline(b, webDir, { expectSample: false, runDir: join(runsDir, b.runId), context: bundles });
+      // Its incidents (derived from the bundle, timeline, approvals and spans.jsonl); real data only.
+      await publishIncidents(b, incidentsDirFor(webDir), { expectSample: false, runDir: join(runsDir, b.runId) });
       copied.push(b.runId);
     }
+    // public/incidents/index.json: every published real run's incidents in one file for the Incidents page.
+    incidentsIndex = await rebuildIncidentsIndex(incidentsDirFor(webDir), { sample: false, bundlesDir: webDir });
   }
 
   const lines = [
@@ -154,6 +165,7 @@ export async function runExport(opts: ExportOptions = {}): Promise<ExportResult>
     `  ${files.evaluationMd}${suite ? ` (evaluation suite: ${suite.scenarios.reduce((n, s) => n + s.bundles.length, 0)} fixture bundle(s) from ${suite.dirLabel}, kept apart from real results)` : " (evaluation suite: not generated)"}`,
     webDir === null ? "  dashboard copy: disabled" : `  dashboard: ${copied.length} bundle(s) copied to ${webDir}${copied.length ? ` (${copied.join(", ")})` : ""}`,
     ...notCopied.map((n) => `  NOT copied ${n.runId}: ${n.reason}`),
+    ...(incidentsIndex ? [`  incidents: ${incidentsIndex.incidents} from ${incidentsIndex.runs} published run(s) -> ${incidentsIndex.path}`] : []),
     ...(checks === null ? ["  checks: skipped (--no-checks)"] : checks.map((c) => `  check ${c.command}: ${c.ok ? "PASS" : "FAIL"} — ${c.summary}`)),
   ];
   if (bundles.length === 0) lines.push("  no real runs yet: TOOLS.md lists every claim as unverified; EVALUATION.md lists what is blocked");

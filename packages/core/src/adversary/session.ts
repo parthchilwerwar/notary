@@ -10,6 +10,15 @@
  *   3. read + zod-validate <repoRoot>/adversary/verdicts/<beliefId>.json
  *   4. take the session id from the CLI's JSON result (`session_id`)
  *   5. if `commit` (default), `git add` both files and commit only those paths
+ *   6. read the new commit's `Entire-Checkpoint` trailer. With Entire enabled on the repo
+ *      (`entire enable --agent claude-code`), Entire's Claude Code hooks track the headless session
+ *      and its git hooks link the verdict commit to a checkpoint of that session (prompt,
+ *      transcript, files touched). The id is returned as `entire` on the outcome; null when Entire
+ *      did not checkpoint the commit, so the review itself never depends on Entire.
+ *
+ * repoRoot is resolved to its long canonical path (realpath.native) first: the --allowedTools
+ * rules are cwd-relative, and on Windows an 8.3 short cwd (C:/Users/ABCDEF~1/...) made Claude Code
+ * deny the inbox Read (observed live on 2026-10-12, docs/ENTIRE.md).
  *
  * Flags verified against `claude --help` (Claude Code 2.1.296): -p/--print, --output-format json,
  * --tools, --allowedTools, --disallowedTools, --permission-mode dontAsk, --strict-mcp-config,
@@ -21,12 +30,12 @@
  * the prompt contains only fixed text and repo-relative paths.
  */
 import { spawn } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import type { AdversaryReview } from "../schema/index.js";
 import { SAFE_ID_RE, reviewReason, sessionReviewerPrompt, validateReply } from "./prompt.js";
-import type { GitRunner, ProcessResult, ReviewOutcome, SessionRunner } from "./types.js";
+import type { EntireLink, GitRunner, ProcessResult, ReviewOutcome, SessionRunner } from "./types.js";
 
 type Env = Record<string, string | undefined>;
 
@@ -144,6 +153,30 @@ export function findRepoRoot(start: string = process.cwd()): string {
   }
 }
 
+/** Long canonical path (resolves Windows 8.3 short names); the plain resolved path if that fails. */
+export function canonicalRepoRoot(p: string): string {
+  const abs = resolve(p);
+  try {
+    return realpathSync.native(abs);
+  } catch {
+    return abs;
+  }
+}
+
+/** Trailer Entire's git hooks add to a commit made while it tracks an agent session. */
+export const ENTIRE_CHECKPOINT_TRAILER = "Entire-Checkpoint";
+
+/** The git args that print HEAD's sha, then its Entire-Checkpoint trailer value(s). */
+export const HEAD_CHECKPOINT_GIT_ARGS = ["log", "-1", `--format=%H%n%(trailers:key=${ENTIRE_CHECKPOINT_TRAILER},valueonly)`];
+
+/** HEAD's sha and its Entire-Checkpoint trailer (null when absent), from HEAD_CHECKPOINT_GIT_ARGS stdout. */
+export function parseHeadCheckpoint(stdout: string): EntireLink | null {
+  const [sha, ...rest] = stdout.split(/\r?\n/).map((l) => l.trim());
+  if (!sha || !/^[0-9a-f]{40}$/i.test(sha)) return null;
+  const id = rest.find((l) => l.length > 0);
+  return { commit: sha.toLowerCase(), checkpointId: id ?? null };
+}
+
 function tail(s: string, n = 400): string {
   const t = s.trim();
   return t.length > n ? `…${t.slice(-n)}` : t;
@@ -190,7 +223,7 @@ export async function reviewWithSession(args: {
   const { beliefId } = args;
   if (!SAFE_ID_RE.test(beliefId)) return fail(`belief id ${JSON.stringify(beliefId)} is not safe for a file name`);
 
-  const repoRoot = resolve(args.repoRoot ?? findRepoRoot());
+  const repoRoot = canonicalRepoRoot(args.repoRoot ?? findRepoRoot());
   const inboxRel = inboxRelPath(beliefId);
   const verdictRel = verdictRelPath(beliefId);
   const inboxAbs = join(repoRoot, ...inboxRel.split("/"));
@@ -262,6 +295,14 @@ export async function reviewWithSession(args: {
       if (commit.exitCode !== 0) return fail(`git commit failed: ${tail(commit.stderr || commit.stdout)}`);
     } catch (err) {
       return fail(`git failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    // The verdict is committed; the checkpoint link is best effort and never fails the review.
+    try {
+      const head = await git(HEAD_CHECKPOINT_GIT_ARGS, repoRoot);
+      const link = head.exitCode === 0 ? parseHeadCheckpoint(head.stdout) : null;
+      if (link) return { review, entire: link };
+    } catch {
+      // no link
     }
   }
   return { review };

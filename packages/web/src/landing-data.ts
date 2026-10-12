@@ -3,11 +3,11 @@
 // certificates (seals recomputed) and the optional cfo.ai plan (public/economics.json). Nothing
 // here fetches and no result is typed by hand. The only literals are copy (step and feature
 // sentences, the "Built with" credits) and links.
-import { z } from "zod";
 import { RequestTypeSchema } from "../../core/src/schema";
 import type { Certificate, Decision, FixtureIndex, RequestType, Revocation, RunBundle } from "../../core/src/schema";
 import { label, scenarioKey, type CertificateWorld } from "./data";
 import { GITHUB_URL } from "./lib/site";
+import { verifyEconomicsFile } from "./data/economics";
 
 /** The repository, linked from the nav and the footer (one site-wide constant, AUDIT H-44). */
 export { GITHUB_URL };
@@ -25,6 +25,9 @@ export const mockupAddress = (origin: string) => `${origin.replace(/\/+$/, "")}/
 
 export type NavLink = { label: string; href: string; external?: boolean };
 
+/** The documentation, served by the app itself at /docs. */
+export const DOCS_HREF = "/docs";
+
 /** Center links of the nav. Pricing only when the pricing section is shown. */
 export function navLinks(showPricing: boolean): NavLink[] {
   return [
@@ -32,14 +35,18 @@ export function navLinks(showPricing: boolean): NavLink[] {
     { label: "Features", href: "#features" },
     { label: "Chat", href: "#chat" },
     ...(showPricing ? [{ label: "Pricing", href: "#pricing" }] : []),
+    { label: "Docs", href: DOCS_HREF },
     { label: "GitHub", href: GITHUB_URL, external: true },
   ];
 }
 
+/** In-app routes ("/docs", "/app") go through the router; hash and external links stay plain anchors. */
+export const isRoute = (l: NavLink) => !l.external && l.href.startsWith("/");
+
 export const FOOTER_LINKS: readonly NavLink[] = [
   { label: "GitHub", href: GITHUB_URL, external: true },
   { label: "Dashboard", href: "/app" },
-  { label: "Docs", href: `${GITHUB_URL}#readme`, external: true },
+  { label: "Docs", href: DOCS_HREF },
 ];
 
 // --------------------------------------------------------------------------- copy
@@ -114,43 +121,52 @@ type PairEntry = {
   startedAt: string;
 };
 
+export type LandingView = {
+  /** The development-only fixture view (`?fixtures=1`): fixture runs only. Default: real runs only. */
+  fixtures?: boolean;
+};
+
 /**
- * The newest naive/guarded queue-run pair. Real runs win over fixtures; a missing real side is
- * never filled with a fixture run, and the naive side must come from the guarded run's world
- * (same scenario key), so the landing never compares two different simulated worlds.
+ * The newest naive/guarded queue-run pair of the visible cohort: real runs only, or fixture runs
+ * only under `?fixtures=1`. There is no fallback from one cohort to the other: with no real run the
+ * pair is empty and the landing says so. The naive side must come from the guarded run's world
+ * (same scenario key), so the landing never compares two different worlds.
  */
-export function landingResults<T extends PairEntry>(all: readonly T[]) {
-  const live = all.some((b) => !b.sample);
+export function landingResults<T extends PairEntry>(all: readonly T[], view: LandingView = {}) {
+  const fixtures = !!view.fixtures;
   const cohort = all
-    .filter((b) => b.sample !== live && b.kind === "run")
+    .filter((b) => b.sample === fixtures && b.kind === "run")
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
   const guarded = cohort.find((b) => b.variant === "guarded");
   const naive = guarded
     ? cohort.find((b) => b.variant === "naive" && scenarioKey(b.runId) === scenarioKey(guarded.runId))
     : cohort.find((b) => b.variant === "naive");
-  return { sample: !live, naive, guarded };
+  return { sample: fixtures, naive, guarded };
 }
 
-/** The fixture naive/guarded pair, regardless of real runs. */
+/** The fixture naive/guarded pair (the `?fixtures=1` view). */
 export function fixturePair<T extends PairEntry>(all: readonly T[]) {
-  return landingResults(all.filter((b) => b.sample));
+  return landingResults(all, { fixtures: true });
 }
 
 /**
- * The pair the Proof section shows: the newest complete pair. When real runs exist but no
- * complete real pair does, it shows the fixture pair instead (labelled as fixture, with the
- * reason) rather than half a comparison. Never one real side and one fixture side.
+ * The pair the Proof section, the hero preview and the feature cards show: the visible cohort's
+ * newest pair, possibly incomplete. Never a fixture run in the default view, never one real side
+ * and one fixture side. `visible` counts the visible cohort's runs, so the page can tell "nothing
+ * yet" from "no complete pair yet".
  */
-export function proofPair<T extends PairEntry>(all: readonly T[]) {
-  const first = landingResults(all);
-  if (first.naive && first.guarded) return { ...first, note: undefined };
-  if (first.sample) return { ...first, note: undefined };
-  const fixture = fixturePair(all);
-  return {
-    ...fixture,
-    note: "No complete naive and guarded pair from your own runs yet, so these numbers come from the evaluation suite.",
-  };
+export function proofPair<T extends PairEntry>(all: readonly T[], view: LandingView = {}) {
+  const pair = landingResults(all, view);
+  const visible = all.filter((b) => b.sample === !!view.fixtures).length;
+  return { ...pair, visible };
 }
+
+/** The landing's empty state when no run is published: the two commands that record and publish one. */
+export const NO_RUNS_YET = {
+  title: "No runs yet",
+  body: "Notarize a real API, then publish the run. Every number on this page comes from it.",
+  commands: ["pnpm notary notarize --tool crustdata", "pnpm notary export"],
+} as const;
 
 /**
  * The fixture scenario whose certificate export records a revocation (today: change-api), and one
@@ -215,6 +231,17 @@ export function actionsByType(naive: RunBundle, guarded: RunBundle): ActionRow[]
     naive: count(naive, type),
     guarded: count(guarded, type),
   }));
+}
+
+/** The chart's takeaway, summed over request types from the same rows the bars draw. */
+export function actionTotals(rows: readonly ActionRow[]) {
+  const sum = (pick: (r: ActionRow) => number) => rows.reduce((n, r) => n + pick(r), 0);
+  return {
+    naiveExecuted: sum((r) => r.naive.executed),
+    naiveUnsafe: sum((r) => r.naive.unsafe),
+    guardedUnsafe: sum((r) => r.guarded.unsafe),
+    guardedHeld: sum((r) => r.guarded.held),
+  };
 }
 
 const sentence = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -290,27 +317,33 @@ export function clipText(text: string, max: number): string {
 // --------------------------------------------------------------------------- pricing
 
 /**
- * The pricing cards come from public/economics.json (the cfo.ai plan) and only when it lists
- * exactly three plans that each carry a numeric price. Anything else hides the section: prices
- * are never invented. Expected shape (no shared schema exists yet; DECISIONS note):
- *   { "pricing": { "plans": [ { "name", "price", "currency"?, "period", "description"?, "features"? } × 3 ] } }
+ * The pricing cards come from public/economics.json (the cfo.ai plan, schema/economics.ts, hash
+ * verified in the browser) and only when the imported plan lists exactly three priced tiers.
+ * Anything else (no file, a failed check, no plan, another tier count) hides the section: prices
+ * are never invented.
  */
-const PlanSchema = z.object({
-  name: z.string().min(1),
-  price: z.number().finite().nonnegative(),
-  currency: z.string().length(3).optional(),
-  period: z.string().min(1),
-  description: z.string().optional(),
-  features: z.array(z.string()).max(8).optional(),
-});
-const PricingFileSchema = z.object({ pricing: z.object({ plans: z.array(PlanSchema).length(3) }) });
-
-export type PricingPlan = z.infer<typeof PlanSchema>;
+export type PricingPlan = {
+  name: string;
+  price: number;
+  currency?: string;
+  period: string;
+  description?: string;
+  features?: string[];
+};
 
 export function pricingPlans(raw: unknown): PricingPlan[] | null {
-  if (raw === undefined || raw === null) return null;
-  const parsed = PricingFileSchema.safeParse(raw);
-  return parsed.success ? parsed.data.pricing.plans : null;
+  const state = verifyEconomicsFile(raw);
+  if (state.status !== "ready") return null;
+  const tiers = state.file.plan?.tiers ?? [];
+  if (tiers.length !== 3) return null;
+  return tiers.map((t) => ({
+    name: t.name,
+    price: t.price,
+    currency: t.currency,
+    period: t.period,
+    ...(t.description ? { description: t.description } : {}),
+    ...(t.features.length ? { features: t.features.slice(0, 8) } : {}),
+  }));
 }
 
 /** "$49" from a plan's price (whole units) and currency. */
@@ -532,6 +565,13 @@ export const showable = (text: string) => !BANNED_RE.test(text);
 
 /** The one footnote under the stats: the suite and its disclosure live in docs/EVALUATION.md. */
 export const EVALUATION_URL = `${GITHUB_URL}/blob/main/docs/EVALUATION.md#evaluation-suite`;
+
+/**
+ * The small tag on a frame that renders the published evaluation-suite runs (the data layer's
+ * fixture bundles, `sample: true`). Shown only when the rendered bundle is one; real runs carry no
+ * tag. It is the landing's data-driven fixture disclosure, worded for a product site.
+ */
+export const EVALUATION_TAG = "Evaluation suite";
 
 /** "See it work": an optional video (VITE_NOTARY_VIDEO_URL, http(s) only), else the How it works section. */
 export function seeItWorkHref(videoUrl: string | undefined): { href: string; external: boolean } {

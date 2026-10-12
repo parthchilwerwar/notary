@@ -1,5 +1,6 @@
-/* UI kit (K2). Extracted from the landing (src/landing.css, src/design/brand.css): the same
-   surfaces, type and spacing, as reusable classes. Colors and fonts only through the tokens in
+/* UI kit (K2, flattened in K5). The landing's type and tokens (src/design), set as a calm
+   full-page dashboard: an editorial header on the page background, inline stat rows, full-width
+   sections divided by hairlines, and flat bordered panels where a frame is needed. Colors and fonts only through the tokens in
    src/design/tokens.css (no hex values, no font names here; test/ui-kit-boundary.test.ts). */
 
 /* ---------------------------------------------------------------- type */
@@ -13,32 +14,31 @@
   text-wrap: balance;
 }
 .ui-title-page {
-  font-size: clamp(36px, 2.4vw + 18px, 48px);
+  font-size: clamp(32px, 1.2vw + 22px, 40px);
   letter-spacing: var(--display-tracking);
   line-height: var(--display-leading);
 }
 .ui-title-section {
-  font-size: clamp(26px, 1vw + 18px, 32px);
+  font-size: clamp(22px, 0.5vw + 18px, 26px);
 }
 .ui-title-card {
-  font-size: 24px;
+  font-size: 20px;
 }
 .ui-section-label {
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
-/* ---------------------------------------------------------------- cards */
+/* ---------------------------------------------------------------- panels */
 .ui-card {
   min-width: 0;
   border: 1px solid var(--hairline-color);
-  border-radius: var(--r-card);
+  border-radius: var(--r-panel);
   background: var(--card);
-  box-shadow: var(--shadow-float);
 }
 .ui-wash-card {
   min-width: 0;
   border: 1px solid var(--hairline-color);
-  border-radius: var(--r-section);
+  border-radius: var(--r-panel);
 }
 .ui-pad-none {
   padding: 0;
@@ -202,63 +202,52 @@
   font-weight: 400;
 }
 
-/* ---------------------------------------------------------------- sky band */
-.ui-band {
+/* ---------------------------------------------------------------- page header */
+/* Directly on the page: no band, no gradient. Title + summary on the left, the primary action on
+   the right, optional content (a stepper) underneath, and a hairline that closes the header. */
+.ui-header {
   position: relative;
   display: grid;
   gap: 24px;
   min-width: 0;
-  padding: 0 0 24px;
-}
-.ui-band-sky {
-  isolation: isolate;
-  overflow: hidden;
-  min-height: 220px;
-  padding: 40px 40px calc(48px + 40px);
-  border-radius: var(--r-section);
-  /* The landing's sky, in its light register so the title and summary stay dark text (AA):
-     --text on --sky-3 is 9:1, --text-strong-muted 5.0:1. A deeper blue sits only behind the action. */
-  background:
-    radial-gradient(30% 110% at 100% 0%, var(--sky-2), transparent 75%),
-    radial-gradient(55% 100% at 0% 100%, var(--sky-lilac), transparent 72%),
-    linear-gradient(180deg, var(--sky-3) 0%, var(--sky-4) 48%, var(--wash-sky) 74%, var(--page) 100%);
-}
-.ui-band-art {
-  position: absolute;
-  inset: auto 0 0 0;
-  z-index: -1;
-  height: 62%;
-  pointer-events: none;
-}
-.ui-band-clouds {
-  opacity: 0.9;
+  padding: 4px 0 28px;
+  border-bottom: 1px solid var(--hairline-color);
 }
 .ui-band-inner {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 16px 32px;
+  gap: 16px 40px;
   min-width: 0;
 }
 .ui-band-copy {
   display: grid;
-  gap: 10px;
+  gap: 8px;
+  flex: 1 1 360px;
   min-width: 0;
-  max-width: 68ch;
+  max-width: 76ch;
 }
 .ui-band-title {
   overflow-wrap: anywhere;
 }
 .ui-band-label {
-  color: var(--text-strong-muted);
-  font-size: 14px;
+  color: var(--text-muted);
+  font-size: 13px;
   overflow-wrap: anywhere;
+}
+.ui-band-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  min-width: 0;
 }
 .ui-band-summary {
   margin: 0;
-  color: var(--text-strong-muted);
-  font-size: 16px;
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 15px;
   line-height: 1.5;
   text-wrap: pretty;
   overflow-wrap: anywhere;
@@ -267,63 +256,55 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
   min-width: 0;
+  max-width: 100%;
 }
 .ui-band-extra {
   min-width: 0;
 }
-:root[data-theme="dark"] .ui-band-sky {
-  background:
-    radial-gradient(38% 120% at 100% 0%, var(--accent-soft), transparent 72%),
-    var(--sky-band),
-    var(--card);
-}
-:root[data-theme="dark"] .ui-band-clouds {
-  opacity: 0.07;
-}
 @media (max-width: 639px) {
-  .ui-band-sky {
-    min-height: 0;
-    /* 72px of the bottom is under the overlapping cards; 20px keeps the action clear of them. */
-    padding: 28px 20px calc(72px + 20px);
-    border-radius: var(--r-card);
-    background: linear-gradient(180deg, var(--sky-3) 0%, var(--sky-4) 48%, var(--wash-sky) 74%, var(--page) 100%);
+  .ui-header {
+    gap: 20px;
+    padding-bottom: 24px;
   }
-  :root[data-theme="dark"] .ui-band-sky {
-    background: var(--sky-band), var(--card);
-  }
-  .ui-band-art {
-    height: 48%;
+  .ui-band-action {
+    justify-content: flex-start;
+    width: 100%;
   }
 }
 
-/* Page layout: the band, then content overlapping its bottom by 48px. */
+/* Page layout: the header, then full-width sections. A section after anything else opens with a
+   hairline; whitespace does the rest. */
 .ui-page {
   display: grid;
   min-width: 0;
 }
 .ui-page-body {
-  position: relative;
-  z-index: 1;
   display: grid;
-  gap: 32px;
+  gap: 40px;
   min-width: 0;
+  padding-top: 32px;
 }
-.ui-band-sky + .ui-page-body {
-  margin-top: calc(-48px - 24px);
-  padding: 0 24px;
+.ui-page-body > * + .ui-section {
+  padding-top: 36px;
+  border-top: 1px solid var(--hairline-color);
 }
 @media (max-width: 639px) {
-  .ui-band-sky + .ui-page-body {
-    padding: 0 8px;
+  .ui-page-body {
+    gap: 32px;
+    padding-top: 24px;
+  }
+  .ui-page-body > * + .ui-section {
+    padding-top: 28px;
   }
 }
 
 /* Sections inside a page. */
 .ui-section {
   display: grid;
-  gap: 16px;
+  gap: 20px;
   min-width: 0;
   scroll-margin-top: 24px;
 }
@@ -343,7 +324,7 @@
 .ui-section-desc {
   margin: 0;
   color: var(--text-muted);
-  font-size: 15px;
+  font-size: 14px;
   text-wrap: pretty;
 }
 .ui-section-actions {
@@ -353,72 +334,113 @@
 }
 
 /* ---------------------------------------------------------------- stats */
+/* An inline row: label above a large serif figure, thin vertical rules between figures. */
 .ui-stat-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 20px 0;
   margin: 0;
 }
-/* Phones: two stats a row (an odd last one spans), so three figures don't take a whole screen. */
+.ui-stat {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 2px 28px;
+  border-left: 1px solid var(--hairline-color);
+}
+.ui-stat:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+/* Phones: two figures a row (an odd last one spans), rules between columns and rows. */
 @media (max-width: 639px) {
   .ui-stat-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    gap: 0;
+  }
+  .ui-stat {
+    padding: 16px 0 16px 16px;
+  }
+  .ui-stat:nth-child(odd) {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .ui-stat:nth-child(n + 3) {
+    border-top: 1px solid var(--hairline-color);
+  }
+  .ui-stat:nth-child(-n + 2) {
+    padding-top: 0;
   }
   .ui-stat-row > :last-child:nth-child(odd) {
     grid-column: 1 / -1;
   }
-}
-.ui-stat {
-  display: flex;
-  flex-direction: column-reverse;
-  justify-content: flex-end;
-  gap: 8px;
-  margin: 0;
+  /* The label takes the slack, so figures side by side line up when only one label wraps. */
+  .ui-stat-label {
+    flex-grow: 1;
+  }
 }
 .ui-stat > dd {
   margin: 0;
 }
 .ui-stat-label {
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: 13px;
+  line-height: 1.3;
 }
 .ui-stat-value {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 4px 10px;
+  gap: 2px 8px;
+  min-height: 1em;
   color: var(--text);
   font-family: var(--font-display);
-  font-size: clamp(44px, 2vw + 30px, 64px);
+  font-size: clamp(38px, 0.8vw + 30px, 44px);
   font-weight: 400;
-  letter-spacing: -0.02em;
-  line-height: 0.95;
-  font-variant-numeric: tabular-nums;
+  /* Instrument Serif's upright 1 is a plain stem ("11" reads as "ll") and the font has no
+     alternate or tabular figures, so figures use its true italic, whose 1 has a clear flag, with a
+     little tracking. Lining/tabular are requested for fallback fonts. */
+  font-style: italic;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.ui-stat-value .ui-stat-of,
+.ui-stat-value .ui-stat-missing {
+  font-family: var(--font-sans);
+  font-style: normal;
+}
+
+/* Prominent numbers elsewhere (counts and amounts in lists): the same serif figures. */
+.num-display {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  font-variant-numeric: lining-nums tabular-nums;
 }
 .ui-stat-of {
   color: var(--text-muted);
-  font-family: var(--font-sans);
-  font-size: 15px;
+  font-size: 14px;
+  font-weight: 400;
   letter-spacing: 0;
 }
 .ui-stat-missing {
+  align-self: flex-end;
   color: var(--text-muted);
-  font-family: var(--font-sans);
-  font-size: 20px;
+  font-size: 16px;
+  font-weight: 400;
   letter-spacing: 0;
+  line-height: 1.25;
 }
 .ui-stat-note {
-  order: -1;
   color: var(--text-muted);
   font-size: 13px;
-}
-/* column-reverse: the note sits under the label visually, so put it after both. */
-.ui-stat {
-  position: relative;
-}
-.ui-stat-art {
-  order: -2;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 /* ---------------------------------------------------------------- timeline */
@@ -582,7 +604,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  border-radius: var(--r-card);
+  border-radius: var(--r-panel);
 }
 .ui-cert {
   position: relative;
@@ -607,8 +629,6 @@
 .ui-cert-compact {
   gap: 10px;
   padding: 16px;
-  border-radius: 20px;
-  box-shadow: var(--shadow-soft);
 }
 .ui-seal {
   display: inline-flex;
@@ -673,16 +693,65 @@
 .ui-fixture {
   justify-self: start;
   display: inline-flex;
+  align-items: center;
+  gap: 6px;
   width: fit-content;
   max-width: 100%;
   margin: 0;
-  padding: 4px 12px;
+  padding: 2px 10px;
   border: 1px solid var(--hairline-color);
   border-radius: var(--r-pill);
-  background: var(--muted-surface);
+  background: var(--surface-subtle);
   color: var(--text-strong-muted);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
+  line-height: 18px;
+}
+.ui-fixture-icon {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+/* A note: a 16px icon and the text on a quiet tint (no rule on the left). */
+.ui-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 80ch;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--r-panel);
+  background: var(--surface-subtle);
+  color: var(--text-strong-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.ui-note-icon {
+  flex: none;
+  margin-top: 2px;
+  color: var(--accent);
+}
+.ui-note-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ui-note-text > p {
+  margin: 0;
+}
+.ui-note-text > p + p {
+  margin-top: 6px;
+}
+.ui-note[data-tone="warning"] {
+  background: var(--status-held-bg);
+}
+.ui-note[data-tone="warning"] .ui-note-icon {
+  color: var(--status-held-text);
+}
+.ui-note[data-tone="error"] {
+  background: var(--status-unsafe-bg);
+}
+.ui-note[data-tone="error"] .ui-note-icon {
+  color: var(--status-unsafe-text);
 }
 .ui-pills {
   display: flex;
@@ -812,8 +881,8 @@
   position: relative;
   min-width: 0;
   overflow-x: auto;
-  border: 1px solid var(--hairline-color);
-  border-radius: 16px;
+  border-top: 1px solid var(--hairline-color);
+  border-bottom: 1px solid var(--hairline-color);
 }
 .ui-table-frame table {
   width: 100%;
@@ -828,11 +897,18 @@
   text-align: left;
   vertical-align: top;
 }
+.ui-table-frame :is(th, td):first-child {
+  padding-left: 0;
+}
+.ui-table-frame :is(th, td):last-child {
+  padding-right: 0;
+}
 .ui-table-frame thead th {
-  background: var(--surface-subtle);
+  padding-top: 10px;
+  padding-bottom: 10px;
   color: var(--text-muted);
-  font-size: 13px;
-  font-weight: 400;
+  font-size: 12px;
+  font-weight: 500;
   white-space: nowrap;
 }
 .ui-table-frame tbody th {
@@ -850,7 +926,61 @@
 .ui-empty {
   display: grid;
   justify-items: start;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 0;
+}
+.ui-empty-head {
+  display: flex;
+  align-items: center;
   gap: 10px;
+  margin: 0;
+}
+.ui-empty-icon {
+  flex: none;
+  color: var(--text-muted);
+}
+.ui-empty[data-tone="error"] .ui-empty-icon {
+  color: var(--status-unsafe-text);
+}
+.ui-empty-text code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+/* The empty state's next step: commands, one per line, ready to copy. */
+.ui-empty-steps {
+  display: grid;
+  gap: 6px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.ui-empty-steps li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.ui-empty-steps code {
+  padding: 4px 10px;
+  border: 1px solid var(--hairline-color);
+  border-radius: var(--r-panel);
+  background: var(--surface-subtle);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.ui-empty-step-n {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--muted-surface);
+  color: var(--text-strong-muted);
+  font-size: 12px;
+  font-variant-numeric: lining-nums tabular-nums;
 }
 .ui-empty-text {
   max-width: 64ch;
@@ -880,28 +1010,21 @@
   height: 72px;
 }
 .ui-skeleton-stat {
-  height: 132px;
-  border-radius: var(--r-card);
+  height: 72px;
 }
 .ui-skeleton-card {
   height: 320px;
-  border-radius: var(--r-card);
+  border-radius: var(--r-panel);
 }
 .ui-skeleton-band {
   display: grid;
   align-content: start;
   gap: 14px;
-  min-height: 220px;
-  padding: 48px 40px;
-  border-radius: var(--r-section);
-  background: var(--surface-subtle);
+  padding: 4px 0 28px;
+  border-bottom: 1px solid var(--hairline-color);
 }
 .ui-skeleton-band .ui-skeleton-line:first-child {
-  height: 40px;
-}
-.ui-page-skeleton > .ui-page-body {
-  margin-top: -72px;
-  padding: 0 24px;
+  height: 36px;
 }
 /* Outside the shell (main.tsx): the dashboard chunk loading, and unknown addresses. */
 .app-loading {
@@ -986,7 +1109,7 @@ code.ui-trace {
   margin: 0;
   padding: 16px;
   border: 1px solid var(--hairline-color);
-  border-radius: 16px;
+  border-radius: var(--r-panel);
   background: var(--surface-subtle);
   font-family: var(--font-mono);
   font-size: 12px;
@@ -996,17 +1119,4 @@ code.ui-trace {
   a.ui-record-chip {
     min-height: 40px;
   }
-}
-
-/* Dark theme: the landing's feature washes are light-only tokens (the landing is pinned light), so
-   dark wash cards take a navy surface with a soft tint in the matching role color. */
-:root[data-theme="dark"] .ui-wash-card {
-  background-color: var(--card);
-  background-image: radial-gradient(120% 90% at 0% 0%, var(--accent-soft), transparent 70%);
-}
-:root[data-theme="dark"] .ui-wash-card.wash-peach {
-  background-image: radial-gradient(120% 90% at 0% 0%, var(--status-held-bg), transparent 70%);
-}
-:root[data-theme="dark"] .ui-wash-card.wash-mint {
-  background-image: radial-gradient(120% 90% at 100% 100%, var(--status-certified-bg), transparent 70%);
 }

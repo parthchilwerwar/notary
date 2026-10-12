@@ -4,7 +4,7 @@ import { cn } from "../lib/utils";
 const fmt = new Intl.NumberFormat("en-US");
 
 /**
- * The landing's proof number in a card: a big Instrument Serif value and a small label. Numbers
+ * One figure in an inline stat row: a small label above a large tabular value. Numbers
  * count up once (motion.ts); the final value is always in the DOM and in a screen-reader copy.
  * `null` renders "Not recorded" (never a stand-in number). `of` adds a quiet "of N" (e.g. a cap).
  */
@@ -32,7 +32,7 @@ export function Stat({
   const text = value === null ? null : (display ?? (decimals !== undefined ? value.toFixed(decimals) : fmt.format(value)));
   const counts = value !== null && display === undefined;
   return (
-    <div className={cn("ui-card ui-pad-md ui-stat", className)} data-reveal>
+    <div className={cn("ui-stat", className)} data-reveal>
       <dt className="ui-stat-label">{label}</dt>
       <dd className="ui-stat-value">
         {text === null ? (
@@ -58,7 +58,7 @@ export function Stat({
   );
 }
 
-/** A row of up to three Stats (a <dl>). */
+/** A full-width row of Stats (a <dl>), separated by thin vertical rules; no boxes. */
 export function StatRow({ children, className, label }: { children: ReactNode; className?: string; label?: string }) {
   return (
     <dl className={cn("ui-stat-row", className)} aria-label={label}>

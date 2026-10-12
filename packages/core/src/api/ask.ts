@@ -35,13 +35,14 @@
 // Read-only by construction: this module imports no tool client, guarded wrapper, queue executor or
 // approval code (test/ask.test.ts checks the import graph), so an ask can never trigger an action.
 import { fileURLToPath } from "node:url";
-import type { Hono } from "hono";
+import type { Hono, MiddlewareHandler } from "hono";
 import { validateCitations } from "../explain/citations.js";
 import type { RecordIndex } from "../explain/citations.js";
 import { worldKeyOf } from "../explain/world.js";
 import { LlmClient } from "../llm/client.js";
 import type { LlmLike } from "../llm/client.js";
 import { isUsdCapExceeded } from "../llm/budget.js";
+import { ASK_SYSTEM_PROMPT } from "../agents/prompts.js";
 import { llmBlockedReason } from "../llm/config.js";
 import { AskRequestSchema, CitationSchema } from "../schema/explain.js";
 import type { AskRequest, AskResponse, Citation } from "../schema/explain.js";
@@ -72,6 +73,8 @@ export interface AskOptions extends WorldSources {
   env?: Env;
   /** Test seam: a model double. When set, the BLOCKED config check is skipped. */
   llm?: LlmLike;
+  /** Auth for POST /api/ask. Default: localhost + the per-session token; the hosted server (hosted.ts) passes its bearer guard. */
+  guard?: MiddlewareHandler;
   topN?: number;
   /**
    * Local span sink for this ask's spans (withSpanSink): a file, or null for none. Undefined: the
@@ -266,13 +269,8 @@ export function retrieve(
   return { world: world.key, bundles, index, counts: world.counts, records: scored.slice(0, topN) };
 }
 
-export const ASK_SYSTEM_PROMPT = [
-  "You answer questions about Notary run records (an agent's decisions, probes, beliefs, guards and claims about the tools it uses).",
-  "Use ONLY the records in the user message. Do not use outside knowledge and do not guess.",
-  'Reply with one JSON object and nothing else: {"answer": "<plain text>", "citations": [{"kind": "<kind>", "id": "<id>", "runId": "<runId>"}]}.',
-  "Every citation must copy the kind, id and runId of a record from the list exactly. Cite every record your answer relies on.",
-  'If the records do not answer the question, reply {"answer": "", "citations": []}.',
-].join("\n");
+// The executor model role's Ask prompt lives with every other agent prompt (src/agents/prompts.ts).
+export { ASK_SYSTEM_PROMPT };
 
 export function buildAskPrompt(question: string, records: readonly RetrievedRecord[]): string {
   const lines = records.map((r) => {
@@ -472,7 +470,7 @@ export function mountAsk(app: Hono, opts: AskOptions & { session: ApiSession }):
   const limit = askRpm(opts.env ?? process.env, opts.rpm);
   if (limit.problem) console.warn(`notary serve: ${limit.problem}`);
   const limiter = new SlidingWindowLimiter({ limit: limit.rpm, ...(opts.now ? { now: opts.now } : {}) });
-  app.post("/api/ask", requireLocalSession(opts.session), async (c) => {
+  app.post("/api/ask", opts.guard ?? requireLocalSession(opts.session), async (c) => {
     let body: unknown;
     try {
       body = await c.req.json();

@@ -1,6 +1,6 @@
 {
-  "traceId": "8e4a01d2811652fa2e8c4e4334642137",
-  "spanId": "1518e64a727d8bac",
-  "flushedAt": "2026-10-10",
-  "source": "seeded from DECISIONS #93 (notary doctor run on Oct 10 with NEATLOGS_API_KEY set)"
+  "traceId": "c4cc92921c1c495ebf24b8cf6fc0b599",
+  "spanId": "fa01f88a77c2c721",
+  "flushedAt": "2026-10-12T02:23:34.319Z",
+  "source": "notary doctor"
 }

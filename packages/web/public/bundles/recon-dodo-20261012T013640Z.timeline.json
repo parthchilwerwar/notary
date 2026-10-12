@@ -1,0 +1,101 @@
+{
+  "runId": "recon-dodo-20261012T013640Z",
+  "sample": false,
+  "bundleHash": "0202521e5bcda3467fe9453626d7f4b09aaf7f68d0cbcfbe22a02ef249bb1ee8",
+  "events": [
+    {
+      "runId": "recon-dodo-20261012T013640Z",
+      "seq": 0,
+      "at": "2026-10-12T01:36:45.318Z",
+      "stage": "certify",
+      "type": "budget",
+      "recordIds": [
+        "recon-dodo-20261012T013640Z"
+      ],
+      "traceIds": [],
+      "summary": "Budget: 0 of 200 credits, 0 recorded tool calls (probe calls + decision effects), $0.0000 model spend.",
+      "data": {
+        "budget": {
+          "credits": {
+            "used": 0,
+            "cap": 200
+          },
+          "toolCalls": {
+            "used": 0,
+            "cap": null
+          },
+          "usdByRole": {
+            "executor": 0,
+            "reflector": 0,
+            "adversary": 0
+          },
+          "usdCap": null
+        }
+      }
+    },
+    {
+      "runId": "recon-dodo-20261012T013640Z",
+      "seq": 1,
+      "at": "2026-10-12T01:36:45.318Z",
+      "stage": "certify",
+      "type": "run.finished",
+      "recordIds": [
+        "recon-dodo-20261012T013640Z"
+      ],
+      "traceIds": [],
+      "summary": "Notarization recon-dodo-20261012T013640Z finished: completed.",
+      "data": {
+        "status": "completed",
+        "metrics": {
+          "claims": 15,
+          "exchanges": 16,
+          "anomalies": 0,
+          "skippedSteps": 0,
+          "unsafe_actions_total": null,
+          "unsafe_duplicates": null,
+          "unsafe_wrong_unit": null,
+          "unsafe_missed_existing_refund": null,
+          "decision_accuracy": null,
+          "automation_rate": null,
+          "holds": null,
+          "escalations": null,
+          "beliefs_hypothesis": 0,
+          "beliefs_candidate": 0,
+          "beliefs_notarized": 0,
+          "beliefs_refuted": 0,
+          "beliefs_abstained": 0,
+          "beliefs_unlearned": 0,
+          "belief_precision": null,
+          "beliefs_false": null,
+          "belief_precision_n": null,
+          "unguarded_call_sites": 0,
+          "credits_total": 0,
+          "usd_executor": 0,
+          "tokens_executor": 0,
+          "usd_reflector": 0,
+          "tokens_reflector": 0,
+          "usd_adversary": 0,
+          "tokens_adversary": 0,
+          "usd_total": 0,
+          "probes_to_candidate": null
+        },
+        "budget": {
+          "credits": {
+            "used": 0,
+            "cap": 200
+          },
+          "toolCalls": {
+            "used": 0,
+            "cap": null
+          },
+          "usdByRole": {
+            "executor": 0,
+            "reflector": 0,
+            "adversary": 0
+          },
+          "usdCap": null
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,141 @@
+/* Entire block on the Report page (EntireSection.tsx). Editorial: hairline rules, no cards, numbers
+   in the display serif. Colors come from design/tokens.css only. */
+.entire {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.entire-meta {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.entire-figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+}
+.entire-figures p {
+  display: grid;
+  margin: 0;
+}
+.entire-figure {
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.entire-figure-bad {
+  color: var(--unsafe);
+}
+.entire-figure-label {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.entire-rows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--hairline-color);
+}
+.entire-row {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--hairline-color);
+}
+.entire-row-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+.entire-row-head time {
+  color: var(--text-muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.entire-id {
+  overflow-wrap: anywhere;
+  font-size: 12.5px;
+}
+.entire-row-msg {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.entire-row-facts {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.entire-row-facts > div {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+}
+.entire-row-facts dt,
+.entire-row-facts dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.entire-icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--text-muted);
+  vertical-align: -3px;
+}
+.entire-icon-safe {
+  color: var(--safe);
+}
+.entire-icon-bad {
+  color: var(--unsafe);
+}
+.entire-empty {
+  padding: 12px 0;
+  border-top: 1px solid var(--hairline-color);
+  border-bottom: 1px solid var(--hairline-color);
+}
+.entire-coverage {
+  display: grid;
+  gap: 8px;
+  padding-top: 4px;
+}
+.entire-subhead {
+  margin: 0;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+}
+.entire-coverage-line {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 8px;
+  margin: 0;
+}
+.entire-unguarded {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 26px;
+  color: var(--unsafe);
+}
+.entire-command {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  min-width: 0;
+}
+.entire-command code {
+  overflow-wrap: anywhere;
+  font-size: 12.5px;
+}

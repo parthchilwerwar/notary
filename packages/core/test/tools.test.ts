@@ -18,6 +18,7 @@ import {
   Recorder,
   TestModeLockError,
   ToolHttpError,
+  ToolNetworkError,
   createTools,
   isBlocked,
   listCassettes,
@@ -92,6 +93,34 @@ describe("recorder: record then replay", () => {
     await expect(replay.dodo.getPayment("pay_2")).rejects.toBeInstanceOf(CassetteMissError);
     await replay.dodo.getPayment("pay_1");
     await expect(replay.dodo.getPayment("pay_1")).rejects.toBeInstanceOf(CassetteMissError);
+  });
+
+  it("records a response whose body never arrives, so replay re-throws it instead of missing", async () => {
+    // TEST DATA: the API answered 200 with headers, then the body stream failed (socket reset).
+    const broken = () =>
+      new Response(
+        new ReadableStream({
+          start(c) {
+            c.error(new Error("terminated"));
+          },
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    vi.stubGlobal("fetch", vi.fn(async () => broken()));
+    const live = createTools({ mode: "live", cassette: "body-lost", cassetteDir: dir, env: liveEnv() });
+    const params = { amount: 250, currency: "EUR", entry_type: "credit" as const, reason: "t" };
+    const liveErr = await live.dodo.createWalletLedgerEntry("cus_1", params).catch((e: unknown) => e);
+    expect(liveErr).toBeInstanceOf(ToolNetworkError);
+
+    const cassette = loadCassette("body-lost", { dir });
+    expect(cassette.exchanges).toHaveLength(1);
+    expect(cassette.exchanges[0]!.status).toBe(0);
+    expect(cassette.exchanges[0]!.error).toContain("HTTP 200");
+
+    const replay = createTools({ mode: "replay", cassette: "body-lost", cassetteDir: dir });
+    const replayErr = await replay.dodo.createWalletLedgerEntry("cus_1", params).catch((e: unknown) => e);
+    expect(replayErr).toBeInstanceOf(ToolNetworkError);
+    expect(replayErr).not.toBeInstanceOf(CassetteMissError);
   });
 
   it("serves from several cassettes and keeps HTTP errors as ToolHttpError", async () => {

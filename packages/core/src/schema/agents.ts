@@ -16,8 +16,8 @@ export type AgentInfo = {
   role: string;
   /** "model" = an LLM role; "rule" = deterministic code, never called an agent in UI copy. */
   kind: "model" | "rule";
-  /** Which configured model role it runs on (null for rules). Chat runs on the executor model. */
-  modelRole: "executor" | "reflector" | "adversary" | null;
+  /** Which configured model role it runs on (null for rules). Chat has its own role: NOTARY_MODEL_CHAT, falling back to NOTARY_MODEL_REFLECTOR. */
+  modelRole: "executor" | "reflector" | "adversary" | "chat" | null;
 };
 
 export const AGENTS: Readonly<Record<AgentId, AgentInfo>> = {
@@ -47,7 +47,7 @@ export const AGENTS: Readonly<Record<AgentId, AgentInfo>> = {
     name: "Notary Chat",
     role: "Answers questions about runs, certificates and APIs",
     kind: "model",
-    modelRole: "executor",
+    modelRole: "chat",
   },
   guard: {
     id: "guard",

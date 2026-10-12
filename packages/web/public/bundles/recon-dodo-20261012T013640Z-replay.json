@@ -1,0 +1,311 @@
+{
+  "runId": "recon-dodo-20261012T013640Z-replay",
+  "kind": "notarize",
+  "variant": "notarize",
+  "mode": "replay",
+  "sample": false,
+  "disclosure": [
+    "Recon-only notarize run: anomalies come from the deterministic contract checker; no hypotheses, probes or beliefs yet.",
+    "Replayed from cassette recon-dodo-20261012T013640Z-recon (sha fec02a7bc282); no network calls.",
+    "Replay of recon-dodo-20261012T013640Z.",
+    "Dodo Payments test mode only."
+  ],
+  "startedAt": "2026-10-12T01:42:48.775Z",
+  "finishedAt": "2026-10-12T01:42:48.798Z",
+  "status": "completed",
+  "seed": 0,
+  "tool": "dodo",
+  "replayOf": "recon-dodo-20261012T013640Z",
+  "queue": [],
+  "decisions": [],
+  "claims": [
+    {
+      "id": "dodo.refund.amount-minor-units",
+      "tool": "dodo",
+      "operation": "dodo.createRefund",
+      "param": "items[].amount",
+      "docText": "the `amount` to refund in the smallest currency unit.",
+      "expect": {
+        "kind": "unit",
+        "field": "amount",
+        "unit": "minor"
+      },
+      "docUrl": "https://docs.dodopayments.com/features/transactions/refunds.md",
+      "endpoint": "POST /refunds",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.refund.full-retry-no-duplicate",
+      "tool": "dodo",
+      "operation": "dodo.createRefund",
+      "param": "refund_id",
+      "docText": "[implied] The refund, together with any earlier refunds on the payment, can't exceed the amount paid.",
+      "expect": {
+        "kind": "idempotentOnRetry"
+      },
+      "docUrl": "https://docs.dodopayments.com/features/transactions/refunds.md",
+      "endpoint": "POST /refunds",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.refunds.amount-integer",
+      "tool": "dodo",
+      "operation": "dodo.listRefunds",
+      "param": "",
+      "docText": "amount: integer or null (int32). The refunded amount.",
+      "expect": {
+        "kind": "type",
+        "field": "items[].amount",
+        "type": "integer|null"
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/refunds/get-refunds.md",
+      "endpoint": "GET /refunds",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.refunds.page-size-max-100",
+      "tool": "dodo",
+      "operation": "dodo.listRefunds",
+      "param": "page_size",
+      "docText": "Page size default is 10 max is 100",
+      "expect": {
+        "kind": "maxItems",
+        "max": 100
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/refunds/get-refunds.md",
+      "endpoint": "GET /refunds",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.payments.page-size-max-100",
+      "tool": "dodo",
+      "operation": "dodo.listPayments",
+      "param": "page_size",
+      "docText": "Page size default is 10 max is 100",
+      "expect": {
+        "kind": "maxItems",
+        "max": 100
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/payments/get-payments.md",
+      "endpoint": "GET /payments",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.payment.refunds-array-present",
+      "tool": "dodo",
+      "operation": "dodo.getPayment",
+      "param": "payment_id",
+      "docText": "refunds: List of refunds issued for this payment (required)",
+      "expect": {
+        "kind": "fieldPresent",
+        "field": "refunds"
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/payments/get-payments-1.md",
+      "endpoint": "GET /payments/{payment_id}",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.payment.refunds-lists-issued-refund",
+      "tool": "dodo",
+      "operation": "dodo.createRefund",
+      "param": "refund_id",
+      "docText": "[implied] refunds: List of refunds issued for this payment",
+      "expect": {
+        "kind": "consistentWithin",
+        "ms": 1000
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/payments/get-payments-1.md",
+      "endpoint": "POST /refunds",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.product.price-minor-units",
+      "tool": "dodo",
+      "operation": "dodo.createProduct",
+      "param": "price.price",
+      "docText": "The payment amount, in the smallest denomination of the currency (e.g., cents for USD).",
+      "expect": {
+        "kind": "unit",
+        "field": "price.price",
+        "unit": "minor"
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/products/post-products.md",
+      "endpoint": "POST /products",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.customer.missing-email-422",
+      "tool": "dodo",
+      "operation": "dodo.createCustomer",
+      "param": "email",
+      "docText": "required: name, email. 422: Invalid Request Object or Parameters",
+      "expect": {
+        "kind": "statusOnError",
+        "status": 422
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/customers/create-customer.md",
+      "endpoint": "POST /customers",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.subscription.change-plan-pending-409",
+      "tool": "dodo",
+      "operation": "dodo.changeSubscriptionPlan",
+      "param": "subscription_id",
+      "docText": "409: A pending plan change already exists for this subscription (PendingPlanChangeExists).",
+      "expect": {
+        "kind": "statusOnError",
+        "status": 409
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/subscriptions/change-plan.md",
+      "endpoint": "POST /subscriptions/{subscription_id}/change-plan",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.wallet.credit-amount-minor-units",
+      "tool": "dodo",
+      "operation": "dodo.createWalletLedgerEntry",
+      "param": "amount",
+      "docText": "`amount` is a positive integer in the smallest currency unit.",
+      "expect": {
+        "kind": "unit",
+        "field": "balance",
+        "unit": "minor"
+      },
+      "docUrl": "https://docs.dodopayments.com/features/customer-wallet.md",
+      "endpoint": "POST /customers/{customer_id}/wallets/ledger-entries",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.wallet.idempotency-key-no-duplicate",
+      "tool": "dodo",
+      "operation": "dodo.createWalletLedgerEntry",
+      "param": "",
+      "docText": "If you repeat a request with the same key, Dodo Payments creates no new entry and returns the current wallet.",
+      "expect": {
+        "kind": "maxItems",
+        "max": 1
+      },
+      "docUrl": "https://docs.dodopayments.com/features/customer-wallet.md",
+      "endpoint": "POST /customers/{customer_id}/wallets/ledger-entries",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.wallet.debit-insufficient-400",
+      "tool": "dodo",
+      "operation": "dodo.createWalletLedgerEntry",
+      "param": "entry_type",
+      "docText": "A debit larger than the balance fails with `400`.",
+      "expect": {
+        "kind": "statusOnError",
+        "status": 400
+      },
+      "docUrl": "https://docs.dodopayments.com/features/customer-wallet.md",
+      "endpoint": "POST /customers/{customer_id}/wallets/ledger-entries",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.wallets.total-balance-usd-integer",
+      "tool": "dodo",
+      "operation": "dodo.listCustomerWallets",
+      "param": "customer_id",
+      "docText": "total_balance_usd: integer (int64). Sum of all wallet balances converted to USD (in smallest unit)",
+      "expect": {
+        "kind": "type",
+        "field": "total_balance_usd",
+        "type": "integer"
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/customers/get-customer-wallets.md",
+      "endpoint": "GET /customers/{customer_id}/wallets",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.wallet.ledger-response-balance-integer",
+      "tool": "dodo",
+      "operation": "dodo.createWalletLedgerEntry",
+      "param": "",
+      "docText": "balance: integer (int64) (CustomerWalletResponse)",
+      "expect": {
+        "kind": "type",
+        "field": "balance",
+        "type": "integer"
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/customers/post-customer-wallets-ledger-entries.md",
+      "endpoint": "POST /customers/{customer_id}/wallets/ledger-entries",
+      "costCredits": 0
+    }
+  ],
+  "anomalies": [],
+  "hypotheses": [],
+  "probes": [],
+  "beliefs": {
+    "before": [],
+    "after": []
+  },
+  "beliefEvents": [],
+  "guards": [],
+  "usageByRole": {
+    "executor": {
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "usd": 0,
+      "calls": 0
+    },
+    "reflector": {
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "usd": 0,
+      "calls": 0
+    },
+    "adversary": {
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "usd": 0,
+      "calls": 0
+    }
+  },
+  "credits": {
+    "byEndpoint": {},
+    "total": 0,
+    "budget": 200
+  },
+  "metrics": {
+    "claims": 15,
+    "exchanges": 16,
+    "anomalies": 0,
+    "skippedSteps": 0,
+    "unsafe_actions_total": null,
+    "unsafe_duplicates": null,
+    "unsafe_wrong_unit": null,
+    "unsafe_missed_existing_refund": null,
+    "decision_accuracy": null,
+    "automation_rate": null,
+    "holds": null,
+    "escalations": null,
+    "beliefs_hypothesis": 0,
+    "beliefs_candidate": 0,
+    "beliefs_notarized": 0,
+    "beliefs_refuted": 0,
+    "beliefs_abstained": 0,
+    "beliefs_unlearned": 0,
+    "belief_precision": null,
+    "beliefs_false": null,
+    "belief_precision_n": null,
+    "unguarded_call_sites": 0,
+    "credits_total": 0,
+    "usd_executor": 0,
+    "tokens_executor": 0,
+    "usd_reflector": 0,
+    "tokens_reflector": 0,
+    "usd_adversary": 0,
+    "tokens_adversary": 0,
+    "usd_total": 0,
+    "probes_to_candidate": null
+  },
+  "traceLinks": {},
+  "cassettes": [
+    "recon-dodo-20261012T013640Z-recon@fec02a7bc2824d3e0e08dc19d9362f8f841f6788398fb54db833aedc16760d63",
+    "recon-dodo-20261012T013640Z-inputs@e3060966c15d601f58bae2d76725474f18dc44e0f5f1c83b85fbfbafef43c6a9"
+  ],
+  "contentHash": "0d2ae865cfc2f565275ff66fdddf644fb49e15f81f68d800aebf0858a8f936aa"
+}

@@ -159,7 +159,7 @@ describe("startServer (real socket on 127.0.0.1)", () => {
   let root: string;
   beforeAll(async () => {
     root = mkdtempSync(join(tmpdir(), "notary-session-srv-"));
-    server = await startServer({ port: 0, bundleDirs: [root], runsDir: null, bus: new EventBus(), eventJournal: null });
+    server = await startServer({ port: 0, bundleDirs: [root], runsDir: null, bus: new EventBus(), eventJournal: null, prewarmGuardCoverage: false });
   });
   afterAll(async () => {
     await server.close();

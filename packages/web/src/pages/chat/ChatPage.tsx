@@ -1,4 +1,5 @@
-// /app/chat: Notary Chat. Messages in a centered column, the composer pinned at the bottom, steps
+// /app/chat: Notary Chat. A plain header line, messages in a centered reading column, the composer
+// docked at the bottom, steps
 // streaming live inside each answer. Everything goes through `source.chat` (src/data): live =
 // `notary serve` /api/chat (token required), replay = the deterministic engine over the published
 // files. ?c= is the open conversation, ?q= prefills the composer (from ⌘K; never auto-sent).
@@ -8,9 +9,9 @@ import { useSearchParams } from "react-router";
 import type { ChatConversation, ChatEvent, ChatMessage } from "../../../../core/src/schema";
 import { AGENTS } from "../../../../core/src/schema";
 import { Button, EmptyState, Skeleton, SkyBand, usePageMotion } from "../../ui";
-import { ArrowDown, ArrowUp, CaretDown, Plus, StopSquare, Trash } from "./icons";
+import { ArrowDown, ArrowUp, CaretDown, CaretRight, Plus, StopSquare, Trash } from "./icons";
 import { useData } from "../../app/catalog";
-import { LocalApiError, REPLAY_CHAT_BANNER, date, useDataSource, useSessionToken, worldKeyOf, worldLabel } from "../../data";
+import { LocalApiError, REPLAY_CHAT_BANNER, date, useDataSource, useSessionToken, worldKeyOf, worldLabel, type WorldKey } from "../../data";
 import { MessageView, UserMessage, CodeText } from "./MessageView";
 import {
   EMPTY_TURN,
@@ -32,6 +33,18 @@ type LoadFailure = "list" | "open" | "delete";
 const MAX_LENGTH = 4000;
 /** The dock's standing note: what Chat can and cannot do (product copy, not data). */
 const CAPABILITY_HINT = "Notary Chat can read runs, certificates, approvals and allowed docs. It cannot move money.";
+
+/**
+ * Which records a replay conversation answers from, in plain words. The shell already discloses a
+ * selected sample run, so a scenario then reads "the default scenario"; when the conversation's
+ * world is a scenario but the selected run is real, the data layer's full label (with its
+ * disclosure) stays.
+ */
+function worldPhrase(key: WorldKey, selectedIsSample: boolean): string {
+  if (key === "real") return "real runs";
+  if (key.startsWith("fixture:") && selectedIsSample) return `the ${key.slice("fixture:".length)} scenario`;
+  return worldLabel(key);
+}
 
 /** A stored assistant message as a view: its recorded events, else its final text alone. */
 function storedView(m: ChatMessage): TurnView {
@@ -64,7 +77,7 @@ export function ChatPage() {
   const [draft, setDraft] = useState(() => params.get("q") ?? "");
   const [inputError, setInputError] = useState<string>();
   const [follow, setFollow] = useState<FollowState>(INITIAL_FOLLOW);
-  const [world, setWorld] = useState<string>();
+  const [world, setWorld] = useState<WorldKey>();
   const abort = useRef<AbortController | null>(null);
   const ownConversation = useRef<string | null>(null);
   const textarea = useRef<HTMLTextAreaElement>(null);
@@ -146,11 +159,11 @@ export function ChatPage() {
   // Replay: which world this conversation answers from (for the label under the banner).
   useEffect(() => {
     let live = true;
-    const replayChat = chat as typeof chat & { conversationWorld?: (id: string) => Promise<{ label: string } | undefined> };
+    const replayChat = chat as typeof chat & { conversationWorld?: (id: string) => Promise<{ world: WorldKey } | undefined> };
     if (mode !== "replay") return setWorld(undefined);
     if (convId && replayChat.conversationWorld)
-      void replayChat.conversationWorld(convId).then((w) => live && setWorld(w?.label ?? (bundle ? worldLabel(worldKeyOf(bundle)) : undefined)));
-    else setWorld(bundle ? worldLabel(worldKeyOf(bundle)) : undefined);
+      void replayChat.conversationWorld(convId).then((w) => live && setWorld(w?.world ?? (bundle ? worldKeyOf(bundle) : undefined)));
+    else setWorld(bundle ? worldKeyOf(bundle) : undefined);
     return () => {
       live = false;
     };
@@ -384,7 +397,7 @@ export function ChatPage() {
       {mode === "replay" && (
         <p className="chat-banner" role="note">
           <span className="chat-banner-main">{REPLAY_CHAT_BANNER}</span>
-          {world && <span className="chat-banner-world">Answers from {world}</span>}
+          {world && <span className="chat-banner-world">Answers from {worldPhrase(world, !!bundle?.sample)}</span>}
         </p>
       )}
 
@@ -399,16 +412,21 @@ export function ChatPage() {
               What should Notary check?
             </h2>
             <p className="chat-empty-lead">Ask about its runs, certificates or the APIs it checks. Every answer cites the records it read.</p>
-            <ul className="chat-suggestions" aria-label="Suggested questions">
-              {suggestions.map((s) => (
-                <li key={s.prompt}>
-                  <button type="button" disabled={needsToken} onClick={() => void send(s.prompt)}>
-                    <span className="chat-suggestion-title">{s.prompt}</span>
-                    {s.detail && <span className="chat-suggestion-detail">{s.detail}</span>}
-                  </button>
-                </li>
-              ))}
-            </ul>
+            {suggestions.length > 0 && (
+              <ul className="chat-suggestions" aria-label="Suggested questions">
+                {suggestions.map((s) => (
+                  <li key={s.prompt}>
+                    <button type="button" disabled={needsToken} onClick={() => void send(s.prompt)}>
+                      <span className="chat-suggestion-text">
+                        <span className="chat-suggestion-title">{s.prompt}</span>
+                        {s.detail && <span className="chat-suggestion-detail">{s.detail}</span>}
+                      </span>
+                      <CaretRight className="chat-suggestion-go" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
         ) : (
           <>
@@ -603,7 +621,7 @@ function RecentChats({
   const root = useRef<HTMLDivElement>(null);
   const menu = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
-  // The menu is portaled to <body> (the sky band clips its overflow) and placed under the button.
+  // The menu is portaled to <body> (the page header may clip its overflow) and placed under the button.
   const [place, setPlace] = useState<{ top: number; left?: number; right?: number }>();
   useLayoutEffect(() => {
     if (!open) return;

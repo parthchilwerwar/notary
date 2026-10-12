@@ -1,7 +1,7 @@
 import type { ComponentPropsWithRef, ReactNode } from "react";
 import { cn } from "../lib/utils";
 
-/** Instrument Serif heading. `size`: page (48px band title), section (32px), card (24px). */
+/** Instrument Serif heading. `size`: page (40px header title), section (26px), card (20px). */
 export function Title({
   level = 2,
   size = "section",

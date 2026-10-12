@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router";
 import { Toaster } from "sonner";
-import { Button, EmptyState, FixtureNote, PageSkeleton, SkyBandContext, StatusPill } from "../../ui";
+import { Button, EmptyState, FixtureNote, NoRunsYet, Page, PageBody, PageHeader, PageHeaderContext, PageSkeleton, StatusPill } from "../../ui";
 import { CommandPalette } from "./CommandPalette";
 import { MobileBar, Sidebar } from "./Sidebar";
 import { ShellStatusProvider } from "./status";
-import { useTheme } from "../../useTheme";
 import { useData } from "../../app/catalog";
 import { LiveToasts } from "../../app/live-toasts";
-import { withRun } from "../../app/links";
+import { keepView, NO_RUNS_COMMANDS, withRun } from "../../app/links";
 import { matchAppRoute, routeById, type AppRoute } from "../../routes";
 import { dateTime as date } from "../../lib/time";
 import "./shell.css";
@@ -31,7 +30,7 @@ export function useCrumbs(): { label: string; path?: string }[] {
   }));
 }
 
-/** Record pages: a link back to the list, above the title inside the sky band. */
+/** Record pages: a link back to the list, above the page title. */
 function Breadcrumb() {
   const crumbs = useCrumbs();
   const { selectedRunId } = useData();
@@ -68,8 +67,51 @@ export function RunReceipt() {
   );
 }
 
-function Gate({ children, ungated }: { children: ReactNode; ungated: boolean }) {
-  const { loading, error, bundles, missingRunId, reload, running } = useData();
+/**
+ * Nothing to show: no real run is published (or, under ?fixtures=1, no fixture run). Never a
+ * fallback to fixture data. The page keeps its title so the shell still reads as that page.
+ */
+export function NoRunsPage({ title, fixtures }: { title: string; fixtures: boolean }) {
+  return (
+    <Page>
+      <PageHeader title={title} summary={fixtures ? "No fixture runs are published" : "No runs recorded yet"} />
+      <PageBody>
+        {fixtures ? (
+          <EmptyState
+            title="No fixture runs published"
+            action={
+              <Button variant="secondary" asChild>
+                <Link to="/app/run">Show recorded runs</Link>
+              </Button>
+            }
+          >
+            The fixture view lists <code>sample: true</code> bundles only, and none are published. Remove{" "}
+            <code>?fixtures=1</code> to see recorded runs.
+          </EmptyState>
+        ) : (
+          <NoRunsYet
+            commands={NO_RUNS_COMMANDS}
+            action={
+              <Button variant="secondary" asChild>
+                <Link to="/app/report">Check connections</Link>
+              </Button>
+            }
+          />
+        )}
+      </PageBody>
+    </Page>
+  );
+}
+
+/** Routes that stay useful with no run: Report (connections) and, against a live server, Run (it starts runs). */
+function worksWithoutRuns(routeId: string | undefined, source: "api" | "static"): boolean {
+  return routeId === "report" || (routeId === "run" && source === "api");
+}
+
+function Gate({ children, ungated, routeId, title }: { children: ReactNode; ungated: boolean; routeId?: string; title: string }) {
+  const { loading, error, bundles, missingRunId, reload, running, fixtures, source } = useData();
+  const empty = !loading && !error && !bundles.length && !running.length;
+  if (empty && !worksWithoutRuns(routeId, source)) return <NoRunsPage title={title} fixtures={fixtures} />;
   if (ungated) return <>{children}</>;
   if (loading) return <PageSkeleton label="Verifying bundle integrity…" />;
   if (error)
@@ -79,20 +121,7 @@ function Gate({ children, ungated }: { children: ReactNode; ungated: boolean }) 
         <p className="gate-detail">{error}</p>
       </EmptyState>
     );
-  if (!bundles.length)
-    return (
-      <EmptyState
-        title="No runs published"
-        action={
-          <Button variant="secondary" asChild>
-            <Link to="/app/report">Check connections</Link>
-          </Button>
-        }
-      >
-        Publish verified exports with <code>pnpm notary export</code>, or start <code>pnpm notary serve</code> for
-        live runs.
-      </EmptyState>
-    );
+  if (!bundles.length) return <NoRunsPage title={title} fixtures={fixtures} />;
   // A live run that is still running has no bundle yet; it is not "unpublished".
   if (missingRunId && !running.some((r) => r.runId === missingRunId))
     return (
@@ -101,7 +130,7 @@ function Gate({ children, ungated }: { children: ReactNode; ungated: boolean }) 
         title={`Run ${missingRunId} is not published`}
         action={
           <Button asChild>
-            <Link to="/app/run">Open the default run</Link>
+            <Link to={keepView("/app/run")}>Open the default run</Link>
           </Button>
         }
       >
@@ -112,13 +141,14 @@ function Gate({ children, ungated }: { children: ReactNode; ungated: boolean }) 
 }
 
 /**
- * The dashboard frame (K3): a white sidebar (phones: a top bar with a drawer), the canvas, the
- * fixture disclosure when the selected run is simulated, the command palette and toasts. The data
- * mode is not repeated as chrome: pages say what fails without a live server where it would fail.
+ * The dashboard frame: a quiet sidebar (phones: a top bar with a drawer), the white page, the
+ * command palette and toasts. Light only. Only real runs are shown; fixture runs appear only in the
+ * development-only `?fixtures=1` view, and there every page header carries the fixture disclosure
+ * (one small pill on the summary line, present only when the selected run is fixture data). The
+ * data mode is not repeated as chrome: pages say what fails without a live server where it would.
  */
 export function AppShell({ children }: { children: ReactNode }) {
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [dark, setDark] = useTheme();
   const { bundle } = useData();
   const { pathname } = useLocation();
   const match = matchAppRoute(pathname);
@@ -128,7 +158,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
-  const band = useMemo(() => ({ inShell: true, lead: <Breadcrumb /> }), []);
+  const sample = !!bundle?.sample;
+  const header = useMemo(
+    () => ({ inShell: true, lead: <Breadcrumb />, note: sample ? <FixtureNote className="fixture-banner" /> : undefined }),
+    [sample],
+  );
   const openPalette = () => setPaletteOpen(true);
   return (
     <ShellStatusProvider>
@@ -136,18 +170,19 @@ export function AppShell({ children }: { children: ReactNode }) {
         <a className="skip" href="#main">
           Skip to content
         </a>
-        <Sidebar dark={dark} setDark={setDark} onPalette={openPalette} />
+        <Sidebar onPalette={openPalette} />
         <div className="app-column">
-          <MobileBar dark={dark} setDark={setDark} onPalette={openPalette} />
+          <MobileBar onPalette={openPalette} />
           <main id="main" className="app-main" tabIndex={-1}>
-            {bundle?.sample && <FixtureNote className="fixture-banner" />}
-            <SkyBandContext.Provider value={band}>
-              <Gate ungated={!!match?.route.ungated}>{children}</Gate>
-            </SkyBandContext.Provider>
+            <PageHeaderContext.Provider value={header}>
+              <Gate ungated={!!match?.route.ungated} routeId={match?.route.id} title={match?.route.title ?? "Notary"}>
+                {children}
+              </Gate>
+            </PageHeaderContext.Provider>
           </main>
         </div>
         <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
-        <Toaster theme={dark ? "dark" : "light"} position="bottom-right" />
+        <Toaster theme="light" position="bottom-right" />
         <LiveToasts />
       </div>
     </ShellStatusProvider>

@@ -65,9 +65,11 @@ describe("explain.json", () => {
       }
       expect(ids.has(`tool_knowledge:${w.key}:crustdata`)).toBe(true);
       expect(ids.has(`tool_knowledge:${w.key}:dodo`)).toBe(true);
-      const naive = w.bundles.find((b) => b.variant === "naive")!;
-      const guarded = w.bundles.find((b) => b.variant === "guarded")!;
-      expect(ids.has(`run_diff:${naive.runId}:${guarded.runId}`)).toBe(true);
+      const naive = w.bundles.find((b) => b.variant === "naive");
+      const guarded = w.bundles.find((b) => b.variant === "guarded");
+      // run_diff needs both runs (the real world may hold only notarize bundles so far).
+      if (w.key !== "real") expect(naive && guarded).toBeTruthy();
+      if (naive && guarded) expect(ids.has(`run_diff:${naive.runId}:${guarded.runId}`)).toBe(true);
       expect(ids.has(`revocations:${w.key}`)).toBe(true);
     }
   });
@@ -101,14 +103,16 @@ describe("explain.json", () => {
   it("cited certificate and revocation ids exist in the published certificate files of the same world", () => {
     const file = ExplainFileSchema.parse(JSON.parse(readFileSync(PUBLISHED, "utf8")));
     const published = new Map<string, Set<string>>();
-    for (const w of worlds.filter((x) => x.sample)) {
-      const dir = join(CERTS_DIR, "fixture", w.key.slice("fixture:".length));
+    // Fixture worlds read certificates/fixture/<scenario>/; the real world reads certificates/<tool>.json.
+    for (const w of worlds.filter((x) => x.sample || x.bundles.length)) {
+      const dir = w.sample ? join(CERTS_DIR, "fixture", w.key.slice("fixture:".length)) : CERTS_DIR;
+      const label = w.sample ? `certificates/fixture/${w.key.slice(8)}` : "certificates";
       const ids = new Set<string>();
-      for (const f of readdirSync(dir).filter((x) => x !== "report.json")) {
+      for (const f of readdirSync(dir).filter((x) => x.endsWith(".json") && x !== "report.json" && x !== "index.json")) {
         const t = JSON.parse(readFileSync(join(dir, f), "utf8")) as ToolCertificates;
         for (const s of t.sourceBundles) {
           const b = w.bundles.find((x) => x.runId === s.runId);
-          expect(b?.contentHash, `certificates/fixture/${w.key.slice(8)}/${f} is stale for ${s.runId}: rerun \`pnpm notary export --certificates --fixture\`, then \`--explain\``).toBe(s.contentHash);
+          expect(b?.contentHash, `${label}/${f} is stale for ${s.runId}: rerun \`pnpm notary export --certificates${w.sample ? " --fixture" : ""}\`, then \`--explain\``).toBe(s.contentHash);
         }
         for (const c of t.certificates) ids.add(c.id);
         for (const r of t.revocations) ids.add(r.id);
@@ -127,6 +131,8 @@ describe("loadPublishedWorlds", () => {
   it("skips the synthetic SAMPLE bundle, tampered files and timelines; keeps a real bundle in its own world", () => {
     const web = tmp();
     cpSync(EXPLAIN_PATHS.webBundlesDir, web, { recursive: true });
+    // Start from no published real runs (keep the SAMPLE bundle), so the constructed one is the only real bundle.
+    for (const f of readdirSync(web)) if (f.endsWith(".json") && f !== "sample-42.json") rmSync(join(web, f));
     const fx = join(web, "fixture");
     const anyFixture = readdirSync(fx).find((f) => f.startsWith("demo-run-guarded"))!;
     const src = JSON.parse(readFileSync(join(fx, anyFixture), "utf8")) as RunBundle;

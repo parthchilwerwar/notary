@@ -1,8 +1,10 @@
 /**
  * P2 agent names, core side. The names, roles and kinds live in src/schema/agents.ts (browser-safe,
  * the one source of truth); this module attaches the MODEL each agent runs on, read from config
- * (NOTARY_MODEL_* via resolveModels) and never hardcoded. Notary Chat runs on the executor model
- * (AGENTS.chat.modelRole); the Guard is a deterministic rule and has no model.
+ * (NOTARY_MODEL_* via resolveModels) and never hardcoded. Notary Chat has its own model role,
+ * NOTARY_MODEL_CHAT, falling back to NOTARY_MODEL_REFLECTOR (resolveChatModel); the Guard is a
+ * deterministic rule and has no model. The system prompt of every model agent lives in
+ * src/agents/prompts.ts.
  *
  * `agentModels(env)` never throws: a roster that breaks separation of duties (reflector = adversary)
  * still reports the configured ids, because they ARE the config; `notary doctor --llm` and
@@ -11,7 +13,7 @@
 import { AGENTS, AGENT_ORDER } from "../schema/agents.js";
 import type { AgentId, AgentInfo } from "../schema/agents.js";
 import type { Role } from "../schema/index.js";
-import { MODEL_ENV, ModelConfigError, ROLES, resolveModels } from "./roles.js";
+import { MODEL_ENV, ModelConfigError, ROLES, resolveChatModel, resolveModels } from "./roles.js";
 import type { ModelRoster } from "./roles.js";
 
 type Env = Record<string, string | undefined>;
@@ -44,6 +46,7 @@ export function agentModels(env: Env = process.env): AgentModels {
   const r = roster(env);
   const of = (id: ModelAgentId): string | null => {
     const role = AGENTS[id].modelRole;
+    if (role === "chat") return resolveChatModel(env)?.model ?? null;
     return role ? (r[role] ?? null) : null;
   };
   return { executor: of("executor"), reflector: of("reflector"), adversary: of("adversary"), chat: of("chat") };

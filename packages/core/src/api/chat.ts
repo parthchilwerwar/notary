@@ -17,13 +17,18 @@
 // and tool are cancelled, the partial message is kept with status "aborted" on the in-flight step and a
 // "Stopped" error event). Storage: <runsDir>/chat.sqlite (runs/ is gitignored).
 //
-// No model configured (llmBlockedReason: NOTARY_MODEL_EXECUTOR + LITELLM_BASE_URL/LITELLM_API_KEY or
-// AWS_REGION per NOTARY_LLM_PROVIDER): the stream carries one `error` naming the variable with a fix
+// The turn is a native tool-calling agent (src/chat/agent.ts) on the "chat" model role:
+// NOTARY_MODEL_CHAT, falling back to NOTARY_MODEL_REFLECTOR. Its system prompt lives in
+// src/agents/prompts.ts.
+//
+// No model configured (llmBlockedReason("chat"): NOTARY_MODEL_CHAT or NOTARY_MODEL_REFLECTOR, plus
+// LITELLM_BASE_URL/LITELLM_API_KEY or AWS_REGION per NOTARY_LLM_PROVIDER): the stream carries one `error` naming the variable with a fix
 // pointing to `pnpm notary doctor --llm`; nothing else is produced.
 //
 // Tracing: one trace per message — `notary.chat.message` (WORKFLOW root: sizes, steps, model calls,
-// tokens, USD or usd_unknown, citations total/invalid, status) -> `notary.chat.tool` (TOOL, one per
-// step: tool, step id, status, duration, credits) and `notary.llm` (CHAIN, opened by LlmClient, with
+// tokens, USD or usd_unknown, citations total/invalid, status) -> `notary.chat.agent` (AGENT, the
+// loop) -> `notary.chat.tool` (TOOL, one per step: tool, step id, status, duration, credits, record
+// ids) and `notary.llm` (CHAIN, opened by LlmClient, with
 // the provider wrapper's LLM span under it). Every one of them carries `notary.agent` = "Notary Chat"
 // (P2, src/schema/agents.ts; span names unchanged for continuity). Never the message text, prompts, the token or a secret in
 // attributes. Spans sink to <runsDir>/_chat/spans.jsonl (withSpanSink); a flush is started after every
@@ -33,11 +38,11 @@
 // guard, runs-starting, store or certify code (test/chat-safety.test.ts walks the import graph); the
 // certificate, approvals and health readers are injected by server.ts.
 import { join } from "node:path";
-import type { Context, Hono } from "hono";
+import type { Context, Hono, MiddlewareHandler } from "hono";
 import { streamSSE } from "hono/streaming";
 import { scrubber, streamScrubber } from "../llm/client.js";
 import { LlmClient } from "../llm/client.js";
-import type { LlmLike } from "../llm/client.js";
+import type { ToolLlmLike } from "../llm/client.js";
 import { llmBlockedReason, llmConfigIssues } from "../llm/config.js";
 import { AGENT_SPAN_ATTR } from "../llm/agents.js";
 import { AGENTS } from "../schema/agents.js";
@@ -62,6 +67,8 @@ type Env = Record<string, string | undefined>;
 export const CHAT_SPANS_DIR = "_chat";
 export const CHAT_DB_FILE = "chat.sqlite";
 const CONVERSATION_ID = /^conv-[0-9a-f-]{36}$/;
+/** SSE keep-alive comment interval while a turn runs. */
+export const CHAT_KEEP_ALIVE_MS = 15_000;
 /** fetch_doc results kept per conversation. */
 const DOC_CACHE_PER_CONVERSATION = 32;
 
@@ -77,7 +84,12 @@ export interface ChatOptions extends ChatSources {
   /** Test seam: an already-open store. */
   store?: ChatStore;
   /** Test seam: the model for one turn. Default: a fresh LlmClient per message (NOTARY_MAX_USD per message). */
-  llm?: () => LlmLike;
+  llm?: () => ToolLlmLike;
+  /**
+   * Auth for every /api/chat route. Default: localhost + the per-session token (requireLocalSession).
+   * The hosted deployment (src/api/hosted.ts) passes its bearer-token guard instead.
+   */
+  guard?: MiddlewareHandler;
   /** fetch_doc transport (test seam). */
   fetch?: typeof fetch;
   /** Test seam: build the Crustdata/Dodo tool clients (default createTools). */
@@ -92,6 +104,8 @@ export interface ChatOptions extends ChatSources {
   rpm?: number;
   now?: () => number;
   maxSteps?: number;
+  /** SSE keep-alive comment interval (default CHAT_KEEP_ALIVE_MS). */
+  keepAliveMs?: number;
 }
 
 function startFlush(flush: () => Promise<unknown>): void {
@@ -114,11 +128,11 @@ async function readBody(c: Context): Promise<{ ok: true; content: string } | { o
   return { ok: true, content: parsed.data.content };
 }
 
-/** The `error` event for a missing/invalid model configuration, or null when the executor can be called. */
+/** The `error` event for a missing/invalid model configuration, or null when the chat model can be called. */
 export function chatBlockedEvent(env: Env): Extract<ChatEvent, { type: "error" }> | null {
-  const reason = llmBlockedReason(env, "executor");
+  const reason = llmBlockedReason(env, "chat");
   if (!reason) return null;
-  const variable = llmConfigIssues(env, "executor")[0]?.variable;
+  const variable = llmConfigIssues(env, "chat")[0]?.variable;
   return {
     type: "error",
     message: reason,
@@ -140,7 +154,7 @@ export function mountChat(app: Hono, opts: ChatOptions): { store: () => ChatStor
   const ledger = opts.ledger ?? new CreditLedger({ env: env as NodeJS.ProcessEnv });
   const docCaches = new Map<string, Map<string, DocResult>>();
   const busy = new Set<string>();
-  const guard = requireLocalSession(opts.session);
+  const guard = opts.guard ?? requireLocalSession(opts.session);
 
   const docCache = (id: string): Map<string, DocResult> => {
     let m = docCaches.get(id);
@@ -215,6 +229,18 @@ export function mountChat(app: Hono, opts: ChatOptions): { store: () => ChatStor
 
       const events: ChatEvent[] = [];
       let chain: Promise<unknown> = Promise.resolve();
+      // SSE comment every KEEP_ALIVE_MS while the turn runs, so a proxy / load balancer idle timeout
+      // (an ALB defaults to 60 s) never cuts a stream during a long tool step. Clients ignore comments.
+      const keepAlive = setInterval(() => {
+        chain = chain.then(async () => {
+          if (stream.aborted || stream.closed) return;
+          try {
+            await stream.write(": keep-alive\n\n");
+          } catch {
+            // client went away
+          }
+        });
+      }, opts.keepAliveMs ?? CHAT_KEEP_ALIVE_MS);
       const emit = (e: ChatEvent): void => {
         const ev = scrubEvent(e);
         events.push(ev);
@@ -231,7 +257,7 @@ export function mountChat(app: Hono, opts: ChatOptions): { store: () => ChatStor
       let turn: TurnResult | undefined;
       try {
         const blocked = opts.llm ? null : chatBlockedEvent(env);
-        let llm: LlmLike | null = null;
+        let llm: ToolLlmLike | null = null;
         let configError: Extract<ChatEvent, { type: "error" }> | null = blocked;
         if (!configError) {
           try {
@@ -275,6 +301,7 @@ export function mountChat(app: Hono, opts: ChatOptions): { store: () => ChatStor
                     ...(opts.certificates ? { certificates: opts.certificates } : {}),
                     ...(opts.approvals ? { approvals: opts.approvals } : {}),
                     ...(opts.health ? { health: opts.health } : {}),
+                    ...(opts.guardCoverage ? { guardCoverage: opts.guardCoverage } : {}),
                   },
                 },
               );
@@ -312,6 +339,7 @@ export function mountChat(app: Hono, opts: ChatOptions): { store: () => ChatStor
         } catch (err) {
           console.warn(`notary serve: could not store the chat answer: ${clean(err instanceof Error ? err.message : String(err))}`);
         }
+        clearInterval(keepAlive);
         busy.delete(id);
         startFlush(opts.flush ?? flushTracing);
         await chain;

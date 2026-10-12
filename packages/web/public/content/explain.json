@@ -2,6 +2,472 @@
   "generatedBy": "notary export --explain",
   "answers": [
     {
+      "id": "tool_knowledge:real:crustdata",
+      "kind": "tool_knowledge",
+      "question": "What does Notary know about crustdata (the real runs)?",
+      "answer": "11 documented crustdata claims appear in this world's runs. Certified: 1 crustdata claim (1 matches the docs, 0 contradict them). crustdata.enrich.headcount-total-integer: matches the docs (certificate cert-ac8e10949d6a64f5, P(doc claim holds) = 0.9375, Beta(4, 1)). Unproven: 10 crustdata claims without an active certificate (never_probed ×9, abstained ×1). crustdata.enrich.headcount-total-integer is notarized (latest snapshot in notarize-crustdata-20261012T011404Z-replay): P(doc claim holds) = 0.9375, Beta(4, 1), so the docs hold; 3 cited probes (type_edge confirmed honored ×3); Adversary narrow. Other crustdata beliefs (latest snapshots): hypothesis ×9, abstained ×1. 4 probes ran on crustdata claims in this world; verdicts: inconclusive ×1, confirmed ×3; templates: unknown_param ×1, type_edge ×3. No guard was compiled from crustdata beliefs in this world.",
+      "citations": [
+        {
+          "kind": "claim",
+          "id": "crustdata.enrich.headcount-total-integer",
+          "runId": "notarize-crustdata-20261012T011404Z"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.enrich.funding-total-investment-number",
+          "runId": "notarize-crustdata-20261012T011404Z"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.enrich.employee-count-range-string",
+          "runId": "notarize-crustdata-20261012T011404Z"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.enrich.last-fundraise-date-string",
+          "runId": "notarize-crustdata-20261012T011404Z"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.enrich.default-fields-basic-info",
+          "runId": "notarize-crustdata-20261012T011404Z"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.enrich.no-match-200-empty",
+          "runId": "notarize-crustdata-20261012T011404Z"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.identify.no-match-200-empty",
+          "runId": "notarize-crustdata-20261012T011404Z"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.identify.invalid-fields-400",
+          "runId": "notarize-crustdata-20261012T011404Z"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.enrich.confidence-score-number",
+          "runId": "notarize-crustdata-20261012T011404Z"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.identify.max-25-identifiers",
+          "runId": "notarize-crustdata-20261012T011404Z"
+        },
+        {
+          "kind": "claim",
+          "id": "crustdata.credits.balance-number",
+          "runId": "notarize-crustdata-20261012T011404Z"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-ac8e10949d6a64f5",
+          "runId": "notarize-crustdata-20261012T011404Z"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.funding-total-investment-number",
+          "runId": "notarize-crustdata-20261012T011404Z-replay"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.employee-count-range-string",
+          "runId": "notarize-crustdata-20261012T011404Z-replay"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.last-fundraise-date-string",
+          "runId": "notarize-crustdata-20261012T011404Z-replay"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.default-fields-basic-info",
+          "runId": "notarize-crustdata-20261012T011404Z-replay"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.no-match-200-empty",
+          "runId": "notarize-crustdata-20261012T011404Z-replay"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.identify.no-match-200-empty",
+          "runId": "notarize-crustdata-20261012T011404Z-replay"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.identify.invalid-fields-400",
+          "runId": "notarize-crustdata-20261012T011404Z-replay"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.confidence-score-number",
+          "runId": "notarize-crustdata-20261012T011404Z-replay"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.identify.max-25-identifiers",
+          "runId": "notarize-crustdata-20261012T011404Z-replay"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.credits.balance-number",
+          "runId": "notarize-crustdata-20261012T011404Z-replay"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-crustdata.enrich.headcount-total-integer",
+          "runId": "notarize-crustdata-20261012T011404Z-replay"
+        },
+        {
+          "kind": "probe",
+          "id": "notarize-crustdata-20261012T011404Z-p002",
+          "runId": "notarize-crustdata-20261012T011404Z",
+          "traceId": "9db41ecd43406cef291c93ef8c9ab1cd"
+        },
+        {
+          "kind": "probe",
+          "id": "notarize-crustdata-20261012T011404Z-p003",
+          "runId": "notarize-crustdata-20261012T011404Z",
+          "traceId": "9db41ecd43406cef291c93ef8c9ab1cd"
+        },
+        {
+          "kind": "probe",
+          "id": "notarize-crustdata-20261012T011404Z-p004",
+          "runId": "notarize-crustdata-20261012T011404Z",
+          "traceId": "9db41ecd43406cef291c93ef8c9ab1cd"
+        },
+        {
+          "kind": "probe",
+          "id": "notarize-crustdata-20261012T011404Z-p001",
+          "runId": "notarize-crustdata-20261012T011404Z",
+          "traceId": "9db41ecd43406cef291c93ef8c9ab1cd"
+        }
+      ],
+      "runIds": [
+        "notarize-crustdata-20261012T011404Z",
+        "notarize-crustdata-20261012T011404Z-replay"
+      ],
+      "sample": false
+    },
+    {
+      "id": "tool_knowledge:real:dodo",
+      "kind": "tool_knowledge",
+      "question": "What does Notary know about dodo (the real runs)?",
+      "answer": "15 documented dodo claims appear in this world's runs. Certified: 4 dodo claims (4 match the docs, 0 contradict them). dodo.payments.page-size-max-100: matches the docs (certificate cert-56762217f480a3c4, P(doc claim holds) = 0.9375, Beta(4, 1)). dodo.refunds.page-size-max-100: matches the docs (certificate cert-fd3fe92edee88644, P(doc claim holds) = 0.9375, Beta(4, 1)). dodo.wallet.credit-amount-minor-units: matches the docs (certificate cert-90b6704587c8abbf, P(doc claim holds) = 0.9375, Beta(4, 1)). dodo.wallet.idempotency-key-no-duplicate: matches the docs (certificate cert-a38f91281f30925e, P(doc claim holds) = 0.9375, Beta(4, 1)). Unproven: 11 dodo claims without an active certificate (never_probed ×10, abstained ×1). dodo.payments.page-size-max-100 is notarized (latest snapshot in notarize-dodo-20261012T014032Z-replay): P(doc claim holds) = 0.9375, Beta(4, 1), so the docs hold; 3 cited probes (boundary_sweep confirmed honored ×3); Adversary narrow. dodo.refunds.page-size-max-100 is notarized (latest snapshot in notarize-dodo-20261012T014032Z-replay): P(doc claim holds) = 0.9375, Beta(4, 1), so the docs hold; 3 cited probes (boundary_sweep confirmed honored ×3); Adversary narrow. dodo.wallet.credit-amount-minor-units is notarized (latest snapshot in notarize-dodo-20261012T014032Z-replay): P(doc claim holds) = 0.9375, Beta(4, 1), so the docs hold; 3 cited probes (unit_roundtrip confirmed honored ×3); Adversary narrow. dodo.wallet.idempotency-key-no-duplicate is notarized (latest snapshot in notarize-dodo-20261012T014032Z-replay): P(doc claim holds) = 0.9375, Beta(4, 1), so the docs hold; 3 cited probes (retry_after_timeout confirmed honored ×3); Adversary narrow. Other dodo beliefs (latest snapshots): hypothesis ×10, abstained ×1. 15 probes ran on dodo claims in this world; verdicts: confirmed ×12, uninformative ×3; templates: boundary_sweep ×6, type_edge ×3, unit_roundtrip ×3, retry_after_timeout ×3. No guard was compiled from dodo beliefs in this world.",
+      "citations": [
+        {
+          "kind": "claim",
+          "id": "dodo.refund.amount-minor-units",
+          "runId": "notarize-dodo-20261012T012315Z"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.refund.full-retry-no-duplicate",
+          "runId": "notarize-dodo-20261012T012315Z"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.refunds.amount-integer",
+          "runId": "notarize-dodo-20261012T012315Z"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.refunds.page-size-max-100",
+          "runId": "notarize-dodo-20261012T012315Z"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.payments.page-size-max-100",
+          "runId": "notarize-dodo-20261012T012315Z"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.payment.refunds-array-present",
+          "runId": "notarize-dodo-20261012T012315Z"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.payment.refunds-lists-issued-refund",
+          "runId": "notarize-dodo-20261012T012315Z"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.product.price-minor-units",
+          "runId": "notarize-dodo-20261012T012315Z"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.customer.missing-email-422",
+          "runId": "notarize-dodo-20261012T012315Z"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.subscription.change-plan-pending-409",
+          "runId": "notarize-dodo-20261012T012315Z"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.wallet.credit-amount-minor-units",
+          "runId": "notarize-dodo-20261012T012315Z"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.wallet.idempotency-key-no-duplicate",
+          "runId": "notarize-dodo-20261012T012315Z"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.wallet.debit-insufficient-400",
+          "runId": "notarize-dodo-20261012T012315Z"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.wallets.total-balance-usd-integer",
+          "runId": "notarize-dodo-20261012T012315Z"
+        },
+        {
+          "kind": "claim",
+          "id": "dodo.wallet.ledger-response-balance-integer",
+          "runId": "notarize-dodo-20261012T012315Z"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-56762217f480a3c4",
+          "runId": "notarize-dodo-20261012T012315Z"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-fd3fe92edee88644",
+          "runId": "notarize-dodo-20261012T012315Z"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-90b6704587c8abbf",
+          "runId": "notarize-dodo-20261012T012315Z"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-a38f91281f30925e",
+          "runId": "notarize-dodo-20261012T012315Z"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.amount-minor-units",
+          "runId": "notarize-dodo-20261012T014032Z-replay"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refund.full-retry-no-duplicate",
+          "runId": "notarize-dodo-20261012T014032Z-replay"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.amount-integer",
+          "runId": "notarize-dodo-20261012T014032Z-replay"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payment.refunds-array-present",
+          "runId": "notarize-dodo-20261012T014032Z-replay"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payment.refunds-lists-issued-refund",
+          "runId": "notarize-dodo-20261012T014032Z-replay"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.product.price-minor-units",
+          "runId": "notarize-dodo-20261012T014032Z-replay"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.customer.missing-email-422",
+          "runId": "notarize-dodo-20261012T014032Z-replay"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.subscription.change-plan-pending-409",
+          "runId": "notarize-dodo-20261012T014032Z-replay"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.debit-insufficient-400",
+          "runId": "notarize-dodo-20261012T014032Z-replay"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallets.total-balance-usd-integer",
+          "runId": "notarize-dodo-20261012T014032Z-replay"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.ledger-response-balance-integer",
+          "runId": "notarize-dodo-20261012T014032Z-replay"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.payments.page-size-max-100",
+          "runId": "notarize-dodo-20261012T014032Z-replay"
+        },
+        {
+          "kind": "probe",
+          "id": "notarize-dodo-20261012T012315Z-p001",
+          "runId": "notarize-dodo-20261012T012315Z",
+          "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d"
+        },
+        {
+          "kind": "probe",
+          "id": "notarize-dodo-20261012T012315Z-p002",
+          "runId": "notarize-dodo-20261012T012315Z",
+          "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d"
+        },
+        {
+          "kind": "probe",
+          "id": "notarize-dodo-20261012T012315Z-p003",
+          "runId": "notarize-dodo-20261012T012315Z",
+          "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.refunds.page-size-max-100",
+          "runId": "notarize-dodo-20261012T014032Z-replay"
+        },
+        {
+          "kind": "probe",
+          "id": "notarize-dodo-20261012T012315Z-p007",
+          "runId": "notarize-dodo-20261012T012315Z",
+          "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d"
+        },
+        {
+          "kind": "probe",
+          "id": "notarize-dodo-20261012T012315Z-p008",
+          "runId": "notarize-dodo-20261012T012315Z",
+          "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d"
+        },
+        {
+          "kind": "probe",
+          "id": "notarize-dodo-20261012T012315Z-p009",
+          "runId": "notarize-dodo-20261012T012315Z",
+          "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.credit-amount-minor-units",
+          "runId": "notarize-dodo-20261012T014032Z-replay"
+        },
+        {
+          "kind": "probe",
+          "id": "notarize-dodo-20261012T012315Z-p010",
+          "runId": "notarize-dodo-20261012T012315Z",
+          "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d"
+        },
+        {
+          "kind": "probe",
+          "id": "notarize-dodo-20261012T012315Z-p011",
+          "runId": "notarize-dodo-20261012T012315Z",
+          "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d"
+        },
+        {
+          "kind": "probe",
+          "id": "notarize-dodo-20261012T012315Z-p012",
+          "runId": "notarize-dodo-20261012T012315Z",
+          "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d"
+        },
+        {
+          "kind": "belief",
+          "id": "belief-dodo.wallet.idempotency-key-no-duplicate",
+          "runId": "notarize-dodo-20261012T014032Z-replay"
+        },
+        {
+          "kind": "probe",
+          "id": "notarize-dodo-20261012T012315Z-p013",
+          "runId": "notarize-dodo-20261012T012315Z",
+          "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d"
+        },
+        {
+          "kind": "probe",
+          "id": "notarize-dodo-20261012T012315Z-p014",
+          "runId": "notarize-dodo-20261012T012315Z",
+          "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d"
+        },
+        {
+          "kind": "probe",
+          "id": "notarize-dodo-20261012T012315Z-p015",
+          "runId": "notarize-dodo-20261012T012315Z",
+          "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d"
+        },
+        {
+          "kind": "probe",
+          "id": "notarize-dodo-20261012T012315Z-p004",
+          "runId": "notarize-dodo-20261012T012315Z",
+          "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d"
+        },
+        {
+          "kind": "probe",
+          "id": "notarize-dodo-20261012T012315Z-p005",
+          "runId": "notarize-dodo-20261012T012315Z",
+          "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d"
+        },
+        {
+          "kind": "probe",
+          "id": "notarize-dodo-20261012T012315Z-p006",
+          "runId": "notarize-dodo-20261012T012315Z",
+          "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d"
+        }
+      ],
+      "runIds": [
+        "notarize-dodo-20261012T012315Z",
+        "notarize-dodo-20261012T014032Z",
+        "notarize-dodo-20261012T014032Z-replay",
+        "recon-dodo-20261012T013640Z",
+        "recon-dodo-20261012T013640Z-replay"
+      ],
+      "sample": false
+    },
+    {
+      "id": "revocations:real",
+      "kind": "revocations",
+      "question": "Which certificates were revoked, and why (the real runs)?",
+      "answer": "No certificate in the real runs was revoked: all 5 issued certificates are active.",
+      "citations": [
+        {
+          "kind": "certificate",
+          "id": "cert-ac8e10949d6a64f5",
+          "runId": "notarize-crustdata-20261012T011404Z"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-56762217f480a3c4",
+          "runId": "notarize-dodo-20261012T012315Z"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-fd3fe92edee88644",
+          "runId": "notarize-dodo-20261012T012315Z"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-90b6704587c8abbf",
+          "runId": "notarize-dodo-20261012T012315Z"
+        },
+        {
+          "kind": "certificate",
+          "id": "cert-a38f91281f30925e",
+          "runId": "notarize-dodo-20261012T012315Z"
+        }
+      ],
+      "runIds": [
+        "notarize-crustdata-20261012T011404Z",
+        "notarize-dodo-20261012T012315Z"
+      ],
+      "sample": false
+    },
+    {
       "id": "why_held:demo-change-api-run-guarded:demo-change-api-run-guarded:q02",
       "kind": "why_held",
       "question": "Why was q02 held in run demo-change-api-run-guarded?",

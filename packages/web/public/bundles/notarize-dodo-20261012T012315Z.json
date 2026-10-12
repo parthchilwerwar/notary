@@ -1,0 +1,2861 @@
+{
+  "runId": "notarize-dodo-20261012T012315Z",
+  "kind": "notarize",
+  "variant": "notarize",
+  "mode": "live",
+  "sample": false,
+  "disclosure": [
+    "Notarize run: anomalies from the deterministic checker, rival hypotheses proposed by the reflector model, probes with predictions committed before each call, verdicts by deterministic rules. Beliefs are Beta(α, β) over the doc claim holding (only confirmed probes update), every cited span is checked against runs/<runId>/spans.jsonl, and candidates are reviewed by the adversary.",
+    "Dodo Payments test mode only; refund and change-plan probes use seeded probe-only payments and subscriptions the seeded queue does not reference.",
+    "Verification probes: 9 required claim(s) with no anomaly this run (dodo.payment.refunds-lists-issued-refund, dodo.payments.page-size-max-100, dodo.refund.amount-minor-units, dodo.refund.full-retry-no-duplicate, dodo.refunds.amount-integer, dodo.refunds.page-size-max-100, dodo.subscription.change-plan-pending-409, dodo.wallet.credit-amount-minor-units, dodo.wallet.idempotency-key-no-duplicate) were probed against a deterministic rival pair {honored, suspected class from src/contracts/priors-map.ts} built by code, not proposed by a model; same commit-then-run loop, caps and budget.",
+    "Transfer priors from crustdata notarize bundle notarize-crustdata-20261012T011404Z: each new belief started from Beta(1 + s(1 - r), 1 + s*r), r = the crustdata base rate of its claim's suspected defect class, s = 2 pseudo-counts (Beta(1, 1) when crustdata settled nothing relevant).",
+    "belief_precision is measured against the deterministic checker on the SAME recording (not an independent ground truth); see docs/AUDIT.md A-14"
+  ],
+  "startedAt": "2026-10-12T01:23:15.107Z",
+  "finishedAt": "2026-10-12T01:29:12.136Z",
+  "status": "completed",
+  "seed": 0,
+  "tool": "dodo",
+  "priorsFrom": "crustdata",
+  "queue": [],
+  "decisions": [],
+  "claims": [
+    {
+      "id": "dodo.refund.amount-minor-units",
+      "tool": "dodo",
+      "operation": "dodo.createRefund",
+      "param": "items[].amount",
+      "docText": "the `amount` to refund in the smallest currency unit.",
+      "expect": {
+        "kind": "unit",
+        "field": "amount",
+        "unit": "minor"
+      },
+      "docUrl": "https://docs.dodopayments.com/features/transactions/refunds.md",
+      "endpoint": "POST /refunds",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.refund.full-retry-no-duplicate",
+      "tool": "dodo",
+      "operation": "dodo.createRefund",
+      "param": "refund_id",
+      "docText": "[implied] The refund, together with any earlier refunds on the payment, can't exceed the amount paid.",
+      "expect": {
+        "kind": "idempotentOnRetry"
+      },
+      "docUrl": "https://docs.dodopayments.com/features/transactions/refunds.md",
+      "endpoint": "POST /refunds",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.refunds.amount-integer",
+      "tool": "dodo",
+      "operation": "dodo.listRefunds",
+      "param": "",
+      "docText": "amount: integer or null (int32). The refunded amount.",
+      "expect": {
+        "kind": "type",
+        "field": "items[].amount",
+        "type": "integer|null"
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/refunds/get-refunds.md",
+      "endpoint": "GET /refunds",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.refunds.page-size-max-100",
+      "tool": "dodo",
+      "operation": "dodo.listRefunds",
+      "param": "page_size",
+      "docText": "Page size default is 10 max is 100",
+      "expect": {
+        "kind": "maxItems",
+        "max": 100
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/refunds/get-refunds.md",
+      "endpoint": "GET /refunds",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.payments.page-size-max-100",
+      "tool": "dodo",
+      "operation": "dodo.listPayments",
+      "param": "page_size",
+      "docText": "Page size default is 10 max is 100",
+      "expect": {
+        "kind": "maxItems",
+        "max": 100
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/payments/get-payments.md",
+      "endpoint": "GET /payments",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.payment.refunds-array-present",
+      "tool": "dodo",
+      "operation": "dodo.getPayment",
+      "param": "payment_id",
+      "docText": "refunds: List of refunds issued for this payment (required)",
+      "expect": {
+        "kind": "fieldPresent",
+        "field": "refunds"
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/payments/get-payments-1.md",
+      "endpoint": "GET /payments/{payment_id}",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.payment.refunds-lists-issued-refund",
+      "tool": "dodo",
+      "operation": "dodo.createRefund",
+      "param": "refund_id",
+      "docText": "[implied] refunds: List of refunds issued for this payment",
+      "expect": {
+        "kind": "consistentWithin",
+        "ms": 1000
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/payments/get-payments-1.md",
+      "endpoint": "POST /refunds",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.product.price-minor-units",
+      "tool": "dodo",
+      "operation": "dodo.createProduct",
+      "param": "price.price",
+      "docText": "The payment amount, in the smallest denomination of the currency (e.g., cents for USD).",
+      "expect": {
+        "kind": "unit",
+        "field": "price.price",
+        "unit": "minor"
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/products/post-products.md",
+      "endpoint": "POST /products",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.customer.missing-email-422",
+      "tool": "dodo",
+      "operation": "dodo.createCustomer",
+      "param": "email",
+      "docText": "required: name, email. 422: Invalid Request Object or Parameters",
+      "expect": {
+        "kind": "statusOnError",
+        "status": 422
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/customers/create-customer.md",
+      "endpoint": "POST /customers",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.subscription.change-plan-pending-409",
+      "tool": "dodo",
+      "operation": "dodo.changeSubscriptionPlan",
+      "param": "subscription_id",
+      "docText": "409: A pending plan change already exists for this subscription (PendingPlanChangeExists).",
+      "expect": {
+        "kind": "statusOnError",
+        "status": 409
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/subscriptions/change-plan.md",
+      "endpoint": "POST /subscriptions/{subscription_id}/change-plan",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.wallet.credit-amount-minor-units",
+      "tool": "dodo",
+      "operation": "dodo.createWalletLedgerEntry",
+      "param": "amount",
+      "docText": "`amount` is a positive integer in the smallest currency unit.",
+      "expect": {
+        "kind": "unit",
+        "field": "balance",
+        "unit": "minor"
+      },
+      "docUrl": "https://docs.dodopayments.com/features/customer-wallet.md",
+      "endpoint": "POST /customers/{customer_id}/wallets/ledger-entries",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.wallet.idempotency-key-no-duplicate",
+      "tool": "dodo",
+      "operation": "dodo.createWalletLedgerEntry",
+      "param": "",
+      "docText": "If you repeat a request with the same key, Dodo Payments creates no new entry and returns the current wallet.",
+      "expect": {
+        "kind": "maxItems",
+        "max": 1
+      },
+      "docUrl": "https://docs.dodopayments.com/features/customer-wallet.md",
+      "endpoint": "POST /customers/{customer_id}/wallets/ledger-entries",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.wallet.debit-insufficient-400",
+      "tool": "dodo",
+      "operation": "dodo.createWalletLedgerEntry",
+      "param": "entry_type",
+      "docText": "A debit larger than the balance fails with `400`.",
+      "expect": {
+        "kind": "statusOnError",
+        "status": 400
+      },
+      "docUrl": "https://docs.dodopayments.com/features/customer-wallet.md",
+      "endpoint": "POST /customers/{customer_id}/wallets/ledger-entries",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.wallets.total-balance-usd-integer",
+      "tool": "dodo",
+      "operation": "dodo.listCustomerWallets",
+      "param": "customer_id",
+      "docText": "total_balance_usd: integer (int64). Sum of all wallet balances converted to USD (in smallest unit)",
+      "expect": {
+        "kind": "type",
+        "field": "total_balance_usd",
+        "type": "integer"
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/customers/get-customer-wallets.md",
+      "endpoint": "GET /customers/{customer_id}/wallets",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.wallet.ledger-response-balance-integer",
+      "tool": "dodo",
+      "operation": "dodo.createWalletLedgerEntry",
+      "param": "",
+      "docText": "balance: integer (int64) (CustomerWalletResponse)",
+      "expect": {
+        "kind": "type",
+        "field": "balance",
+        "type": "integer"
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/customers/post-customer-wallets-ledger-entries.md",
+      "endpoint": "POST /customers/{customer_id}/wallets/ledger-entries",
+      "costCredits": 0
+    }
+  ],
+  "anomalies": [],
+  "hypotheses": [
+    {
+      "id": "hyp-db223ee84503",
+      "anomalyId": "verify:dodo.payment.refunds-lists-issued-refund",
+      "class": "eventual_consistency",
+      "statement": "Verification rival (deterministic, not model-proposed; suspected class from src/contracts/priors-map.ts): eventual_consistency: a write is not visible to an immediate read; it appears later.",
+      "distinguishingTest": "write_then_read"
+    },
+    {
+      "id": "hyp-e39eef03124b",
+      "anomalyId": "verify:dodo.payment.refunds-lists-issued-refund",
+      "class": "honored",
+      "statement": "Verification rival (deterministic, not model-proposed; no anomaly observed): the documented claim holds for dodo.createRefund [refund_id].",
+      "distinguishingTest": "write_then_read"
+    },
+    {
+      "id": "hyp-4daedaff3435",
+      "anomalyId": "verify:dodo.payments.page-size-max-100",
+      "class": "silent_truncation",
+      "statement": "Verification rival (deterministic, not model-proposed; suspected class from src/contracts/priors-map.ts): silent_truncation: fewer items/characters returned than requested or documented, with no error.",
+      "distinguishingTest": "boundary_sweep"
+    },
+    {
+      "id": "hyp-6b09f86e4f55",
+      "anomalyId": "verify:dodo.payments.page-size-max-100",
+      "class": "honored",
+      "statement": "Verification rival (deterministic, not model-proposed; no anomaly observed): the documented claim holds for dodo.listPayments [page_size].",
+      "distinguishingTest": "boundary_sweep"
+    },
+    {
+      "id": "hyp-d35a569b03f5",
+      "anomalyId": "verify:dodo.refund.amount-minor-units",
+      "class": "honored",
+      "statement": "Verification rival (deterministic, not model-proposed; no anomaly observed): the documented claim holds for dodo.createRefund [items[].amount].",
+      "distinguishingTest": "unit_roundtrip"
+    },
+    {
+      "id": "hyp-e9e37af8b503",
+      "anomalyId": "verify:dodo.refund.amount-minor-units",
+      "class": "unit_mismatch",
+      "statement": "Verification rival (deterministic, not model-proposed; suspected class from src/contracts/priors-map.ts): unit_mismatch: a number is in a different unit than documented (e.g. major vs minor currency units).",
+      "distinguishingTest": "unit_roundtrip"
+    },
+    {
+      "id": "hyp-661c1b2f1f7e",
+      "anomalyId": "verify:dodo.refund.full-retry-no-duplicate",
+      "class": "honored",
+      "statement": "Verification rival (deterministic, not model-proposed; no anomaly observed): the documented claim holds for dodo.createRefund [refund_id].",
+      "distinguishingTest": "retry_after_timeout"
+    },
+    {
+      "id": "hyp-6fcbaf9b0468",
+      "anomalyId": "verify:dodo.refund.full-retry-no-duplicate",
+      "class": "idempotency_hazard",
+      "statement": "Verification rival (deterministic, not model-proposed; suspected class from src/contracts/priors-map.ts): idempotency_hazard: repeating a request creates a duplicate effect.",
+      "distinguishingTest": "retry_after_timeout"
+    },
+    {
+      "id": "hyp-c744a27924fa",
+      "anomalyId": "verify:dodo.refunds.amount-integer",
+      "class": "honored",
+      "statement": "Verification rival (deterministic, not model-proposed; no anomaly observed): the documented claim holds for dodo.listRefunds.",
+      "distinguishingTest": "type_edge"
+    },
+    {
+      "id": "hyp-d6cbdd6239f9",
+      "anomalyId": "verify:dodo.refunds.amount-integer",
+      "class": "silent_coercion",
+      "statement": "Verification rival (deterministic, not model-proposed; suspected class from src/contracts/priors-map.ts): silent_coercion: a value is silently converted (type, rounding, clamping) instead of rejected.",
+      "distinguishingTest": "type_edge"
+    },
+    {
+      "id": "hyp-47335cea9441",
+      "anomalyId": "verify:dodo.refunds.page-size-max-100",
+      "class": "honored",
+      "statement": "Verification rival (deterministic, not model-proposed; no anomaly observed): the documented claim holds for dodo.listRefunds [page_size].",
+      "distinguishingTest": "boundary_sweep"
+    },
+    {
+      "id": "hyp-b6be1c089529",
+      "anomalyId": "verify:dodo.refunds.page-size-max-100",
+      "class": "silent_truncation",
+      "statement": "Verification rival (deterministic, not model-proposed; suspected class from src/contracts/priors-map.ts): silent_truncation: fewer items/characters returned than requested or documented, with no error.",
+      "distinguishingTest": "boundary_sweep"
+    },
+    {
+      "id": "hyp-543363473162",
+      "anomalyId": "verify:dodo.subscription.change-plan-pending-409",
+      "class": "honored",
+      "statement": "Verification rival (deterministic, not model-proposed; no anomaly observed): the documented claim holds for dodo.changeSubscriptionPlan [subscription_id].",
+      "distinguishingTest": "retry_after_timeout"
+    },
+    {
+      "id": "hyp-7803f9a6a0c7",
+      "anomalyId": "verify:dodo.subscription.change-plan-pending-409",
+      "class": "idempotency_hazard",
+      "statement": "Verification rival (deterministic, not model-proposed; suspected class from src/contracts/priors-map.ts): idempotency_hazard: repeating a request creates a duplicate effect.",
+      "distinguishingTest": "retry_after_timeout"
+    },
+    {
+      "id": "hyp-be916b968dc8",
+      "anomalyId": "verify:dodo.wallet.credit-amount-minor-units",
+      "class": "honored",
+      "statement": "Verification rival (deterministic, not model-proposed; no anomaly observed): the documented claim holds for dodo.createWalletLedgerEntry [amount].",
+      "distinguishingTest": "unit_roundtrip"
+    },
+    {
+      "id": "hyp-ca8a731b4705",
+      "anomalyId": "verify:dodo.wallet.credit-amount-minor-units",
+      "class": "unit_mismatch",
+      "statement": "Verification rival (deterministic, not model-proposed; suspected class from src/contracts/priors-map.ts): unit_mismatch: a number is in a different unit than documented (e.g. major vs minor currency units).",
+      "distinguishingTest": "unit_roundtrip"
+    },
+    {
+      "id": "hyp-8599a750e379",
+      "anomalyId": "verify:dodo.wallet.idempotency-key-no-duplicate",
+      "class": "idempotency_hazard",
+      "statement": "Verification rival (deterministic, not model-proposed; suspected class from src/contracts/priors-map.ts): idempotency_hazard: repeating a request creates a duplicate effect.",
+      "distinguishingTest": "retry_after_timeout"
+    },
+    {
+      "id": "hyp-d9ead836ca14",
+      "anomalyId": "verify:dodo.wallet.idempotency-key-no-duplicate",
+      "class": "honored",
+      "statement": "Verification rival (deterministic, not model-proposed; no anomaly observed): the documented claim holds for dodo.createWalletLedgerEntry.",
+      "distinguishingTest": "retry_after_timeout"
+    }
+  ],
+  "probes": [
+    {
+      "id": "notarize-dodo-20261012T012315Z-p001",
+      "tool": "dodo",
+      "claimId": "dodo.payments.page-size-max-100",
+      "hypothesisIds": [
+        "hyp-4daedaff3435",
+        "hyp-6b09f86e4f55"
+      ],
+      "template": "boundary_sweep",
+      "params": {
+        "steps": [
+          {
+            "op": "dodo.listPayments",
+            "params": {
+              "page_size": 101
+            },
+            "tag": "over",
+            "note": "page_size=101 (1 over the documented max)"
+          }
+        ],
+        "max": 100
+      },
+      "control": {
+        "params": {
+          "steps": [
+            {
+              "op": "dodo.listPayments",
+              "params": {
+                "page_size": 1
+              },
+              "tag": "one",
+              "note": "page_size=1 (instrument: the size param must matter)"
+            },
+            {
+              "op": "dodo.listPayments",
+              "params": {
+                "page_size": 100
+              },
+              "tag": "max",
+              "note": "page_size=100 (can the data fill a page?)"
+            }
+          ]
+        },
+        "observed": {
+          "one": {
+            "status": 200,
+            "length": 1
+          },
+          "atMax": {
+            "status": 200,
+            "length": 1
+          }
+        }
+      },
+      "prediction": {
+        "hyp-4daedaff3435": {
+          "class": "silent_truncation",
+          "outcomes": [
+            "clamped"
+          ]
+        },
+        "hyp-6b09f86e4f55": {
+          "class": "honored",
+          "outcomes": [
+            "rejected"
+          ]
+        }
+      },
+      "predictionHash": "3204744d3794dfc64f8f3596481bc86a7922c879ce90799a83335aba3964a2d2",
+      "committedAt": "2026-10-12T01:23:34.762Z",
+      "ranAt": "2026-10-12T01:23:35.534Z",
+      "observed": {
+        "outcome": "rejected",
+        "over": {
+          "status": 400,
+          "length": null
+        },
+        "reason": "observation matches hyp-6b09f86e4f55 and contradicts every rival"
+      },
+      "verdict": "confirmed",
+      "winningHypothesisId": "hyp-6b09f86e4f55",
+      "costCredits": 0,
+      "calls": 3,
+      "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+      "spanId": "1945989db8704aad"
+    },
+    {
+      "id": "notarize-dodo-20261012T012315Z-p002",
+      "tool": "dodo",
+      "claimId": "dodo.payments.page-size-max-100",
+      "hypothesisIds": [
+        "hyp-4daedaff3435",
+        "hyp-6b09f86e4f55"
+      ],
+      "template": "boundary_sweep",
+      "params": {
+        "steps": [
+          {
+            "op": "dodo.listPayments",
+            "params": {
+              "page_size": 110
+            },
+            "tag": "over",
+            "note": "page_size=110 (10 over the documented max)"
+          }
+        ],
+        "max": 100,
+        "variant": 1
+      },
+      "control": {
+        "params": {
+          "steps": [
+            {
+              "op": "dodo.listPayments",
+              "params": {
+                "page_size": 1
+              },
+              "tag": "one",
+              "note": "page_size=1 (instrument: the size param must matter)"
+            },
+            {
+              "op": "dodo.listPayments",
+              "params": {
+                "page_size": 100
+              },
+              "tag": "max",
+              "note": "page_size=100 (can the data fill a page?)"
+            }
+          ]
+        },
+        "observed": {
+          "one": {
+            "status": 200,
+            "length": 1
+          },
+          "atMax": {
+            "status": 200,
+            "length": 1
+          }
+        }
+      },
+      "prediction": {
+        "hyp-4daedaff3435": {
+          "class": "silent_truncation",
+          "outcomes": [
+            "clamped"
+          ]
+        },
+        "hyp-6b09f86e4f55": {
+          "class": "honored",
+          "outcomes": [
+            "rejected"
+          ]
+        }
+      },
+      "predictionHash": "3204744d3794dfc64f8f3596481bc86a7922c879ce90799a83335aba3964a2d2",
+      "committedAt": "2026-10-12T01:23:36.112Z",
+      "ranAt": "2026-10-12T01:23:36.415Z",
+      "observed": {
+        "outcome": "rejected",
+        "over": {
+          "status": 400,
+          "length": null
+        },
+        "reason": "observation matches hyp-6b09f86e4f55 and contradicts every rival"
+      },
+      "verdict": "confirmed",
+      "winningHypothesisId": "hyp-6b09f86e4f55",
+      "costCredits": 0,
+      "calls": 3,
+      "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+      "spanId": "72b633a7b83766e5"
+    },
+    {
+      "id": "notarize-dodo-20261012T012315Z-p003",
+      "tool": "dodo",
+      "claimId": "dodo.payments.page-size-max-100",
+      "hypothesisIds": [
+        "hyp-4daedaff3435",
+        "hyp-6b09f86e4f55"
+      ],
+      "template": "boundary_sweep",
+      "params": {
+        "steps": [
+          {
+            "op": "dodo.listPayments",
+            "params": {
+              "page_size": 200
+            },
+            "tag": "over",
+            "note": "page_size=200 (100 over the documented max)"
+          }
+        ],
+        "max": 100,
+        "variant": 2
+      },
+      "control": {
+        "params": {
+          "steps": [
+            {
+              "op": "dodo.listPayments",
+              "params": {
+                "page_size": 1
+              },
+              "tag": "one",
+              "note": "page_size=1 (instrument: the size param must matter)"
+            },
+            {
+              "op": "dodo.listPayments",
+              "params": {
+                "page_size": 100
+              },
+              "tag": "max",
+              "note": "page_size=100 (can the data fill a page?)"
+            }
+          ]
+        },
+        "observed": {
+          "one": {
+            "status": 200,
+            "length": 1
+          },
+          "atMax": {
+            "status": 200,
+            "length": 1
+          }
+        }
+      },
+      "prediction": {
+        "hyp-4daedaff3435": {
+          "class": "silent_truncation",
+          "outcomes": [
+            "clamped"
+          ]
+        },
+        "hyp-6b09f86e4f55": {
+          "class": "honored",
+          "outcomes": [
+            "rejected"
+          ]
+        }
+      },
+      "predictionHash": "3204744d3794dfc64f8f3596481bc86a7922c879ce90799a83335aba3964a2d2",
+      "committedAt": "2026-10-12T01:23:36.523Z",
+      "ranAt": "2026-10-12T01:23:36.891Z",
+      "observed": {
+        "outcome": "rejected",
+        "over": {
+          "status": 400,
+          "length": null
+        },
+        "reason": "observation matches hyp-6b09f86e4f55 and contradicts every rival"
+      },
+      "verdict": "confirmed",
+      "winningHypothesisId": "hyp-6b09f86e4f55",
+      "costCredits": 0,
+      "calls": 3,
+      "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+      "spanId": "e5099c5f7c0c3642"
+    },
+    {
+      "id": "notarize-dodo-20261012T012315Z-p004",
+      "tool": "dodo",
+      "claimId": "dodo.refunds.amount-integer",
+      "hypothesisIds": [
+        "hyp-c744a27924fa",
+        "hyp-d6cbdd6239f9"
+      ],
+      "template": "type_edge",
+      "params": {
+        "steps": [
+          {
+            "op": "dodo.listRefunds",
+            "params": {
+              "page_size": 100
+            },
+            "tag": "read",
+            "note": "Refunds, page_size 100"
+          }
+        ],
+        "field": "items[].amount",
+        "type": "integer|null"
+      },
+      "control": {
+        "params": {
+          "steps": [
+            {
+              "op": "dodo.listRefunds",
+              "params": {
+                "page_size": 1
+              },
+              "tag": "read",
+              "note": "Refunds, page_size 1"
+            }
+          ]
+        },
+        "observed": {
+          "values": [],
+          "count": 0
+        }
+      },
+      "prediction": {
+        "hyp-c744a27924fa": {
+          "class": "honored",
+          "outcomes": [
+            "doc_type"
+          ]
+        },
+        "hyp-d6cbdd6239f9": {
+          "class": "silent_coercion",
+          "outcomes": [
+            "float",
+            "formatted_string",
+            "numeric_string"
+          ]
+        }
+      },
+      "predictionHash": "87c8c94a07ac0b114212dc1fb2ec4067e30f88c353364346346cbbd1c6480ae4",
+      "committedAt": "2026-10-12T01:23:37.207Z",
+      "ranAt": "2026-10-12T01:23:37.430Z",
+      "observed": {
+        "outcome": null,
+        "values": [],
+        "count": 0,
+        "note": "no non-null value at items[].amount",
+        "reason": "uninformative observation: no update"
+      },
+      "verdict": "uninformative",
+      "costCredits": 0,
+      "calls": 2,
+      "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+      "spanId": "bb144e442ddb71d5"
+    },
+    {
+      "id": "notarize-dodo-20261012T012315Z-p005",
+      "tool": "dodo",
+      "claimId": "dodo.refunds.amount-integer",
+      "hypothesisIds": [
+        "hyp-c744a27924fa",
+        "hyp-d6cbdd6239f9"
+      ],
+      "template": "type_edge",
+      "params": {
+        "steps": [
+          {
+            "op": "dodo.listRefunds",
+            "params": {
+              "page_size": 10,
+              "page_number": 1
+            },
+            "tag": "read",
+            "note": "Refunds, page_size 10, page 1"
+          }
+        ],
+        "field": "items[].amount",
+        "type": "integer|null",
+        "variant": 1
+      },
+      "control": {
+        "params": {
+          "steps": [
+            {
+              "op": "dodo.listRefunds",
+              "params": {
+                "page_size": 1
+              },
+              "tag": "read",
+              "note": "Refunds, page_size 1"
+            }
+          ]
+        },
+        "observed": {
+          "values": [],
+          "count": 0
+        }
+      },
+      "prediction": {
+        "hyp-c744a27924fa": {
+          "class": "honored",
+          "outcomes": [
+            "doc_type"
+          ]
+        },
+        "hyp-d6cbdd6239f9": {
+          "class": "silent_coercion",
+          "outcomes": [
+            "float",
+            "formatted_string",
+            "numeric_string"
+          ]
+        }
+      },
+      "predictionHash": "87c8c94a07ac0b114212dc1fb2ec4067e30f88c353364346346cbbd1c6480ae4",
+      "committedAt": "2026-10-12T01:23:37.577Z",
+      "ranAt": "2026-10-12T01:23:37.734Z",
+      "observed": {
+        "outcome": null,
+        "values": [],
+        "count": 0,
+        "note": "no non-null value at items[].amount",
+        "reason": "uninformative observation: no update"
+      },
+      "verdict": "uninformative",
+      "costCredits": 0,
+      "calls": 2,
+      "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+      "spanId": "02d0e7282a6f7a0a"
+    },
+    {
+      "id": "notarize-dodo-20261012T012315Z-p006",
+      "tool": "dodo",
+      "claimId": "dodo.refunds.amount-integer",
+      "hypothesisIds": [
+        "hyp-c744a27924fa",
+        "hyp-d6cbdd6239f9"
+      ],
+      "template": "type_edge",
+      "params": {
+        "steps": [
+          {
+            "op": "dodo.listRefunds",
+            "params": {
+              "page_size": 10,
+              "page_number": 2
+            },
+            "tag": "read",
+            "note": "Refunds, page_size 10, page 2"
+          }
+        ],
+        "field": "items[].amount",
+        "type": "integer|null",
+        "variant": 2
+      },
+      "control": {
+        "params": {
+          "steps": [
+            {
+              "op": "dodo.listRefunds",
+              "params": {
+                "page_size": 2
+              },
+              "tag": "read",
+              "note": "Refunds, page_size 2"
+            }
+          ]
+        },
+        "observed": {
+          "values": [],
+          "count": 0
+        }
+      },
+      "prediction": {
+        "hyp-c744a27924fa": {
+          "class": "honored",
+          "outcomes": [
+            "doc_type"
+          ]
+        },
+        "hyp-d6cbdd6239f9": {
+          "class": "silent_coercion",
+          "outcomes": [
+            "float",
+            "formatted_string",
+            "numeric_string"
+          ]
+        }
+      },
+      "predictionHash": "87c8c94a07ac0b114212dc1fb2ec4067e30f88c353364346346cbbd1c6480ae4",
+      "committedAt": "2026-10-12T01:23:37.846Z",
+      "ranAt": "2026-10-12T01:23:38.072Z",
+      "observed": {
+        "outcome": null,
+        "values": [],
+        "count": 0,
+        "note": "no non-null value at items[].amount",
+        "reason": "uninformative observation: no update"
+      },
+      "verdict": "uninformative",
+      "costCredits": 0,
+      "calls": 2,
+      "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+      "spanId": "9558137ba92b262c"
+    },
+    {
+      "id": "notarize-dodo-20261012T012315Z-p007",
+      "tool": "dodo",
+      "claimId": "dodo.refunds.page-size-max-100",
+      "hypothesisIds": [
+        "hyp-47335cea9441",
+        "hyp-b6be1c089529"
+      ],
+      "template": "boundary_sweep",
+      "params": {
+        "steps": [
+          {
+            "op": "dodo.listRefunds",
+            "params": {
+              "page_size": 101
+            },
+            "tag": "over",
+            "note": "page_size=101 (1 over the documented max)"
+          }
+        ],
+        "max": 100
+      },
+      "control": {
+        "params": {
+          "steps": [
+            {
+              "op": "dodo.listRefunds",
+              "params": {
+                "page_size": 1
+              },
+              "tag": "one",
+              "note": "page_size=1 (instrument: the size param must matter)"
+            },
+            {
+              "op": "dodo.listRefunds",
+              "params": {
+                "page_size": 100
+              },
+              "tag": "max",
+              "note": "page_size=100 (can the data fill a page?)"
+            }
+          ]
+        },
+        "observed": {
+          "one": {
+            "status": 200,
+            "length": 0
+          },
+          "atMax": {
+            "status": 200,
+            "length": 0
+          }
+        }
+      },
+      "prediction": {
+        "hyp-47335cea9441": {
+          "class": "honored",
+          "outcomes": [
+            "rejected"
+          ]
+        },
+        "hyp-b6be1c089529": {
+          "class": "silent_truncation",
+          "outcomes": [
+            "clamped"
+          ]
+        }
+      },
+      "predictionHash": "78362dca1c7ec31bc1f4ff759ec47d0d8d3b2135220d782f643028fb23bbc1cd",
+      "committedAt": "2026-10-12T01:23:38.341Z",
+      "ranAt": "2026-10-12T01:23:38.603Z",
+      "observed": {
+        "outcome": "rejected",
+        "over": {
+          "status": 400,
+          "length": null
+        },
+        "reason": "observation matches hyp-47335cea9441 and contradicts every rival"
+      },
+      "verdict": "confirmed",
+      "winningHypothesisId": "hyp-47335cea9441",
+      "costCredits": 0,
+      "calls": 3,
+      "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+      "spanId": "0e61d4642d36cf14"
+    },
+    {
+      "id": "notarize-dodo-20261012T012315Z-p008",
+      "tool": "dodo",
+      "claimId": "dodo.refunds.page-size-max-100",
+      "hypothesisIds": [
+        "hyp-47335cea9441",
+        "hyp-b6be1c089529"
+      ],
+      "template": "boundary_sweep",
+      "params": {
+        "steps": [
+          {
+            "op": "dodo.listRefunds",
+            "params": {
+              "page_size": 110
+            },
+            "tag": "over",
+            "note": "page_size=110 (10 over the documented max)"
+          }
+        ],
+        "max": 100,
+        "variant": 1
+      },
+      "control": {
+        "params": {
+          "steps": [
+            {
+              "op": "dodo.listRefunds",
+              "params": {
+                "page_size": 1
+              },
+              "tag": "one",
+              "note": "page_size=1 (instrument: the size param must matter)"
+            },
+            {
+              "op": "dodo.listRefunds",
+              "params": {
+                "page_size": 100
+              },
+              "tag": "max",
+              "note": "page_size=100 (can the data fill a page?)"
+            }
+          ]
+        },
+        "observed": {
+          "one": {
+            "status": 200,
+            "length": 0
+          },
+          "atMax": {
+            "status": 200,
+            "length": 0
+          }
+        }
+      },
+      "prediction": {
+        "hyp-47335cea9441": {
+          "class": "honored",
+          "outcomes": [
+            "rejected"
+          ]
+        },
+        "hyp-b6be1c089529": {
+          "class": "silent_truncation",
+          "outcomes": [
+            "clamped"
+          ]
+        }
+      },
+      "predictionHash": "78362dca1c7ec31bc1f4ff759ec47d0d8d3b2135220d782f643028fb23bbc1cd",
+      "committedAt": "2026-10-12T01:23:38.763Z",
+      "ranAt": "2026-10-12T01:23:39.086Z",
+      "observed": {
+        "outcome": "rejected",
+        "over": {
+          "status": 400,
+          "length": null
+        },
+        "reason": "observation matches hyp-47335cea9441 and contradicts every rival"
+      },
+      "verdict": "confirmed",
+      "winningHypothesisId": "hyp-47335cea9441",
+      "costCredits": 0,
+      "calls": 3,
+      "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+      "spanId": "55bd76ed9155d3d3"
+    },
+    {
+      "id": "notarize-dodo-20261012T012315Z-p009",
+      "tool": "dodo",
+      "claimId": "dodo.refunds.page-size-max-100",
+      "hypothesisIds": [
+        "hyp-47335cea9441",
+        "hyp-b6be1c089529"
+      ],
+      "template": "boundary_sweep",
+      "params": {
+        "steps": [
+          {
+            "op": "dodo.listRefunds",
+            "params": {
+              "page_size": 200
+            },
+            "tag": "over",
+            "note": "page_size=200 (100 over the documented max)"
+          }
+        ],
+        "max": 100,
+        "variant": 2
+      },
+      "control": {
+        "params": {
+          "steps": [
+            {
+              "op": "dodo.listRefunds",
+              "params": {
+                "page_size": 1
+              },
+              "tag": "one",
+              "note": "page_size=1 (instrument: the size param must matter)"
+            },
+            {
+              "op": "dodo.listRefunds",
+              "params": {
+                "page_size": 100
+              },
+              "tag": "max",
+              "note": "page_size=100 (can the data fill a page?)"
+            }
+          ]
+        },
+        "observed": {
+          "one": {
+            "status": 200,
+            "length": 0
+          },
+          "atMax": {
+            "status": 200,
+            "length": 0
+          }
+        }
+      },
+      "prediction": {
+        "hyp-47335cea9441": {
+          "class": "honored",
+          "outcomes": [
+            "rejected"
+          ]
+        },
+        "hyp-b6be1c089529": {
+          "class": "silent_truncation",
+          "outcomes": [
+            "clamped"
+          ]
+        }
+      },
+      "predictionHash": "78362dca1c7ec31bc1f4ff759ec47d0d8d3b2135220d782f643028fb23bbc1cd",
+      "committedAt": "2026-10-12T01:23:39.488Z",
+      "ranAt": "2026-10-12T01:23:39.772Z",
+      "observed": {
+        "outcome": "rejected",
+        "over": {
+          "status": 400,
+          "length": null
+        },
+        "reason": "observation matches hyp-47335cea9441 and contradicts every rival"
+      },
+      "verdict": "confirmed",
+      "winningHypothesisId": "hyp-47335cea9441",
+      "costCredits": 0,
+      "calls": 3,
+      "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+      "spanId": "a6d08cc4f6ea3782"
+    },
+    {
+      "id": "notarize-dodo-20261012T012315Z-p010",
+      "tool": "dodo",
+      "claimId": "dodo.wallet.credit-amount-minor-units",
+      "hypothesisIds": [
+        "hyp-be916b968dc8",
+        "hyp-ca8a731b4705"
+      ],
+      "template": "unit_roundtrip",
+      "params": {
+        "steps": [
+          {
+            "op": "dodo.createCustomer",
+            "params": {
+              "name": "Notary probe notarize-dodo-20261012T012315Z-p10-t",
+              "email": "probe+notarize-dodo-20261012T012315Z-p10-t@notary.test"
+            },
+            "setup": true,
+            "note": "Create a fresh test customer (empty wallets)"
+          },
+          {
+            "op": "dodo.createWalletLedgerEntry",
+            "params": {
+              "customer_id": "$from:0:customer_id",
+              "amount": 1234,
+              "currency": "USD",
+              "entry_type": "credit",
+              "reason": "notary probe unit notarize-dodo-20261012T012315Z-p10"
+            },
+            "tag": "write",
+            "note": "Credit 1234 to an empty USD wallet"
+          }
+        ],
+        "sent": 1234,
+        "sentPath": "amount",
+        "echoPath": "balance"
+      },
+      "control": {
+        "params": {
+          "steps": [
+            {
+              "op": "dodo.createCustomer",
+              "params": {
+                "name": "Notary probe notarize-dodo-20261012T012315Z-p10-c",
+                "email": "probe+notarize-dodo-20261012T012315Z-p10-c@notary.test"
+              },
+              "setup": true,
+              "note": "Create a fresh test customer (empty wallets)"
+            },
+            {
+              "op": "dodo.createWalletLedgerEntry",
+              "params": {
+                "customer_id": "$from:0:customer_id",
+                "amount": 2468,
+                "currency": "USD",
+                "entry_type": "credit",
+                "reason": "notary probe unit notarize-dodo-20261012T012315Z-p10"
+              },
+              "tag": "write",
+              "note": "Credit 2468 to an empty USD wallet"
+            }
+          ],
+          "sent": 2468
+        },
+        "observed": {
+          "status": 200,
+          "sent": 2468,
+          "echoed": 2468
+        }
+      },
+      "prediction": {
+        "hyp-be916b968dc8": {
+          "class": "honored",
+          "outcomes": [
+            "equal"
+          ]
+        },
+        "hyp-ca8a731b4705": {
+          "class": "unit_mismatch",
+          "outcomes": [
+            "div100",
+            "x100"
+          ]
+        }
+      },
+      "predictionHash": "5561a402a3c313ba71164d967ee60e3eb946121e52d550a0fa8caa0ae6f5d01e",
+      "committedAt": "2026-10-12T01:23:40.398Z",
+      "ranAt": "2026-10-12T01:23:41.112Z",
+      "observed": {
+        "outcome": "equal",
+        "status": 200,
+        "sent": 1234,
+        "echoed": 1234,
+        "ratio": 1,
+        "reason": "observation matches hyp-be916b968dc8 and contradicts every rival"
+      },
+      "verdict": "confirmed",
+      "winningHypothesisId": "hyp-be916b968dc8",
+      "costCredits": 0,
+      "calls": 4,
+      "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+      "spanId": "3a8574d582bac49d"
+    },
+    {
+      "id": "notarize-dodo-20261012T012315Z-p011",
+      "tool": "dodo",
+      "claimId": "dodo.wallet.credit-amount-minor-units",
+      "hypothesisIds": [
+        "hyp-be916b968dc8",
+        "hyp-ca8a731b4705"
+      ],
+      "template": "unit_roundtrip",
+      "params": {
+        "steps": [
+          {
+            "op": "dodo.createCustomer",
+            "params": {
+              "name": "Notary probe notarize-dodo-20261012T012315Z-p11-t",
+              "email": "probe+notarize-dodo-20261012T012315Z-p11-t@notary.test"
+            },
+            "setup": true,
+            "note": "Create a fresh test customer (empty wallets)"
+          },
+          {
+            "op": "dodo.createWalletLedgerEntry",
+            "params": {
+              "customer_id": "$from:0:customer_id",
+              "amount": 3517,
+              "currency": "USD",
+              "entry_type": "credit",
+              "reason": "notary probe unit notarize-dodo-20261012T012315Z-p11"
+            },
+            "tag": "write",
+            "note": "Credit 3517 to an empty USD wallet"
+          }
+        ],
+        "sent": 3517,
+        "sentPath": "amount",
+        "echoPath": "balance",
+        "variant": 1
+      },
+      "control": {
+        "params": {
+          "steps": [
+            {
+              "op": "dodo.createCustomer",
+              "params": {
+                "name": "Notary probe notarize-dodo-20261012T012315Z-p11-c",
+                "email": "probe+notarize-dodo-20261012T012315Z-p11-c@notary.test"
+              },
+              "setup": true,
+              "note": "Create a fresh test customer (empty wallets)"
+            },
+            {
+              "op": "dodo.createWalletLedgerEntry",
+              "params": {
+                "customer_id": "$from:0:customer_id",
+                "amount": 2468,
+                "currency": "USD",
+                "entry_type": "credit",
+                "reason": "notary probe unit notarize-dodo-20261012T012315Z-p11"
+              },
+              "tag": "write",
+              "note": "Credit 2468 to an empty USD wallet"
+            }
+          ],
+          "sent": 2468
+        },
+        "observed": {
+          "status": 200,
+          "sent": 2468,
+          "echoed": 2468
+        }
+      },
+      "prediction": {
+        "hyp-be916b968dc8": {
+          "class": "honored",
+          "outcomes": [
+            "equal"
+          ]
+        },
+        "hyp-ca8a731b4705": {
+          "class": "unit_mismatch",
+          "outcomes": [
+            "div100",
+            "x100"
+          ]
+        }
+      },
+      "predictionHash": "5561a402a3c313ba71164d967ee60e3eb946121e52d550a0fa8caa0ae6f5d01e",
+      "committedAt": "2026-10-12T01:23:41.182Z",
+      "ranAt": "2026-10-12T01:23:42.325Z",
+      "observed": {
+        "outcome": "equal",
+        "status": 200,
+        "sent": 3517,
+        "echoed": 3517,
+        "ratio": 1,
+        "reason": "observation matches hyp-be916b968dc8 and contradicts every rival"
+      },
+      "verdict": "confirmed",
+      "winningHypothesisId": "hyp-be916b968dc8",
+      "costCredits": 0,
+      "calls": 4,
+      "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+      "spanId": "1bbe2f47612997f0"
+    },
+    {
+      "id": "notarize-dodo-20261012T012315Z-p012",
+      "tool": "dodo",
+      "claimId": "dodo.wallet.credit-amount-minor-units",
+      "hypothesisIds": [
+        "hyp-be916b968dc8",
+        "hyp-ca8a731b4705"
+      ],
+      "template": "unit_roundtrip",
+      "params": {
+        "steps": [
+          {
+            "op": "dodo.createCustomer",
+            "params": {
+              "name": "Notary probe notarize-dodo-20261012T012315Z-p12-t",
+              "email": "probe+notarize-dodo-20261012T012315Z-p12-t@notary.test"
+            },
+            "setup": true,
+            "note": "Create a fresh test customer (empty wallets)"
+          },
+          {
+            "op": "dodo.createWalletLedgerEntry",
+            "params": {
+              "customer_id": "$from:0:customer_id",
+              "amount": 4321,
+              "currency": "USD",
+              "entry_type": "credit",
+              "reason": "notary probe unit notarize-dodo-20261012T012315Z-p12"
+            },
+            "tag": "write",
+            "note": "Credit 4321 to an empty USD wallet"
+          }
+        ],
+        "sent": 4321,
+        "sentPath": "amount",
+        "echoPath": "balance",
+        "variant": 2
+      },
+      "control": {
+        "params": {
+          "steps": [
+            {
+              "op": "dodo.createCustomer",
+              "params": {
+                "name": "Notary probe notarize-dodo-20261012T012315Z-p12-c",
+                "email": "probe+notarize-dodo-20261012T012315Z-p12-c@notary.test"
+              },
+              "setup": true,
+              "note": "Create a fresh test customer (empty wallets)"
+            },
+            {
+              "op": "dodo.createWalletLedgerEntry",
+              "params": {
+                "customer_id": "$from:0:customer_id",
+                "amount": 2468,
+                "currency": "USD",
+                "entry_type": "credit",
+                "reason": "notary probe unit notarize-dodo-20261012T012315Z-p12"
+              },
+              "tag": "write",
+              "note": "Credit 2468 to an empty USD wallet"
+            }
+          ],
+          "sent": 2468
+        },
+        "observed": {
+          "status": 200,
+          "sent": 2468,
+          "echoed": 2468
+        }
+      },
+      "prediction": {
+        "hyp-be916b968dc8": {
+          "class": "honored",
+          "outcomes": [
+            "equal"
+          ]
+        },
+        "hyp-ca8a731b4705": {
+          "class": "unit_mismatch",
+          "outcomes": [
+            "div100",
+            "x100"
+          ]
+        }
+      },
+      "predictionHash": "5561a402a3c313ba71164d967ee60e3eb946121e52d550a0fa8caa0ae6f5d01e",
+      "committedAt": "2026-10-12T01:23:42.408Z",
+      "ranAt": "2026-10-12T01:23:43.181Z",
+      "observed": {
+        "outcome": "equal",
+        "status": 200,
+        "sent": 4321,
+        "echoed": 4321,
+        "ratio": 1,
+        "reason": "observation matches hyp-be916b968dc8 and contradicts every rival"
+      },
+      "verdict": "confirmed",
+      "winningHypothesisId": "hyp-be916b968dc8",
+      "costCredits": 0,
+      "calls": 4,
+      "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+      "spanId": "a2b43db07c66ed7f"
+    },
+    {
+      "id": "notarize-dodo-20261012T012315Z-p013",
+      "tool": "dodo",
+      "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+      "hypothesisIds": [
+        "hyp-8599a750e379",
+        "hyp-d9ead836ca14"
+      ],
+      "template": "retry_after_timeout",
+      "params": {
+        "steps": [
+          {
+            "op": "dodo.createCustomer",
+            "params": {
+              "name": "Notary probe notarize-dodo-20261012T012315Z-p13-t",
+              "email": "probe+notarize-dodo-20261012T012315Z-p13-t@notary.test"
+            },
+            "setup": true,
+            "note": "Create a fresh test customer (empty wallets)"
+          },
+          {
+            "op": "dodo.createWalletLedgerEntry",
+            "params": {
+              "customer_id": "$from:0:customer_id",
+              "amount": 500,
+              "currency": "USD",
+              "entry_type": "credit",
+              "idempotency_key": "notary-probe-notarize-dodo-20261012T012315Z-p13",
+              "reason": "notary probe retry notarize-dodo-20261012T012315Z-p13"
+            },
+            "repeat": 3,
+            "tag": "write",
+            "note": "Send the identical keyed credit of 500 3 times"
+          },
+          {
+            "op": "dodo.listWalletLedgerEntries",
+            "params": {
+              "customer_id": "$from:0:customer_id",
+              "currency": "USD"
+            },
+            "delayMs": 1000,
+            "tag": "count",
+            "note": "Count ledger entries after"
+          }
+        ],
+        "countField": "list"
+      },
+      "control": {
+        "params": {
+          "steps": [
+            {
+              "op": "dodo.createCustomer",
+              "params": {
+                "name": "Notary probe notarize-dodo-20261012T012315Z-p13-c",
+                "email": "probe+notarize-dodo-20261012T012315Z-p13-c@notary.test"
+              },
+              "setup": true,
+              "note": "Create a fresh test customer (empty wallets)"
+            },
+            {
+              "op": "dodo.listWalletLedgerEntries",
+              "params": {
+                "customer_id": "$from:0:customer_id",
+                "currency": "USD"
+              },
+              "tag": "count",
+              "note": "Empty ledger baseline"
+            }
+          ]
+        },
+        "observed": {
+          "before": 0
+        }
+      },
+      "prediction": {
+        "hyp-8599a750e379": {
+          "class": "idempotency_hazard",
+          "outcomes": [
+            "duplicate"
+          ]
+        },
+        "hyp-d9ead836ca14": {
+          "class": "honored",
+          "outcomes": [
+            "single"
+          ]
+        }
+      },
+      "predictionHash": "7f115373c6b470ef374eec1c0a08cd724ea92630772d5a69f2df57ef5651eff1",
+      "committedAt": "2026-10-12T01:23:43.494Z",
+      "ranAt": "2026-10-12T01:23:45.585Z",
+      "observed": {
+        "outcome": "single",
+        "writes": 3,
+        "writes2xx": 3,
+        "statuses": [
+          200,
+          200,
+          200
+        ],
+        "after": 1,
+        "reason": "observation matches hyp-d9ead836ca14 and contradicts every rival"
+      },
+      "verdict": "confirmed",
+      "winningHypothesisId": "hyp-d9ead836ca14",
+      "costCredits": 0,
+      "calls": 7,
+      "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+      "spanId": "ada7d2e6ce46f23f"
+    },
+    {
+      "id": "notarize-dodo-20261012T012315Z-p014",
+      "tool": "dodo",
+      "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+      "hypothesisIds": [
+        "hyp-8599a750e379",
+        "hyp-d9ead836ca14"
+      ],
+      "template": "retry_after_timeout",
+      "params": {
+        "steps": [
+          {
+            "op": "dodo.createCustomer",
+            "params": {
+              "name": "Notary probe notarize-dodo-20261012T012315Z-p14-t",
+              "email": "probe+notarize-dodo-20261012T012315Z-p14-t@notary.test"
+            },
+            "setup": true,
+            "note": "Create a fresh test customer (empty wallets)"
+          },
+          {
+            "op": "dodo.createWalletLedgerEntry",
+            "params": {
+              "customer_id": "$from:0:customer_id",
+              "amount": 700,
+              "currency": "USD",
+              "entry_type": "credit",
+              "idempotency_key": "notary-probe-notarize-dodo-20261012T012315Z-p14",
+              "reason": "notary probe retry notarize-dodo-20261012T012315Z-p14"
+            },
+            "repeat": 2,
+            "tag": "write",
+            "note": "Send the identical keyed credit of 700 2 times"
+          },
+          {
+            "op": "dodo.listWalletLedgerEntries",
+            "params": {
+              "customer_id": "$from:0:customer_id",
+              "currency": "USD"
+            },
+            "delayMs": 1000,
+            "tag": "count",
+            "note": "Count ledger entries after"
+          }
+        ],
+        "countField": "list",
+        "variant": 1
+      },
+      "control": {
+        "params": {
+          "steps": [
+            {
+              "op": "dodo.createCustomer",
+              "params": {
+                "name": "Notary probe notarize-dodo-20261012T012315Z-p14-c",
+                "email": "probe+notarize-dodo-20261012T012315Z-p14-c@notary.test"
+              },
+              "setup": true,
+              "note": "Create a fresh test customer (empty wallets)"
+            },
+            {
+              "op": "dodo.listWalletLedgerEntries",
+              "params": {
+                "customer_id": "$from:0:customer_id",
+                "currency": "USD"
+              },
+              "tag": "count",
+              "note": "Empty ledger baseline"
+            }
+          ]
+        },
+        "observed": {
+          "before": 0
+        }
+      },
+      "prediction": {
+        "hyp-8599a750e379": {
+          "class": "idempotency_hazard",
+          "outcomes": [
+            "duplicate"
+          ]
+        },
+        "hyp-d9ead836ca14": {
+          "class": "honored",
+          "outcomes": [
+            "single"
+          ]
+        }
+      },
+      "predictionHash": "7f115373c6b470ef374eec1c0a08cd724ea92630772d5a69f2df57ef5651eff1",
+      "committedAt": "2026-10-12T01:23:45.834Z",
+      "ranAt": "2026-10-12T01:23:47.572Z",
+      "observed": {
+        "outcome": "single",
+        "writes": 2,
+        "writes2xx": 2,
+        "statuses": [
+          200,
+          200
+        ],
+        "after": 1,
+        "reason": "observation matches hyp-d9ead836ca14 and contradicts every rival"
+      },
+      "verdict": "confirmed",
+      "winningHypothesisId": "hyp-d9ead836ca14",
+      "costCredits": 0,
+      "calls": 6,
+      "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+      "spanId": "8b9d81d00c515c93"
+    },
+    {
+      "id": "notarize-dodo-20261012T012315Z-p015",
+      "tool": "dodo",
+      "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+      "hypothesisIds": [
+        "hyp-8599a750e379",
+        "hyp-d9ead836ca14"
+      ],
+      "template": "retry_after_timeout",
+      "params": {
+        "steps": [
+          {
+            "op": "dodo.createCustomer",
+            "params": {
+              "name": "Notary probe notarize-dodo-20261012T012315Z-p15-t",
+              "email": "probe+notarize-dodo-20261012T012315Z-p15-t@notary.test"
+            },
+            "setup": true,
+            "note": "Create a fresh test customer (empty wallets)"
+          },
+          {
+            "op": "dodo.createWalletLedgerEntry",
+            "params": {
+              "customer_id": "$from:0:customer_id",
+              "amount": 900,
+              "currency": "USD",
+              "entry_type": "credit",
+              "idempotency_key": "notary-probe-notarize-dodo-20261012T012315Z-p15",
+              "reason": "notary probe retry notarize-dodo-20261012T012315Z-p15"
+            },
+            "repeat": 3,
+            "tag": "write",
+            "note": "Send the identical keyed credit of 900 3 times"
+          },
+          {
+            "op": "dodo.listWalletLedgerEntries",
+            "params": {
+              "customer_id": "$from:0:customer_id",
+              "currency": "USD"
+            },
+            "delayMs": 1000,
+            "tag": "count",
+            "note": "Count ledger entries after"
+          }
+        ],
+        "countField": "list",
+        "variant": 2
+      },
+      "control": {
+        "params": {
+          "steps": [
+            {
+              "op": "dodo.createCustomer",
+              "params": {
+                "name": "Notary probe notarize-dodo-20261012T012315Z-p15-c",
+                "email": "probe+notarize-dodo-20261012T012315Z-p15-c@notary.test"
+              },
+              "setup": true,
+              "note": "Create a fresh test customer (empty wallets)"
+            },
+            {
+              "op": "dodo.listWalletLedgerEntries",
+              "params": {
+                "customer_id": "$from:0:customer_id",
+                "currency": "USD"
+              },
+              "tag": "count",
+              "note": "Empty ledger baseline"
+            }
+          ]
+        },
+        "observed": {
+          "before": 0
+        }
+      },
+      "prediction": {
+        "hyp-8599a750e379": {
+          "class": "idempotency_hazard",
+          "outcomes": [
+            "duplicate"
+          ]
+        },
+        "hyp-d9ead836ca14": {
+          "class": "honored",
+          "outcomes": [
+            "single"
+          ]
+        }
+      },
+      "predictionHash": "7f115373c6b470ef374eec1c0a08cd724ea92630772d5a69f2df57ef5651eff1",
+      "committedAt": "2026-10-12T01:23:47.648Z",
+      "ranAt": "2026-10-12T01:23:49.308Z",
+      "observed": {
+        "outcome": "single",
+        "writes": 3,
+        "writes2xx": 3,
+        "statuses": [
+          200,
+          200,
+          200
+        ],
+        "after": 1,
+        "reason": "observation matches hyp-d9ead836ca14 and contradicts every rival"
+      },
+      "verdict": "confirmed",
+      "winningHypothesisId": "hyp-d9ead836ca14",
+      "costCredits": 0,
+      "calls": 7,
+      "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+      "spanId": "2dda79e4e9691cad"
+    }
+  ],
+  "beliefs": {
+    "before": [
+      {
+        "id": "belief-dodo.customer.missing-email-422",
+        "claimId": "dodo.customer.missing-email-422",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createCustomer [email] — required: name, email. 422: Invalid Request Object or Parameters",
+        "alpha": 3,
+        "beta": 1,
+        "confidence": 0.875,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 3,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.113Z"
+      },
+      {
+        "id": "belief-dodo.payment.refunds-array-present",
+        "claimId": "dodo.payment.refunds-array-present",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.getPayment [payment_id] — refunds: List of refunds issued for this payment (required)",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:33.961Z"
+      },
+      {
+        "id": "belief-dodo.payment.refunds-lists-issued-refund",
+        "claimId": "dodo.payment.refunds-lists-issued-refund",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createRefund [refund_id] — [implied] refunds: List of refunds issued for this payment",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:33.978Z"
+      },
+      {
+        "id": "belief-dodo.payments.page-size-max-100",
+        "claimId": "dodo.payments.page-size-max-100",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.listPayments [page_size] — Page size default is 10 max is 100",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:33.949Z"
+      },
+      {
+        "id": "belief-dodo.product.price-minor-units",
+        "claimId": "dodo.product.price-minor-units",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createProduct [price.price] — The payment amount, in the smallest denomination of the currency (e.g., cents for USD).",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.102Z"
+      },
+      {
+        "id": "belief-dodo.refund.amount-minor-units",
+        "claimId": "dodo.refund.amount-minor-units",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createRefund [items[].amount] — the `amount` to refund in the smallest currency unit.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:33.783Z"
+      },
+      {
+        "id": "belief-dodo.refund.full-retry-no-duplicate",
+        "claimId": "dodo.refund.full-retry-no-duplicate",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createRefund [refund_id] — [implied] The refund, together with any earlier refunds on the payment, can't exceed the amount paid.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:33.845Z"
+      },
+      {
+        "id": "belief-dodo.refunds.amount-integer",
+        "claimId": "dodo.refunds.amount-integer",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.listRefunds — amount: integer or null (int32). The refunded amount.",
+        "alpha": 3,
+        "beta": 1,
+        "confidence": 0.875,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 3,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:33.893Z"
+      },
+      {
+        "id": "belief-dodo.refunds.page-size-max-100",
+        "claimId": "dodo.refunds.page-size-max-100",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.listRefunds [page_size] — Page size default is 10 max is 100",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:33.936Z"
+      },
+      {
+        "id": "belief-dodo.subscription.change-plan-pending-409",
+        "claimId": "dodo.subscription.change-plan-pending-409",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.changeSubscriptionPlan [subscription_id] — 409: A pending plan change already exists for this subscription (PendingPlanChangeExists).",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.173Z"
+      },
+      {
+        "id": "belief-dodo.wallet.credit-amount-minor-units",
+        "claimId": "dodo.wallet.credit-amount-minor-units",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createWalletLedgerEntry [amount] — `amount` is a positive integer in the smallest currency unit.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.186Z"
+      },
+      {
+        "id": "belief-dodo.wallet.debit-insufficient-400",
+        "claimId": "dodo.wallet.debit-insufficient-400",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createWalletLedgerEntry [entry_type] — A debit larger than the balance fails with `400`.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.262Z"
+      },
+      {
+        "id": "belief-dodo.wallet.idempotency-key-no-duplicate",
+        "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createWalletLedgerEntry — If you repeat a request with the same key, Dodo Payments creates no new entry and returns the current wallet.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.197Z"
+      },
+      {
+        "id": "belief-dodo.wallet.ledger-response-balance-integer",
+        "claimId": "dodo.wallet.ledger-response-balance-integer",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createWalletLedgerEntry — balance: integer (int64) (CustomerWalletResponse)",
+        "alpha": 3,
+        "beta": 1,
+        "confidence": 0.875,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 3,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.353Z"
+      },
+      {
+        "id": "belief-dodo.wallets.total-balance-usd-integer",
+        "claimId": "dodo.wallets.total-balance-usd-integer",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.listCustomerWallets [customer_id] — total_balance_usd: integer (int64). Sum of all wallet balances converted to USD (in smallest unit)",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.340Z"
+      }
+    ],
+    "after": [
+      {
+        "id": "belief-dodo.customer.missing-email-422",
+        "claimId": "dodo.customer.missing-email-422",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createCustomer [email] — required: name, email. 422: Invalid Request Object or Parameters",
+        "alpha": 3,
+        "beta": 1,
+        "confidence": 0.875,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 3,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.113Z"
+      },
+      {
+        "id": "belief-dodo.payment.refunds-array-present",
+        "claimId": "dodo.payment.refunds-array-present",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.getPayment [payment_id] — refunds: List of refunds issued for this payment (required)",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:33.961Z"
+      },
+      {
+        "id": "belief-dodo.payment.refunds-lists-issued-refund",
+        "claimId": "dodo.payment.refunds-lists-issued-refund",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createRefund [refund_id] — [implied] refunds: List of refunds issued for this payment",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:33.978Z"
+      },
+      {
+        "id": "belief-dodo.payments.page-size-max-100",
+        "claimId": "dodo.payments.page-size-max-100",
+        "tool": "dodo",
+        "class": "honored",
+        "statement": "Doc claim holds: dodo.listPayments [page_size] — Page size default is 10 max is 100 [narrowed scope: dodo.listPayments rejects page_size values above 100 with HTTP 400, tested with a single API key and minimal dataset (1 record)]",
+        "alpha": 4,
+        "beta": 1,
+        "confidence": 0.9375,
+        "status": "notarized",
+        "evidence": [
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p001",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "1945989db8704aad",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p002",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "72b633a7b83766e5",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p003",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "e5099c5f7c0c3642",
+            "valid": true
+          }
+        ],
+        "adversary": {
+          "verdict": "narrow",
+          "reason": "The probes confirm that values above 100 are rejected (400), which is consistent with a max of 100. However, the control calls with page_size=1 and page_size=100 both return length=1, meaning there is only 1 record in the test dataset. This means the 'default is 10' part of the claim is completely untested (we can't distinguish default behavior with so little data), and more importantly, the rejection at 101+ could be due to a general input validation rule (e.g., any value > some threshold) rather than specifically a max of 100. No probe tested page_size=100 as a treatment (expecting success) vs page_size=101 as a boundary — the control already shows page_size=100 succeeds, but with only 1 record we can't confirm the max is exactly 100 vs. some other nearby value. The evidence only supports that values above 100 are rejected on this single endpoint with this single API key.",
+          "model": "claude-opus-4.6",
+          "backend": "bedrock",
+          "scope": "dodo.listPayments rejects page_size values above 100 with HTTP 400, tested with a single API key and minimal dataset (1 record)",
+          "reviewedAt": "2026-10-12T01:24:04.644Z"
+        },
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "probesToCandidate": 3,
+        "updatedAt": "2026-10-12T01:24:04.672Z"
+      },
+      {
+        "id": "belief-dodo.product.price-minor-units",
+        "claimId": "dodo.product.price-minor-units",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createProduct [price.price] — The payment amount, in the smallest denomination of the currency (e.g., cents for USD).",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.102Z"
+      },
+      {
+        "id": "belief-dodo.refund.amount-minor-units",
+        "claimId": "dodo.refund.amount-minor-units",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createRefund [items[].amount] — the `amount` to refund in the smallest currency unit.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:33.783Z"
+      },
+      {
+        "id": "belief-dodo.refund.full-retry-no-duplicate",
+        "claimId": "dodo.refund.full-retry-no-duplicate",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createRefund [refund_id] — [implied] The refund, together with any earlier refunds on the payment, can't exceed the amount paid.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:33.845Z"
+      },
+      {
+        "id": "belief-dodo.refunds.amount-integer",
+        "claimId": "dodo.refunds.amount-integer",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.listRefunds — amount: integer or null (int32). The refunded amount.",
+        "alpha": 3,
+        "beta": 1,
+        "confidence": 0.875,
+        "status": "abstained",
+        "evidence": [],
+        "prior": {
+          "alpha": 3,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:49.377Z"
+      },
+      {
+        "id": "belief-dodo.refunds.page-size-max-100",
+        "claimId": "dodo.refunds.page-size-max-100",
+        "tool": "dodo",
+        "class": "honored",
+        "statement": "Doc claim holds: dodo.listRefunds [page_size] — Page size default is 10 max is 100 [narrowed scope: The API rejects page_size values above 100 with HTTP 400 on GET /refunds for this single test account/key. The default-of-10 sub-claim is untested, and the functional effect of page_size on result count is unverified due to empty data.]",
+        "alpha": 4,
+        "beta": 1,
+        "confidence": 0.9375,
+        "status": "notarized",
+        "evidence": [
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p007",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "0e61d4642d36cf14",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p008",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "55bd76ed9155d3d3",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p009",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "a6d08cc4f6ea3782",
+            "valid": true
+          }
+        ],
+        "adversary": {
+          "verdict": "narrow",
+          "reason": "The control calls with page_size=1 and page_size=100 both return 0 items, meaning there is no refund data in the test account. Without data, the control cannot demonstrate that page_size actually controls the number of returned items (both return empty arrays regardless). The over-max probes (101, 110, 200) all get 400 errors, which confirms the API rejects values above 100, but the 400 could be a general input-validation rule (e.g., rejecting any value > 100 for any integer parameter) rather than specifically enforcing a page-size maximum of 100. More critically, the 'default is 10' part of the claim is completely untested. Additionally, all probes use a single API key/account and a single endpoint, so the evidence scope is limited. Untested alternative: The 400 error for page_size>100 could be a generic integer-range validation (e.g., max allowed integer value for any query param) rather than a page-size-specific maximum. With zero items in the account, there is no evidence that page_size actually limits result count or that the default is 10.",
+          "model": "claude-opus-4.6",
+          "backend": "bedrock",
+          "scope": "The API rejects page_size values above 100 with HTTP 400 on GET /refunds for this single test account/key. The default-of-10 sub-claim is untested, and the functional effect of page_size on result count is unverified due to empty data.",
+          "reviewedAt": "2026-10-12T01:24:14.365Z"
+        },
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "probesToCandidate": 3,
+        "updatedAt": "2026-10-12T01:24:14.373Z"
+      },
+      {
+        "id": "belief-dodo.subscription.change-plan-pending-409",
+        "claimId": "dodo.subscription.change-plan-pending-409",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.changeSubscriptionPlan [subscription_id] — 409: A pending plan change already exists for this subscription (PendingPlanChangeExists).",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.173Z"
+      },
+      {
+        "id": "belief-dodo.wallet.credit-amount-minor-units",
+        "claimId": "dodo.wallet.credit-amount-minor-units",
+        "tool": "dodo",
+        "class": "honored",
+        "statement": "Doc claim holds: dodo.createWalletLedgerEntry [amount] — `amount` is a positive integer in the smallest currency unit. [narrowed scope: amount is in minor units for USD wallets only]",
+        "alpha": 4,
+        "beta": 1,
+        "confidence": 0.9375,
+        "status": "notarized",
+        "evidence": [
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p010",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "3a8574d582bac49d",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p011",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "1bbe2f47612997f0",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p012",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "a2b43db07c66ed7f",
+            "valid": true
+          }
+        ],
+        "adversary": {
+          "verdict": "narrow",
+          "reason": "All probes test only USD currency. The claim states 'smallest currency unit' generically, but no other currencies (e.g., JPY where minor units differ, or EUR) were tested. The balance echoing the sent amount without scaling only confirms minor-unit behavior for USD (which has cents as minor units). A currency with zero decimal places (like JPY) or different minor-unit scaling was never probed, so the claim that amount is always in the smallest currency unit is only evidenced for USD. Untested alternative: The API might behave differently for currencies with different decimal structures (e.g., JPY with 0 decimals, BHD with 3 decimals), where the 'smallest currency unit' interpretation could differ or the API could apply unexpected scaling.",
+          "model": "claude-opus-4.6",
+          "backend": "bedrock",
+          "scope": "amount is in minor units for USD wallets only",
+          "reviewedAt": "2026-10-12T01:24:21.481Z"
+        },
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "probesToCandidate": 3,
+        "updatedAt": "2026-10-12T01:24:21.488Z"
+      },
+      {
+        "id": "belief-dodo.wallet.debit-insufficient-400",
+        "claimId": "dodo.wallet.debit-insufficient-400",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createWalletLedgerEntry [entry_type] — A debit larger than the balance fails with `400`.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.262Z"
+      },
+      {
+        "id": "belief-dodo.wallet.idempotency-key-no-duplicate",
+        "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+        "tool": "dodo",
+        "class": "honored",
+        "statement": "Doc claim holds: dodo.createWalletLedgerEntry — If you repeat a request with the same key, Dodo Payments creates no new entry and returns the current wallet. [narrowed scope: Idempotency key deduplication is confirmed for rapid successive credit entries in USD, but not verified for debit entries, other currencies, or longer time gaps between retries.]",
+        "alpha": 4,
+        "beta": 1,
+        "confidence": 0.9375,
+        "status": "notarized",
+        "evidence": [
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p013",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "ada7d2e6ce46f23f",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p014",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "8b9d81d00c515c93",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p015",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "2dda79e4e9691cad",
+            "valid": true
+          }
+        ],
+        "adversary": {
+          "verdict": "narrow",
+          "reason": "All three probes test only the 'credit' entry_type with USD currency. The claim is general ('repeat a request with the same key'), but no probes test 'debit' entries or other currencies. Additionally, the probes send identical requests in rapid succession (same parameters with same idempotency key), but do not test whether the idempotency key is still honored after a longer delay (e.g., minutes or hours), which is a common edge case for idempotency key expiration. The controls also do not vary the idempotency key itself — they simply omit the repeated writes — so the probes don't isolate whether it's the idempotency_key specifically (vs. some other deduplication mechanism) that prevents duplicates. Untested alternative: The API might be deduplicating based on something other than the idempotency key (e.g., identical request body hashing or rate limiting), since no probe sends the same idempotency key with different body parameters to confirm the key is the controlling factor.",
+          "model": "claude-opus-4.6",
+          "backend": "bedrock",
+          "scope": "Idempotency key deduplication is confirmed for rapid successive credit entries in USD, but not verified for debit entries, other currencies, or longer time gaps between retries.",
+          "reviewedAt": "2026-10-12T01:24:30.416Z"
+        },
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "probesToCandidate": 3,
+        "updatedAt": "2026-10-12T01:24:30.438Z"
+      },
+      {
+        "id": "belief-dodo.wallet.ledger-response-balance-integer",
+        "claimId": "dodo.wallet.ledger-response-balance-integer",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createWalletLedgerEntry — balance: integer (int64) (CustomerWalletResponse)",
+        "alpha": 3,
+        "beta": 1,
+        "confidence": 0.875,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 3,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.353Z"
+      },
+      {
+        "id": "belief-dodo.wallets.total-balance-usd-integer",
+        "claimId": "dodo.wallets.total-balance-usd-integer",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.listCustomerWallets [customer_id] — total_balance_usd: integer (int64). Sum of all wallet balances converted to USD (in smallest unit)",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.340Z"
+      }
+    ]
+  },
+  "beliefEvents": [
+    {
+      "beliefId": "belief-dodo.refund.amount-minor-units",
+      "at": "2026-10-12T01:23:33.819Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "created from transfer prior Beta(1, 1) (from crustdata)"
+    },
+    {
+      "beliefId": "belief-dodo.refund.full-retry-no-duplicate",
+      "at": "2026-10-12T01:23:33.878Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "created from transfer prior Beta(1, 1) (from crustdata)"
+    },
+    {
+      "beliefId": "belief-dodo.refunds.amount-integer",
+      "at": "2026-10-12T01:23:33.931Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 3,
+      "beta": 1,
+      "confidence": 0.875,
+      "reason": "created from transfer prior Beta(3, 1) (from crustdata)"
+    },
+    {
+      "beliefId": "belief-dodo.refunds.page-size-max-100",
+      "at": "2026-10-12T01:23:33.941Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "created from transfer prior Beta(1, 1) (from crustdata)"
+    },
+    {
+      "beliefId": "belief-dodo.payments.page-size-max-100",
+      "at": "2026-10-12T01:23:33.955Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "created from transfer prior Beta(1, 1) (from crustdata)"
+    },
+    {
+      "beliefId": "belief-dodo.payment.refunds-array-present",
+      "at": "2026-10-12T01:23:33.966Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "created from transfer prior Beta(1, 1) (from crustdata)"
+    },
+    {
+      "beliefId": "belief-dodo.payment.refunds-lists-issued-refund",
+      "at": "2026-10-12T01:23:34.075Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "created from transfer prior Beta(1, 1) (from crustdata)"
+    },
+    {
+      "beliefId": "belief-dodo.product.price-minor-units",
+      "at": "2026-10-12T01:23:34.106Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "created from transfer prior Beta(1, 1) (from crustdata)"
+    },
+    {
+      "beliefId": "belief-dodo.customer.missing-email-422",
+      "at": "2026-10-12T01:23:34.168Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 3,
+      "beta": 1,
+      "confidence": 0.875,
+      "reason": "created from transfer prior Beta(3, 1) (from crustdata)"
+    },
+    {
+      "beliefId": "belief-dodo.subscription.change-plan-pending-409",
+      "at": "2026-10-12T01:23:34.177Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "created from transfer prior Beta(1, 1) (from crustdata)"
+    },
+    {
+      "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+      "at": "2026-10-12T01:23:34.190Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "created from transfer prior Beta(1, 1) (from crustdata)"
+    },
+    {
+      "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
+      "at": "2026-10-12T01:23:34.256Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "created from transfer prior Beta(1, 1) (from crustdata)"
+    },
+    {
+      "beliefId": "belief-dodo.wallet.debit-insufficient-400",
+      "at": "2026-10-12T01:23:34.332Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "created from transfer prior Beta(1, 1) (from crustdata)"
+    },
+    {
+      "beliefId": "belief-dodo.wallets.total-balance-usd-integer",
+      "at": "2026-10-12T01:23:34.345Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "created from transfer prior Beta(1, 1) (from crustdata)"
+    },
+    {
+      "beliefId": "belief-dodo.wallet.ledger-response-balance-integer",
+      "at": "2026-10-12T01:23:34.390Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 3,
+      "beta": 1,
+      "confidence": 0.875,
+      "reason": "created from transfer prior Beta(3, 1) (from crustdata)"
+    },
+    {
+      "beliefId": "belief-dodo.payments.page-size-max-100",
+      "at": "2026-10-12T01:23:36.083Z",
+      "from": "hypothesis",
+      "to": "hypothesis",
+      "alpha": 2,
+      "beta": 1,
+      "confidence": 0.75,
+      "reason": "confirmed honored (hyp-6b09f86e4f55): α+1",
+      "probeId": "notarize-dodo-20261012T012315Z-p001"
+    },
+    {
+      "beliefId": "belief-dodo.payments.page-size-max-100",
+      "at": "2026-10-12T01:23:36.491Z",
+      "from": "hypothesis",
+      "to": "hypothesis",
+      "alpha": 3,
+      "beta": 1,
+      "confidence": 0.875,
+      "reason": "confirmed honored (hyp-6b09f86e4f55): α+1",
+      "probeId": "notarize-dodo-20261012T012315Z-p002"
+    },
+    {
+      "beliefId": "belief-dodo.payments.page-size-max-100",
+      "at": "2026-10-12T01:23:37.019Z",
+      "from": "hypothesis",
+      "to": "candidate",
+      "alpha": 4,
+      "beta": 1,
+      "confidence": 0.9375,
+      "reason": "confirmed honored (hyp-6b09f86e4f55): α+1; P(holds)=0.9375 past the honored threshold with 3 independent probes: candidate",
+      "probeId": "notarize-dodo-20261012T012315Z-p003"
+    },
+    {
+      "beliefId": "belief-dodo.refunds.amount-integer",
+      "at": "2026-10-12T01:23:37.570Z",
+      "from": "hypothesis",
+      "to": "hypothesis",
+      "alpha": 3,
+      "beta": 1,
+      "confidence": 0.875,
+      "reason": "uninformative: no update (uninformative observation: no update)",
+      "probeId": "notarize-dodo-20261012T012315Z-p004"
+    },
+    {
+      "beliefId": "belief-dodo.refunds.amount-integer",
+      "at": "2026-10-12T01:23:37.832Z",
+      "from": "hypothesis",
+      "to": "hypothesis",
+      "alpha": 3,
+      "beta": 1,
+      "confidence": 0.875,
+      "reason": "uninformative: no update (uninformative observation: no update)",
+      "probeId": "notarize-dodo-20261012T012315Z-p005"
+    },
+    {
+      "beliefId": "belief-dodo.refunds.amount-integer",
+      "at": "2026-10-12T01:23:38.236Z",
+      "from": "hypothesis",
+      "to": "hypothesis",
+      "alpha": 3,
+      "beta": 1,
+      "confidence": 0.875,
+      "reason": "uninformative: no update (uninformative observation: no update)",
+      "probeId": "notarize-dodo-20261012T012315Z-p006"
+    },
+    {
+      "beliefId": "belief-dodo.refunds.page-size-max-100",
+      "at": "2026-10-12T01:23:38.732Z",
+      "from": "hypothesis",
+      "to": "hypothesis",
+      "alpha": 2,
+      "beta": 1,
+      "confidence": 0.75,
+      "reason": "confirmed honored (hyp-47335cea9441): α+1",
+      "probeId": "notarize-dodo-20261012T012315Z-p007"
+    },
+    {
+      "beliefId": "belief-dodo.refunds.page-size-max-100",
+      "at": "2026-10-12T01:23:39.463Z",
+      "from": "hypothesis",
+      "to": "hypothesis",
+      "alpha": 3,
+      "beta": 1,
+      "confidence": 0.875,
+      "reason": "confirmed honored (hyp-47335cea9441): α+1",
+      "probeId": "notarize-dodo-20261012T012315Z-p008"
+    },
+    {
+      "beliefId": "belief-dodo.refunds.page-size-max-100",
+      "at": "2026-10-12T01:23:40.142Z",
+      "from": "hypothesis",
+      "to": "candidate",
+      "alpha": 4,
+      "beta": 1,
+      "confidence": 0.9375,
+      "reason": "confirmed honored (hyp-47335cea9441): α+1; P(holds)=0.9375 past the honored threshold with 3 independent probes: candidate",
+      "probeId": "notarize-dodo-20261012T012315Z-p009"
+    },
+    {
+      "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+      "at": "2026-10-12T01:23:41.169Z",
+      "from": "hypothesis",
+      "to": "hypothesis",
+      "alpha": 2,
+      "beta": 1,
+      "confidence": 0.75,
+      "reason": "confirmed honored (hyp-be916b968dc8): α+1",
+      "probeId": "notarize-dodo-20261012T012315Z-p010"
+    },
+    {
+      "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+      "at": "2026-10-12T01:23:42.384Z",
+      "from": "hypothesis",
+      "to": "hypothesis",
+      "alpha": 3,
+      "beta": 1,
+      "confidence": 0.875,
+      "reason": "confirmed honored (hyp-be916b968dc8): α+1",
+      "probeId": "notarize-dodo-20261012T012315Z-p011"
+    },
+    {
+      "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+      "at": "2026-10-12T01:23:43.469Z",
+      "from": "hypothesis",
+      "to": "candidate",
+      "alpha": 4,
+      "beta": 1,
+      "confidence": 0.9375,
+      "reason": "confirmed honored (hyp-be916b968dc8): α+1; P(holds)=0.9375 past the honored threshold with 3 independent probes: candidate",
+      "probeId": "notarize-dodo-20261012T012315Z-p012"
+    },
+    {
+      "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
+      "at": "2026-10-12T01:23:45.816Z",
+      "from": "hypothesis",
+      "to": "hypothesis",
+      "alpha": 2,
+      "beta": 1,
+      "confidence": 0.75,
+      "reason": "confirmed honored (hyp-d9ead836ca14): α+1",
+      "probeId": "notarize-dodo-20261012T012315Z-p013"
+    },
+    {
+      "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
+      "at": "2026-10-12T01:23:47.636Z",
+      "from": "hypothesis",
+      "to": "hypothesis",
+      "alpha": 3,
+      "beta": 1,
+      "confidence": 0.875,
+      "reason": "confirmed honored (hyp-d9ead836ca14): α+1",
+      "probeId": "notarize-dodo-20261012T012315Z-p014"
+    },
+    {
+      "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
+      "at": "2026-10-12T01:23:49.365Z",
+      "from": "hypothesis",
+      "to": "candidate",
+      "alpha": 4,
+      "beta": 1,
+      "confidence": 0.9375,
+      "reason": "confirmed honored (hyp-d9ead836ca14): α+1; P(holds)=0.9375 past the honored threshold with 3 independent probes: candidate",
+      "probeId": "notarize-dodo-20261012T012315Z-p015"
+    },
+    {
+      "beliefId": "belief-dodo.refunds.amount-integer",
+      "at": "2026-10-12T01:23:49.392Z",
+      "from": "hypothesis",
+      "to": "abstained",
+      "alpha": 3,
+      "beta": 1,
+      "confidence": 0.875,
+      "reason": "abstain: no further independent probe design between thresholds; P(holds)=0.8750"
+    },
+    {
+      "beliefId": "belief-dodo.payments.page-size-max-100",
+      "at": "2026-10-12T01:24:04.681Z",
+      "from": "candidate",
+      "to": "notarized",
+      "alpha": 4,
+      "beta": 1,
+      "confidence": 0.9375,
+      "reason": "adversary narrow (bedrock, claude-opus-4.6): The probes confirm that values above 100 are rejected (400), which is consistent with a max of 100. However, the control calls with page_size=1 and page_size=100 both return length=1, meaning there is only 1 record in the test dataset. This means the 'default is 10' part of the claim is completely untested (we can't distinguish default behavior with so little data), and more importantly, the rejection at 101+ could be due to a general input validation rule (e.g., any value > some threshold) rather than specifically a max of 100. No probe tested page_size=100 as a treatment (expecting success) vs page_size=101 as a boundary — the control already shows page_size=100 succeeds, but with only 1 record we can't confirm the max is exactly 100 vs. some other nearby value. The evidence only supports that values above 100 are rejected on this single endpoint with this single API key. [scope: dodo.listPayments rejects page_size values above 100 with HTTP 400, tested with a single API key and minimal dataset (1 record)]"
+    },
+    {
+      "beliefId": "belief-dodo.refunds.page-size-max-100",
+      "at": "2026-10-12T01:24:14.377Z",
+      "from": "candidate",
+      "to": "notarized",
+      "alpha": 4,
+      "beta": 1,
+      "confidence": 0.9375,
+      "reason": "adversary narrow (bedrock, claude-opus-4.6): The control calls with page_size=1 and page_size=100 both return 0 items, meaning there is no refund data in the test account. Without data, the control cannot demonstrate that page_size actually controls the number of returned items (both return empty arrays regardless). The over-max probes (101, 110, 200) all get 400 errors, which confirms the API rejects values above 100, but the 400 could be a general input-validation rule (e.g., rejecting any value > 100 for any integer parameter) rather than specifically enforcing a page-size maximum of 100. More critically, the 'default is 10' part of the claim is completely untested. Additionally, all probes use a single API key/account and a single endpoint, so the evidence scope is limited. Untested alternative: The 400 error for page_size>100 could be a generic integer-range validation (e.g., max allowed integer value for any query param) rather than a page-size-specific maximum. With zero items in the account, there is no evidence that page_size actually limits result count or that the default is 10. [scope: The API rejects page_size values above 100 with HTTP 400 on GET /refunds for this single test account/key. The default-of-10 sub-claim is untested, and the functional effect of page_size on result count is unverified due to empty data.]"
+    },
+    {
+      "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+      "at": "2026-10-12T01:24:21.497Z",
+      "from": "candidate",
+      "to": "notarized",
+      "alpha": 4,
+      "beta": 1,
+      "confidence": 0.9375,
+      "reason": "adversary narrow (bedrock, claude-opus-4.6): All probes test only USD currency. The claim states 'smallest currency unit' generically, but no other currencies (e.g., JPY where minor units differ, or EUR) were tested. The balance echoing the sent amount without scaling only confirms minor-unit behavior for USD (which has cents as minor units). A currency with zero decimal places (like JPY) or different minor-unit scaling was never probed, so the claim that amount is always in the smallest currency unit is only evidenced for USD. Untested alternative: The API might behave differently for currencies with different decimal structures (e.g., JPY with 0 decimals, BHD with 3 decimals), where the 'smallest currency unit' interpretation could differ or the API could apply unexpected scaling. [scope: amount is in minor units for USD wallets only]"
+    },
+    {
+      "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
+      "at": "2026-10-12T01:24:30.469Z",
+      "from": "candidate",
+      "to": "notarized",
+      "alpha": 4,
+      "beta": 1,
+      "confidence": 0.9375,
+      "reason": "adversary narrow (bedrock, claude-opus-4.6): All three probes test only the 'credit' entry_type with USD currency. The claim is general ('repeat a request with the same key'), but no probes test 'debit' entries or other currencies. Additionally, the probes send identical requests in rapid succession (same parameters with same idempotency key), but do not test whether the idempotency key is still honored after a longer delay (e.g., minutes or hours), which is a common edge case for idempotency key expiration. The controls also do not vary the idempotency key itself — they simply omit the repeated writes — so the probes don't isolate whether it's the idempotency_key specifically (vs. some other deduplication mechanism) that prevents duplicates. Untested alternative: The API might be deduplicating based on something other than the idempotency key (e.g., identical request body hashing or rate limiting), since no probe sends the same idempotency key with different body parameters to confirm the key is the controlling factor. [scope: Idempotency key deduplication is confirmed for rapid successive credit entries in USD, but not verified for debit entries, other currencies, or longer time gaps between retries.]"
+    }
+  ],
+  "guards": [],
+  "usageByRole": {
+    "executor": {
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "usd": 0,
+      "calls": 0
+    },
+    "reflector": {
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "usd": 0,
+      "calls": 0
+    },
+    "adversary": {
+      "inputTokens": 10272,
+      "outputTokens": 1106,
+      "usd": 0.086911,
+      "calls": 4
+    }
+  },
+  "credits": {
+    "byEndpoint": {},
+    "total": 0,
+    "budget": 200
+  },
+  "metrics": {
+    "claims": 15,
+    "anomalies": 0,
+    "hypotheses": 18,
+    "hypothesesRejected": 0,
+    "probes": 15,
+    "probes.confirmed": 12,
+    "probes.refuted": 0,
+    "probes.inconclusive": 0,
+    "probes.uninformative": 3,
+    "probes.invalid": 0,
+    "abstained": 0,
+    "anomaliesSkipped": 0,
+    "beliefs.hypothesis": 10,
+    "beliefs.candidate": 0,
+    "beliefs.notarized": 4,
+    "beliefs.refuted": 0,
+    "beliefs.abstained": 1,
+    "beliefs.unlearned": 0,
+    "evidence.checked": 12,
+    "evidence.invalid": 0,
+    "adversary.uphold": 0,
+    "adversary.narrow": 4,
+    "adversary.downgrade": 0,
+    "adversary.failed": 0,
+    "probes_to_candidate_mean": 3,
+    "probes_to_candidate_dodo.customer.missing-email-422": null,
+    "probes_to_candidate_dodo.payment.refunds-array-present": null,
+    "probes_to_candidate_dodo.payment.refunds-lists-issued-refund": null,
+    "probes_to_candidate_dodo.payments.page-size-max-100": 3,
+    "probes_to_candidate_dodo.product.price-minor-units": null,
+    "probes_to_candidate_dodo.refund.amount-minor-units": null,
+    "probes_to_candidate_dodo.refund.full-retry-no-duplicate": null,
+    "probes_to_candidate_dodo.refunds.amount-integer": null,
+    "probes_to_candidate_dodo.refunds.page-size-max-100": 3,
+    "probes_to_candidate_dodo.subscription.change-plan-pending-409": null,
+    "probes_to_candidate_dodo.wallet.credit-amount-minor-units": 3,
+    "probes_to_candidate_dodo.wallet.debit-insufficient-400": null,
+    "probes_to_candidate_dodo.wallet.idempotency-key-no-duplicate": 3,
+    "probes_to_candidate_dodo.wallet.ledger-response-balance-integer": null,
+    "probes_to_candidate_dodo.wallets.total-balance-usd-integer": null,
+    "priors_strength": 2,
+    "priors_applied": 15,
+    "priors_informative": 3,
+    "priors_preexisting": 0,
+    "unsafe_actions_total": null,
+    "unsafe_duplicates": null,
+    "unsafe_wrong_unit": null,
+    "unsafe_missed_existing_refund": null,
+    "decision_accuracy": null,
+    "automation_rate": null,
+    "holds": null,
+    "escalations": null,
+    "beliefs_hypothesis": 10,
+    "beliefs_candidate": 0,
+    "beliefs_notarized": 4,
+    "beliefs_refuted": 0,
+    "beliefs_abstained": 1,
+    "beliefs_unlearned": 0,
+    "belief_precision": 1,
+    "beliefs_false": 0,
+    "belief_precision_n": 4,
+    "unguarded_call_sites": 0,
+    "credits_total": 0,
+    "usd_executor": 0,
+    "tokens_executor": 0,
+    "usd_reflector": 0,
+    "tokens_reflector": 0,
+    "usd_adversary": 0.086911,
+    "tokens_adversary": 11378,
+    "usd_total": 0.086911,
+    "probes_to_candidate": 3
+  },
+  "traceLinks": {},
+  "cassettes": [
+    "notarize-dodo-20261012T012315Z-recon@256926aa1d1a191fce51a337f1cfb4a2b144c401748e543ef6664d38a14dd82d",
+    "notarize-dodo-20261012T012315Z-probes@e074c80ade35cfa354ed8737b025c097bc67827e3b105346d0bb9bc9325cf076",
+    "notarize-dodo-20261012T012315Z-llm@af951fd3b8f41362b27159eba9592f9b0927d1176a02a48110f7e4a5ab06dde8",
+    "notarize-dodo-20261012T012315Z-inputs@c34495e1c401d53e35012ee5c7ac00fda0cdbda65180be9017f430553ddc4291"
+  ],
+  "contentHash": "047476038381d524113b7b312c4da7bc8ccf937446990e74c0836a16c0751fd5"
+}

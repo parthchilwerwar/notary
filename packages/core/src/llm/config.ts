@@ -15,13 +15,14 @@
  *   AWS_REGION             plus credentials from the AWS SDK's default chain (env keys, profile, SSO).
  *
  * Both: the same three role model ids, NOTARY_MODEL_EXECUTOR / _REFLECTOR / _ADVERSARY
- * (LiteLLM model names such as "claude-haiku" for litellm, Bedrock model ids for bedrock).
+ * (LiteLLM model names such as "claude-haiku" for litellm, Bedrock model ids for bedrock), plus
+ * Notary Chat's NOTARY_MODEL_CHAT (falls back to NOTARY_MODEL_REFLECTOR; src/llm/roles.ts).
  *
  * Nothing here performs I/O; a missing variable is reported by name, never by value.
  */
-import type { Role } from "../schema/index.js";
 import { MissingCredentialError } from "../tools/errors.js";
-import { LLM_FIX_HINT, MODEL_ENV, ModelConfigError } from "./roles.js";
+import { CHAT_MODEL_ENV, CHAT_MODEL_FALLBACK_ENV, LLM_FIX_HINT, MODEL_ENV, ModelConfigError, resolveChatModel } from "./roles.js";
+import type { ModelRole } from "./roles.js";
 
 export { LLM_FIX_HINT };
 
@@ -112,7 +113,7 @@ function missing(variable: string): LlmConfigIssue {
  * model id, then the provider's connection settings. Empty when configured. Pure, never throws.
  * (A wrong key or an unreachable proxy is not visible here — `notary doctor --llm` checks those.)
  */
-export function llmConfigIssues(env: Env, role: Role): LlmConfigIssue[] {
+export function llmConfigIssues(env: Env, role: ModelRole): LlmConfigIssue[] {
   let provider: LlmProvider;
   try {
     provider = llmProvider(env);
@@ -120,7 +121,9 @@ export function llmConfigIssues(env: Env, role: Role): LlmConfigIssue[] {
     return [invalid(LLM_PROVIDER_ENV, `must be "litellm" or "bedrock" (got "${read(env, LLM_PROVIDER_ENV)}")`)];
   }
   const out: LlmConfigIssue[] = [];
-  if (!read(env, MODEL_ENV[role])) out.push(missing(MODEL_ENV[role]));
+  if (role === "chat") {
+    if (!resolveChatModel(env)) out.push({ variable: CHAT_MODEL_ENV, problem: "not set", message: `BLOCKED: ${CHAT_MODEL_ENV} not set (and ${CHAT_MODEL_FALLBACK_ENV}, its fallback, is not set either) — ${LLM_FIX_HINT}` });
+  } else if (!read(env, MODEL_ENV[role])) out.push(missing(MODEL_ENV[role]));
   if (provider === "litellm") {
     const base = read(env, LITELLM_BASE_URL_ENV);
     if (!base) out.push(missing(LITELLM_BASE_URL_ENV));
@@ -133,11 +136,11 @@ export function llmConfigIssues(env: Env, role: Role): LlmConfigIssue[] {
 }
 
 /** The first env variable to fix before `role`'s model can be called, or null when configured. */
-export function llmConfigProblem(env: Env, role: Role): string | null {
+export function llmConfigProblem(env: Env, role: ModelRole): string | null {
   return llmConfigIssues(env, role)[0]?.variable ?? null;
 }
 
 /** The BLOCKED message for `role` ("BLOCKED: <VAR> not set — …"), or null when configured. No I/O. */
-export function llmBlockedReason(env: Env, role: Role): string | null {
+export function llmBlockedReason(env: Env, role: ModelRole): string | null {
   return llmConfigIssues(env, role)[0]?.message ?? null;
 }

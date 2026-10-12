@@ -158,7 +158,10 @@ describe("toolKnowledge", () => {
 
 describe("runDiff", () => {
   it("decision status changes, unsafe counts and metric deltas are computed from the two bundles", () => {
-    for (const w of worlds.filter((x) => x.bundles.length)) {
+    // Worlds with a naive and a guarded run (the fixture worlds; the real world once both are recorded).
+    const paired = worlds.filter((x) => x.bundles.some((b) => b.variant === "naive") && x.bundles.some((b) => b.variant === "guarded"));
+    expect(paired.length).toBeGreaterThan(0);
+    for (const w of paired) {
       const naive = bundle(w, "naive");
       const guarded = bundle(w, "guarded");
       const a = runDiff(naive, guarded, w)!;
@@ -207,10 +210,14 @@ describe("revocations", () => {
     }
   });
 
-  it("default: says plainly that nothing was revoked; the real world (no certificates issued) gives no answer", () => {
+  it("default: says plainly that nothing was revoked; the real world gives no answer until a certificate is issued", () => {
     const a = revocations(world("fixture:default"))!;
     expect(a.answer).toMatch(/No certificate in fixture scenario default was revoked/);
-    expect(revocations(world("real"))).toBeNull();
+    const real = world("real");
+    const issued = real.certificates.reduce((n, t) => n + t.certificates.length, 0);
+    const revoked = real.certificates.reduce((n, t) => n + t.revocations.length, 0);
+    if (issued === 0) expect(revocations(real)).toBeNull();
+    else if (revoked === 0) expect(revocations(real)!.answer).toContain(`all ${issued} issued certificate`);
   });
 });
 

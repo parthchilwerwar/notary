@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState, type RefObject } from "react";
 import { Link } from "react-router";
 import type { DataSource } from "../../data";
-import { mockupAddress } from "../../landing-data";
+import { EVALUATION_TAG, NO_RUNS_YET, mockupAddress } from "../../landing-data";
 import { Clouds } from "../brand/Clouds";
 import { BrowserFrame } from "./BrowserFrame";
 import { gsap, MOTION_OK, SplitText, useGSAP } from "./gsap";
@@ -44,6 +44,9 @@ export function Hero({
   const title = useRef<HTMLHeadingElement>(null);
   const idle = useEngaged();
   const [run, setRun] = useState(false);
+  const [sample, setSample] = useState(false);
+  /** The data layer answered and no run is published (real runs only; fixtures only under ?fixtures=1). */
+  const [empty, setEmpty] = useState(false);
   const [address, setAddress] = useState("");
   const replay = replayFor(source);
 
@@ -63,7 +66,12 @@ export function Hero({
     if (!idle) return;
     let live = true;
     replayPair(replay).then(
-      (p) => live && setRun(!!p.guarded),
+      (p) => {
+        if (!live) return;
+        setRun(!!p.preview);
+        setSample(!!p.preview?.sample);
+        setEmpty(!p.preview);
+      },
       () => undefined,
     );
     return () => {
@@ -98,7 +106,7 @@ export function Hero({
   );
 
   return (
-    <section ref={heroRef} className="l-hero sky" aria-labelledby="hero-title">
+    <section ref={heroRef} className="l-hero sky" aria-labelledby="hero-title" data-nav-dark>
       <div className="l-hero-copy">
         <h1 id="hero-title" ref={title} className="l-hero-title">
           No certificate, <br />
@@ -120,11 +128,12 @@ export function Hero({
           )}
         </div>
       </div>
-      <div className="l-shot-rise">
+      <div className="l-shot-rise" data-nav-dark-end>
         <div className="l-shot-parallax">
           <BrowserFrame
             className="l-shot"
             address={address}
+            tag={run && idle && sample ? EVALUATION_TAG : undefined}
             decorative
           >
             <div className="l-shot-screen" ref={screen}>
@@ -134,6 +143,8 @@ export function Hero({
                     <RunPreview replay={replay} />
                   </div>
                 </Suspense>
+              ) : empty ? (
+                <ShotEmpty />
               ) : (
                 <ShotSkeleton />
               )}
@@ -143,6 +154,23 @@ export function Hero({
       </div>
       <Clouds className="l-hero-clouds" />
     </section>
+  );
+}
+
+/** No run published: the frame says what to run instead of showing anything made up. */
+function ShotEmpty() {
+  return (
+    <div className="l-shot-empty">
+      <p className="l-shot-empty-title">{NO_RUNS_YET.title}</p>
+      <p className="l-shot-empty-text">{NO_RUNS_YET.body}</p>
+      <ol>
+        {NO_RUNS_YET.commands.map((c) => (
+          <li key={c}>
+            <code>{c}</code>
+          </li>
+        ))}
+      </ol>
+    </div>
   );
 }
 

@@ -1,0 +1,40 @@
+{
+  "kind": "notary-entire/1",
+  "repoHead": "0ce991dc108e6708620e70015f694e2c6e57be5a",
+  "branch": "main",
+  "cli": {
+    "installed": true,
+    "version": "0.11.4",
+    "graphPlugin": "v0.4.0"
+  },
+  "repo": {
+    "enabled": true,
+    "agents": [
+      "Claude Code"
+    ],
+    "checkpointStore": "git-refs",
+    "commitLinking": "always"
+  },
+  "checkpoints": [],
+  "checkpointsNote": "Entire is enabled (Claude Code), but no commit on main carries an Entire-Checkpoint trailer yet. One is created when a commit is made while Entire tracks an agent session: commit after a Claude Code session in this repo, or run `pnpm notary notarize --tool <name> --adversary session`, whose verdict commits are checkpointed.",
+  "coverage": {
+    "backend": "entire",
+    "command": "entire graph edges --repo . --format ndjson --worktree --relation CALLS,ASYNC_CALLS,CONSTRUCTS",
+    "graphProvider": "entire-graph",
+    "graphVersion": "v0.4.0",
+    "commit": "0ce991dc108e6708620e70015f694e2c6e57be5a",
+    "worktree": true,
+    "completeness": "ok",
+    "skippedFiles": [],
+    "callEdges": 7822,
+    "constructEdges": 377,
+    "clientEdges": 2,
+    "ops": 18,
+    "sites": 33,
+    "guarded": 26,
+    "rawByDesign": 7,
+    "unguardedCallSites": 0,
+    "unguarded": []
+  },
+  "coverageNote": null
+}

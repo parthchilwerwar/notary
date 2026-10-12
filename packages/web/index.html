@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,16 +10,6 @@
     />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Cstyle%3Etext%7Bfill:%230b0f19%7D@media (prefers-color-scheme:dark)%7Btext%7Bfill:%23e8ecf4%7D%7D%3C/style%3E%3Ctext x=%2716%27 y=%2725%27 text-anchor=%27middle%27 font-family=%27Instrument Serif,Georgia,Times New Roman,serif%27 font-size=%2730%27 font-weight=%27400%27%3EN%3C/text%3E%3C/svg%3E" />
     <title>Notary</title>
-    <script>
-      // Theme before first paint (same rule as src/useTheme.ts): stored choice, else the OS.
-      try {
-        var t = localStorage.getItem("notary-theme");
-        if (t !== "dark" && t !== "light")
-          t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-        document.documentElement.dataset.theme = t;
-        document.querySelector('meta[name="theme-color"]').setAttribute("content", t === "dark" ? "#0b1220" : "#ffffff");
-      } catch (e) {}
-    </script>
   </head>
   <body>
     <div id="root"></div>

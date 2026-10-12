@@ -54,6 +54,8 @@ import type {
   Tier,
 } from "../schema/index.js";
 import { withSpan } from "../trace/index.js";
+import { AGENT_ID_ATTR } from "../trace/agent.js";
+import { reportDecisionIncidents } from "../incidents/decision.js";
 import { AGENT_SPAN_ATTR } from "../llm/agents.js";
 import { AGENTS } from "../schema/agents.js";
 import { isRef, resolveRef } from "./manifest.js";
@@ -301,6 +303,8 @@ export async function executeQueue(opts: ExecuteQueueOptions): Promise<ExecuteQu
         "notary.queue.item",
         {
           [AGENT_SPAN_ATTR]: AGENTS.executor.name,
+          [AGENT_ID_ATTR]: "executor",
+          "notary.role": "executor",
           "notary.requestId": req.id,
           "notary.requestType": req.type,
           "notary.variant": opts.variant,
@@ -308,7 +312,12 @@ export async function executeQueue(opts: ExecuteQueueOptions): Promise<ExecuteQu
           ...(req.note ? { "notary.note": req.note } : {}),
           ...(saved ? { "notary.resumedFrom": saved.state } : {}),
         },
-        () => handleItem(req, saved),
+        async () => {
+          const d = await handleItem(req, saved);
+          // Holds / guard refusals of this item become incidents (warn logs) on this AGENT span.
+          reportDecisionIncidents(d, req);
+          return d;
+        },
         {
           kind: "AGENT",
           onSpan: (ids) => {

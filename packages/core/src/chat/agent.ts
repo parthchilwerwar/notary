@@ -1,55 +1,72 @@
-// The Notary Chat agent loop: one user message -> tool steps -> one streamed, cited answer.
+// The Notary Chat agent: one user message -> a native tool-calling loop -> one cited answer.
 //
-// Provider-agnostic (works the same on LiteLLM and Bedrock through LlmClient, executor role):
-//   1. Action phase, at most `maxSteps` (8) tool steps. Each model call must reply with ONE JSON
-//      object, validated with zod:
-//        {"note": "<≤20 words>", "tool": "<ChatToolName>", "args": {...}}   or   {"note"?: "...", "final": true}
-//      and the args are validated by the tool's own zod schema. A malformed reply gets one corrective
-//      retry; a second malformed reply ends the turn with an `error` event (steps so far are kept).
-//      The model's note becomes a `note` event (source "model", ≤ 20 words, ≤ 200 chars) before the step.
-//   2. Answer phase: one more call, streamed (LlmClient onText: LiteLLM `stream: true`; Bedrock and
-//      doubles deliver the whole reply at once, chunked here into text_delta events). The answer is
-//      markdown with [n] markers and a trailing `CITATIONS: [...]` line that is stripped from the text
-//      and validated by code against this turn's step outputs (citations.ts) -> one `citations` event.
-//   3. `done` with the turn's tokens, cost (null if any model call had an unknown price), steps,
-//      duration, the root trace id and mode "live".
-// The full conversation history (every earlier user message and answer, with a one-line summary of the
-// steps behind each answer) goes to the model on every call, so follow-ups work; citations must still
-// come from this turn's steps.
+// A real agent loop over OpenAI-style function tools (LlmClient.completeTools: LiteLLM `tools` /
+// `tool_choice` with `tool_calls` fed back as `tool` messages; Bedrock Converse toolUse/toolResult).
+// Model role "chat" (NOTARY_MODEL_CHAT, falling back to NOTARY_MODEL_REFLECTOR); system prompt from
+// src/agents/prompts.ts (chatSystemPrompt).
 //
-// Money: chat has no write tool and its API clients are read-only (tools.ts). A deterministic check
-// (money.ts) also catches obvious money-moving requests: the loop runs a real `list_approvals` step
-// first, tells the model it cannot act, and if the answer does not point to the Approvals card a fixed
-// notice (code-written) is appended.
+//   1. Every model call offers every chat tool (chatToolSpecs: JSON Schema generated from the zod
+//      schema that validates the arguments). A reply with tool calls is executed by code: each call's
+//      name and arguments are validated (zod); a valid, new call runs as one step (step_started ->
+//      step_finished on the SSE stream, wrapped in a TOOL span) and its result goes back as the
+//      `tool` message for that call id; an invalid or repeated call gets an explanatory `tool` result
+//      and no step. Text the model writes next to its tool calls becomes a `note` event (≤ 20 words).
+//   2. A reply without tool calls is the answer. At most `maxSteps` (8) tool steps per question; when
+//      the cap is reached the next call uses tool_choice "none" with a nudge to answer now.
+//      Two consecutive rounds with only invalid calls end the turn with an `error` event.
+//   3. The answer is markdown with [n] markers and a trailing `CITATIONS: [...]` line, which is
+//      stripped from the text and validated by code against this turn's step outputs only
+//      (citations.ts: every cited id must be a record id a tool returned this turn) -> one
+//      `citations` event; then `done` with tokens, cost (null when a price is unknown), steps,
+//      duration, the root trace id and mode "live". The answer text is emitted once the model's
+//      final reply is complete (a reply only turns out to be the answer when it carries no tool
+//      call), in small text_delta chunks.
+// History: earlier user messages and answers (each answer with a one-line summary of its steps) are
+// sent as plain user/assistant turns; citations must still come from this turn's steps.
 //
-// Stop: the AbortSignal reaches the model call (HTTP cancelled) and the in-flight tool (fetch_doc,
-// Crustdata, Dodo requests cancelled); the step is closed with status "aborted", an `error` event
-// "Stopped" marks the message, and the loop returns at once with what was produced so far.
-import { z } from "zod";
+// Budget: one LlmClient per message, so NOTARY_MAX_USD caps one message's model spend (checked before
+// every call); NOTARY_LLM_RPM / NOTARY_LLM_CONCURRENCY apply to every call; messages per minute are
+// limited by NOTARY_ASK_RPM in api/chat.ts.
+//
+// Money: no tool can write and the API clients are read-only (tools.ts). A deterministic check
+// (money.ts) also catches obvious money-moving requests: a real list_approvals step runs first, the
+// model is told it cannot act, and if the answer does not point to the Approvals card a fixed notice
+// (written by code) is appended. Chat never approves or executes anything.
+//
+// Tracing: the loop runs in one AGENT span `notary.chat.agent`; each tool call is a TOOL span
+// `notary.chat.tool` (notary.tool, notary.recordIds = the record ids it returned); model calls open
+// their own spans in LlmClient. No prompt, message text, token or secret in attributes.
+//
+// Stop: the AbortSignal reaches the model call (HTTP cancelled) and the in-flight tool; the step is
+// closed with status "aborted", an `error` event "Stopped" marks the message and the loop returns.
+import { chatStepCapNudge, chatSystemPrompt, CHAT_DEFAULT_MAX_STEPS, CHAT_NOTE_MAX_WORDS } from "../agents/prompts.js";
 import { isUsdCapExceeded } from "../llm/budget.js";
 import { LlmRateLimitedError } from "../llm/limiter.js";
 import { AGENT_SPAN_ATTR } from "../llm/agents.js";
-import { MODEL_ENV } from "../llm/roles.js";
+import { CHAT_MODEL_ENV, CHAT_MODEL_FALLBACK_ENV } from "../llm/roles.js";
 import { AGENTS } from "../schema/agents.js";
-import type { CompleteResult, LlmLike, LlmMessage } from "../llm/client.js";
-import { ChatToolNameSchema } from "../schema/chat.js";
+import type { AgentMessage, ToolCall, ToolChoice, ToolCompleteResult, ToolLlmLike } from "../llm/client.js";
 import type { ChatEvent, ChatMessage } from "../schema/chat.js";
 import { withSpan } from "../trace/index.js";
 import { AnswerSplitter, validateChatCitations } from "./citations.js";
 import type { TurnStep } from "./citations.js";
 import { APPROVALS_PATH, MONEY_NOTICE, detectMoneyRequest } from "./money.js";
-import { CHAT_TOOLS, STEP_ID_PLACEHOLDER, TOOL_TEXT_CHARS, capData, toolByName } from "./tools.js";
+import { CHAT_TOOLS, STEP_ID_PLACEHOLDER, TOOL_TEXT_CHARS, capData, chatToolSpecs, toolByName } from "./tools.js";
 import type { ChatToolDef, ToolContext, ToolRun } from "./tools.js";
 
-export const CHAT_MAX_STEPS = 8;
-export const NOTE_MAX_WORDS = 20;
+export const CHAT_MAX_STEPS = CHAT_DEFAULT_MAX_STEPS;
+export const NOTE_MAX_WORDS = CHAT_NOTE_MAX_WORDS;
 /** Characters of one earlier message sent back to the model as history. */
 export const HISTORY_MESSAGE_CHARS = 6000;
-export const ACTION_MAX_TOKENS = 500;
-export const ANSWER_MAX_TOKENS = 1500;
+/** Output cap per model call (a call may turn out to be the answer). */
+export const CALL_MAX_TOKENS = 1500;
+/** Rounds in a row whose tool calls were all invalid before the turn gives up. */
+export const MAX_INVALID_ROUNDS = 2;
 export const STOPPED_MESSAGE = "Stopped — this answer is incomplete.";
-/** The model Notary Chat runs on (AGENTS.chat.modelRole → its NOTARY_MODEL_* variable), for fix lines. */
-const CHAT_MODEL = `the model ${AGENTS.chat.name} runs on (${MODEL_ENV[AGENTS.chat.modelRole!]})`;
+/** Span attribute: the agent's id (src/schema/agents.ts), next to the display name in notary.agent. */
+export const AGENT_ID_SPAN_ATTR = "notary.agent_id";
+/** The model Notary Chat runs on, for fix lines. */
+const CHAT_MODEL = `the model ${AGENTS.chat.name} runs on (${CHAT_MODEL_ENV}, else ${CHAT_MODEL_FALLBACK_ENV})`;
 const DOCTOR_FIX = `Check ${CHAT_MODEL} with \`pnpm notary doctor --llm\``;
 
 export interface TurnInput {
@@ -59,7 +76,7 @@ export interface TurnInput {
 }
 
 export interface AgentDeps {
-  llm: LlmLike;
+  llm: ToolLlmLike;
   /** Everything a tool needs except the turn's signal. */
   tools: Omit<ToolContext, "signal" | "usdSpent">;
   emit: (event: ChatEvent) => void;
@@ -70,7 +87,7 @@ export interface AgentDeps {
   clock?: () => number;
   /** Scrubs secret env values out of any text before it is emitted. */
   clean?: (s: string) => string;
-  /** A fresh stream scrubber for the answer's deltas (a secret split across deltas is still caught). */
+  /** A fresh stream scrubber for the answer's text (a secret split across chunks is still caught). */
   streamClean?: () => { push: (delta: string) => string; end: () => string };
 }
 
@@ -107,36 +124,9 @@ class TurnError extends Error {
 
 // ------------------------------------------------------------------------------------- prompts
 
-export function systemPrompt(): string {
-  const tools = CHAT_TOOLS.map((t) => `- ${t.name} ${t.argsDoc}: ${t.description}`).join("\n");
-  return [
-    "You are Notary Chat, the assistant inside Notary. Notary tests what third-party APIs (Crustdata, Dodo Payments) actually do against their docs, issues certificates for verified behaviour, and holds risky money-moving actions for a human to approve.",
-    "You answer questions by calling tools, which READ Notary's real records and, when connected, live read-only APIs. Use only what the tools return; never invent ids, numbers, names or results.",
-    `You cannot move money or change anything: you cannot refund, approve, reject, charge, change plans, credit wallets or start runs, and no tool for that exists. If asked to, do not pretend; explain what would happen and that a person approves or rejects held actions on the Approvals card (${APPROVALS_PATH}) in the Notary app.`,
-    "",
-    "TOOLS:",
-    tools,
-    "",
-    "PROTOCOL (until told to write the answer): reply with exactly ONE JSON object and nothing else, either",
-    '  {"note": "<what you will do next, at most 20 words>", "tool": "<tool name>", "args": {<arguments>}}',
-    "or, when you have what you need (or nothing needs looking up):",
-    '  {"note": "<optional, at most 20 words>", "final": true}',
-    `At most ${CHAT_MAX_STEPS} tool calls per question. Prefer the most specific tool. If a tool is unavailable or fails, you could not check that; do not retry it with the same arguments.`,
-  ].join("\n");
-}
-
-export function finalInstructions(moneyRequest: boolean): string {
-  return [
-    "Now write the final answer for the user. Do NOT reply with a JSON action this time.",
-    "Write concise GitHub-flavored markdown. Rules:",
-    "- Put a citation marker like [1] after every factual claim. Cite only the step results of THIS question shown above (not earlier answers).",
-    "- If something could not be checked (a tool was unavailable or failed), say so plainly. Never guess or fill gaps.",
-    ...(moneyRequest ? [`- The user asked you to move money or change something. Say clearly that you cannot, what would happen, and that a person approves or rejects held actions on the Approvals card (${APPROVALS_PATH}).`] : []),
-    "After the answer, on its own last line, write CITATIONS: followed by a JSON array with one entry per marker:",
-    'CITATIONS: [{"n": 1, "type": "<certificate|run_event|run|approval|doc|api_response>", "id": "<exact id>", "stepId": "<step id, e.g. s2>"}]',
-    'Ids: certificate = the cert-… or rev-… id; run_event = "<runId>#<seq>"; run = the run id; approval = the appr-… id; doc = the page URL; api_response = the step id (e.g. "s3") whose result you used.',
-    "If you cite nothing, write CITATIONS: []",
-  ].join("\n");
+/** Notary Chat's system prompt (src/agents/prompts.ts). */
+export function systemPrompt(maxSteps: number = CHAT_MAX_STEPS): string {
+  return chatSystemPrompt({ maxSteps });
 }
 
 function stepsSummary(events: readonly ChatEvent[] | undefined): string {
@@ -158,7 +148,7 @@ function clip(s: string, max: number): string {
 }
 
 /** Earlier messages as model history (each assistant answer with its step summary). */
-export function historyMessages(history: readonly ChatMessage[]): LlmMessage[] {
+export function historyMessages(history: readonly ChatMessage[]): AgentMessage[] {
   return history.map((m) =>
     m.role === "user"
       ? { role: "user" as const, content: clip(m.content, HISTORY_MESSAGE_CHARS) }
@@ -166,60 +156,29 @@ export function historyMessages(history: readonly ChatMessage[]): LlmMessage[] {
   );
 }
 
-/** Providers need user/assistant alternation starting with a user turn: merge neighbours, drop a leading assistant, no empty content. */
-export function alternate(msgs: readonly LlmMessage[]): LlmMessage[] {
-  const out: LlmMessage[] = [];
-  for (const m of msgs) {
-    const content = m.content.trim() ? m.content : "(empty)";
-    const last = out[out.length - 1];
-    if (last && last.role === m.role) last.content = `${last.content}\n\n${content}`;
-    else out.push({ role: m.role, content });
+// ---------------------------------------------------------------------------------- tool calls
+
+export type CheckedCall = { ok: true; def: ChatToolDef; args: Record<string, unknown> } | { ok: false; reason: string };
+
+/** Validate one native tool call: a known tool and arguments that pass its zod schema. */
+export function checkToolCall(call: Pick<ToolCall, "name" | "arguments">): CheckedCall {
+  const def = toolByName(call.name);
+  if (!def) return { ok: false, reason: `there is no tool named "${call.name}"; the tools are ${CHAT_TOOLS.map((t) => t.name).join(", ")}` };
+  let raw: unknown = {};
+  const text = call.arguments.trim();
+  if (text) {
+    try {
+      raw = JSON.parse(text);
+    } catch {
+      return { ok: false, reason: `the arguments for ${def.name} are not valid JSON` };
+    }
   }
-  while (out.length && out[0]!.role === "assistant") out.shift();
-  return out;
-}
-
-// ------------------------------------------------------------------------------------- actions
-
-const ActionSchema = z.union([
-  z.object({ note: z.string().optional(), tool: ChatToolNameSchema, args: z.record(z.string(), z.unknown()).optional() }).strict(),
-  z.object({ note: z.string().optional(), final: z.literal(true) }).strict(),
-]);
-
-export type ParsedAction =
-  | { ok: true; kind: "tool"; note?: string; def: ChatToolDef; args: Record<string, unknown> }
-  | { ok: true; kind: "final"; note?: string }
-  | { ok: false; reason: string };
-
-/** Parse one action reply: one JSON object (a code fence or surrounding prose tolerated), then zod. */
-export function parseAction(text: string): ParsedAction {
-  let body = text.trim();
-  const fence = /```(?:json)?\s*([\s\S]*?)```/i.exec(body);
-  if (fence) body = fence[1]!.trim();
-  const start = body.indexOf("{");
-  const end = body.lastIndexOf("}");
-  if (start < 0 || end < start) return { ok: false, reason: "the reply contains no JSON object" };
-  let raw: unknown;
-  try {
-    raw = JSON.parse(body.slice(start, end + 1));
-  } catch {
-    return { ok: false, reason: "the reply is not valid JSON" };
-  }
-  const parsed = ActionSchema.safeParse(raw);
-  if (!parsed.success) {
-    const issue = parsed.error.issues[0];
-    return { ok: false, reason: `the JSON does not match the protocol (${issue ? `${issue.path.join(".") || "object"}: ${issue.message}` : "invalid"}); tools: ${ChatToolNameSchema.options.join(", ")}` };
-  }
-  const a = parsed.data;
-  const note = a.note?.trim() ? a.note.trim() : undefined;
-  if ("final" in a) return { ok: true, kind: "final", ...(note ? { note } : {}) };
-  const def = toolByName(a.tool)!;
-  const args = def.args.safeParse(a.args ?? {});
+  const args = def.args.safeParse(raw ?? {});
   if (!args.success) {
     const issue = args.error.issues[0];
-    return { ok: false, reason: `bad arguments for ${a.tool} (${issue ? `${issue.path.join(".") || "args"}: ${issue.message}` : "invalid"}); expected ${def.argsDoc}` };
+    return { ok: false, reason: `bad arguments for ${def.name} (${issue ? `${issue.path.join(".") || "args"}: ${issue.message}` : "invalid"}); expected ${def.argsDoc}` };
   }
-  return { ok: true, kind: "tool", ...(note ? { note } : {}), def, args: args.data };
+  return { ok: true, def, args: args.data };
 }
 
 /** ≤ NOTE_MAX_WORDS words and ≤ 200 chars. */
@@ -230,7 +189,7 @@ export function shortNote(note: string): string {
   return s;
 }
 
-/** Split a long delta into word-boundary chunks so non-streaming providers still render progressively. */
+/** Split a long text into word-boundary chunks so the answer still renders progressively. */
 export function chunkText(text: string, size = 48): string[] {
   if (text.length <= size) return [text];
   const out: string[] = [];
@@ -248,6 +207,25 @@ export function chunkText(text: string, size = 48): string[] {
 // ------------------------------------------------------------------------------------ the loop
 
 export async function runTurn(input: TurnInput, deps: AgentDeps): Promise<TurnResult> {
+  let agentSet: (k: string, v: string | number | boolean) => void = () => {};
+  const result = await withSpan(
+    "notary.chat.agent",
+    { [AGENT_SPAN_ATTR]: AGENTS.chat.name, [AGENT_ID_SPAN_ATTR]: "chat", "notary.chat.history_messages": input.history.length },
+    async () => {
+      const r = await loop(input, deps);
+      agentSet("notary.chat.status", r.status);
+      agentSet("notary.chat.steps", r.steps);
+      agentSet("notary.chat.model_calls", r.modelCalls);
+      agentSet("notary.chat.citations", r.citations.total);
+      agentSet("notary.chat.citations_invalid", r.citations.invalid);
+      return r;
+    },
+    { kind: "AGENT", onSpan: (_ids, set) => (agentSet = set) },
+  );
+  return result;
+}
+
+async function loop(input: TurnInput, deps: AgentDeps): Promise<TurnResult> {
   const clock = deps.clock ?? (() => performance.now());
   const clean = deps.clean ?? ((s: string) => s);
   const maxSteps = deps.maxSteps ?? CHAT_MAX_STEPS;
@@ -256,6 +234,8 @@ export async function runTurn(input: TurnInput, deps: AgentDeps): Promise<TurnRe
   const steps: (TurnStep & { tool: string; key: string })[] = [];
   const usage = { input: 0, output: 0, usd: 0, unknown: false, calls: 0 };
   const money = detectMoneyRequest(input.content);
+  const system = systemPrompt(maxSteps);
+  const specs = chatToolSpecs();
   let visible = "";
   let citations = { total: 0, invalid: 0 };
 
@@ -277,11 +257,11 @@ export async function runTurn(input: TurnInput, deps: AgentDeps): Promise<TurnRe
 
   const ctx: ToolContext = { ...deps.tools, signal, usdSpent: () => usage.usd };
 
-  const callModel = async (messages: LlmMessage[], maxTokens: number, onText?: (d: string) => void): Promise<CompleteResult> => {
+  const callModel = async (messages: AgentMessage[], toolChoice: ToolChoice): Promise<ToolCompleteResult> => {
     if (signal.aborted) throw new Aborted();
-    let r: CompleteResult;
+    let r: ToolCompleteResult;
     try {
-      r = await deps.llm.complete({ role: AGENTS.chat.modelRole!, agent: "chat", system: systemPrompt(), messages: alternate(messages), maxTokens, signal, ...(onText ? { onText } : {}) });
+      r = await deps.llm.completeTools({ role: "chat", agent: "chat", system, messages, tools: specs, toolChoice, maxTokens: CALL_MAX_TOKENS, signal });
     } catch (err) {
       if (signal.aborted) throw new Aborted();
       const msg = clean(err instanceof Error ? err.message : String(err));
@@ -299,6 +279,7 @@ export async function runTurn(input: TurnInput, deps: AgentDeps): Promise<TurnRe
     return r;
   };
 
+  /** Run one validated tool call as a step; returns the text the model gets back as the tool result. */
   const runStep = async (def: ChatToolDef, args: Record<string, unknown>): Promise<string> => {
     const id = `s${steps.length + 1}`;
     const inputSummary = clean(def.input(args));
@@ -309,7 +290,14 @@ export async function runTurn(input: TurnInput, deps: AgentDeps): Promise<TurnRe
     // The span body returns a small summary only (the SDK records the return value); the result stays here.
     await withSpan(
       "notary.chat.tool",
-      { [AGENT_SPAN_ATTR]: AGENTS.chat.name, "notary.chat.tool": def.name, "notary.chat.step_id": id, "notary.chat.input_chars": inputSummary.length },
+      {
+        [AGENT_SPAN_ATTR]: AGENTS.chat.name,
+        [AGENT_ID_SPAN_ATTR]: "chat",
+        "notary.tool": def.name,
+        "notary.chat.tool": def.name,
+        "notary.chat.step_id": id,
+        "notary.chat.input_chars": inputSummary.length,
+      },
       async () => {
         try {
           run = await def.run(args, ctx);
@@ -326,6 +314,8 @@ export async function runTurn(input: TurnInput, deps: AgentDeps): Promise<TurnRe
         set("notary.chat.duration_ms", Math.max(0, Math.round(clock() - started)));
         if (r !== "aborted") {
           set("notary.chat.citables", r.citables.length);
+          // Record ids only (never record content); the step id stands in for an API response.
+          set("notary.recordIds", clip(r.citables.map((c) => (c.id === STEP_ID_PLACEHOLDER ? id : c.id)).join(","), 1000));
           if (r.credits !== undefined) set("notary.chat.credits", r.credits);
         }
         return { status: r === "aborted" ? "aborted" : r.status };
@@ -360,51 +350,63 @@ export async function runTurn(input: TurnInput, deps: AgentDeps): Promise<TurnRe
         : "";
     return clean(`Result of step ${id} (${def.name} ${inputSummary || "{}"}) — status ${run.status}:\n${clip(run.modelText, TOOL_TEXT_CHARS)}${citeLine}`);
   };
-  const convo: LlmMessage[] = [...historyMessages(input.history), { role: "user", content: input.content }];
+
+  const convo: AgentMessage[] = [...historyMessages(input.history), { role: "user", content: input.content }];
 
   try {
     // Deterministic: an obvious money-moving request gets a real read of what is held, and the model is told it can't act.
     if (money.moneyMoving) {
-      const approvals = toolByName("list_approvals")!;
-      const resultText = await runStep(approvals, {});
+      const resultText = await runStep(toolByName("list_approvals")!, {});
       convo.push({
         role: "user",
-        content: `[Notary: this message asks to move money or change something ("${money.verb}"). Chat cannot do that — no tool can write. Notary ran ${steps[steps.length - 1]!.id} (list_approvals) to show what is actually held.]\n${resultText}`,
+        content: `[Notary: this message asks to move money or change something ("${money.verb}"). Chat cannot do that — no tool can write. Notary ran ${steps[steps.length - 1]!.id} (list_approvals) to show what is actually held. Answer any other part of the question with your tools as usual.]\n${resultText}`,
       });
     }
 
-    // 1. Action phase.
-    let iterations = 0;
-    let toolSteps = 0;
-    while (toolSteps < maxSteps && iterations < maxSteps + 4) {
-      iterations += 1;
-      let reply = await callModel(convo, ACTION_MAX_TOKENS);
-      let action = parseAction(reply.text);
-      if (!action.ok) {
-        convo.push({ role: "assistant", content: reply.text });
-        convo.push({ role: "user", content: `Your reply was not a valid action: ${action.reason}. Reply with exactly one JSON object as described in the protocol, nothing else.` });
-        reply = await callModel(convo, ACTION_MAX_TOKENS);
-        action = parseAction(reply.text);
-        if (!action.ok) throw new TurnError(`${AGENTS.chat.name}'s reply was not a valid action twice in a row (${action.reason}).`, `Ask again or rephrase the question; if it keeps happening, check ${CHAT_MODEL} with \`pnpm notary doctor --llm\``);
+    // The agent loop: the model calls tools until it answers (or the step cap forces an answer).
+    let answer: string | null = null;
+    let invalidRounds = 0;
+    let capped = false;
+    while (answer === null) {
+      const toolSteps = steps.length - (money.moneyMoving ? 1 : 0);
+      if (!capped && toolSteps >= maxSteps) {
+        capped = true;
+        convo.push({ role: "user", content: chatStepCapNudge(maxSteps) });
       }
-      convo.push({ role: "assistant", content: reply.text });
-      if (action.note) emit({ type: "note", text: clean(shortNote(action.note)), source: "model" });
-      if (action.kind === "final") break;
-      const key = `${action.def.name}:${JSON.stringify(action.args)}`;
-      const dup = steps.find((s) => s.key === key);
-      if (dup) {
-        convo.push({ role: "user", content: `You already ran ${action.def.name} with these arguments in step ${dup.id}; its result is above. Choose a different step or reply {"final": true}.` });
-        continue;
+      const reply = await callModel(convo, capped ? "none" : "auto");
+      if (!reply.toolCalls.length || capped) {
+        answer = reply.text;
+        break;
       }
-      convo.push({ role: "user", content: await runStep(action.def, action.args) });
-      toolSteps += 1;
+      // The model's words next to its calls are its note (≤ 20 words).
+      if (reply.text.trim()) emit({ type: "note", text: clean(shortNote(reply.text)), source: "model" });
+      // Ids must be unique per call for the provider to pair results; fill any the provider left empty.
+      const calls = reply.toolCalls.map((c, i) => ({ ...c, id: c.id || `call_${usage.calls}_${i}` }));
+      convo.push({ role: "assistant", content: reply.text, toolCalls: calls });
+      let validThisRound = 0;
+      for (const call of calls) {
+        let out: string;
+        const checked = checkToolCall(call);
+        if (!checked.ok) out = `Not run: ${checked.reason}. Fix the call or answer from what you have.`;
+        else {
+          validThisRound += 1;
+          const key = `${checked.def.name}:${JSON.stringify(checked.args)}`;
+          const dup = steps.find((s) => s.key === key);
+          if (dup) out = `Not run again: you already ran ${checked.def.name} with these arguments in step ${dup.id}; its result is above.`;
+          else if (steps.length - (money.moneyMoving ? 1 : 0) >= maxSteps) out = `Not run: the limit of ${maxSteps} tool calls for this question is reached.`;
+          else out = await runStep(checked.def, checked.args);
+        }
+        // Every tool call gets exactly one tool result (providers require the pairing).
+        convo.push({ role: "tool", toolCallId: call.id, name: call.name, content: out });
+      }
+      invalidRounds = validThisRound === 0 ? invalidRounds + 1 : 0;
+      if (invalidRounds >= MAX_INVALID_ROUNDS) {
+        throw new TurnError(`${AGENTS.chat.name}'s tool calls were invalid ${MAX_INVALID_ROUNDS} rounds in a row.`, `Ask again or rephrase the question; if it keeps happening, check ${CHAT_MODEL} with \`pnpm notary doctor --llm\``);
+      }
     }
 
-    // 2. Answer phase (streamed).
-    convo.push({ role: "user", content: finalInstructions(money.moneyMoving) });
+    // The answer: strip and check the CITATIONS line, scrub secrets, emit in chunks.
     const splitter = new AnswerSplitter();
-    // Secret-safe across deltas (a second line of defence behind LlmClient's own stream scrubbing),
-    // and trailing whitespace before the CITATIONS line is never emitted.
     const safe = deps.streamClean?.() ?? { push: (d: string) => clean(d), end: () => "" };
     let pendingWs = "";
     const show = (out: string): void => {
@@ -417,8 +419,7 @@ export async function runTurn(input: TurnInput, deps: AgentDeps): Promise<TurnRe
         emitText(trimmed);
       }
     };
-    const onText = (d: string): void => show(splitter.push(safe.push(d)));
-    await callModel(convo, ANSWER_MAX_TOKENS, onText);
+    show(splitter.push(safe.push(answer)));
     show(splitter.push(safe.end()));
     show(splitter.end().text);
     const block = splitter.block;

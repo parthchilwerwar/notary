@@ -1,6 +1,8 @@
 /**
- * `notary doctor --llm`: is the model backend reachable and configured for all three roles? Output
- * names each role by its agent (src/schema/agents.ts): Executor, Reflector, Adversary (P2).
+ * `notary doctor --llm`: is the model backend reachable and configured for every model agent? Output
+ * names each role by its agent (src/schema/agents.ts): Executor, Reflector, Adversary (P2), plus
+ * Notary Chat (NOTARY_MODEL_CHAT, falling back to NOTARY_MODEL_REFLECTOR), whose test call is a real
+ * tool call (one function tool, tool_choice forcing it) because the chat agent needs tool calling.
  * The CLI loads .env, inits tracing ("doctor") and roots the run in a WORKFLOW span; this module
  * only checks and reports.
  *
@@ -37,7 +39,9 @@ import {
 import type { LlmConfigIssue, LlmProvider } from "./config.js";
 import { liteLlmModelLister } from "./litellm.js";
 import type { ChatTransport, ModelLister } from "./litellm.js";
-import { MODEL_ENV, ROLES, baseModelId } from "./roles.js";
+import { CHAT_MODEL_ENV, CHAT_MODEL_FALLBACK_ENV, MODEL_ENV, ROLES, baseModelId, resolveChatModel } from "./roles.js";
+import type { ModelRole } from "./roles.js";
+import { AGENTS } from "../schema/agents.js";
 import { roleAgentName as nm } from "./agents.js";
 import { MAX_USD_ENV, maxUsdFromEnv } from "./budget.js";
 import { resolvePrice } from "./pricing.js";
@@ -47,6 +51,10 @@ type Env = Record<string, string | undefined>;
 
 export const DOCTOR_PROMPT = "Reply with OK";
 export const DOCTOR_MAX_TOKENS = 5;
+/** The chat role's check: one forced call of this tool (proves tool calling works through the provider). */
+export const DOCTOR_TOOL = { name: "notary_ping", description: "Answer the doctor's ping.", parameters: { type: "object", properties: { ok: { type: "boolean" } }, required: ["ok"], additionalProperties: false } };
+export const DOCTOR_TOOL_PROMPT = "Call the notary_ping tool with ok=true.";
+export const DOCTOR_TOOL_MAX_TOKENS = 60;
 
 export type LlmDoctorOptions = {
   env?: Env;
@@ -123,7 +131,7 @@ export async function runLlmDoctor(opts: LlmDoctorOptions = {}): Promise<LlmDoct
   };
   const finish = (provider: LlmProvider | null): LlmDoctorReport => {
     const status = failed ? "failed" : blocked ? "blocked" : "ok";
-    out(`result: ${status === "ok" ? `OK — ${ROLES.map(nm).join(", ").replace(/, ([^,]*)$/, " and $1")} answered` : status === "blocked" ? "BLOCKED — set the variables above" : "FAILED — fix the lines marked FAIL"}`);
+    out(`result: ${status === "ok" ? `OK — ${[...ROLES.map(nm), AGENTS.chat.name].join(", ").replace(/, ([^,]*)$/, " and $1")} answered` : status === "blocked" ? "BLOCKED — set the variables above" : "FAILED — fix the lines marked FAIL"}`);
     return { status, exitCode: failed ? 1 : blocked ? 3 : 0, provider, lines };
   };
 
@@ -147,6 +155,12 @@ export async function runLlmDoctor(opts: LlmDoctorOptions = {}): Promise<LlmDoct
     out("  AWS credentials: SDK default chain (env keys / profile / SSO); exercised by the test calls only");
   }
   for (const role of ROLES) out(`  ${nm(role)} (${MODEL_ENV[role]}) = ${read(env, MODEL_ENV[role]) || "(not set)"}`);
+  const chat = resolveChatModel(env);
+  out(
+    `  ${AGENTS.chat.name} (${CHAT_MODEL_ENV}) = ${
+      chat ? (chat.source === CHAT_MODEL_ENV ? chat.model : `(not set; falls back to ${CHAT_MODEL_FALLBACK_ENV} = ${chat.model})`) : `(not set, and ${CHAT_MODEL_FALLBACK_ENV} is not set either)`
+    }`,
+  );
 
   // Rate limits (process-wide, every real model call).
   out(
@@ -161,21 +175,24 @@ export async function runLlmDoctor(opts: LlmDoctorOptions = {}): Promise<LlmDoct
   } catch {
     fail(`${MAX_USD_ENV} is "${read(env, MAX_USD_ENV)}"`, `set ${MAX_USD_ENV} to a non-negative number of USD per run, e.g. ${MAX_USD_ENV}=1, or leave it empty for no cap`);
   }
-  for (const role of ROLES) {
-    const id = read(env, MODEL_ENV[role]);
-    if (!id) continue;
+  const priced: { role: ModelRole; id: string; name: string }[] = [
+    ...ROLES.flatMap((role) => (read(env, MODEL_ENV[role]) ? [{ role, id: read(env, MODEL_ENV[role]), name: nm(role) }] : [])),
+    ...(chat ? [{ role: "chat" as const, id: chat.model, name: AGENTS.chat.name }] : []),
+  ];
+  for (const { role, id, name } of priced) {
     const r = resolvePrice(role, id, env);
     const names = `NOTARY_PRICE_${role.toUpperCase()}_IN/_OUT`;
-    if (r.source === "env") out(`  price ${nm(role)}: env override ${names} ($${r.price!.inPerM} in / $${r.price!.outPerM} out per 1M tokens)`);
-    else if (r.warning && /must both be/.test(r.warning)) fail(`price ${nm(role)}: ${r.warning}`, `set both ${names} (USD per 1M tokens) or neither`);
-    else if (r.source === "table") out(`  price ${nm(role)}: Bedrock table ($${r.price!.inPerM} in / $${r.price!.outPerM} out per 1M tokens)${provider === "litellm" ? "; a proxy-reported cost takes precedence" : ""}`);
-    else out(`  price ${nm(role)}: ${provider === "litellm" ? "the proxy's x-litellm-response-cost if it sends one, else unknown" : "unknown"} (set ${names} to fix it)`);
+    if (r.source === "env") out(`  price ${name}: env override ${names} ($${r.price!.inPerM} in / $${r.price!.outPerM} out per 1M tokens)`);
+    else if (r.warning && /must both be/.test(r.warning)) fail(`price ${name}: ${r.warning}`, `set both ${names} (USD per 1M tokens) or neither`);
+    else if (r.source === "table") out(`  price ${name}: Bedrock table ($${r.price!.inPerM} in / $${r.price!.outPerM} out per 1M tokens)${provider === "litellm" ? "; a proxy-reported cost takes precedence" : ""}`);
+    else out(`  price ${name}: ${provider === "litellm" ? "the proxy's x-litellm-response-cost if it sends one, else unknown" : "unknown"} (set ${names} to fix it)`);
   }
 
   // Config issues, de-duplicated across roles (the connection settings are shared).
   const issues = new Map<string, LlmConfigIssue>();
-  for (const role of ROLES) for (const i of llmConfigIssues(env, role)) if (!issues.has(i.variable)) issues.set(i.variable, i);
-  const connectionMissing = [...issues.values()].some((i) => !Object.values(MODEL_ENV).includes(i.variable));
+  for (const role of [...ROLES, "chat" as const]) for (const i of llmConfigIssues(env, role)) if (!issues.has(i.variable)) issues.set(i.variable, i);
+  const modelVars = [...Object.values(MODEL_ENV), CHAT_MODEL_ENV];
+  const connectionMissing = [...issues.values()].some((i) => !modelVars.includes(i.variable));
 
   // 2. Model listing (litellm only, needs URL + key).
   let available: string[] | null = null;
@@ -203,7 +220,7 @@ export async function runLlmDoctor(opts: LlmDoctorOptions = {}): Promise<LlmDoct
   // Missing / invalid variables (with listed ids as examples where possible).
   for (const issue of issues.values()) {
     const role = ROLES.find((r) => MODEL_ENV[r] === issue.variable);
-    block(issue, role ? modelExample(available) : (EXAMPLE[issue.variable] ?? "<value>"));
+    block(issue, role || issue.variable === CHAT_MODEL_ENV ? modelExample(available) : (EXAMPLE[issue.variable] ?? "<value>"));
   }
 
   // 3. Each configured role model is offered by the proxy.
@@ -221,6 +238,18 @@ export async function runLlmDoctor(opts: LlmDoctorOptions = {}): Promise<LlmDoct
     }
     if (available) out(`ok   ${nm(role)}: "${id}" is offered by the proxy`);
     usable.push(role);
+  }
+  let chatUsable = false;
+  if (chat) {
+    if (available && !offered.has(chat.model)) {
+      fail(
+        `${AGENTS.chat.name}: model "${chat.model}" (${chat.source}) is not offered by the proxy for this key`,
+        `set ${CHAT_MODEL_ENV} to one of: ${available.join(", ") || "(none listed)"} (e.g. ${CHAT_MODEL_ENV}=${modelExample(available)})`,
+      );
+    } else {
+      if (available) out(`ok   ${AGENTS.chat.name}: "${chat.model}" is offered by the proxy`);
+      chatUsable = true;
+    }
   }
 
   // 4. Separation of duties (same comparison as resolveModels).
@@ -286,6 +315,51 @@ export async function runLlmDoctor(opts: LlmDoctorOptions = {}): Promise<LlmDoct
               : `check the provider settings in .env and that ${provider === "litellm" ? "the proxy" : "Bedrock"} is reachable`,
         );
       }
+    }
+  }
+  // 6. Notary Chat: one forced tool call (its agent loop depends on native tool calling).
+  if (chat && chatUsable && !connectionMissing && !authRejected) {
+    const chatEnv: Env = { ...env, [MODEL_ENV.executor]: "", [MODEL_ENV.adversary]: "" };
+    try {
+      const llm = new LlmClient({
+        env: chatEnv,
+        ...(opts.chatTransport ? { chatTransport: opts.chatTransport } : {}),
+        ...(opts.transport ? { transport: opts.transport } : {}),
+      });
+      const t0 = now();
+      const res = await llm.completeTools({
+        role: "chat",
+        agent: "chat",
+        messages: [{ role: "user", content: DOCTOR_TOOL_PROMPT }],
+        tools: [DOCTOR_TOOL],
+        toolChoice: { name: DOCTOR_TOOL.name },
+        maxTokens: DOCTOR_TOOL_MAX_TOKENS,
+      });
+      const ms = Math.round(now() - t0);
+      const call = res.toolCalls.find((c) => c.name === DOCTOR_TOOL.name);
+      const source = res.priceSource ?? "unknown";
+      if (call) {
+        out(
+          `ok   ${AGENTS.chat.name} tool call: "${chat.model}" ${ms} ms, ${res.inputTokens} in / ${res.outputTokens} out tokens, $${res.usd.toFixed(6)} (price: ${source}), called ${call.name}(${call.arguments.slice(0, 40)})`,
+        );
+      } else {
+        fail(
+          `${AGENTS.chat.name} tool call ("${chat.model}"): the model answered without calling the tool (stop ${res.stopReason}, reply ${JSON.stringify(res.text.slice(0, 40))})`,
+          `Notary Chat needs a model with tool calling through the proxy; set ${CHAT_MODEL_ENV} to one that supports it (e.g. ${CHAT_MODEL_ENV}=${modelExample(available)})`,
+        );
+      }
+      if (call && source === "unknown") {
+        out(`WARN ${AGENTS.chat.name}: price unknown for "${chat.model}" — USD is recorded as $0 (and ${MAX_USD_ENV} can only count proxy-reported costs)`);
+        out(`  FIX: set NOTARY_PRICE_CHAT_IN=<USD per 1M input tokens> and NOTARY_PRICE_CHAT_OUT=<USD per 1M output tokens> in .env`);
+      }
+    } catch (err) {
+      const status = statusOf(err);
+      fail(
+        `${AGENTS.chat.name} tool call ("${chat.model}"): ${errText(err)}`,
+        status === 401 || status === 403
+          ? `the provider rejected the credentials; check ${provider === "litellm" ? LITELLM_API_KEY_ENV : "the AWS credentials"} in .env`
+          : `check ${CHAT_MODEL_ENV} (e.g. ${CHAT_MODEL_ENV}=${modelExample(available)}) and that the model supports tool calling`,
+      );
     }
   }
   if (!separated) out(`note: the bundle-producing commands refuse this roster until the ${nm("reflector")} and the ${nm("adversary")} run on different models`);

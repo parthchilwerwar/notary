@@ -6,6 +6,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { HealthResponse } from "../../../../core/src/schema";
 import { useDataSource, useSessionToken } from "../../data";
+import { useOptionalData } from "../../app/catalog";
 
 export const RECHECK_MS = 30_000;
 
@@ -48,6 +49,10 @@ export function ShellStatusProvider({ children }: { children: ReactNode }) {
   const [healthKey, setHealthKey] = useState(0);
   const [approvals, setApprovals] = useState<ApprovalsCount>({ state: "unknown", reason: "Loading…" });
   const [approvalsKey, setApprovalsKey] = useState(0);
+  const data = useOptionalData();
+  const scoped = !!data;
+  const visibleKey = data ? data.bundles.map((b) => b.runId).join("|") : "";
+  const visibleIds = useMemo(() => new Set(visibleKey ? visibleKey.split("|") : []), [visibleKey]);
 
   useEffect(() => {
     if (!ready) return;
@@ -100,14 +105,17 @@ export function ShellStatusProvider({ children }: { children: ReactNode }) {
     source
       .approvals(controller.signal)
       .then((list) => {
-        if (!controller.signal.aborted)
-          setApprovals({ state: "ready", pending: list.pending.length, readOnly: mode !== "live" });
+        // Replay lists the held decisions of every published run; count only the visible ones (real
+        // runs, or fixture runs under ?fixtures=1), so a fixture number never shows unlabeled.
+        const pending =
+          mode === "live" || !scoped ? list.pending.length : list.pending.filter((p) => visibleIds.has(p.runId)).length;
+        if (!controller.signal.aborted) setApprovals({ state: "ready", pending, readOnly: mode !== "live" });
       })
       .catch((e: Error) => {
         if (!controller.signal.aborted) setApprovals({ state: "unknown", reason: e.message });
       });
     return () => controller.abort();
-  }, [source, mode, ready, token, approvalsKey]);
+  }, [source, mode, ready, token, approvalsKey, visibleIds, scoped]);
 
   // Live mode: waiting items change as runs hold actions; refresh with the health re-check.
   useEffect(() => {

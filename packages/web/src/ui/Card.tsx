@@ -3,7 +3,7 @@ import { cn } from "../lib/utils";
 
 type Wash = "lavender" | "peach" | "mint" | "sky";
 
-/** White card: 24px radius, hairline, the landing's soft floating shadow. */
+/** A flat bordered panel (12px radius, hairline, no shadow) for content that needs a frame. */
 export function Card<T extends ElementType = "div">({
   as,
   className,
@@ -19,7 +19,7 @@ export function Card<T extends ElementType = "div">({
   );
 }
 
-/** The landing's feature card: 28px radius, hairline, a soft radial wash over the subtle surface. */
+/** A flat panel with a soft tinted wash (e.g. peach for held actions); same geometry as Card. */
 export function WashCard<T extends ElementType = "div">({
   as,
   wash = "sky",

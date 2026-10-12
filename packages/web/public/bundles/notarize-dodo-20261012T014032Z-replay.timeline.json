@@ -1,0 +1,141 @@
+{
+  "runId": "notarize-dodo-20261012T014032Z-replay",
+  "sample": false,
+  "bundleHash": "16807c03dc52f343a6d89d7df3c7e29e767b8c81da5fe903095d2aaf049104a1",
+  "events": [
+    {
+      "runId": "notarize-dodo-20261012T014032Z-replay",
+      "seq": 0,
+      "at": "2026-10-12T01:42:48.932Z",
+      "stage": "certify",
+      "type": "budget",
+      "recordIds": [
+        "notarize-dodo-20261012T014032Z-replay"
+      ],
+      "traceIds": [],
+      "summary": "Budget: 0 of 200 credits, 0 recorded tool calls (probe calls + decision effects), $0.0000 model spend.",
+      "data": {
+        "budget": {
+          "credits": {
+            "used": 0,
+            "cap": 200
+          },
+          "toolCalls": {
+            "used": 0,
+            "cap": null
+          },
+          "usdByRole": {
+            "executor": 0,
+            "reflector": 0,
+            "adversary": 0
+          },
+          "usdCap": null
+        }
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T014032Z-replay",
+      "seq": 1,
+      "at": "2026-10-12T01:42:48.932Z",
+      "stage": "certify",
+      "type": "run.finished",
+      "recordIds": [
+        "notarize-dodo-20261012T014032Z-replay"
+      ],
+      "traceIds": [],
+      "summary": "Notarization notarize-dodo-20261012T014032Z-replay finished: completed.",
+      "data": {
+        "status": "completed",
+        "metrics": {
+          "claims": 15,
+          "anomalies": 0,
+          "hypotheses": 10,
+          "hypothesesRejected": 0,
+          "probes": 0,
+          "probes.confirmed": 0,
+          "probes.refuted": 0,
+          "probes.inconclusive": 0,
+          "probes.uninformative": 0,
+          "probes.invalid": 0,
+          "abstained": 0,
+          "anomaliesSkipped": 0,
+          "beliefs.hypothesis": 10,
+          "beliefs.candidate": 0,
+          "beliefs.notarized": 4,
+          "beliefs.refuted": 0,
+          "beliefs.abstained": 1,
+          "beliefs.unlearned": 0,
+          "evidence.checked": 0,
+          "evidence.invalid": 0,
+          "adversary.uphold": 0,
+          "adversary.narrow": 0,
+          "adversary.downgrade": 0,
+          "adversary.failed": 0,
+          "probes_to_candidate_mean": 3,
+          "probes_to_candidate_dodo.customer.missing-email-422": null,
+          "probes_to_candidate_dodo.payment.refunds-array-present": null,
+          "probes_to_candidate_dodo.payment.refunds-lists-issued-refund": null,
+          "probes_to_candidate_dodo.payments.page-size-max-100": 3,
+          "probes_to_candidate_dodo.product.price-minor-units": null,
+          "probes_to_candidate_dodo.refund.amount-minor-units": null,
+          "probes_to_candidate_dodo.refund.full-retry-no-duplicate": null,
+          "probes_to_candidate_dodo.refunds.amount-integer": null,
+          "probes_to_candidate_dodo.refunds.page-size-max-100": 3,
+          "probes_to_candidate_dodo.subscription.change-plan-pending-409": null,
+          "probes_to_candidate_dodo.wallet.credit-amount-minor-units": 3,
+          "probes_to_candidate_dodo.wallet.debit-insufficient-400": null,
+          "probes_to_candidate_dodo.wallet.idempotency-key-no-duplicate": 3,
+          "probes_to_candidate_dodo.wallet.ledger-response-balance-integer": null,
+          "probes_to_candidate_dodo.wallets.total-balance-usd-integer": null,
+          "priors_strength": 2,
+          "priors_applied": 0,
+          "priors_informative": 0,
+          "priors_preexisting": 15,
+          "unsafe_actions_total": null,
+          "unsafe_duplicates": null,
+          "unsafe_wrong_unit": null,
+          "unsafe_missed_existing_refund": null,
+          "decision_accuracy": null,
+          "automation_rate": null,
+          "holds": null,
+          "escalations": null,
+          "beliefs_hypothesis": 10,
+          "beliefs_candidate": 0,
+          "beliefs_notarized": 4,
+          "beliefs_refuted": 0,
+          "beliefs_abstained": 1,
+          "beliefs_unlearned": 0,
+          "belief_precision": 1,
+          "beliefs_false": 0,
+          "belief_precision_n": 4,
+          "unguarded_call_sites": 0,
+          "credits_total": 0,
+          "usd_executor": 0,
+          "tokens_executor": 0,
+          "usd_reflector": 0,
+          "tokens_reflector": 0,
+          "usd_adversary": 0,
+          "tokens_adversary": 0,
+          "usd_total": 0,
+          "probes_to_candidate": 3
+        },
+        "budget": {
+          "credits": {
+            "used": 0,
+            "cap": 200
+          },
+          "toolCalls": {
+            "used": 0,
+            "cap": null
+          },
+          "usdByRole": {
+            "executor": 0,
+            "reflector": 0,
+            "adversary": 0
+          },
+          "usdCap": null
+        }
+      }
+    }
+  ]
+}

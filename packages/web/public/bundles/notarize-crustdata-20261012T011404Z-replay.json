@@ -1,0 +1,1250 @@
+{
+  "runId": "notarize-crustdata-20261012T011404Z-replay",
+  "kind": "notarize",
+  "variant": "notarize",
+  "mode": "replay",
+  "sample": false,
+  "disclosure": [
+    "Notarize run: anomalies from the deterministic checker, rival hypotheses proposed by the reflector model, probes with predictions committed before each call, verdicts by deterministic rules. Beliefs are Beta(α, β) over the doc claim holding (only confirmed probes update), every cited span is checked against runs/<runId>/spans.jsonl, and candidates are reviewed by the adversary.",
+    "Replay of notarize-crustdata-20261012T011404Z from its pinned cassettes (tool traffic, model answers, store snapshot); no network calls, no keys.",
+    "Probe ids and request tags use the recorded run id notarize-crustdata-20261012T011404Z.",
+    "Verification probes: 1 required claim(s) with no anomaly this run (crustdata.enrich.headcount-total-integer) were probed against a deterministic rival pair {honored, suspected class from src/contracts/priors-map.ts} built by code, not proposed by a model; same commit-then-run loop, caps and budget.",
+    "belief_precision is measured against the deterministic checker on the SAME recording (not an independent ground truth); see docs/AUDIT.md A-14"
+  ],
+  "startedAt": "2026-10-12T01:42:15.358Z",
+  "finishedAt": "2026-10-12T01:42:48.509Z",
+  "status": "completed",
+  "seed": 0,
+  "tool": "crustdata",
+  "replayOf": "notarize-crustdata-20261012T011404Z",
+  "queue": [],
+  "decisions": [],
+  "claims": [
+    {
+      "id": "crustdata.enrich.headcount-total-integer",
+      "tool": "crustdata",
+      "operation": "crustdata.enrichCompany",
+      "param": "fields",
+      "docText": "headcount.total: integer, nullable (enrich response schema)",
+      "expect": {
+        "kind": "type",
+        "field": "[].matches[].company_data.headcount.total",
+        "type": "integer|null"
+      },
+      "docUrl": "https://docs.crustdata.com/api-reference/company-apis/get-full-company-enrichment.md",
+      "endpoint": "POST /company/enrich",
+      "costCredits": 2
+    },
+    {
+      "id": "crustdata.enrich.funding-total-investment-number",
+      "tool": "crustdata",
+      "operation": "crustdata.enrichCompany",
+      "param": "fields",
+      "docText": "funding.total_investment_usd: number, nullable (enrich response schema)",
+      "expect": {
+        "kind": "type",
+        "field": "[].matches[].company_data.funding.total_investment_usd",
+        "type": "number|null"
+      },
+      "docUrl": "https://docs.crustdata.com/api-reference/company-apis/get-full-company-enrichment.md",
+      "endpoint": "POST /company/enrich",
+      "costCredits": 2
+    },
+    {
+      "id": "crustdata.enrich.employee-count-range-string",
+      "tool": "crustdata",
+      "operation": "crustdata.enrichCompany",
+      "param": "fields",
+      "docText": "employee_count_range: string, nullable (example: 51-200)",
+      "expect": {
+        "kind": "type",
+        "field": "[].matches[].company_data.basic_info.employee_count_range",
+        "type": "string|null"
+      },
+      "docUrl": "https://docs.crustdata.com/api-reference/company-apis/get-full-company-enrichment.md",
+      "endpoint": "POST /company/enrich",
+      "costCredits": 2
+    },
+    {
+      "id": "crustdata.enrich.last-fundraise-date-string",
+      "tool": "crustdata",
+      "operation": "crustdata.enrichCompany",
+      "param": "fields",
+      "docText": "last_fundraise_date: string, format date, nullable (example: '2025-10-10')",
+      "expect": {
+        "kind": "type",
+        "field": "[].matches[].company_data.funding.last_fundraise_date",
+        "type": "string|null"
+      },
+      "docUrl": "https://docs.crustdata.com/api-reference/company-apis/get-full-company-enrichment.md",
+      "endpoint": "POST /company/enrich",
+      "costCredits": 2
+    },
+    {
+      "id": "crustdata.enrich.default-fields-basic-info",
+      "tool": "crustdata",
+      "operation": "crustdata.enrichCompany",
+      "param": "fields",
+      "docText": "When `fields` is omitted, only `crustdata_company_id` and `basic_info` are returned",
+      "expect": {
+        "kind": "fieldPresent",
+        "field": "[].matches[].company_data.basic_info"
+      },
+      "docUrl": "https://docs.crustdata.com/api-reference/company-apis/get-full-company-enrichment.md",
+      "endpoint": "POST /company/enrich",
+      "costCredits": 2
+    },
+    {
+      "id": "crustdata.enrich.no-match-200-empty",
+      "tool": "crustdata",
+      "operation": "crustdata.enrichCompany",
+      "param": "domains",
+      "docText": "No-match responses currently return `200` with an empty `matches` array.",
+      "expect": {
+        "kind": "statusOnError",
+        "status": 200
+      },
+      "docUrl": "https://docs.crustdata.com/api-reference/company-apis/get-full-company-enrichment.md",
+      "endpoint": "POST /company/enrich",
+      "costCredits": 2
+    },
+    {
+      "id": "crustdata.identify.no-match-200-empty",
+      "tool": "crustdata",
+      "operation": "crustdata.identifyCompany",
+      "param": "domains",
+      "docText": "[implied] no_match_found example returns 200 with matches: []; 404 is also documented as \"No data found\"",
+      "expect": {
+        "kind": "statusOnError",
+        "status": 200
+      },
+      "docUrl": "https://docs.crustdata.com/api-reference/company-apis/identify-a-company-from-name-domain-id-or-profile-url.md",
+      "endpoint": "POST /company/identify",
+      "costCredits": 0
+    },
+    {
+      "id": "crustdata.identify.invalid-fields-400",
+      "tool": "crustdata",
+      "operation": "crustdata.identifyCompany",
+      "param": "fields",
+      "docText": "requesting any other group returns `400 Invalid fields`",
+      "expect": {
+        "kind": "statusOnError",
+        "status": 400
+      },
+      "docUrl": "https://docs.crustdata.com/api-reference/company-apis/identify-a-company-from-name-domain-id-or-profile-url.md",
+      "endpoint": "POST /company/identify",
+      "costCredits": 0
+    },
+    {
+      "id": "crustdata.enrich.confidence-score-number",
+      "tool": "crustdata",
+      "operation": "crustdata.enrichCompany",
+      "param": "domains",
+      "docText": "Each item in `matches` has `confidence_score` (number) and `company_data`.",
+      "expect": {
+        "kind": "type",
+        "field": "[].matches[].confidence_score",
+        "type": "number"
+      },
+      "docUrl": "https://docs.crustdata.com/api-reference/company-apis/get-full-company-enrichment.md",
+      "endpoint": "POST /company/enrich",
+      "costCredits": 2
+    },
+    {
+      "id": "crustdata.identify.max-25-identifiers",
+      "tool": "crustdata",
+      "operation": "crustdata.identifyCompany",
+      "param": "domains",
+      "docText": "each may contain 1 to 25 values.",
+      "expect": {
+        "kind": "maxItems",
+        "max": 25
+      },
+      "docUrl": "https://docs.crustdata.com/api-reference/company-apis/identify-a-company-from-name-domain-id-or-profile-url.md",
+      "endpoint": "POST /company/identify",
+      "costCredits": 0
+    },
+    {
+      "id": "crustdata.credits.balance-number",
+      "tool": "crustdata",
+      "operation": "crustdata.getCreditBalance",
+      "param": "",
+      "docText": "account.credits: number. Credits currently remaining on the account.",
+      "expect": {
+        "kind": "type",
+        "field": "account.credits",
+        "type": "number"
+      },
+      "docUrl": "https://docs.crustdata.com/api-reference/account-apis/get-account-credit-balance.md",
+      "endpoint": "GET /account/credits",
+      "costCredits": 0
+    }
+  ],
+  "anomalies": [
+    {
+      "id": "anom-63a522d8c1a5",
+      "claimId": "crustdata.enrich.no-match-200-empty",
+      "tool": "crustdata",
+      "observed": {
+        "status": 400
+      },
+      "expected": {
+        "status": 200
+      },
+      "exchangeId": "20c128f8b37cd795d3e29a01188eb18129c0885e8752e03b10ee0d4bba3afa64",
+      "traceId": "",
+      "spanId": ""
+    },
+    {
+      "id": "anom-2bed8f71dd63",
+      "claimId": "crustdata.identify.invalid-fields-400",
+      "tool": "crustdata",
+      "observed": {
+        "status": 403
+      },
+      "expected": {
+        "status": 400
+      },
+      "exchangeId": "c242455ad92a565c485ed01fd13e74e5cfee24d9f862d23de978adfed8c85eca",
+      "traceId": "",
+      "spanId": ""
+    },
+    {
+      "id": "anom-4bdf6de2d2be",
+      "claimId": "crustdata.identify.no-match-200-empty",
+      "tool": "crustdata",
+      "observed": {
+        "status": 400
+      },
+      "expected": {
+        "status": 200
+      },
+      "exchangeId": "aaf0cb65f768c6e3d6a6b0b954dffd62954168b24bf905ec940c78dfb74f4cd6",
+      "traceId": "",
+      "spanId": ""
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "hyp-0469c35fd429",
+      "anomalyId": "anom-2bed8f71dd63",
+      "class": "mislabelled_semantics",
+      "statement": "The API returns 403 instead of 400 when invalid fields are requested because the server interprets unknown field groups as an authorization/access violation rather than a validation error, meaning the error code semantics differ from documentation.",
+      "distinguishingTest": "boundary_sweep"
+    },
+    {
+      "id": "hyp-74a1872b1174",
+      "anomalyId": "anom-2bed8f71dd63",
+      "class": "undocumented_flag",
+      "statement": "The 403 response is triggered by an undocumented access-control rule (e.g., the API key tier does not have permission to request certain field groups), so the error is an authorization failure rather than a validation failure, and the documented 400 path is only reached by fully authenticated/authorized keys.",
+      "distinguishingTest": "unknown_param"
+    },
+    {
+      "id": "hyp-fb7ef16c1268",
+      "anomalyId": "anom-2bed8f71dd63",
+      "class": "honored",
+      "statement": "The documented claim only states that invalid fields produce an error; the specific status code 400 vs 403 may be a documentation imprecision, and the actual rejection behaviour (an error response) still holds as intended.",
+      "distinguishingTest": "boundary_sweep"
+    },
+    {
+      "id": "hyp-f4089e212fb3",
+      "anomalyId": "anom-4bdf6de2d2be",
+      "class": "mislabelled_semantics",
+      "statement": "The API returns 400 for a no-match scenario because the server treats a domain that yields no results as a bad/malformed request rather than a valid query with an empty result set, contradicting the documented 200 with empty matches.",
+      "distinguishingTest": "boundary_sweep"
+    },
+    {
+      "id": "hyp-0f2dbaad8c26",
+      "anomalyId": "anom-4bdf6de2d2be",
+      "class": "undocumented_flag",
+      "statement": "An undocumented validation rule (e.g., domain format check, minimum domain length, or TLD whitelist) causes the specific test domain to be rejected with 400 before the match logic runs, so the no-match 200 path is never reached for that input.",
+      "distinguishingTest": "unknown_param"
+    },
+    {
+      "id": "hyp-402f924326d6",
+      "anomalyId": "anom-4bdf6de2d2be",
+      "class": "honored",
+      "statement": "The docs acknowledge both 200 (empty matches) and 404 (no data found) as valid no-match responses; the 400 observed here may indicate the test domain was genuinely malformed, meaning the documented 200 path still holds for well-formed domains with no match.",
+      "distinguishingTest": "boundary_sweep"
+    },
+    {
+      "id": "hyp-0bedb671cbb4",
+      "anomalyId": "anom-63a522d8c1a5",
+      "class": "mislabelled_semantics",
+      "statement": "The /company/enrich endpoint returns 400 for unrecognised or unresolvable domains because the server conflates 'no enrichment data found' with 'invalid input', whereas the documentation treats these as distinct cases returning 200 with an empty matches array.",
+      "distinguishingTest": "boundary_sweep"
+    },
+    {
+      "id": "hyp-707cf43b92cc",
+      "anomalyId": "anom-63a522d8c1a5",
+      "class": "undocumented_flag",
+      "statement": "An undocumented server-side rule (e.g., domain must be pre-indexed or pass a format/existence check) causes certain domains to be rejected with 400 before the enrichment lookup occurs, so the documented 200/empty-matches path is only reached for domains that pass this hidden gate.",
+      "distinguishingTest": "unknown_param"
+    },
+    {
+      "id": "hyp-c73dda2a13a4",
+      "anomalyId": "anom-63a522d8c1a5",
+      "class": "honored",
+      "statement": "The documentation describes the no-match 200 behaviour for valid but unmatched domains; the 400 observed may reflect a genuinely malformed domain in the test payload, meaning the documented claim still holds for properly formatted domains that simply have no data.",
+      "distinguishingTest": "unit_roundtrip"
+    },
+    {
+      "id": "hyp-269cf9d8efea",
+      "anomalyId": "verify:crustdata.enrich.headcount-total-integer",
+      "class": "silent_coercion",
+      "statement": "Verification rival (deterministic, not model-proposed; suspected class from src/contracts/priors-map.ts): silent_coercion: a value is silently converted (type, rounding, clamping) instead of rejected.",
+      "distinguishingTest": "type_edge"
+    },
+    {
+      "id": "hyp-6c3fd63e8a75",
+      "anomalyId": "verify:crustdata.enrich.headcount-total-integer",
+      "class": "honored",
+      "statement": "Verification rival (deterministic, not model-proposed; no anomaly observed): the documented claim holds for crustdata.enrichCompany [fields].",
+      "distinguishingTest": "type_edge"
+    }
+  ],
+  "probes": [
+    {
+      "id": "notarize-crustdata-20261012T011404Z-p001",
+      "tool": "crustdata",
+      "claimId": "crustdata.identify.invalid-fields-400",
+      "hypothesisIds": [
+        "hyp-0469c35fd429",
+        "hyp-74a1872b1174",
+        "hyp-fb7ef16c1268"
+      ],
+      "template": "unknown_param",
+      "params": {
+        "steps": [
+          {
+            "op": "crustdata.identifyCompany",
+            "params": {
+              "domains": [
+                "stripe.com"
+              ],
+              "fields": [
+                "headcount"
+              ]
+            },
+            "note": "with fields",
+            "tag": "probe"
+          }
+        ],
+        "param": "fields"
+      },
+      "control": {
+        "params": {
+          "steps": [
+            {
+              "op": "crustdata.identifyCompany",
+              "params": {
+                "domains": [
+                  "stripe.com"
+                ]
+              },
+              "note": "without fields",
+              "tag": "probe"
+            }
+          ]
+        },
+        "observed": {
+          "status": 200
+        }
+      },
+      "prediction": {
+        "hyp-0469c35fd429": {
+          "class": "mislabelled_semantics",
+          "outcomes": [
+            "*"
+          ]
+        },
+        "hyp-74a1872b1174": {
+          "class": "undocumented_flag",
+          "outcomes": [
+            "applied"
+          ]
+        },
+        "hyp-fb7ef16c1268": {
+          "class": "honored",
+          "outcomes": [
+            "rejected"
+          ]
+        }
+      },
+      "predictionHash": "04eea097807bf25ab1e9ee6c5b7789413e6124d0b6f6abd759b39a06682f0a9d",
+      "committedAt": "2026-10-12T01:42:15.645Z",
+      "ranAt": "2026-10-12T01:42:15.651Z",
+      "observed": {
+        "outcome": "rejected",
+        "status": 403,
+        "reason": "observation matches 2 rivals (hyp-0469c35fd429, hyp-fb7ef16c1268): no update"
+      },
+      "verdict": "inconclusive",
+      "costCredits": 0,
+      "calls": 2,
+      "traceId": "a724d88f5b394ef4a180037b597d2f8c",
+      "spanId": "32cb631cea9f4f32"
+    },
+    {
+      "id": "notarize-crustdata-20261012T011404Z-p002",
+      "tool": "crustdata",
+      "claimId": "crustdata.enrich.headcount-total-integer",
+      "hypothesisIds": [
+        "hyp-269cf9d8efea",
+        "hyp-6c3fd63e8a75"
+      ],
+      "template": "type_edge",
+      "params": {
+        "steps": [
+          {
+            "op": "crustdata.enrichCompany",
+            "params": {
+              "domains": [
+                "stripe.com"
+              ],
+              "fields": [
+                "basic_info",
+                "headcount",
+                "funding"
+              ]
+            },
+            "note": "Enrich stripe.com",
+            "tag": "read"
+          }
+        ],
+        "field": "[].matches[].company_data.headcount.total",
+        "type": "integer|null"
+      },
+      "control": {
+        "params": {
+          "steps": [
+            {
+              "op": "crustdata.enrichCompany",
+              "params": {
+                "domains": [
+                  "notion.so"
+                ],
+                "fields": [
+                  "basic_info",
+                  "headcount",
+                  "funding"
+                ]
+              },
+              "note": "Enrich notion.so",
+              "tag": "read"
+            }
+          ]
+        },
+        "observed": {
+          "values": [
+            26,
+            58,
+            19
+          ],
+          "count": 3
+        }
+      },
+      "prediction": {
+        "hyp-269cf9d8efea": {
+          "class": "silent_coercion",
+          "outcomes": [
+            "float",
+            "formatted_string",
+            "numeric_string"
+          ]
+        },
+        "hyp-6c3fd63e8a75": {
+          "class": "honored",
+          "outcomes": [
+            "doc_type"
+          ]
+        }
+      },
+      "predictionHash": "fbae0b3c8bcc4278e8e80b3727573fe42e4d6d4663b00b878618b2f67cdd45fc",
+      "committedAt": "2026-10-12T01:42:15.667Z",
+      "ranAt": "2026-10-12T01:42:15.671Z",
+      "observed": {
+        "outcome": "doc_type",
+        "values": [
+          17058
+        ],
+        "count": 1,
+        "reason": "observation matches hyp-6c3fd63e8a75 and contradicts every rival"
+      },
+      "verdict": "confirmed",
+      "winningHypothesisId": "hyp-6c3fd63e8a75",
+      "costCredits": 8,
+      "calls": 2,
+      "traceId": "587cb48160cf40a59ae438703d95e94f",
+      "spanId": "5b9d6455edbe4616"
+    },
+    {
+      "id": "notarize-crustdata-20261012T011404Z-p003",
+      "tool": "crustdata",
+      "claimId": "crustdata.enrich.headcount-total-integer",
+      "hypothesisIds": [
+        "hyp-269cf9d8efea",
+        "hyp-6c3fd63e8a75"
+      ],
+      "template": "type_edge",
+      "params": {
+        "steps": [
+          {
+            "op": "crustdata.enrichCompany",
+            "params": {
+              "domains": [
+                "notion.so"
+              ],
+              "fields": [
+                "basic_info",
+                "headcount",
+                "funding"
+              ]
+            },
+            "note": "Enrich notion.so",
+            "tag": "read"
+          }
+        ],
+        "field": "[].matches[].company_data.headcount.total",
+        "type": "integer|null",
+        "variant": 1
+      },
+      "control": {
+        "params": {
+          "steps": [
+            {
+              "op": "crustdata.enrichCompany",
+              "params": {
+                "domains": [
+                  "atlassian.com"
+                ],
+                "fields": [
+                  "basic_info",
+                  "headcount",
+                  "funding"
+                ]
+              },
+              "note": "Enrich atlassian.com",
+              "tag": "read"
+            }
+          ]
+        },
+        "observed": {
+          "values": [
+            16947
+          ],
+          "count": 1
+        }
+      },
+      "prediction": {
+        "hyp-269cf9d8efea": {
+          "class": "silent_coercion",
+          "outcomes": [
+            "float",
+            "formatted_string",
+            "numeric_string"
+          ]
+        },
+        "hyp-6c3fd63e8a75": {
+          "class": "honored",
+          "outcomes": [
+            "doc_type"
+          ]
+        }
+      },
+      "predictionHash": "fbae0b3c8bcc4278e8e80b3727573fe42e4d6d4663b00b878618b2f67cdd45fc",
+      "committedAt": "2026-10-12T01:42:15.711Z",
+      "ranAt": "2026-10-12T01:42:15.715Z",
+      "observed": {
+        "outcome": "doc_type",
+        "values": [
+          26,
+          58,
+          19
+        ],
+        "count": 3,
+        "reason": "observation matches hyp-6c3fd63e8a75 and contradicts every rival"
+      },
+      "verdict": "confirmed",
+      "winningHypothesisId": "hyp-6c3fd63e8a75",
+      "costCredits": 8,
+      "calls": 2,
+      "traceId": "5bcd4192ac7a4fd49000b74a1369d26f",
+      "spanId": "7a72d702b6784da3"
+    },
+    {
+      "id": "notarize-crustdata-20261012T011404Z-p004",
+      "tool": "crustdata",
+      "claimId": "crustdata.enrich.headcount-total-integer",
+      "hypothesisIds": [
+        "hyp-269cf9d8efea",
+        "hyp-6c3fd63e8a75"
+      ],
+      "template": "type_edge",
+      "params": {
+        "steps": [
+          {
+            "op": "crustdata.enrichCompany",
+            "params": {
+              "domains": [
+                "atlassian.com"
+              ],
+              "fields": [
+                "basic_info",
+                "headcount",
+                "funding"
+              ]
+            },
+            "note": "Enrich atlassian.com",
+            "tag": "read"
+          }
+        ],
+        "field": "[].matches[].company_data.headcount.total",
+        "type": "integer|null",
+        "variant": 2
+      },
+      "control": {
+        "params": {
+          "steps": [
+            {
+              "op": "crustdata.enrichCompany",
+              "params": {
+                "domains": [
+                  "buttondown.com"
+                ],
+                "fields": [
+                  "basic_info",
+                  "headcount",
+                  "funding"
+                ]
+              },
+              "note": "Enrich buttondown.com",
+              "tag": "read"
+            }
+          ]
+        },
+        "observed": {
+          "values": [
+            8
+          ],
+          "count": 1
+        }
+      },
+      "prediction": {
+        "hyp-269cf9d8efea": {
+          "class": "silent_coercion",
+          "outcomes": [
+            "float",
+            "formatted_string",
+            "numeric_string"
+          ]
+        },
+        "hyp-6c3fd63e8a75": {
+          "class": "honored",
+          "outcomes": [
+            "doc_type"
+          ]
+        }
+      },
+      "predictionHash": "fbae0b3c8bcc4278e8e80b3727573fe42e4d6d4663b00b878618b2f67cdd45fc",
+      "committedAt": "2026-10-12T01:42:15.725Z",
+      "ranAt": "2026-10-12T01:42:15.727Z",
+      "observed": {
+        "outcome": "doc_type",
+        "values": [
+          16947
+        ],
+        "count": 1,
+        "reason": "observation matches hyp-6c3fd63e8a75 and contradicts every rival"
+      },
+      "verdict": "confirmed",
+      "winningHypothesisId": "hyp-6c3fd63e8a75",
+      "costCredits": 4,
+      "calls": 2,
+      "traceId": "2b54ecd6565745acbb1035a757fbd1ca",
+      "spanId": "b3dfe51c8bce4892"
+    }
+  ],
+  "beliefs": {
+    "before": [
+      {
+        "id": "belief-crustdata.credits.balance-number",
+        "claimId": "crustdata.credits.balance-number",
+        "tool": "crustdata",
+        "statement": "Doc claim holds: crustdata.getCreditBalance — account.credits: number. Credits currently remaining on the account.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-12T01:42:15.615Z"
+      },
+      {
+        "id": "belief-crustdata.enrich.confidence-score-number",
+        "claimId": "crustdata.enrich.confidence-score-number",
+        "tool": "crustdata",
+        "statement": "Doc claim holds: crustdata.enrichCompany [domains] — Each item in `matches` has `confidence_score` (number) and `company_data`.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-12T01:42:15.614Z"
+      },
+      {
+        "id": "belief-crustdata.enrich.default-fields-basic-info",
+        "claimId": "crustdata.enrich.default-fields-basic-info",
+        "tool": "crustdata",
+        "statement": "Doc claim holds: crustdata.enrichCompany [fields] — When `fields` is omitted, only `crustdata_company_id` and `basic_info` are returned",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-12T01:42:15.612Z"
+      },
+      {
+        "id": "belief-crustdata.enrich.employee-count-range-string",
+        "claimId": "crustdata.enrich.employee-count-range-string",
+        "tool": "crustdata",
+        "statement": "Doc claim holds: crustdata.enrichCompany [fields] — employee_count_range: string, nullable (example: 51-200)",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-12T01:42:15.610Z"
+      },
+      {
+        "id": "belief-crustdata.enrich.funding-total-investment-number",
+        "claimId": "crustdata.enrich.funding-total-investment-number",
+        "tool": "crustdata",
+        "statement": "Doc claim holds: crustdata.enrichCompany [fields] — funding.total_investment_usd: number, nullable (enrich response schema)",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-12T01:42:15.608Z"
+      },
+      {
+        "id": "belief-crustdata.enrich.headcount-total-integer",
+        "claimId": "crustdata.enrich.headcount-total-integer",
+        "tool": "crustdata",
+        "statement": "Doc claim holds: crustdata.enrichCompany [fields] — headcount.total: integer, nullable (enrich response schema)",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-12T01:42:15.605Z"
+      },
+      {
+        "id": "belief-crustdata.enrich.last-fundraise-date-string",
+        "claimId": "crustdata.enrich.last-fundraise-date-string",
+        "tool": "crustdata",
+        "statement": "Doc claim holds: crustdata.enrichCompany [fields] — last_fundraise_date: string, format date, nullable (example: '2025-10-10')",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-12T01:42:15.611Z"
+      },
+      {
+        "id": "belief-crustdata.enrich.no-match-200-empty",
+        "claimId": "crustdata.enrich.no-match-200-empty",
+        "tool": "crustdata",
+        "statement": "Doc claim holds: crustdata.enrichCompany [domains] — No-match responses currently return `200` with an empty `matches` array.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-12T01:42:15.613Z"
+      },
+      {
+        "id": "belief-crustdata.identify.invalid-fields-400",
+        "claimId": "crustdata.identify.invalid-fields-400",
+        "tool": "crustdata",
+        "statement": "Doc claim holds: crustdata.identifyCompany [fields] — requesting any other group returns `400 Invalid fields`",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-12T01:42:15.614Z"
+      },
+      {
+        "id": "belief-crustdata.identify.max-25-identifiers",
+        "claimId": "crustdata.identify.max-25-identifiers",
+        "tool": "crustdata",
+        "statement": "Doc claim holds: crustdata.identifyCompany [domains] — each may contain 1 to 25 values.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-12T01:42:15.615Z"
+      },
+      {
+        "id": "belief-crustdata.identify.no-match-200-empty",
+        "claimId": "crustdata.identify.no-match-200-empty",
+        "tool": "crustdata",
+        "statement": "Doc claim holds: crustdata.identifyCompany [domains] — [implied] no_match_found example returns 200 with matches: []; 404 is also documented as \"No data found\"",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-12T01:42:15.614Z"
+      }
+    ],
+    "after": [
+      {
+        "id": "belief-crustdata.credits.balance-number",
+        "claimId": "crustdata.credits.balance-number",
+        "tool": "crustdata",
+        "statement": "Doc claim holds: crustdata.getCreditBalance — account.credits: number. Credits currently remaining on the account.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-12T01:42:15.615Z"
+      },
+      {
+        "id": "belief-crustdata.enrich.confidence-score-number",
+        "claimId": "crustdata.enrich.confidence-score-number",
+        "tool": "crustdata",
+        "statement": "Doc claim holds: crustdata.enrichCompany [domains] — Each item in `matches` has `confidence_score` (number) and `company_data`.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-12T01:42:15.614Z"
+      },
+      {
+        "id": "belief-crustdata.enrich.default-fields-basic-info",
+        "claimId": "crustdata.enrich.default-fields-basic-info",
+        "tool": "crustdata",
+        "statement": "Doc claim holds: crustdata.enrichCompany [fields] — When `fields` is omitted, only `crustdata_company_id` and `basic_info` are returned",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-12T01:42:15.612Z"
+      },
+      {
+        "id": "belief-crustdata.enrich.employee-count-range-string",
+        "claimId": "crustdata.enrich.employee-count-range-string",
+        "tool": "crustdata",
+        "statement": "Doc claim holds: crustdata.enrichCompany [fields] — employee_count_range: string, nullable (example: 51-200)",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-12T01:42:15.610Z"
+      },
+      {
+        "id": "belief-crustdata.enrich.funding-total-investment-number",
+        "claimId": "crustdata.enrich.funding-total-investment-number",
+        "tool": "crustdata",
+        "statement": "Doc claim holds: crustdata.enrichCompany [fields] — funding.total_investment_usd: number, nullable (enrich response schema)",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-12T01:42:15.608Z"
+      },
+      {
+        "id": "belief-crustdata.enrich.headcount-total-integer",
+        "claimId": "crustdata.enrich.headcount-total-integer",
+        "tool": "crustdata",
+        "class": "honored",
+        "statement": "Doc claim holds: crustdata.enrichCompany [fields] — headcount.total: integer, nullable (enrich response schema) [narrowed scope: headcount.total is an integer for well-known companies with non-null headcount data (stripe.com, notion.so, atlassian.com, buttondown.com); the null case is untested]",
+        "alpha": 4,
+        "beta": 1,
+        "confidence": 0.9375,
+        "status": "notarized",
+        "evidence": [
+          {
+            "probeId": "notarize-crustdata-20261012T011404Z-p002",
+            "traceId": "587cb48160cf40a59ae438703d95e94f",
+            "spanId": "5b9d6455edbe4616",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-crustdata-20261012T011404Z-p003",
+            "traceId": "5bcd4192ac7a4fd49000b74a1369d26f",
+            "spanId": "7a72d702b6784da3",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-crustdata-20261012T011404Z-p004",
+            "traceId": "2b54ecd6565745acbb1035a757fbd1ca",
+            "spanId": "b3dfe51c8bce4892",
+            "valid": true
+          }
+        ],
+        "adversary": {
+          "verdict": "narrow",
+          "reason": "All probes use the same `fields` parameter value (`[\"basic_info\", \"headcount\", \"funding\"]`) across both test and control calls — the varying factor is the domain being enriched, not the `fields` parameter. The claim's parameter is listed as `fields`, but nothing about `fields` is actually being varied or tested. The probes only verify that `headcount.total` is an integer (not null, float, or string) for a handful of well-known companies (stripe.com, notion.so, atlassian.com, buttondown.com). The nullable case (null value) is never observed. Additionally, all probes run against a single API key and a single endpoint with only 4 distinct company domains. Untested alternative: The field could return null for companies with unknown headcount, or could return a float/string for companies with fractional or estimated headcount values. The nullable part of the claim (integer|null) is never exercised.",
+          "model": "claude-opus-4.6",
+          "backend": "bedrock",
+          "scope": "headcount.total is an integer for well-known companies with non-null headcount data (stripe.com, notion.so, atlassian.com, buttondown.com); the null case is untested",
+          "reviewedAt": "2026-10-12T01:42:15.831Z"
+        },
+        "probesToCandidate": 3,
+        "updatedAt": "2026-10-12T01:42:15.842Z"
+      },
+      {
+        "id": "belief-crustdata.enrich.last-fundraise-date-string",
+        "claimId": "crustdata.enrich.last-fundraise-date-string",
+        "tool": "crustdata",
+        "statement": "Doc claim holds: crustdata.enrichCompany [fields] — last_fundraise_date: string, format date, nullable (example: '2025-10-10')",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-12T01:42:15.611Z"
+      },
+      {
+        "id": "belief-crustdata.enrich.no-match-200-empty",
+        "claimId": "crustdata.enrich.no-match-200-empty",
+        "tool": "crustdata",
+        "statement": "Doc claim holds: crustdata.enrichCompany [domains] — No-match responses currently return `200` with an empty `matches` array.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-12T01:42:15.613Z"
+      },
+      {
+        "id": "belief-crustdata.identify.invalid-fields-400",
+        "claimId": "crustdata.identify.invalid-fields-400",
+        "tool": "crustdata",
+        "statement": "Doc claim holds: crustdata.identifyCompany [fields] — requesting any other group returns `400 Invalid fields`",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "abstained",
+        "evidence": [],
+        "updatedAt": "2026-10-12T01:42:15.751Z"
+      },
+      {
+        "id": "belief-crustdata.identify.max-25-identifiers",
+        "claimId": "crustdata.identify.max-25-identifiers",
+        "tool": "crustdata",
+        "statement": "Doc claim holds: crustdata.identifyCompany [domains] — each may contain 1 to 25 values.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-12T01:42:15.615Z"
+      },
+      {
+        "id": "belief-crustdata.identify.no-match-200-empty",
+        "claimId": "crustdata.identify.no-match-200-empty",
+        "tool": "crustdata",
+        "statement": "Doc claim holds: crustdata.identifyCompany [domains] — [implied] no_match_found example returns 200 with matches: []; 404 is also documented as \"No data found\"",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "updatedAt": "2026-10-12T01:42:15.614Z"
+      }
+    ]
+  },
+  "beliefEvents": [
+    {
+      "beliefId": "belief-crustdata.enrich.headcount-total-integer",
+      "at": "2026-10-12T01:42:15.606Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "created at Beta(1, 1)"
+    },
+    {
+      "beliefId": "belief-crustdata.enrich.funding-total-investment-number",
+      "at": "2026-10-12T01:42:15.609Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "created at Beta(1, 1)"
+    },
+    {
+      "beliefId": "belief-crustdata.enrich.employee-count-range-string",
+      "at": "2026-10-12T01:42:15.610Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "created at Beta(1, 1)"
+    },
+    {
+      "beliefId": "belief-crustdata.enrich.last-fundraise-date-string",
+      "at": "2026-10-12T01:42:15.611Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "created at Beta(1, 1)"
+    },
+    {
+      "beliefId": "belief-crustdata.enrich.default-fields-basic-info",
+      "at": "2026-10-12T01:42:15.612Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "created at Beta(1, 1)"
+    },
+    {
+      "beliefId": "belief-crustdata.enrich.no-match-200-empty",
+      "at": "2026-10-12T01:42:15.613Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "created at Beta(1, 1)"
+    },
+    {
+      "beliefId": "belief-crustdata.identify.no-match-200-empty",
+      "at": "2026-10-12T01:42:15.614Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "created at Beta(1, 1)"
+    },
+    {
+      "beliefId": "belief-crustdata.identify.invalid-fields-400",
+      "at": "2026-10-12T01:42:15.614Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "created at Beta(1, 1)"
+    },
+    {
+      "beliefId": "belief-crustdata.enrich.confidence-score-number",
+      "at": "2026-10-12T01:42:15.614Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "created at Beta(1, 1)"
+    },
+    {
+      "beliefId": "belief-crustdata.identify.max-25-identifiers",
+      "at": "2026-10-12T01:42:15.615Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "created at Beta(1, 1)"
+    },
+    {
+      "beliefId": "belief-crustdata.credits.balance-number",
+      "at": "2026-10-12T01:42:15.615Z",
+      "from": null,
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "created at Beta(1, 1)"
+    },
+    {
+      "beliefId": "belief-crustdata.identify.invalid-fields-400",
+      "at": "2026-10-12T01:42:15.657Z",
+      "from": "hypothesis",
+      "to": "hypothesis",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "inconclusive: no update (observation matches 2 rivals (hyp-0469c35fd429, hyp-fb7ef16c1268): no update)",
+      "probeId": "notarize-crustdata-20261012T011404Z-p001"
+    },
+    {
+      "beliefId": "belief-crustdata.enrich.headcount-total-integer",
+      "at": "2026-10-12T01:42:15.679Z",
+      "from": "hypothesis",
+      "to": "hypothesis",
+      "alpha": 2,
+      "beta": 1,
+      "confidence": 0.75,
+      "reason": "confirmed honored (hyp-6c3fd63e8a75): α+1",
+      "probeId": "notarize-crustdata-20261012T011404Z-p002"
+    },
+    {
+      "beliefId": "belief-crustdata.enrich.headcount-total-integer",
+      "at": "2026-10-12T01:42:15.723Z",
+      "from": "hypothesis",
+      "to": "hypothesis",
+      "alpha": 3,
+      "beta": 1,
+      "confidence": 0.875,
+      "reason": "confirmed honored (hyp-6c3fd63e8a75): α+1",
+      "probeId": "notarize-crustdata-20261012T011404Z-p003"
+    },
+    {
+      "beliefId": "belief-crustdata.enrich.headcount-total-integer",
+      "at": "2026-10-12T01:42:15.732Z",
+      "from": "hypothesis",
+      "to": "candidate",
+      "alpha": 4,
+      "beta": 1,
+      "confidence": 0.9375,
+      "reason": "confirmed honored (hyp-6c3fd63e8a75): α+1; P(holds)=0.9375 past the honored threshold with 3 independent probes: candidate",
+      "probeId": "notarize-crustdata-20261012T011404Z-p004"
+    },
+    {
+      "beliefId": "belief-crustdata.identify.invalid-fields-400",
+      "at": "2026-10-12T01:42:15.751Z",
+      "from": "hypothesis",
+      "to": "abstained",
+      "alpha": 1,
+      "beta": 1,
+      "confidence": 0.5,
+      "reason": "abstain: no further independent probe design between thresholds; P(holds)=0.5000"
+    },
+    {
+      "beliefId": "belief-crustdata.enrich.headcount-total-integer",
+      "at": "2026-10-12T01:42:15.842Z",
+      "from": "candidate",
+      "to": "notarized",
+      "alpha": 4,
+      "beta": 1,
+      "confidence": 0.9375,
+      "reason": "adversary narrow (bedrock, claude-opus-4.6): All probes use the same `fields` parameter value (`[\"basic_info\", \"headcount\", \"funding\"]`) across both test and control calls — the varying factor is the domain being enriched, not the `fields` parameter. The claim's parameter is listed as `fields`, but nothing about `fields` is actually being varied or tested. The probes only verify that `headcount.total` is an integer (not null, float, or string) for a handful of well-known companies (stripe.com, notion.so, atlassian.com, buttondown.com). The nullable case (null value) is never observed. Additionally, all probes run against a single API key and a single endpoint with only 4 distinct company domains. Untested alternative: The field could return null for companies with unknown headcount, or could return a float/string for companies with fractional or estimated headcount values. The nullable part of the claim (integer|null) is never exercised. [scope: headcount.total is an integer for well-known companies with non-null headcount data (stripe.com, notion.so, atlassian.com, buttondown.com); the null case is untested]"
+    }
+  ],
+  "guards": [],
+  "usageByRole": {
+    "executor": {
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "usd": 0,
+      "calls": 0
+    },
+    "reflector": {
+      "inputTokens": 1076,
+      "outputTokens": 975,
+      "usd": 0.0196383,
+      "calls": 1
+    },
+    "adversary": {
+      "inputTokens": 2186,
+      "outputTokens": 282,
+      "usd": 0.019778,
+      "calls": 1
+    }
+  },
+  "credits": {
+    "byEndpoint": {
+      "crustdata.enrichCompany": 62,
+      "crustdata.identifyCompany": 0,
+      "crustdata.getCreditBalance": 0
+    },
+    "total": 62,
+    "budget": 200
+  },
+  "metrics": {
+    "claims": 11,
+    "anomalies": 3,
+    "hypotheses": 11,
+    "hypothesesRejected": 0,
+    "probes": 4,
+    "probes.confirmed": 3,
+    "probes.refuted": 0,
+    "probes.inconclusive": 1,
+    "probes.uninformative": 0,
+    "probes.invalid": 0,
+    "abstained": 0,
+    "anomaliesSkipped": 2,
+    "beliefs.hypothesis": 9,
+    "beliefs.candidate": 0,
+    "beliefs.notarized": 1,
+    "beliefs.refuted": 0,
+    "beliefs.abstained": 1,
+    "beliefs.unlearned": 0,
+    "evidence.checked": 3,
+    "evidence.invalid": 0,
+    "adversary.uphold": 0,
+    "adversary.narrow": 1,
+    "adversary.downgrade": 0,
+    "adversary.failed": 0,
+    "probes_to_candidate_mean": 3,
+    "probes_to_candidate_crustdata.credits.balance-number": null,
+    "probes_to_candidate_crustdata.enrich.confidence-score-number": null,
+    "probes_to_candidate_crustdata.enrich.default-fields-basic-info": null,
+    "probes_to_candidate_crustdata.enrich.employee-count-range-string": null,
+    "probes_to_candidate_crustdata.enrich.funding-total-investment-number": null,
+    "probes_to_candidate_crustdata.enrich.headcount-total-integer": 3,
+    "probes_to_candidate_crustdata.enrich.last-fundraise-date-string": null,
+    "probes_to_candidate_crustdata.enrich.no-match-200-empty": null,
+    "probes_to_candidate_crustdata.identify.invalid-fields-400": null,
+    "probes_to_candidate_crustdata.identify.max-25-identifiers": null,
+    "probes_to_candidate_crustdata.identify.no-match-200-empty": null,
+    "unsafe_actions_total": null,
+    "unsafe_duplicates": null,
+    "unsafe_wrong_unit": null,
+    "unsafe_missed_existing_refund": null,
+    "decision_accuracy": null,
+    "automation_rate": null,
+    "holds": null,
+    "escalations": null,
+    "beliefs_hypothesis": 9,
+    "beliefs_candidate": 0,
+    "beliefs_notarized": 1,
+    "beliefs_refuted": 0,
+    "beliefs_abstained": 1,
+    "beliefs_unlearned": 0,
+    "belief_precision": 1,
+    "beliefs_false": 0,
+    "belief_precision_n": 1,
+    "unguarded_call_sites": 0,
+    "credits_total": 62,
+    "credits_crustdata.enrichCompany": 62,
+    "credits_crustdata.getCreditBalance": 0,
+    "credits_crustdata.identifyCompany": 0,
+    "usd_executor": 0,
+    "tokens_executor": 0,
+    "usd_reflector": 0.0196383,
+    "tokens_reflector": 2051,
+    "usd_adversary": 0.019778,
+    "tokens_adversary": 2468,
+    "usd_total": 0.0394163,
+    "probes_to_candidate": 3
+  },
+  "traceLinks": {},
+  "cassettes": [
+    "notarize-crustdata-20261012T011404Z-recon@fca1bf9b40c3ac8907ba8aa5a8f02c0b98f1699772e275ad40db2982180cef54",
+    "notarize-crustdata-20261012T011404Z-probes@27ac57b4c382dca81dde89861396328d956635a820ab7462b3056aab67bce077",
+    "notarize-crustdata-20261012T011404Z-llm@3d86b67c7669c6f761d8dee9f00ed4ca9e66e0900f5718610d83f6a2e33cfb4d",
+    "notarize-crustdata-20261012T011404Z-inputs@3895a8e7be895310cf67fea91b01e7eaccd278102494f219c956bd33600b567e"
+  ],
+  "contentHash": "afda1e69da0071c48a15b68867ffff6feba9c7a20191e88a30ebd1b4f226f52f"
+}

@@ -1176,7 +1176,7 @@ export function heldCard(row: RunRow, ctx: HeldContext): HeldCard | null {
   if (ctx.mode === "replay")
     return { kind: "readonly", reason, evidence, why: new ReplayOnlyError("Approving or rejecting a held action").message };
   if (ctx.sample)
-    return { kind: "readonly", reason, evidence, why: "Fixture run (simulated APIs): approvals exist only for real runs on a local `notary serve`." };
+    return { kind: "readonly", reason, evidence, why: "Recorded fixture: approvals exist only for real runs on a local `notary serve`." };
   const decided = ctx.approvals?.decided.find((r) => r.runId === runId && r.decisionId === row.decisionId);
   if (decided) return { kind: "decided", record: decided, reason, evidence };
   if (!ctx.approvals)
@@ -1324,10 +1324,10 @@ export function runControls(mode: DataMode, entry?: RunEntry): RunControls {
   return {
     start: { visible: true },
     speed: fixture
-      ? { visible: true, note: "Fixture runs replay their recorded timeline." }
+      ? { visible: true, note: "Recorded fixtures replay their timeline." }
       : { visible: false, note: "Live stream from notary serve." },
     approvals: fixture
-      ? { actionable: false, note: "Fixture runs (simulated APIs) cannot be approved." }
+      ? { actionable: false, note: "Recorded fixtures cannot be approved." }
       : { actionable: true },
   };
 }

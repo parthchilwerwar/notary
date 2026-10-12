@@ -1,0 +1,515 @@
+{
+  "runId": "demo-run-guarded",
+  "sample": true,
+  "bundleHash": "301d950717e879ab4ebda20c44fa4ce5217e6df25d5c1b69821a0597fb686418",
+  "sources": [
+    "bundle",
+    "timeline"
+  ],
+  "incidents": [
+    {
+      "id": "inc-5040030ea5c2c477",
+      "runId": "demo-run-guarded",
+      "kind": "adversary_downgrade",
+      "severity": "warning",
+      "at": "2026-10-10T08:46:34.575Z",
+      "agent": "adversary",
+      "tool": "dodo",
+      "summary": "The Adversary downgraded belief-dodo.payments.page-size-max-100 instead of upholding it (model fixture.adversary-double).",
+      "recordIds": [
+        "belief-dodo.payments.page-size-max-100",
+        "dodo.payments.page-size-max-100"
+      ],
+      "claimId": "dodo.payments.page-size-max-100",
+      "beliefId": "belief-dodo.payments.page-size-max-100",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "belief_abstained",
+        "summary": "The objection kept belief-dodo.payments.page-size-max-100 out of certification (status abstained); no guard relies on it and money actions that need it are held.",
+        "at": "2026-10-10T08:46:34.796Z",
+        "recordIds": [
+          "belief-dodo.payments.page-size-max-100"
+        ]
+      },
+      "data": {
+        "verdict": "downgrade",
+        "backend": "bedrock"
+      }
+    },
+    {
+      "id": "inc-03ce280646d9a591",
+      "runId": "demo-run-guarded",
+      "kind": "adversary_downgrade",
+      "severity": "warning",
+      "at": "2026-10-10T08:46:34.646Z",
+      "agent": "adversary",
+      "tool": "dodo",
+      "summary": "The Adversary narrowed belief-dodo.wallet.credit-amount-minor-units instead of upholding it (model fixture.adversary-double).",
+      "recordIds": [
+        "belief-dodo.wallet.credit-amount-minor-units",
+        "dodo.wallet.credit-amount-minor-units"
+      ],
+      "claimId": "dodo.wallet.credit-amount-minor-units",
+      "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "certified",
+        "summary": "Certified only within the narrowed scope (USD only: dodo.createWalletLedgerEntry was probed with USD amounts; other curre…); guards refuse calls outside it.",
+        "at": "2026-10-10T08:46:34.648Z",
+        "recordIds": [
+          "belief-dodo.wallet.credit-amount-minor-units"
+        ]
+      },
+      "data": {
+        "verdict": "narrow",
+        "backend": "bedrock"
+      }
+    },
+    {
+      "id": "inc-257b717b9eadd439",
+      "runId": "demo-run-guarded",
+      "kind": "adversary_downgrade",
+      "severity": "warning",
+      "at": "2026-10-10T08:46:34.657Z",
+      "agent": "adversary",
+      "tool": "dodo",
+      "summary": "The Adversary narrowed belief-dodo.wallet.idempotency-key-no-duplicate instead of upholding it (model fixture.adversary-double).",
+      "recordIds": [
+        "belief-dodo.wallet.idempotency-key-no-duplicate",
+        "dodo.wallet.idempotency-key-no-duplicate"
+      ],
+      "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+      "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "certified",
+        "summary": "Certified only within the narrowed scope (USD only: dodo.createWalletLedgerEntry was probed with USD amounts; other curre…); guards refuse calls outside it.",
+        "at": "2026-10-10T08:46:34.659Z",
+        "recordIds": [
+          "belief-dodo.wallet.idempotency-key-no-duplicate"
+        ]
+      },
+      "data": {
+        "verdict": "narrow",
+        "backend": "bedrock"
+      }
+    },
+    {
+      "id": "inc-998c740a1d5fc9d1",
+      "runId": "demo-run-guarded",
+      "kind": "guard_hold",
+      "severity": "warning",
+      "at": "2026-10-12T00:14:55.665Z",
+      "agent": "guard",
+      "tool": "dodo",
+      "summary": "The Guard held dodo.createRefund for q01 (an unknown amount): 1 required belief(s) not notarized (belief-dodo.payments.page-size-max-100).",
+      "recordIds": [
+        "demo-run-guarded:q01",
+        "q01",
+        "belief-dodo.payments.page-size-max-100"
+      ],
+      "beliefId": "belief-dodo.payments.page-size-max-100",
+      "decisionId": "demo-run-guarded:q01",
+      "traceId": "8f675a10c9124bbabce7dacd5f05e513",
+      "spanId": "b8277e08aa9f4ca3",
+      "exported": false,
+      "resolution": {
+        "status": "awaiting_human",
+        "action": "held_for_person",
+        "summary": "Held with an evidence pack (6 related probe(s)) for a person in Approvals.",
+        "at": "2026-10-12T00:14:55.665Z",
+        "recordIds": [
+          "demo-run-guarded:q01"
+        ]
+      },
+      "data": {
+        "action": "dodo.createRefund",
+        "missing": 1,
+        "currency": "USD"
+      }
+    },
+    {
+      "id": "inc-14161f74c0198fe7",
+      "runId": "demo-run-guarded",
+      "kind": "guard_hold",
+      "severity": "warning",
+      "at": "2026-10-12T00:14:55.774Z",
+      "agent": "guard",
+      "tool": "dodo",
+      "summary": "The Guard held dodo.createRefund for q02 (an unknown amount): 1 required belief(s) not notarized (belief-dodo.payments.page-size-max-100).",
+      "recordIds": [
+        "demo-run-guarded:q02",
+        "q02",
+        "belief-dodo.payments.page-size-max-100"
+      ],
+      "beliefId": "belief-dodo.payments.page-size-max-100",
+      "decisionId": "demo-run-guarded:q02",
+      "traceId": "3418ffd7d0634f34a2f4738ab37f6ad8",
+      "spanId": "61a663e65c364c20",
+      "exported": false,
+      "resolution": {
+        "status": "awaiting_human",
+        "action": "held_for_person",
+        "summary": "Held with an evidence pack (6 related probe(s)) for a person in Approvals.",
+        "at": "2026-10-12T00:14:55.774Z",
+        "recordIds": [
+          "demo-run-guarded:q02"
+        ]
+      },
+      "data": {
+        "action": "dodo.createRefund",
+        "missing": 1,
+        "currency": "USD"
+      }
+    },
+    {
+      "id": "inc-a59ddc3f9cc38ea4",
+      "runId": "demo-run-guarded",
+      "kind": "guard_hold",
+      "severity": "warning",
+      "at": "2026-10-12T00:14:55.876Z",
+      "agent": "guard",
+      "tool": "dodo",
+      "summary": "The Guard held dodo.createRefund for q03 (1999 USD (minor units)): 1 required belief(s) not notarized (belief-dodo.payments.page-size-max-100).",
+      "recordIds": [
+        "demo-run-guarded:q03",
+        "q03",
+        "belief-dodo.payments.page-size-max-100"
+      ],
+      "beliefId": "belief-dodo.payments.page-size-max-100",
+      "decisionId": "demo-run-guarded:q03",
+      "traceId": "fe097f56cda145d1b1095764f6fdf45f",
+      "spanId": "3ecc57b3ada74ab7",
+      "exported": false,
+      "resolution": {
+        "status": "awaiting_human",
+        "action": "held_for_person",
+        "summary": "Held with an evidence pack (6 related probe(s)) for a person in Approvals.",
+        "at": "2026-10-12T00:14:55.876Z",
+        "recordIds": [
+          "demo-run-guarded:q03"
+        ]
+      },
+      "data": {
+        "action": "dodo.createRefund",
+        "missing": 1,
+        "amount": 1999,
+        "currency": "USD"
+      }
+    },
+    {
+      "id": "inc-d6818ed4d1c92436",
+      "runId": "demo-run-guarded",
+      "kind": "guard_hold",
+      "severity": "warning",
+      "at": "2026-10-12T00:14:55.963Z",
+      "agent": "guard",
+      "tool": "dodo",
+      "summary": "The Guard held dodo.createRefund for q04 (an unknown amount): 1 required belief(s) not notarized (belief-dodo.payments.page-size-max-100).",
+      "recordIds": [
+        "demo-run-guarded:q04",
+        "q04",
+        "belief-dodo.payments.page-size-max-100"
+      ],
+      "beliefId": "belief-dodo.payments.page-size-max-100",
+      "decisionId": "demo-run-guarded:q04",
+      "traceId": "a058763cd2a84178a50c04384faa63c2",
+      "spanId": "ba04315e5bf34f0a",
+      "exported": false,
+      "resolution": {
+        "status": "awaiting_human",
+        "action": "held_for_person",
+        "summary": "Held with an evidence pack (6 related probe(s)) for a person in Approvals.",
+        "at": "2026-10-12T00:14:55.963Z",
+        "recordIds": [
+          "demo-run-guarded:q04"
+        ]
+      },
+      "data": {
+        "action": "dodo.createRefund",
+        "missing": 1,
+        "currency": "USD"
+      }
+    },
+    {
+      "id": "inc-1a263ae887dccf9d",
+      "runId": "demo-run-guarded",
+      "kind": "guard_hold",
+      "severity": "warning",
+      "at": "2026-10-12T00:14:56.128Z",
+      "agent": "guard",
+      "tool": "dodo",
+      "summary": "The Guard held dodo.createRefund for q05 (an unknown amount): 1 required belief(s) not notarized (belief-dodo.payments.page-size-max-100).",
+      "recordIds": [
+        "demo-run-guarded:q05",
+        "q05",
+        "belief-dodo.payments.page-size-max-100"
+      ],
+      "beliefId": "belief-dodo.payments.page-size-max-100",
+      "decisionId": "demo-run-guarded:q05",
+      "traceId": "fbfebb40dc6f4915a03c842877a03e17",
+      "spanId": "a5b93ca0c2a2447f",
+      "exported": false,
+      "resolution": {
+        "status": "awaiting_human",
+        "action": "held_for_person",
+        "summary": "Held with an evidence pack (6 related probe(s)) for a person in Approvals.",
+        "at": "2026-10-12T00:14:56.128Z",
+        "recordIds": [
+          "demo-run-guarded:q05"
+        ]
+      },
+      "data": {
+        "action": "dodo.createRefund",
+        "missing": 1,
+        "currency": "USD"
+      }
+    },
+    {
+      "id": "inc-ecd38c57d6cf8252",
+      "runId": "demo-run-guarded",
+      "kind": "guard_hold",
+      "severity": "warning",
+      "at": "2026-10-12T00:14:56.251Z",
+      "agent": "guard",
+      "tool": "dodo",
+      "summary": "The Guard held dodo.createRefund for q06 (an unknown amount): 1 required belief(s) not notarized (belief-dodo.payments.page-size-max-100).",
+      "recordIds": [
+        "demo-run-guarded:q06",
+        "q06",
+        "belief-dodo.payments.page-size-max-100"
+      ],
+      "beliefId": "belief-dodo.payments.page-size-max-100",
+      "decisionId": "demo-run-guarded:q06",
+      "traceId": "48f4838cf60c41c5a2d3f1e35a030c4b",
+      "spanId": "5833d5ad11d04404",
+      "exported": false,
+      "resolution": {
+        "status": "awaiting_human",
+        "action": "held_for_person",
+        "summary": "Held with an evidence pack (6 related probe(s)) for a person in Approvals.",
+        "at": "2026-10-12T00:14:56.251Z",
+        "recordIds": [
+          "demo-run-guarded:q06"
+        ]
+      },
+      "data": {
+        "action": "dodo.createRefund",
+        "missing": 1,
+        "currency": "USD"
+      }
+    },
+    {
+      "id": "inc-c66b35a57913e66b",
+      "runId": "demo-run-guarded",
+      "kind": "guard_block",
+      "severity": "warning",
+      "at": "2026-10-12T00:14:56.615Z",
+      "agent": "guard",
+      "tool": "dodo",
+      "summary": "Guard grd-001913575809 (block, unit_mismatch) refused dodo.createWalletLedgerEntry for q08.",
+      "recordIds": [
+        "demo-run-guarded:q08",
+        "grd-001913575809",
+        "belief-dodo.wallet.credit-amount-minor-units"
+      ],
+      "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+      "decisionId": "demo-run-guarded:q08",
+      "traceId": "6d48ee8e21f7477bbf3ae55fdb35742d",
+      "spanId": "8e53a53ae8514539",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "action_refused",
+        "summary": "No money moved; decision held.",
+        "at": "2026-10-12T00:14:56.615Z",
+        "recordIds": [
+          "grd-001913575809",
+          "belief-dodo.wallet.credit-amount-minor-units"
+        ]
+      },
+      "data": {
+        "guardKind": "block",
+        "class": "unit_mismatch",
+        "decision": "held"
+      }
+    },
+    {
+      "id": "inc-7a3cebd2eb97b338",
+      "runId": "demo-run-guarded",
+      "kind": "guard_hold",
+      "severity": "warning",
+      "at": "2026-10-12T00:14:56.676Z",
+      "agent": "guard",
+      "tool": "dodo",
+      "summary": "The Guard held dodo.createRefund for q09 (12000 USD (minor units)): 1 required belief(s) not notarized (belief-dodo.payments.page-size-max-100).",
+      "recordIds": [
+        "demo-run-guarded:q09",
+        "q09",
+        "belief-dodo.payments.page-size-max-100"
+      ],
+      "beliefId": "belief-dodo.payments.page-size-max-100",
+      "decisionId": "demo-run-guarded:q09",
+      "traceId": "f373c8d228144edabd4f949a125f44eb",
+      "spanId": "3aa62a3918f34c17",
+      "exported": false,
+      "resolution": {
+        "status": "awaiting_human",
+        "action": "held_for_person",
+        "summary": "Held with an evidence pack (6 related probe(s)) for a person in Approvals.",
+        "at": "2026-10-12T00:14:56.676Z",
+        "recordIds": [
+          "demo-run-guarded:q09"
+        ]
+      },
+      "data": {
+        "action": "dodo.createRefund",
+        "missing": 1,
+        "amount": 12000,
+        "currency": "USD"
+      }
+    },
+    {
+      "id": "inc-08f4f13a0ee86682",
+      "runId": "demo-run-guarded",
+      "kind": "guard_hold",
+      "severity": "warning",
+      "at": "2026-10-12T00:14:56.757Z",
+      "agent": "guard",
+      "tool": "dodo",
+      "summary": "The Guard held dodo.createRefund for q10 (2500 USD (minor units)): 1 required belief(s) not notarized (belief-dodo.payments.page-size-max-100).",
+      "recordIds": [
+        "demo-run-guarded:q10",
+        "q10",
+        "belief-dodo.payments.page-size-max-100"
+      ],
+      "beliefId": "belief-dodo.payments.page-size-max-100",
+      "decisionId": "demo-run-guarded:q10",
+      "traceId": "a61b466a74f143d9a2d123995bcdc96e",
+      "spanId": "b55c9b05c9d548cc",
+      "exported": false,
+      "resolution": {
+        "status": "awaiting_human",
+        "action": "held_for_person",
+        "summary": "Held with an evidence pack (6 related probe(s)) for a person in Approvals.",
+        "at": "2026-10-12T00:14:56.757Z",
+        "recordIds": [
+          "demo-run-guarded:q10"
+        ]
+      },
+      "data": {
+        "action": "dodo.createRefund",
+        "missing": 1,
+        "amount": 2500,
+        "currency": "USD"
+      }
+    },
+    {
+      "id": "inc-f80d045850fd6184",
+      "runId": "demo-run-guarded",
+      "kind": "guard_block",
+      "severity": "warning",
+      "at": "2026-10-12T00:14:57.161Z",
+      "agent": "guard",
+      "tool": "dodo",
+      "summary": "Guard grd-001913575809 (block, unit_mismatch) refused dodo.createWalletLedgerEntry for q15.",
+      "recordIds": [
+        "demo-run-guarded:q15",
+        "grd-001913575809",
+        "belief-dodo.wallet.credit-amount-minor-units"
+      ],
+      "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+      "decisionId": "demo-run-guarded:q15",
+      "traceId": "6196119677ec4fee91f41f14be7bb1c0",
+      "spanId": "5d4dd78452264e86",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "action_refused",
+        "summary": "No money moved; decision held.",
+        "at": "2026-10-12T00:14:57.161Z",
+        "recordIds": [
+          "grd-001913575809",
+          "belief-dodo.wallet.credit-amount-minor-units"
+        ]
+      },
+      "data": {
+        "guardKind": "block",
+        "class": "unit_mismatch",
+        "decision": "held"
+      }
+    },
+    {
+      "id": "inc-5060d466232ea7d7",
+      "runId": "demo-run-guarded",
+      "kind": "guard_block",
+      "severity": "warning",
+      "at": "2026-10-12T00:14:57.270Z",
+      "agent": "guard",
+      "tool": "dodo",
+      "summary": "Guard grd-001913575809 (block, unit_mismatch) refused dodo.createWalletLedgerEntry for q18.",
+      "recordIds": [
+        "demo-run-guarded:q18",
+        "grd-001913575809",
+        "belief-dodo.wallet.credit-amount-minor-units"
+      ],
+      "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+      "decisionId": "demo-run-guarded:q18",
+      "traceId": "23254704503348c786707ae2cb102881",
+      "spanId": "8a7e7c7ceb234f5e",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "action_refused",
+        "summary": "No money moved; decision held.",
+        "at": "2026-10-12T00:14:57.270Z",
+        "recordIds": [
+          "grd-001913575809",
+          "belief-dodo.wallet.credit-amount-minor-units"
+        ]
+      },
+      "data": {
+        "guardKind": "block",
+        "class": "unit_mismatch",
+        "decision": "held"
+      }
+    },
+    {
+      "id": "inc-dee3af9f37f3083d",
+      "runId": "demo-run-guarded",
+      "kind": "guard_hold",
+      "severity": "warning",
+      "at": "2026-10-12T00:14:57.768Z",
+      "agent": "guard",
+      "tool": "dodo",
+      "summary": "The Guard held dodo.createRefund for q20 (an unknown amount): 1 required belief(s) not notarized (belief-dodo.payments.page-size-max-100).",
+      "recordIds": [
+        "demo-run-guarded:q20",
+        "q20",
+        "belief-dodo.payments.page-size-max-100"
+      ],
+      "beliefId": "belief-dodo.payments.page-size-max-100",
+      "decisionId": "demo-run-guarded:q20",
+      "traceId": "40556882b6324130a74244f0f0fb1479",
+      "spanId": "f58d2616cebb49fa",
+      "exported": false,
+      "resolution": {
+        "status": "awaiting_human",
+        "action": "held_for_person",
+        "summary": "Held with an evidence pack (6 related probe(s)) for a person in Approvals.",
+        "at": "2026-10-12T00:14:57.768Z",
+        "recordIds": [
+          "demo-run-guarded:q20"
+        ]
+      },
+      "data": {
+        "action": "dodo.createRefund",
+        "missing": 1,
+        "currency": "USD"
+      }
+    }
+  ]
+}

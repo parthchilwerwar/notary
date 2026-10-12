@@ -1,0 +1,1866 @@
+{
+  "runId": "notarize-dodo-20261012T012315Z",
+  "sample": false,
+  "bundleHash": "047476038381d524113b7b312c4da7bc8ccf937446990e74c0836a16c0751fd5",
+  "events": [
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 0,
+      "at": "2026-10-12T01:23:33.819Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.refund.amount-minor-units",
+        "dodo.refund.amount-minor-units"
+      ],
+      "traceIds": [],
+      "summary": "Belief in dodo.refund.amount-minor-units created as hypothesis at P(holds)=0.500.",
+      "data": {
+        "beliefId": "belief-dodo.refund.amount-minor-units",
+        "claimId": "dodo.refund.amount-minor-units",
+        "from": null,
+        "to": "hypothesis",
+        "confidence": 0.5,
+        "alpha": 1,
+        "beta": 1
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 1,
+      "at": "2026-10-12T01:23:33.878Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.refund.full-retry-no-duplicate",
+        "dodo.refund.full-retry-no-duplicate"
+      ],
+      "traceIds": [],
+      "summary": "Belief in dodo.refund.full-retry-no-duplicate created as hypothesis at P(holds)=0.500.",
+      "data": {
+        "beliefId": "belief-dodo.refund.full-retry-no-duplicate",
+        "claimId": "dodo.refund.full-retry-no-duplicate",
+        "from": null,
+        "to": "hypothesis",
+        "confidence": 0.5,
+        "alpha": 1,
+        "beta": 1
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 2,
+      "at": "2026-10-12T01:23:33.931Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.refunds.amount-integer",
+        "dodo.refunds.amount-integer"
+      ],
+      "traceIds": [],
+      "summary": "Belief in dodo.refunds.amount-integer created as hypothesis at P(holds)=0.875.",
+      "data": {
+        "beliefId": "belief-dodo.refunds.amount-integer",
+        "claimId": "dodo.refunds.amount-integer",
+        "from": null,
+        "to": "hypothesis",
+        "confidence": 0.875,
+        "alpha": 3,
+        "beta": 1
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 3,
+      "at": "2026-10-12T01:23:33.941Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.refunds.page-size-max-100",
+        "dodo.refunds.page-size-max-100"
+      ],
+      "traceIds": [],
+      "summary": "Belief in dodo.refunds.page-size-max-100 created as hypothesis at P(holds)=0.500.",
+      "data": {
+        "beliefId": "belief-dodo.refunds.page-size-max-100",
+        "claimId": "dodo.refunds.page-size-max-100",
+        "from": null,
+        "to": "hypothesis",
+        "confidence": 0.5,
+        "alpha": 1,
+        "beta": 1
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 4,
+      "at": "2026-10-12T01:23:33.955Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.payments.page-size-max-100",
+        "dodo.payments.page-size-max-100"
+      ],
+      "traceIds": [],
+      "summary": "Belief in dodo.payments.page-size-max-100 created as hypothesis at P(holds)=0.500.",
+      "data": {
+        "beliefId": "belief-dodo.payments.page-size-max-100",
+        "claimId": "dodo.payments.page-size-max-100",
+        "from": null,
+        "to": "hypothesis",
+        "confidence": 0.5,
+        "alpha": 1,
+        "beta": 1
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 5,
+      "at": "2026-10-12T01:23:33.966Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.payment.refunds-array-present",
+        "dodo.payment.refunds-array-present"
+      ],
+      "traceIds": [],
+      "summary": "Belief in dodo.payment.refunds-array-present created as hypothesis at P(holds)=0.500.",
+      "data": {
+        "beliefId": "belief-dodo.payment.refunds-array-present",
+        "claimId": "dodo.payment.refunds-array-present",
+        "from": null,
+        "to": "hypothesis",
+        "confidence": 0.5,
+        "alpha": 1,
+        "beta": 1
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 6,
+      "at": "2026-10-12T01:23:34.075Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.payment.refunds-lists-issued-refund",
+        "dodo.payment.refunds-lists-issued-refund"
+      ],
+      "traceIds": [],
+      "summary": "Belief in dodo.payment.refunds-lists-issued-refund created as hypothesis at P(holds)=0.500.",
+      "data": {
+        "beliefId": "belief-dodo.payment.refunds-lists-issued-refund",
+        "claimId": "dodo.payment.refunds-lists-issued-refund",
+        "from": null,
+        "to": "hypothesis",
+        "confidence": 0.5,
+        "alpha": 1,
+        "beta": 1
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 7,
+      "at": "2026-10-12T01:23:34.106Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.product.price-minor-units",
+        "dodo.product.price-minor-units"
+      ],
+      "traceIds": [],
+      "summary": "Belief in dodo.product.price-minor-units created as hypothesis at P(holds)=0.500.",
+      "data": {
+        "beliefId": "belief-dodo.product.price-minor-units",
+        "claimId": "dodo.product.price-minor-units",
+        "from": null,
+        "to": "hypothesis",
+        "confidence": 0.5,
+        "alpha": 1,
+        "beta": 1
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 8,
+      "at": "2026-10-12T01:23:34.168Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.customer.missing-email-422",
+        "dodo.customer.missing-email-422"
+      ],
+      "traceIds": [],
+      "summary": "Belief in dodo.customer.missing-email-422 created as hypothesis at P(holds)=0.875.",
+      "data": {
+        "beliefId": "belief-dodo.customer.missing-email-422",
+        "claimId": "dodo.customer.missing-email-422",
+        "from": null,
+        "to": "hypothesis",
+        "confidence": 0.875,
+        "alpha": 3,
+        "beta": 1
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 9,
+      "at": "2026-10-12T01:23:34.177Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.subscription.change-plan-pending-409",
+        "dodo.subscription.change-plan-pending-409"
+      ],
+      "traceIds": [],
+      "summary": "Belief in dodo.subscription.change-plan-pending-409 created as hypothesis at P(holds)=0.500.",
+      "data": {
+        "beliefId": "belief-dodo.subscription.change-plan-pending-409",
+        "claimId": "dodo.subscription.change-plan-pending-409",
+        "from": null,
+        "to": "hypothesis",
+        "confidence": 0.5,
+        "alpha": 1,
+        "beta": 1
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 10,
+      "at": "2026-10-12T01:23:34.190Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.wallet.credit-amount-minor-units",
+        "dodo.wallet.credit-amount-minor-units"
+      ],
+      "traceIds": [],
+      "summary": "Belief in dodo.wallet.credit-amount-minor-units created as hypothesis at P(holds)=0.500.",
+      "data": {
+        "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+        "claimId": "dodo.wallet.credit-amount-minor-units",
+        "from": null,
+        "to": "hypothesis",
+        "confidence": 0.5,
+        "alpha": 1,
+        "beta": 1
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 11,
+      "at": "2026-10-12T01:23:34.256Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.wallet.idempotency-key-no-duplicate",
+        "dodo.wallet.idempotency-key-no-duplicate"
+      ],
+      "traceIds": [],
+      "summary": "Belief in dodo.wallet.idempotency-key-no-duplicate created as hypothesis at P(holds)=0.500.",
+      "data": {
+        "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
+        "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+        "from": null,
+        "to": "hypothesis",
+        "confidence": 0.5,
+        "alpha": 1,
+        "beta": 1
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 12,
+      "at": "2026-10-12T01:23:34.332Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.wallet.debit-insufficient-400",
+        "dodo.wallet.debit-insufficient-400"
+      ],
+      "traceIds": [],
+      "summary": "Belief in dodo.wallet.debit-insufficient-400 created as hypothesis at P(holds)=0.500.",
+      "data": {
+        "beliefId": "belief-dodo.wallet.debit-insufficient-400",
+        "claimId": "dodo.wallet.debit-insufficient-400",
+        "from": null,
+        "to": "hypothesis",
+        "confidence": 0.5,
+        "alpha": 1,
+        "beta": 1
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 13,
+      "at": "2026-10-12T01:23:34.345Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.wallets.total-balance-usd-integer",
+        "dodo.wallets.total-balance-usd-integer"
+      ],
+      "traceIds": [],
+      "summary": "Belief in dodo.wallets.total-balance-usd-integer created as hypothesis at P(holds)=0.500.",
+      "data": {
+        "beliefId": "belief-dodo.wallets.total-balance-usd-integer",
+        "claimId": "dodo.wallets.total-balance-usd-integer",
+        "from": null,
+        "to": "hypothesis",
+        "confidence": 0.5,
+        "alpha": 1,
+        "beta": 1
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 14,
+      "at": "2026-10-12T01:23:34.390Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.wallet.ledger-response-balance-integer",
+        "dodo.wallet.ledger-response-balance-integer"
+      ],
+      "traceIds": [],
+      "summary": "Belief in dodo.wallet.ledger-response-balance-integer created as hypothesis at P(holds)=0.875.",
+      "data": {
+        "beliefId": "belief-dodo.wallet.ledger-response-balance-integer",
+        "claimId": "dodo.wallet.ledger-response-balance-integer",
+        "from": null,
+        "to": "hypothesis",
+        "confidence": 0.875,
+        "alpha": 3,
+        "beta": 1
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 15,
+      "at": "2026-10-12T01:23:34.762Z",
+      "stage": "test",
+      "type": "probe.committed",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p001",
+        "hyp-4daedaff3435",
+        "hyp-6b09f86e4f55",
+        "dodo.payments.page-size-max-100"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p001 (boundary_sweep) committed its predictions for dodo.payments.page-size-max-100 before running.",
+      "data": {
+        "claimId": "dodo.payments.page-size-max-100",
+        "template": "boundary_sweep",
+        "tool": "dodo",
+        "hypotheses": 2
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 16,
+      "at": "2026-10-12T01:23:35.534Z",
+      "stage": "test",
+      "type": "probe.verdict",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p001",
+        "hyp-6b09f86e4f55",
+        "dodo.payments.page-size-max-100"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p001 (boundary_sweep) on dodo.payments.page-size-max-100: confirmed (honored), 3 calls, 0 credits.",
+      "data": {
+        "claimId": "dodo.payments.page-size-max-100",
+        "template": "boundary_sweep",
+        "verdict": "confirmed",
+        "costCredits": 0,
+        "calls": 3,
+        "winningHypothesisId": "hyp-6b09f86e4f55",
+        "winningClass": "honored"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 17,
+      "at": "2026-10-12T01:23:36.083Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.payments.page-size-max-100",
+        "dodo.payments.page-size-max-100",
+        "notarize-dodo-20261012T012315Z-p001"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Belief in dodo.payments.page-size-max-100 stays hypothesis, P(holds)=0.750 (Beta(2, 1)).",
+      "data": {
+        "beliefId": "belief-dodo.payments.page-size-max-100",
+        "claimId": "dodo.payments.page-size-max-100",
+        "from": "hypothesis",
+        "to": "hypothesis",
+        "confidence": 0.75,
+        "alpha": 2,
+        "beta": 1,
+        "probeId": "notarize-dodo-20261012T012315Z-p001"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 18,
+      "at": "2026-10-12T01:23:36.112Z",
+      "stage": "test",
+      "type": "probe.committed",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p002",
+        "hyp-4daedaff3435",
+        "hyp-6b09f86e4f55",
+        "dodo.payments.page-size-max-100"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p002 (boundary_sweep) committed its predictions for dodo.payments.page-size-max-100 before running.",
+      "data": {
+        "claimId": "dodo.payments.page-size-max-100",
+        "template": "boundary_sweep",
+        "tool": "dodo",
+        "hypotheses": 2
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 19,
+      "at": "2026-10-12T01:23:36.415Z",
+      "stage": "test",
+      "type": "probe.verdict",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p002",
+        "hyp-6b09f86e4f55",
+        "dodo.payments.page-size-max-100"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p002 (boundary_sweep) on dodo.payments.page-size-max-100: confirmed (honored), 3 calls, 0 credits.",
+      "data": {
+        "claimId": "dodo.payments.page-size-max-100",
+        "template": "boundary_sweep",
+        "verdict": "confirmed",
+        "costCredits": 0,
+        "calls": 3,
+        "winningHypothesisId": "hyp-6b09f86e4f55",
+        "winningClass": "honored"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 20,
+      "at": "2026-10-12T01:23:36.491Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.payments.page-size-max-100",
+        "dodo.payments.page-size-max-100",
+        "notarize-dodo-20261012T012315Z-p002"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Belief in dodo.payments.page-size-max-100 stays hypothesis, P(holds)=0.875 (Beta(3, 1)).",
+      "data": {
+        "beliefId": "belief-dodo.payments.page-size-max-100",
+        "claimId": "dodo.payments.page-size-max-100",
+        "from": "hypothesis",
+        "to": "hypothesis",
+        "confidence": 0.875,
+        "alpha": 3,
+        "beta": 1,
+        "probeId": "notarize-dodo-20261012T012315Z-p002"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 21,
+      "at": "2026-10-12T01:23:36.523Z",
+      "stage": "test",
+      "type": "probe.committed",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p003",
+        "hyp-4daedaff3435",
+        "hyp-6b09f86e4f55",
+        "dodo.payments.page-size-max-100"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p003 (boundary_sweep) committed its predictions for dodo.payments.page-size-max-100 before running.",
+      "data": {
+        "claimId": "dodo.payments.page-size-max-100",
+        "template": "boundary_sweep",
+        "tool": "dodo",
+        "hypotheses": 2
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 22,
+      "at": "2026-10-12T01:23:36.891Z",
+      "stage": "test",
+      "type": "probe.verdict",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p003",
+        "hyp-6b09f86e4f55",
+        "dodo.payments.page-size-max-100"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p003 (boundary_sweep) on dodo.payments.page-size-max-100: confirmed (honored), 3 calls, 0 credits.",
+      "data": {
+        "claimId": "dodo.payments.page-size-max-100",
+        "template": "boundary_sweep",
+        "verdict": "confirmed",
+        "costCredits": 0,
+        "calls": 3,
+        "winningHypothesisId": "hyp-6b09f86e4f55",
+        "winningClass": "honored"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 23,
+      "at": "2026-10-12T01:23:37.019Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.payments.page-size-max-100",
+        "dodo.payments.page-size-max-100",
+        "notarize-dodo-20261012T012315Z-p003"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Belief in dodo.payments.page-size-max-100: hypothesis → candidate, P(holds)=0.938 (Beta(4, 1)).",
+      "data": {
+        "beliefId": "belief-dodo.payments.page-size-max-100",
+        "claimId": "dodo.payments.page-size-max-100",
+        "from": "hypothesis",
+        "to": "candidate",
+        "confidence": 0.9375,
+        "alpha": 4,
+        "beta": 1,
+        "probeId": "notarize-dodo-20261012T012315Z-p003"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 24,
+      "at": "2026-10-12T01:23:37.207Z",
+      "stage": "test",
+      "type": "probe.committed",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p004",
+        "hyp-c744a27924fa",
+        "hyp-d6cbdd6239f9",
+        "dodo.refunds.amount-integer"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p004 (type_edge) committed its predictions for dodo.refunds.amount-integer before running.",
+      "data": {
+        "claimId": "dodo.refunds.amount-integer",
+        "template": "type_edge",
+        "tool": "dodo",
+        "hypotheses": 2
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 25,
+      "at": "2026-10-12T01:23:37.430Z",
+      "stage": "test",
+      "type": "probe.verdict",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p004",
+        "dodo.refunds.amount-integer"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p004 (type_edge) on dodo.refunds.amount-integer: uninformative, 2 calls, 0 credits.",
+      "data": {
+        "claimId": "dodo.refunds.amount-integer",
+        "template": "type_edge",
+        "verdict": "uninformative",
+        "costCredits": 0,
+        "calls": 2
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 26,
+      "at": "2026-10-12T01:23:37.570Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.refunds.amount-integer",
+        "dodo.refunds.amount-integer",
+        "notarize-dodo-20261012T012315Z-p004"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Belief in dodo.refunds.amount-integer stays hypothesis, P(holds)=0.875 (Beta(3, 1)).",
+      "data": {
+        "beliefId": "belief-dodo.refunds.amount-integer",
+        "claimId": "dodo.refunds.amount-integer",
+        "from": "hypothesis",
+        "to": "hypothesis",
+        "confidence": 0.875,
+        "alpha": 3,
+        "beta": 1,
+        "probeId": "notarize-dodo-20261012T012315Z-p004"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 27,
+      "at": "2026-10-12T01:23:37.577Z",
+      "stage": "test",
+      "type": "probe.committed",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p005",
+        "hyp-c744a27924fa",
+        "hyp-d6cbdd6239f9",
+        "dodo.refunds.amount-integer"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p005 (type_edge) committed its predictions for dodo.refunds.amount-integer before running.",
+      "data": {
+        "claimId": "dodo.refunds.amount-integer",
+        "template": "type_edge",
+        "tool": "dodo",
+        "hypotheses": 2
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 28,
+      "at": "2026-10-12T01:23:37.734Z",
+      "stage": "test",
+      "type": "probe.verdict",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p005",
+        "dodo.refunds.amount-integer"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p005 (type_edge) on dodo.refunds.amount-integer: uninformative, 2 calls, 0 credits.",
+      "data": {
+        "claimId": "dodo.refunds.amount-integer",
+        "template": "type_edge",
+        "verdict": "uninformative",
+        "costCredits": 0,
+        "calls": 2
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 29,
+      "at": "2026-10-12T01:23:37.832Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.refunds.amount-integer",
+        "dodo.refunds.amount-integer",
+        "notarize-dodo-20261012T012315Z-p005"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Belief in dodo.refunds.amount-integer stays hypothesis, P(holds)=0.875 (Beta(3, 1)).",
+      "data": {
+        "beliefId": "belief-dodo.refunds.amount-integer",
+        "claimId": "dodo.refunds.amount-integer",
+        "from": "hypothesis",
+        "to": "hypothesis",
+        "confidence": 0.875,
+        "alpha": 3,
+        "beta": 1,
+        "probeId": "notarize-dodo-20261012T012315Z-p005"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 30,
+      "at": "2026-10-12T01:23:37.846Z",
+      "stage": "test",
+      "type": "probe.committed",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p006",
+        "hyp-c744a27924fa",
+        "hyp-d6cbdd6239f9",
+        "dodo.refunds.amount-integer"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p006 (type_edge) committed its predictions for dodo.refunds.amount-integer before running.",
+      "data": {
+        "claimId": "dodo.refunds.amount-integer",
+        "template": "type_edge",
+        "tool": "dodo",
+        "hypotheses": 2
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 31,
+      "at": "2026-10-12T01:23:38.072Z",
+      "stage": "test",
+      "type": "probe.verdict",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p006",
+        "dodo.refunds.amount-integer"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p006 (type_edge) on dodo.refunds.amount-integer: uninformative, 2 calls, 0 credits.",
+      "data": {
+        "claimId": "dodo.refunds.amount-integer",
+        "template": "type_edge",
+        "verdict": "uninformative",
+        "costCredits": 0,
+        "calls": 2
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 32,
+      "at": "2026-10-12T01:23:38.236Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.refunds.amount-integer",
+        "dodo.refunds.amount-integer",
+        "notarize-dodo-20261012T012315Z-p006"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Belief in dodo.refunds.amount-integer stays hypothesis, P(holds)=0.875 (Beta(3, 1)).",
+      "data": {
+        "beliefId": "belief-dodo.refunds.amount-integer",
+        "claimId": "dodo.refunds.amount-integer",
+        "from": "hypothesis",
+        "to": "hypothesis",
+        "confidence": 0.875,
+        "alpha": 3,
+        "beta": 1,
+        "probeId": "notarize-dodo-20261012T012315Z-p006"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 33,
+      "at": "2026-10-12T01:23:38.341Z",
+      "stage": "test",
+      "type": "probe.committed",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p007",
+        "hyp-47335cea9441",
+        "hyp-b6be1c089529",
+        "dodo.refunds.page-size-max-100"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p007 (boundary_sweep) committed its predictions for dodo.refunds.page-size-max-100 before running.",
+      "data": {
+        "claimId": "dodo.refunds.page-size-max-100",
+        "template": "boundary_sweep",
+        "tool": "dodo",
+        "hypotheses": 2
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 34,
+      "at": "2026-10-12T01:23:38.603Z",
+      "stage": "test",
+      "type": "probe.verdict",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p007",
+        "hyp-47335cea9441",
+        "dodo.refunds.page-size-max-100"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p007 (boundary_sweep) on dodo.refunds.page-size-max-100: confirmed (honored), 3 calls, 0 credits.",
+      "data": {
+        "claimId": "dodo.refunds.page-size-max-100",
+        "template": "boundary_sweep",
+        "verdict": "confirmed",
+        "costCredits": 0,
+        "calls": 3,
+        "winningHypothesisId": "hyp-47335cea9441",
+        "winningClass": "honored"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 35,
+      "at": "2026-10-12T01:23:38.732Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.refunds.page-size-max-100",
+        "dodo.refunds.page-size-max-100",
+        "notarize-dodo-20261012T012315Z-p007"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Belief in dodo.refunds.page-size-max-100 stays hypothesis, P(holds)=0.750 (Beta(2, 1)).",
+      "data": {
+        "beliefId": "belief-dodo.refunds.page-size-max-100",
+        "claimId": "dodo.refunds.page-size-max-100",
+        "from": "hypothesis",
+        "to": "hypothesis",
+        "confidence": 0.75,
+        "alpha": 2,
+        "beta": 1,
+        "probeId": "notarize-dodo-20261012T012315Z-p007"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 36,
+      "at": "2026-10-12T01:23:38.763Z",
+      "stage": "test",
+      "type": "probe.committed",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p008",
+        "hyp-47335cea9441",
+        "hyp-b6be1c089529",
+        "dodo.refunds.page-size-max-100"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p008 (boundary_sweep) committed its predictions for dodo.refunds.page-size-max-100 before running.",
+      "data": {
+        "claimId": "dodo.refunds.page-size-max-100",
+        "template": "boundary_sweep",
+        "tool": "dodo",
+        "hypotheses": 2
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 37,
+      "at": "2026-10-12T01:23:39.086Z",
+      "stage": "test",
+      "type": "probe.verdict",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p008",
+        "hyp-47335cea9441",
+        "dodo.refunds.page-size-max-100"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p008 (boundary_sweep) on dodo.refunds.page-size-max-100: confirmed (honored), 3 calls, 0 credits.",
+      "data": {
+        "claimId": "dodo.refunds.page-size-max-100",
+        "template": "boundary_sweep",
+        "verdict": "confirmed",
+        "costCredits": 0,
+        "calls": 3,
+        "winningHypothesisId": "hyp-47335cea9441",
+        "winningClass": "honored"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 38,
+      "at": "2026-10-12T01:23:39.463Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.refunds.page-size-max-100",
+        "dodo.refunds.page-size-max-100",
+        "notarize-dodo-20261012T012315Z-p008"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Belief in dodo.refunds.page-size-max-100 stays hypothesis, P(holds)=0.875 (Beta(3, 1)).",
+      "data": {
+        "beliefId": "belief-dodo.refunds.page-size-max-100",
+        "claimId": "dodo.refunds.page-size-max-100",
+        "from": "hypothesis",
+        "to": "hypothesis",
+        "confidence": 0.875,
+        "alpha": 3,
+        "beta": 1,
+        "probeId": "notarize-dodo-20261012T012315Z-p008"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 39,
+      "at": "2026-10-12T01:23:39.488Z",
+      "stage": "test",
+      "type": "probe.committed",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p009",
+        "hyp-47335cea9441",
+        "hyp-b6be1c089529",
+        "dodo.refunds.page-size-max-100"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p009 (boundary_sweep) committed its predictions for dodo.refunds.page-size-max-100 before running.",
+      "data": {
+        "claimId": "dodo.refunds.page-size-max-100",
+        "template": "boundary_sweep",
+        "tool": "dodo",
+        "hypotheses": 2
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 40,
+      "at": "2026-10-12T01:23:39.772Z",
+      "stage": "test",
+      "type": "probe.verdict",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p009",
+        "hyp-47335cea9441",
+        "dodo.refunds.page-size-max-100"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p009 (boundary_sweep) on dodo.refunds.page-size-max-100: confirmed (honored), 3 calls, 0 credits.",
+      "data": {
+        "claimId": "dodo.refunds.page-size-max-100",
+        "template": "boundary_sweep",
+        "verdict": "confirmed",
+        "costCredits": 0,
+        "calls": 3,
+        "winningHypothesisId": "hyp-47335cea9441",
+        "winningClass": "honored"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 41,
+      "at": "2026-10-12T01:23:40.142Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.refunds.page-size-max-100",
+        "dodo.refunds.page-size-max-100",
+        "notarize-dodo-20261012T012315Z-p009"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Belief in dodo.refunds.page-size-max-100: hypothesis → candidate, P(holds)=0.938 (Beta(4, 1)).",
+      "data": {
+        "beliefId": "belief-dodo.refunds.page-size-max-100",
+        "claimId": "dodo.refunds.page-size-max-100",
+        "from": "hypothesis",
+        "to": "candidate",
+        "confidence": 0.9375,
+        "alpha": 4,
+        "beta": 1,
+        "probeId": "notarize-dodo-20261012T012315Z-p009"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 42,
+      "at": "2026-10-12T01:23:40.398Z",
+      "stage": "test",
+      "type": "probe.committed",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p010",
+        "hyp-be916b968dc8",
+        "hyp-ca8a731b4705",
+        "dodo.wallet.credit-amount-minor-units"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p010 (unit_roundtrip) committed its predictions for dodo.wallet.credit-amount-minor-units before running.",
+      "data": {
+        "claimId": "dodo.wallet.credit-amount-minor-units",
+        "template": "unit_roundtrip",
+        "tool": "dodo",
+        "hypotheses": 2
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 43,
+      "at": "2026-10-12T01:23:41.112Z",
+      "stage": "test",
+      "type": "probe.verdict",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p010",
+        "hyp-be916b968dc8",
+        "dodo.wallet.credit-amount-minor-units"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p010 (unit_roundtrip) on dodo.wallet.credit-amount-minor-units: confirmed (honored), 4 calls, 0 credits.",
+      "data": {
+        "claimId": "dodo.wallet.credit-amount-minor-units",
+        "template": "unit_roundtrip",
+        "verdict": "confirmed",
+        "costCredits": 0,
+        "calls": 4,
+        "winningHypothesisId": "hyp-be916b968dc8",
+        "winningClass": "honored"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 44,
+      "at": "2026-10-12T01:23:41.169Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.wallet.credit-amount-minor-units",
+        "dodo.wallet.credit-amount-minor-units",
+        "notarize-dodo-20261012T012315Z-p010"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Belief in dodo.wallet.credit-amount-minor-units stays hypothesis, P(holds)=0.750 (Beta(2, 1)).",
+      "data": {
+        "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+        "claimId": "dodo.wallet.credit-amount-minor-units",
+        "from": "hypothesis",
+        "to": "hypothesis",
+        "confidence": 0.75,
+        "alpha": 2,
+        "beta": 1,
+        "probeId": "notarize-dodo-20261012T012315Z-p010"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 45,
+      "at": "2026-10-12T01:23:41.182Z",
+      "stage": "test",
+      "type": "probe.committed",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p011",
+        "hyp-be916b968dc8",
+        "hyp-ca8a731b4705",
+        "dodo.wallet.credit-amount-minor-units"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p011 (unit_roundtrip) committed its predictions for dodo.wallet.credit-amount-minor-units before running.",
+      "data": {
+        "claimId": "dodo.wallet.credit-amount-minor-units",
+        "template": "unit_roundtrip",
+        "tool": "dodo",
+        "hypotheses": 2
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 46,
+      "at": "2026-10-12T01:23:42.325Z",
+      "stage": "test",
+      "type": "probe.verdict",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p011",
+        "hyp-be916b968dc8",
+        "dodo.wallet.credit-amount-minor-units"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p011 (unit_roundtrip) on dodo.wallet.credit-amount-minor-units: confirmed (honored), 4 calls, 0 credits.",
+      "data": {
+        "claimId": "dodo.wallet.credit-amount-minor-units",
+        "template": "unit_roundtrip",
+        "verdict": "confirmed",
+        "costCredits": 0,
+        "calls": 4,
+        "winningHypothesisId": "hyp-be916b968dc8",
+        "winningClass": "honored"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 47,
+      "at": "2026-10-12T01:23:42.384Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.wallet.credit-amount-minor-units",
+        "dodo.wallet.credit-amount-minor-units",
+        "notarize-dodo-20261012T012315Z-p011"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Belief in dodo.wallet.credit-amount-minor-units stays hypothesis, P(holds)=0.875 (Beta(3, 1)).",
+      "data": {
+        "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+        "claimId": "dodo.wallet.credit-amount-minor-units",
+        "from": "hypothesis",
+        "to": "hypothesis",
+        "confidence": 0.875,
+        "alpha": 3,
+        "beta": 1,
+        "probeId": "notarize-dodo-20261012T012315Z-p011"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 48,
+      "at": "2026-10-12T01:23:42.408Z",
+      "stage": "test",
+      "type": "probe.committed",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p012",
+        "hyp-be916b968dc8",
+        "hyp-ca8a731b4705",
+        "dodo.wallet.credit-amount-minor-units"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p012 (unit_roundtrip) committed its predictions for dodo.wallet.credit-amount-minor-units before running.",
+      "data": {
+        "claimId": "dodo.wallet.credit-amount-minor-units",
+        "template": "unit_roundtrip",
+        "tool": "dodo",
+        "hypotheses": 2
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 49,
+      "at": "2026-10-12T01:23:43.181Z",
+      "stage": "test",
+      "type": "probe.verdict",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p012",
+        "hyp-be916b968dc8",
+        "dodo.wallet.credit-amount-minor-units"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p012 (unit_roundtrip) on dodo.wallet.credit-amount-minor-units: confirmed (honored), 4 calls, 0 credits.",
+      "data": {
+        "claimId": "dodo.wallet.credit-amount-minor-units",
+        "template": "unit_roundtrip",
+        "verdict": "confirmed",
+        "costCredits": 0,
+        "calls": 4,
+        "winningHypothesisId": "hyp-be916b968dc8",
+        "winningClass": "honored"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 50,
+      "at": "2026-10-12T01:23:43.469Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.wallet.credit-amount-minor-units",
+        "dodo.wallet.credit-amount-minor-units",
+        "notarize-dodo-20261012T012315Z-p012"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Belief in dodo.wallet.credit-amount-minor-units: hypothesis → candidate, P(holds)=0.938 (Beta(4, 1)).",
+      "data": {
+        "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+        "claimId": "dodo.wallet.credit-amount-minor-units",
+        "from": "hypothesis",
+        "to": "candidate",
+        "confidence": 0.9375,
+        "alpha": 4,
+        "beta": 1,
+        "probeId": "notarize-dodo-20261012T012315Z-p012"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 51,
+      "at": "2026-10-12T01:23:43.494Z",
+      "stage": "test",
+      "type": "probe.committed",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p013",
+        "hyp-8599a750e379",
+        "hyp-d9ead836ca14",
+        "dodo.wallet.idempotency-key-no-duplicate"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p013 (retry_after_timeout) committed its predictions for dodo.wallet.idempotency-key-no-duplicate before running.",
+      "data": {
+        "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+        "template": "retry_after_timeout",
+        "tool": "dodo",
+        "hypotheses": 2
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 52,
+      "at": "2026-10-12T01:23:45.585Z",
+      "stage": "test",
+      "type": "probe.verdict",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p013",
+        "hyp-d9ead836ca14",
+        "dodo.wallet.idempotency-key-no-duplicate"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p013 (retry_after_timeout) on dodo.wallet.idempotency-key-no-duplicate: confirmed (honored), 7 calls, 0 credits.",
+      "data": {
+        "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+        "template": "retry_after_timeout",
+        "verdict": "confirmed",
+        "costCredits": 0,
+        "calls": 7,
+        "winningHypothesisId": "hyp-d9ead836ca14",
+        "winningClass": "honored"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 53,
+      "at": "2026-10-12T01:23:45.816Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.wallet.idempotency-key-no-duplicate",
+        "dodo.wallet.idempotency-key-no-duplicate",
+        "notarize-dodo-20261012T012315Z-p013"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Belief in dodo.wallet.idempotency-key-no-duplicate stays hypothesis, P(holds)=0.750 (Beta(2, 1)).",
+      "data": {
+        "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
+        "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+        "from": "hypothesis",
+        "to": "hypothesis",
+        "confidence": 0.75,
+        "alpha": 2,
+        "beta": 1,
+        "probeId": "notarize-dodo-20261012T012315Z-p013"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 54,
+      "at": "2026-10-12T01:23:45.834Z",
+      "stage": "test",
+      "type": "probe.committed",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p014",
+        "hyp-8599a750e379",
+        "hyp-d9ead836ca14",
+        "dodo.wallet.idempotency-key-no-duplicate"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p014 (retry_after_timeout) committed its predictions for dodo.wallet.idempotency-key-no-duplicate before running.",
+      "data": {
+        "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+        "template": "retry_after_timeout",
+        "tool": "dodo",
+        "hypotheses": 2
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 55,
+      "at": "2026-10-12T01:23:47.572Z",
+      "stage": "test",
+      "type": "probe.verdict",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p014",
+        "hyp-d9ead836ca14",
+        "dodo.wallet.idempotency-key-no-duplicate"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p014 (retry_after_timeout) on dodo.wallet.idempotency-key-no-duplicate: confirmed (honored), 6 calls, 0 credits.",
+      "data": {
+        "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+        "template": "retry_after_timeout",
+        "verdict": "confirmed",
+        "costCredits": 0,
+        "calls": 6,
+        "winningHypothesisId": "hyp-d9ead836ca14",
+        "winningClass": "honored"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 56,
+      "at": "2026-10-12T01:23:47.636Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.wallet.idempotency-key-no-duplicate",
+        "dodo.wallet.idempotency-key-no-duplicate",
+        "notarize-dodo-20261012T012315Z-p014"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Belief in dodo.wallet.idempotency-key-no-duplicate stays hypothesis, P(holds)=0.875 (Beta(3, 1)).",
+      "data": {
+        "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
+        "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+        "from": "hypothesis",
+        "to": "hypothesis",
+        "confidence": 0.875,
+        "alpha": 3,
+        "beta": 1,
+        "probeId": "notarize-dodo-20261012T012315Z-p014"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 57,
+      "at": "2026-10-12T01:23:47.648Z",
+      "stage": "test",
+      "type": "probe.committed",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p015",
+        "hyp-8599a750e379",
+        "hyp-d9ead836ca14",
+        "dodo.wallet.idempotency-key-no-duplicate"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p015 (retry_after_timeout) committed its predictions for dodo.wallet.idempotency-key-no-duplicate before running.",
+      "data": {
+        "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+        "template": "retry_after_timeout",
+        "tool": "dodo",
+        "hypotheses": 2
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 58,
+      "at": "2026-10-12T01:23:49.308Z",
+      "stage": "test",
+      "type": "probe.verdict",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z-p015",
+        "hyp-d9ead836ca14",
+        "dodo.wallet.idempotency-key-no-duplicate"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Probe notarize-dodo-20261012T012315Z-p015 (retry_after_timeout) on dodo.wallet.idempotency-key-no-duplicate: confirmed (honored), 7 calls, 0 credits.",
+      "data": {
+        "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+        "template": "retry_after_timeout",
+        "verdict": "confirmed",
+        "costCredits": 0,
+        "calls": 7,
+        "winningHypothesisId": "hyp-d9ead836ca14",
+        "winningClass": "honored"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 59,
+      "at": "2026-10-12T01:23:49.365Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.wallet.idempotency-key-no-duplicate",
+        "dodo.wallet.idempotency-key-no-duplicate",
+        "notarize-dodo-20261012T012315Z-p015"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Belief in dodo.wallet.idempotency-key-no-duplicate: hypothesis → candidate, P(holds)=0.938 (Beta(4, 1)).",
+      "data": {
+        "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
+        "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+        "from": "hypothesis",
+        "to": "candidate",
+        "confidence": 0.9375,
+        "alpha": 4,
+        "beta": 1,
+        "probeId": "notarize-dodo-20261012T012315Z-p015"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 60,
+      "at": "2026-10-12T01:23:49.392Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.refunds.amount-integer",
+        "dodo.refunds.amount-integer"
+      ],
+      "traceIds": [],
+      "summary": "Belief in dodo.refunds.amount-integer: hypothesis → abstained, P(holds)=0.875 (Beta(3, 1)).",
+      "data": {
+        "beliefId": "belief-dodo.refunds.amount-integer",
+        "claimId": "dodo.refunds.amount-integer",
+        "from": "hypothesis",
+        "to": "abstained",
+        "confidence": 0.875,
+        "alpha": 3,
+        "beta": 1
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 61,
+      "at": "2026-10-12T01:24:04.644Z",
+      "stage": "challenge",
+      "type": "adversary.verdict",
+      "recordIds": [
+        "belief-dodo.payments.page-size-max-100",
+        "dodo.payments.page-size-max-100"
+      ],
+      "traceIds": [],
+      "summary": "Adversary challenged dodo.payments.page-size-max-100 — narrowed: belief candidate → notarized.",
+      "data": {
+        "beliefId": "belief-dodo.payments.page-size-max-100",
+        "claimId": "dodo.payments.page-size-max-100",
+        "verdict": "narrow",
+        "to": "notarized",
+        "model": "claude-opus-4.6",
+        "backend": "bedrock",
+        "scope": "dodo.listPayments rejects page_size values above 100 with HTTP 400, tested with a single API key and minimal dataset (1 record)"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 62,
+      "at": "2026-10-12T01:24:04.681Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.payments.page-size-max-100",
+        "dodo.payments.page-size-max-100"
+      ],
+      "traceIds": [],
+      "summary": "Belief in dodo.payments.page-size-max-100: candidate → notarized, P(holds)=0.938 (Beta(4, 1)).",
+      "data": {
+        "beliefId": "belief-dodo.payments.page-size-max-100",
+        "claimId": "dodo.payments.page-size-max-100",
+        "from": "candidate",
+        "to": "notarized",
+        "confidence": 0.9375,
+        "alpha": 4,
+        "beta": 1
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 63,
+      "at": "2026-10-12T01:24:04.681Z",
+      "stage": "certify",
+      "type": "certificate.issued",
+      "recordIds": [
+        "cert-56762217f480a3c4",
+        "belief-dodo.payments.page-size-max-100",
+        "dodo.payments.page-size-max-100"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Certificate cert-56762217f480a3c4 issued: dodo.payments.page-size-max-100 matches the docs (P(holds)=0.938).",
+      "data": {
+        "certificateId": "cert-56762217f480a3c4",
+        "beliefId": "belief-dodo.payments.page-size-max-100",
+        "claimId": "dodo.payments.page-size-max-100",
+        "tool": "dodo",
+        "side": "honored",
+        "confidence": 0.9375
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 64,
+      "at": "2026-10-12T01:24:14.365Z",
+      "stage": "challenge",
+      "type": "adversary.verdict",
+      "recordIds": [
+        "belief-dodo.refunds.page-size-max-100",
+        "dodo.refunds.page-size-max-100"
+      ],
+      "traceIds": [],
+      "summary": "Adversary challenged dodo.refunds.page-size-max-100 — narrowed: belief candidate → notarized.",
+      "data": {
+        "beliefId": "belief-dodo.refunds.page-size-max-100",
+        "claimId": "dodo.refunds.page-size-max-100",
+        "verdict": "narrow",
+        "to": "notarized",
+        "model": "claude-opus-4.6",
+        "backend": "bedrock",
+        "scope": "The API rejects page_size values above 100 with HTTP 400 on GET /refunds for this single test account/key. The default-of-10 sub-claim is untested, and the functional effect of page_size on result count is unverified due to empty data."
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 65,
+      "at": "2026-10-12T01:24:14.377Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.refunds.page-size-max-100",
+        "dodo.refunds.page-size-max-100"
+      ],
+      "traceIds": [],
+      "summary": "Belief in dodo.refunds.page-size-max-100: candidate → notarized, P(holds)=0.938 (Beta(4, 1)).",
+      "data": {
+        "beliefId": "belief-dodo.refunds.page-size-max-100",
+        "claimId": "dodo.refunds.page-size-max-100",
+        "from": "candidate",
+        "to": "notarized",
+        "confidence": 0.9375,
+        "alpha": 4,
+        "beta": 1
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 66,
+      "at": "2026-10-12T01:24:14.377Z",
+      "stage": "certify",
+      "type": "certificate.issued",
+      "recordIds": [
+        "cert-fd3fe92edee88644",
+        "belief-dodo.refunds.page-size-max-100",
+        "dodo.refunds.page-size-max-100"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Certificate cert-fd3fe92edee88644 issued: dodo.refunds.page-size-max-100 matches the docs (P(holds)=0.938).",
+      "data": {
+        "certificateId": "cert-fd3fe92edee88644",
+        "beliefId": "belief-dodo.refunds.page-size-max-100",
+        "claimId": "dodo.refunds.page-size-max-100",
+        "tool": "dodo",
+        "side": "honored",
+        "confidence": 0.9375
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 67,
+      "at": "2026-10-12T01:24:21.481Z",
+      "stage": "challenge",
+      "type": "adversary.verdict",
+      "recordIds": [
+        "belief-dodo.wallet.credit-amount-minor-units",
+        "dodo.wallet.credit-amount-minor-units"
+      ],
+      "traceIds": [],
+      "summary": "Adversary challenged dodo.wallet.credit-amount-minor-units — narrowed: belief candidate → notarized.",
+      "data": {
+        "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+        "claimId": "dodo.wallet.credit-amount-minor-units",
+        "verdict": "narrow",
+        "to": "notarized",
+        "model": "claude-opus-4.6",
+        "backend": "bedrock",
+        "scope": "amount is in minor units for USD wallets only"
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 68,
+      "at": "2026-10-12T01:24:21.497Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.wallet.credit-amount-minor-units",
+        "dodo.wallet.credit-amount-minor-units"
+      ],
+      "traceIds": [],
+      "summary": "Belief in dodo.wallet.credit-amount-minor-units: candidate → notarized, P(holds)=0.938 (Beta(4, 1)).",
+      "data": {
+        "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+        "claimId": "dodo.wallet.credit-amount-minor-units",
+        "from": "candidate",
+        "to": "notarized",
+        "confidence": 0.9375,
+        "alpha": 4,
+        "beta": 1
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 69,
+      "at": "2026-10-12T01:24:21.497Z",
+      "stage": "certify",
+      "type": "certificate.issued",
+      "recordIds": [
+        "cert-90b6704587c8abbf",
+        "belief-dodo.wallet.credit-amount-minor-units",
+        "dodo.wallet.credit-amount-minor-units"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Certificate cert-90b6704587c8abbf issued: dodo.wallet.credit-amount-minor-units matches the docs (P(holds)=0.938).",
+      "data": {
+        "certificateId": "cert-90b6704587c8abbf",
+        "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+        "claimId": "dodo.wallet.credit-amount-minor-units",
+        "tool": "dodo",
+        "side": "honored",
+        "confidence": 0.9375
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 70,
+      "at": "2026-10-12T01:24:30.416Z",
+      "stage": "challenge",
+      "type": "adversary.verdict",
+      "recordIds": [
+        "belief-dodo.wallet.idempotency-key-no-duplicate",
+        "dodo.wallet.idempotency-key-no-duplicate"
+      ],
+      "traceIds": [],
+      "summary": "Adversary challenged dodo.wallet.idempotency-key-no-duplicate — narrowed: belief candidate → notarized.",
+      "data": {
+        "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
+        "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+        "verdict": "narrow",
+        "to": "notarized",
+        "model": "claude-opus-4.6",
+        "backend": "bedrock",
+        "scope": "Idempotency key deduplication is confirmed for rapid successive credit entries in USD, but not verified for debit entries, other currencies, or longer time gaps between retries."
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 71,
+      "at": "2026-10-12T01:24:30.469Z",
+      "stage": "certify",
+      "type": "belief.changed",
+      "recordIds": [
+        "belief-dodo.wallet.idempotency-key-no-duplicate",
+        "dodo.wallet.idempotency-key-no-duplicate"
+      ],
+      "traceIds": [],
+      "summary": "Belief in dodo.wallet.idempotency-key-no-duplicate: candidate → notarized, P(holds)=0.938 (Beta(4, 1)).",
+      "data": {
+        "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
+        "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+        "from": "candidate",
+        "to": "notarized",
+        "confidence": 0.9375,
+        "alpha": 4,
+        "beta": 1
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 72,
+      "at": "2026-10-12T01:24:30.469Z",
+      "stage": "certify",
+      "type": "certificate.issued",
+      "recordIds": [
+        "cert-a38f91281f30925e",
+        "belief-dodo.wallet.idempotency-key-no-duplicate",
+        "dodo.wallet.idempotency-key-no-duplicate"
+      ],
+      "traceIds": [
+        "a0e6fda50d71a9eb2fec0f04843bff4d"
+      ],
+      "summary": "Certificate cert-a38f91281f30925e issued: dodo.wallet.idempotency-key-no-duplicate matches the docs (P(holds)=0.938).",
+      "data": {
+        "certificateId": "cert-a38f91281f30925e",
+        "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
+        "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+        "tool": "dodo",
+        "side": "honored",
+        "confidence": 0.9375
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 73,
+      "at": "2026-10-12T01:29:12.136Z",
+      "stage": "certify",
+      "type": "budget",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z"
+      ],
+      "traceIds": [],
+      "summary": "Budget: 0 of 200 credits, 56 recorded tool calls (probe calls + decision effects), $0.0869 model spend.",
+      "data": {
+        "budget": {
+          "credits": {
+            "used": 0,
+            "cap": 200
+          },
+          "toolCalls": {
+            "used": 56,
+            "cap": null
+          },
+          "usdByRole": {
+            "executor": 0,
+            "reflector": 0,
+            "adversary": 0.086911
+          },
+          "usdCap": null
+        }
+      }
+    },
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "seq": 74,
+      "at": "2026-10-12T01:29:12.136Z",
+      "stage": "certify",
+      "type": "run.finished",
+      "recordIds": [
+        "notarize-dodo-20261012T012315Z"
+      ],
+      "traceIds": [],
+      "summary": "Notarization notarize-dodo-20261012T012315Z finished: completed.",
+      "data": {
+        "status": "completed",
+        "metrics": {
+          "claims": 15,
+          "anomalies": 0,
+          "hypotheses": 18,
+          "hypothesesRejected": 0,
+          "probes": 15,
+          "probes.confirmed": 12,
+          "probes.refuted": 0,
+          "probes.inconclusive": 0,
+          "probes.uninformative": 3,
+          "probes.invalid": 0,
+          "abstained": 0,
+          "anomaliesSkipped": 0,
+          "beliefs.hypothesis": 10,
+          "beliefs.candidate": 0,
+          "beliefs.notarized": 4,
+          "beliefs.refuted": 0,
+          "beliefs.abstained": 1,
+          "beliefs.unlearned": 0,
+          "evidence.checked": 12,
+          "evidence.invalid": 0,
+          "adversary.uphold": 0,
+          "adversary.narrow": 4,
+          "adversary.downgrade": 0,
+          "adversary.failed": 0,
+          "probes_to_candidate_mean": 3,
+          "probes_to_candidate_dodo.customer.missing-email-422": null,
+          "probes_to_candidate_dodo.payment.refunds-array-present": null,
+          "probes_to_candidate_dodo.payment.refunds-lists-issued-refund": null,
+          "probes_to_candidate_dodo.payments.page-size-max-100": 3,
+          "probes_to_candidate_dodo.product.price-minor-units": null,
+          "probes_to_candidate_dodo.refund.amount-minor-units": null,
+          "probes_to_candidate_dodo.refund.full-retry-no-duplicate": null,
+          "probes_to_candidate_dodo.refunds.amount-integer": null,
+          "probes_to_candidate_dodo.refunds.page-size-max-100": 3,
+          "probes_to_candidate_dodo.subscription.change-plan-pending-409": null,
+          "probes_to_candidate_dodo.wallet.credit-amount-minor-units": 3,
+          "probes_to_candidate_dodo.wallet.debit-insufficient-400": null,
+          "probes_to_candidate_dodo.wallet.idempotency-key-no-duplicate": 3,
+          "probes_to_candidate_dodo.wallet.ledger-response-balance-integer": null,
+          "probes_to_candidate_dodo.wallets.total-balance-usd-integer": null,
+          "priors_strength": 2,
+          "priors_applied": 15,
+          "priors_informative": 3,
+          "priors_preexisting": 0,
+          "unsafe_actions_total": null,
+          "unsafe_duplicates": null,
+          "unsafe_wrong_unit": null,
+          "unsafe_missed_existing_refund": null,
+          "decision_accuracy": null,
+          "automation_rate": null,
+          "holds": null,
+          "escalations": null,
+          "beliefs_hypothesis": 10,
+          "beliefs_candidate": 0,
+          "beliefs_notarized": 4,
+          "beliefs_refuted": 0,
+          "beliefs_abstained": 1,
+          "beliefs_unlearned": 0,
+          "belief_precision": 1,
+          "beliefs_false": 0,
+          "belief_precision_n": 4,
+          "unguarded_call_sites": 0,
+          "credits_total": 0,
+          "usd_executor": 0,
+          "tokens_executor": 0,
+          "usd_reflector": 0,
+          "tokens_reflector": 0,
+          "usd_adversary": 0.086911,
+          "tokens_adversary": 11378,
+          "usd_total": 0.086911,
+          "probes_to_candidate": 3
+        },
+        "budget": {
+          "credits": {
+            "used": 0,
+            "cap": 200
+          },
+          "toolCalls": {
+            "used": 56,
+            "cap": null
+          },
+          "usdByRole": {
+            "executor": 0,
+            "reflector": 0,
+            "adversary": 0.086911
+          },
+          "usdCap": null
+        }
+      }
+    }
+  ]
+}

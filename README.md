@@ -8,6 +8,34 @@ Notary is a billing-ops agent for the neatHack hackathon. It works a queue of re
 
 > **Status, plainly.** No API keys were available while this was built, so **no live run has been recorded yet**: no cassettes, no notarized beliefs, no headline numbers. Every pipeline below is implemented and unit-tested against doubles and test-only cassettes, and each one stops with `BLOCKED: <VAR> not set` (exit 3) instead of faking a result. The only numbers in this README come from checks that need no keys, copied from [`docs/EVALUATION.md`](docs/EVALUATION.md).
 
+## Install the CLI
+
+Needs **Node 22 or newer** (built on Node 24), **pnpm 11.7.0** (pinned in `package.json` → `packageManager`; for example `npm install -g pnpm@11.7.0`) and git.
+
+```sh
+git clone https://github.com/parthchilwerwar/notary.git
+cd notary
+pnpm install
+pnpm notary --help
+```
+
+**Quick start, no keys.** The keyless walkthrough on recorded fixtures runs the whole pipeline against an in-process simulated API with model doubles, labels everything as fixture data, and writes only to the gitignored `packages/core/runs/demo/`:
+
+```sh
+pnpm notary demo --fixture
+pnpm --filter @notary/web dev    # then open http://127.0.0.1:5173/app/certificates
+```
+
+**With keys.** Copy `.env.example` to `.env` (gitignored; Dodo Payments in test mode only) and check the setup:
+
+```sh
+cp .env.example .env
+pnpm notary doctor          # one neatlogs test span (needs NEATLOGS_API_KEY)
+pnpm notary doctor --llm    # model provider, the three role models, one tiny call per role
+```
+
+A keyed command with a missing variable stops with `BLOCKED: <VAR> not set` (exit 3) before any network call. The full guide (every command, every variable, live mode, approvals, troubleshooting) is the `/docs` page of the web app: run `pnpm --filter @notary/web dev` and open http://127.0.0.1:5173/docs.
+
 ## The problem
 
 Agents trust tool documentation by default, and when the tool moves money that trust is the most expensive bug in the system. A docs page can say a refund amount is in units when it's in cents, that a timed-out request wasn't processed when it was, or that a list returns everything when it stops at a page cap. None of these crash anything: every call returns 200, every trace looks green, and the damage turns up later as a double refund in the payments dashboard.
@@ -61,7 +89,7 @@ These values are copied from [`docs/EVALUATION.md` → Checks that don't need AP
 | [`pnpm test`](docs/EVALUATION.md#checks-that-dont-need-api-keys) | PASS: 673 passed, 0 failed (673 tests in 39 files) |
 | [`pnpm notary guards coverage --json`](docs/EVALUATION.md#checks-that-dont-need-api-keys) | PASS: unguarded_call_sites = 0 (27 sites: 21 guarded, 6 raw-by-design; backend tsc) |
 
-The coverage check uses the TypeScript-checker backend. The PRD asks for `entire graph` callers. That backend is implemented, but it is unverified because the Entire CLI isn't installed (see [limits](#honest-limits)).
+That EVALUATION.md row ran on the TypeScript-checker backend. With the Entire CLI and its graph plugin installed, `auto` now uses `entire graph` (one bulk `entire graph edges` pass), which also reports 0 unguarded call sites ([`docs/ENTIRE.md`](docs/ENTIRE.md)).
 
 ## 5-minute offline quickstart
 
@@ -119,7 +147,7 @@ Read these caveats before running the sequence:
 | Sponsor | What the code does | Verified? |
 | --- | --- | --- |
 | **neatlogs** (required) | The `neatlogs` TS SDK (1.1.26) wraps every queue item, recon step, probe and model call in a span through `withSpan` ([`src/trace/`](packages/core/src/trace/index.ts)). Probe spans carry `notary.prediction` (committed before the call), plus `notary.runId`, `notary.claimId`, `notary.probeId` and `notary.verdict`. Every span is also written to `runs/<runId>/spans.jsonl`, which is what the FR-10 evidence check and held-item evidence packs read. `notary doctor` sends a smoke span. | **No span has reached neatlogs**: `NEATLOGS_API_KEY` was never set. `neatlogs-cli` is not installed, so evidence is read from `spans.jsonl` ([DECISIONS #48](docs/DECISIONS.md)). Bundle `traceLinks` point to local `spans.jsonl` receipts, not neatlogs URLs. |
-| **Entire** (required) | `notary guards coverage --backend entire` shells out to `entire graph neighbors --symbol … --direction in --format json` ([DECISIONS #61](docs/DECISIONS.md)). The adversary's `session` backend runs headless Claude Code and commits each verdict file (`adversary: <verdict> <beliefId>`), so Entire would checkpoint each review next to its belief ([DECISIONS #50](docs/DECISIONS.md)). | **Unverified.** The Entire CLI isn't installed on the build machine: no `entire enable`, no checkpoints, and coverage falls back to the `tsc` backend. The `session` backend has not run live. |
+| **Entire** (required) | Entire checkpoints the AI agent sessions that build and review this repo. `entire enable --agent claude-code` installs Claude Code hooks (`.claude/settings.json`) and git hooks (`.githooks/`); every commit made during a tracked session gets an `Entire-Checkpoint: <id>` trailer and a checkpoint (transcript, prompts, files touched, tokens) under `refs/entire/checkpoints/`. The adversary's `session` backend runs headless Claude Code and commits each verdict (`adversary: <verdict> <beliefId>`), so each review is checkpointed with the reviewer's session; the outcome carries the checkpoint id ([`adversary/session.ts`](packages/core/src/adversary/session.ts)). `notary guards coverage --backend entire` runs one `entire graph edges` pass and fails on any call into a raw Dodo/Crustdata method outside the guard wrapper ([`guards/coverage.ts`](packages/core/src/guards/coverage.ts)). `notary export --entire` writes the checkpoints and the coverage result to `packages/web/public/evidence/entire.json`, shown on the Report page. Setup and demo: [`docs/ENTIRE.md`](docs/ENTIRE.md). | **Live CLI, checked 2026-10-12** with Entire CLI 0.11.4 + entire-graph v0.4.0: `guards coverage --backend entire` reports 0 unguarded call sites, matching the `tsc` backend site for site, and catches a planted raw call at the exact line. A real headless review (`--adversary session` on a real Crustdata belief, in a scratch clone) was committed with Entire checkpoint `01M4PYAG60V4ZBFR9WN79VAWB1`. On `main`, checkpoints start with the first commit made under a tracked session. |
 | **cfo.ai** (required) | Business plan (pricing per monitored contract, COGS from bundle credits and tokens, incidents prevented, runway). | **Not started.** Planned for P10 as a manual step that produces `docs/BUSINESS.md` and `packages/web/public/economics.json`. Neither exists yet. |
 | **Crustdata** | Company enrichment for policy tiers (`POST /company/enrich`, `/company/identify`, `GET /account/credits`). It is the first tool notarized: 11 claims. A per-run credit ledger reserves the estimated cost before each call, settles from `X-Credits-Used`, and stops the run cleanly at `CRUSTDATA_CREDIT_BUDGET`. See [`docs/ENDPOINTS.md`](docs/ENDPOINTS.md). | No live call yet (no key). |
 | **Dodo Payments** (test mode) | Refunds, plan changes and wallet credits. It is the second tool notarized (15 claims, with transfer priors from Crustdata). It seeds the test world. The client refuses to start unless `NOTARY_MODE=test` and the base URL is exactly `https://test.dodopayments.com`. | No live call yet (no key). Seeding also needs 11 human checkouts. |
@@ -155,7 +183,7 @@ Run commands with `pnpm notary <command>` from the repo root, and see `pnpm nota
 - **Two required beliefs have no doc claim.** The docs make no promise about partial-refund rounding or about plan-change timing (immediate vs next billing date). Rounding uses `dodo.refunds.amount-integer` as a proxy and floors client-side. For timing, the guarded run sends `effective_at: "immediately"` explicitly. Both gaps are written into each run bundle's disclosure ([DECISIONS #22, #54](docs/DECISIONS.md)).
 - **Crustdata type claims may abstain.** `type_edge` has only two variants, so these claims can end between thresholds ([DECISIONS #47](docs/DECISIONS.md)).
 - **Some designed failures may not trip.** The "existing refund on a later page" case probably won't trip the naive agent ([DECISIONS #32](docs/DECISIONS.md)). Whatever happens will be reported as is.
-- **Entire is unverified.** The `entire` coverage backend and the `session` adversary have never run against the real tools ([DECISIONS #50, #61](docs/DECISIONS.md)).
+- **Entire graph is slow on a dirty tree.** Every `entire graph` query re-indexes the working tree (1-5 minutes here), so `guards coverage --backend entire` takes minutes where `--backend tsc` takes seconds. The `session` adversary's Entire checkpoint was verified in a scratch clone; on `main` it appears with the first `--adversary session` run ([`docs/ENTIRE.md`](docs/ENTIRE.md)).
 - **neatlogs is unverified.** No span has been exported, and `neatlogs-cli` isn't used ([DECISIONS #48](docs/DECISIONS.md)).
 - **`node:sqlite` is experimental** on Node 24 and prints a warning ([DECISIONS #34](docs/DECISIONS.md)).
 - **The dashboard isn't here yet.** It is Codex's `packages/web` (phases U1–U3). Today that package holds only the SAMPLE bundle and a placeholder README.

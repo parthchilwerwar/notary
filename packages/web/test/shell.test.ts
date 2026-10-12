@@ -1,4 +1,6 @@
 import { readFileSync } from "node:fs";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BundleIndexSchema } from "../../core/src/schema/bundle";
 import type { BundleIndexEntry } from "../../core/src/schema";
@@ -25,6 +27,8 @@ import { chooseScenario, verifyToolFile } from "../src/data";
 import { FixtureIndexSchema } from "../../core/src/schema";
 import { activeNavId } from "../src/components/shell/Sidebar";
 import { latestHealth, modeLabel } from "../src/components/shell/status";
+import { FixtureNote, PageHeader, PageHeaderContext, SkyBand } from "../src/ui";
+import { FIXTURE_BANNER } from "../src/data/types";
 
 const read = (path: string) =>
   JSON.parse(readFileSync(new URL(`../public/${path}`, import.meta.url), "utf8"));
@@ -48,14 +52,16 @@ describe("route table", () => {
         "/app/certificates",
         "/app/certificates/:certificateId",
         "/app/approvals",
+        "/app/business",
+        "/app/incidents",
         "/app/chat",
         "/app/report",
       ].sort(),
     );
     expect(new Set(routes.map((r) => r.id)).size).toBe(routes.length);
   });
-  it("puts exactly four text-only items in the sidebar, in order", () => {
-    expect(navRoutes().map((r) => r.title)).toEqual(["Run", "Certificates", "Approvals", "Chat"]);
+  it("puts exactly six text-only items in the sidebar, in order", () => {
+    expect(navRoutes().map((r) => r.title)).toEqual(["Run", "Certificates", "Approvals", "Business", "Incidents", "Chat"]);
     expect(routes.filter((r) => r.badge).map((r) => r.id)).toEqual(["approvals"]);
     // Report is reached from the sidebar footer, not the menu.
     expect(routeById("report")?.nav).toBeFalsy();
@@ -80,7 +86,8 @@ describe("route table", () => {
     expect(redirectTarget(from("/app"), {})).toBe("/app/run");
     for (const old of ["/app/overview", "/app/mission-control", "/app/runs", "/app/queue", "/app/probes"])
       expect(redirectTarget(from(old), {})).toBe("/app/run");
-    for (const old of ["/app/economics", "/app/evidence", "/app/comparison"])
+    expect(redirectTarget(from("/app/economics"), {})).toBe("/app/business");
+    for (const old of ["/app/evidence", "/app/comparison"])
       expect(redirectTarget(from(old), {})).toBe("/app/report");
     for (const old of ["/app/beliefs", "/app/reports", "/app/revocation-demo"])
       expect(redirectTarget(from(old), {})).toBe("/app/certificates");
@@ -161,6 +168,17 @@ describe("run picker", () => {
     expect(groupRuns(fixtureIndex, "static").map((g) => g.kind)).toEqual([
       "fixture",
     ]);
+  });
+  it("lists real runs first and fixtures under a neutral label, with no demo or simulation wording", () => {
+    const entries = [...fixtureIndex, real(fixtureIndex[0], "real-a")];
+    for (const source of ["static", "api"] as const) {
+      const groups = groupRuns(entries, source);
+      expect(groups[0]!.runs.every((r) => !r.sample)).toBe(true);
+      expect(groups.at(-1)!.label).toBe("Fixture runs");
+      for (const g of groups) expect(g.label).not.toMatch(/demo|simulat/i);
+    }
+    // With a real run published, the default selection is real.
+    expect(entries.find((e) => e.runId === defaultRunId(entries))!.sample).toBe(false);
   });
   it("only offers same-cohort baselines, preferring the same simulated world", () => {
     const changed = fixtures.find(
@@ -284,5 +302,33 @@ describe("live toasts", () => {
     for (const status of ["failed", "stopped_budget", "blocked"])
       expect(toastFor({ ...finished, data: { ...finished.data, status } })?.tone).toBe("error");
     expect(toastFor({ ...finished, data: { ...finished.data, status: "completed" } })?.tone).toBe("success");
+  });
+});
+
+describe("page header (full-page layout, light only)", () => {
+  const read = (p: string) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
+  it("renders a plain header: no sky band, no clouds; SkyBand stays an alias", () => {
+    expect(SkyBand).toBe(PageHeader);
+    const html = renderToStaticMarkup(createElement(PageHeader, { title: "Run", summary: "x · 3 events" }));
+    expect(html).toContain("ui-header");
+    expect(html).not.toMatch(/ui-band-sky|clouds/i);
+  });
+  it("shows the fixture disclosure once, on the summary line, only when the shell passes it", () => {
+    const inShell = (note?: ReturnType<typeof createElement>) =>
+      renderToStaticMarkup(
+        createElement(PageHeaderContext.Provider, { value: { inShell: true, note } }, createElement(PageHeader, { title: "Run", summary: "s" })),
+      );
+    const withNote = inShell(createElement(FixtureNote));
+    expect(withNote.split(FIXTURE_BANNER).length - 1).toBe(1);
+    expect(inShell()).not.toContain(FIXTURE_BANNER);
+    // The shell passes the note only for a fixture (bundle.sample) run.
+    expect(read("components/shell/AppShell.tsx")).toMatch(/note: sample \? <FixtureNote/);
+  });
+  it("has no theme switch: no toggle in the sidebar, light toasts, no useTheme", () => {
+    const sidebar = read("components/shell/Sidebar.tsx");
+    const shell = read("components/shell/AppShell.tsx");
+    expect(sidebar).not.toMatch(/Dark theme|setDark|aria-pressed=\{dark\}/);
+    expect(shell).not.toMatch(/useTheme/);
+    expect(shell).toContain('<Toaster theme="light"');
   });
 });

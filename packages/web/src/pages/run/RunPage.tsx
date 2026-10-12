@@ -1,22 +1,22 @@
 // /app/run — one run as an agent transcript: the events of the run streamed in order (SSE from a
 // local `notary serve`, or the recorded timeline replayed at 1×, 4× or instant), each a compact
-// row that expands into tagged details, held actions inline, the five-step progress bar, the
-// budget, and the certificates the run touched. All data comes through useDataSource(); all
+// row that expands into tagged details, held actions inline, the five-step stepper under the
+// header, the budget, and the certificates the run touched. Full-page layout: header, stat row,
+// then full-width sections. All data comes through useDataSource(); all
 // logic lives in ./model.ts.
-import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router";
 import type { ApprovalsList, PendingApproval, RunBundle, TimelineEvent } from "../../../../core/src/schema";
 import {
   Button,
-  Card,
   CertificateCard,
   EmptyState,
   Page,
   PageBody,
+  PageHeader,
   PageSkeleton,
+  Section,
   Select,
-  SkyBand,
   Stat,
   StatRow,
   usePageMotion,
@@ -36,12 +36,12 @@ import {
   type RunEntry,
 } from "../../data";
 import { ConfirmDialog, type DialogKind } from "../approvals/ConfirmDialog";
+import { fixturesRequested, recordPath, visibleRuns, withRun } from "../../app/links";
+import { CheckIcon as Check } from "@phosphor-icons/react/dist/csr/Check";
+import { ExclamationMarkIcon as ExclamationMark } from "@phosphor-icons/react/dist/csr/ExclamationMark";
 import {
-  INITIAL_FOLLOW,
   REPLAY_SPEEDS,
   START_CHOICES,
-  afterRowsAdded,
-  afterScroll,
   budgetView,
   buildRows,
   certificatesTouched,
@@ -49,7 +49,6 @@ import {
   heldCard,
   indexBundle,
   isFinished,
-  jumpToLatest,
   mergeEvents,
   parseSpeed,
   pickRun,
@@ -59,17 +58,15 @@ import {
   speedLabel,
   stageProgress,
   unsafeDecisionIds,
-  type FollowState,
   type RunRow,
   type Speed,
   type StageStep,
   type TouchedCertificate,
 } from "./model";
-import { CodeText, HeldCardView, RowDetailsView, StatusMark, TranscriptRow } from "./Transcript";
+import { CodeText, HeldCardView, RowDetailsView, TranscriptTimeline, parseView } from "./Transcript";
 import "./run.css";
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
-const ENTER_MS = 400;
 
 type BundleState = { runId: string; bundle?: RunBundle; running?: boolean; error?: string };
 
@@ -77,6 +74,8 @@ export function RunPage() {
   const { source, mode, ready } = useDataSource();
   const [params, setParams] = useSearchParams();
   const [token, setToken] = useSessionToken();
+  // Real runs only; fixture runs only in the development view (?fixtures=1). Never both.
+  const fixtures = fixturesRequested(params);
 
   /* ---- runs ---- */
   const [runs, setRuns] = useState<RunEntry[] | null>(null);
@@ -87,13 +86,13 @@ export function RunPage() {
     const ctrl = new AbortController();
     source.listRuns(ctrl.signal).then(
       (r) => {
-        setRuns(r);
+        setRuns(visibleRuns(r, fixtures));
         setRunsError(undefined);
       },
       (e) => !ctrl.signal.aborted && setRunsError(message(e)),
     );
     return () => ctrl.abort();
-  }, [ready, source, runsNonce]);
+  }, [ready, source, runsNonce, fixtures]);
 
   const entry = runs ? pickRun(runs, params.get("run")) : undefined;
   const runId = entry?.runId;
@@ -236,9 +235,7 @@ export function RunPage() {
   const streaming = !!runId && !ended && !streamError;
   const root = usePageMotion([runId]);
 
-  /* ---- expansion + deep links (?event=, ?decision=, ?probe=) ---- */
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  useEffect(() => setExpanded(new Set()), [runId]);
+  /* ---- deep links (?event=, ?decision=, ?probe=): the transcript opens and scrolls to the row ---- */
   const target = params.get("event") ?? params.get("decision") ?? params.get("probe");
   const targetKey = useMemo(() => {
     if (!target) return undefined;
@@ -247,60 +244,11 @@ export function RunPage() {
     );
     return hit?.key;
   }, [rows, target, params]);
-  const toggle = (row: RunRow) =>
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(row.key)) next.delete(row.key);
-      else next.add(row.key);
-      return next;
-    });
-
-  /* ---- virtual list + follow ---- */
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const lastTop = useRef(0);
-  const [follow, setFollow] = useState<FollowState>(INITIAL_FOLLOW);
-  const count = rows.length + (streaming ? 1 : 0);
-  const virtualizer = useVirtualizer({
-    count,
-    getScrollElement: () => scrollRef.current,
-    estimateSize: () => 48,
-    overscan: 10,
-    getItemKey: (i) => rows[i]?.key ?? "waiting",
-  });
-  const prevCount = useRef(0);
-  useLayoutEffect(() => {
-    const added = rows.length - prevCount.current;
-    prevCount.current = rows.length;
-    if (added < 0) {
-      setFollow(INITIAL_FOLLOW);
-      return;
-    }
-    setFollow((f) => afterRowsAdded(f, added));
-  }, [rows.length]);
-  useEffect(() => {
-    if (follow.follow && count > 0) virtualizer.scrollToIndex(count - 1, { align: "end" });
-  }, [count, follow.follow, virtualizer]);
-  const appliedTarget = useRef<string | undefined>(undefined);
-  useEffect(() => {
-    if (!targetKey || appliedTarget.current === targetKey) return;
-    appliedTarget.current = targetKey;
-    setExpanded((prev) => new Set(prev).add(targetKey));
-    setFollow({ follow: false, unseen: 0 });
-    const i = rows.findIndex((r) => r.key === targetKey);
-    if (i >= 0) requestAnimationFrame(() => virtualizer.scrollToIndex(i, { align: "start" }));
-  }, [targetKey, rows, virtualizer]);
-
-  const onScroll = () => {
-    const el = scrollRef.current;
-    if (!el) return;
-    setFollow((f) => afterScroll(f, el, lastTop.current));
-    lastTop.current = el.scrollTop;
-  };
+  const view = parseView(params.get("view"));
 
   /* ---- render ---- */
   if (!ready) return <PageSkeleton label="Choosing live or replay mode…" />;
   const groups = runs ? groupRuns(runs) : { real: [], fixture: [] };
-  const now = performance.now();
   const notarize = (entry?.kind ?? bundle?.kind) === "notarize";
   const decisions = events.filter((e) => e.type === "decision");
   const held = decisions.filter((e) => e.data?.status === "held").length;
@@ -321,9 +269,13 @@ export function RunPage() {
       ? "No runs are published yet"
       : "Choose a run";
 
+  const transcriptStatus = `${number(events.length)} ${events.length === 1 ? "event" : "events"}${statusText ? ` · ${statusText}` : ""}${
+    bundleState?.running ? " · the bundle is written when the run finishes" : ""
+  }`;
+
   return (
     <Page ref={root} className="run-page">
-      <SkyBand
+      <PageHeader
         title="Run"
         summary={summary}
         action={
@@ -345,7 +297,7 @@ export function RunPage() {
                 {!runs && <option value="">{runsError ? "Runs withheld" : "Loading runs…"}</option>}
                 {runs && !runs.length && <option value="">No runs</option>}
                 {groups.real.length > 0 && (
-                  <optgroup label={mode === "live" ? "Runs on this machine" : "Recorded runs"}>
+                  <optgroup label={mode === "live" ? "Live runs" : "Recorded runs"}>
                     {groups.real.map((r) => (
                       <option key={r.runId} value={r.runId}>
                         {runLabel(r)}
@@ -354,7 +306,7 @@ export function RunPage() {
                   </optgroup>
                 )}
                 {groups.fixture.length > 0 && (
-                  <optgroup label="Fixture runs (simulated APIs)">
+                  <optgroup label="Fixture runs">
                     {groups.fixture.map((r) => (
                       <option key={r.runId} value={r.runId}>
                         {runLabel(r)}
@@ -385,8 +337,8 @@ export function RunPage() {
           </div>
         }
       >
-        <StageBar steps={progress.steps} finished={progress.finished} />
-      </SkyBand>
+        <Stepper steps={progress.steps} finished={progress.finished} />
+      </PageHeader>
 
       <PageBody>
         {runsError && (
@@ -428,25 +380,22 @@ export function RunPage() {
           />
         </StatRow>
 
-        <div className="run-body">
-          <Card as="section" padding="none" className="run-transcript" aria-label="Transcript" data-reveal>
-            <header className="run-transcript-head">
-              <div className="run-status" aria-live="polite">
-                <h2 className="ui-title ui-title-card">Transcript</h2>
-                <span>
-                  {number(events.length)} {events.length === 1 ? "event" : "events"}
-                  {statusText ? ` · ${statusText}` : ""}
-                  {bundleState?.running && " · the bundle is written when the run finishes"}
-                </span>
-              </div>
-              {controls.speed.visible && (
-                <SpeedControl
-                  speed={speed}
-                  onSpeed={(s) => setParam("speed", s === 1 ? null : String(s))}
-                  onRestart={() => setReplayNonce((n) => n + 1)}
-                />
-              )}
-            </header>
+        <Section
+          className="run-transcript-section"
+          aria-labelledby="run-transcript-title"
+          title={<span id="run-transcript-title">Transcript</span>}
+          description={<span className="run-status" aria-live="polite">{transcriptStatus}</span>}
+          actions={
+            controls.speed.visible ? (
+              <SpeedControl
+                speed={speed}
+                onSpeed={(s) => setParam("speed", s === 1 ? null : String(s))}
+                onRestart={() => setReplayNonce((n) => n + 1)}
+              />
+            ) : undefined
+          }
+        >
+          <div className="run-transcript" data-reveal>
             {streamError && (
               <p className="run-error run-stream-error" role="alert">
                 {streamError.includes("No timeline") || streamError.includes(TimelineMissingError.name)
@@ -454,76 +403,43 @@ export function RunPage() {
                   : streamError}
               </p>
             )}
-            <div className="run-scroll" ref={scrollRef} onScroll={onScroll} tabIndex={0} aria-label="Transcript events">
-              {count === 0 && !streamError && <p className="run-muted run-empty">{runId ? "Waiting for the first event…" : "Choose a run."}</p>}
-              <div className="run-virtual" style={{ height: virtualizer.getTotalSize() }}>
-                {virtualizer.getVirtualItems().map((item) => {
-                  const row = rows[item.index];
-                  return (
-                    <div
-                      key={item.key}
-                      data-index={item.index}
-                      ref={virtualizer.measureElement}
-                      className="run-virtual-item"
-                      style={{ transform: `translateY(${item.start}px)` }}
-                    >
-                      {row ? (
-                        <TranscriptRow
-                          row={row}
-                          expanded={expanded.has(row.key)}
-                          onToggle={() => toggle(row)}
-                          entering={row.seq !== null && now - (arrivals.current.get(row.seq) ?? -Infinity) < ENTER_MS}
-                          details={expanded.has(row.key) ? <RowDetailsView details={rowDetails(row, { bundle, index, world: worldView })} /> : undefined}
-                          certificateHref={row.certificateId ? `/app/certificates/${encodeURIComponent(row.certificateId)}?run=${encodeURIComponent(row.event?.runId ?? "")}` : undefined}
-                          card={(() => {
-                            const card = heldCard(row, {
-                              mode,
-                              sample: !!entry && entry.state === "finished" && entry.sample,
-                              bundle,
-                              world: worldView,
-                              approvals: approvals.list,
-                              approvalsError: approvals.error === TOKEN_REQUIRED ? "Paste the session token above to load the approval list." : approvals.error,
-                            });
-                            if (!card) return undefined;
-                            return (
-                              <HeldCardView
-                                card={card}
-                                onApprove={card.kind === "actionable" ? () => setDialog({ kind: "approve", item: card.pending }) : undefined}
-                                onReject={card.kind === "actionable" ? () => setDialog({ kind: "reject", item: card.pending }) : undefined}
-                              />
-                            );
-                          })()}
-                        />
-                      ) : (
-                        <div className="run-row run-waiting">
-                          <div className="run-row-head">
-                            <StatusMark mark="spinner" tone="neutral" />
-                            <span className="run-row-main">
-                              <span className="run-row-title run-muted">Waiting for the next event…</span>
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            {!follow.follow && (
-              <button
-                type="button"
-                className="run-jump"
-                onClick={() => {
-                  setFollow(jumpToLatest());
-                  if (count) virtualizer.scrollToIndex(count - 1, { align: "end" });
-                }}
-              >
-                Jump to latest{follow.unseen ? ` (${follow.unseen} new)` : ""}
-              </button>
-            )}
-          </Card>
-          <CertificatesRail items={touched} runId={runId} streaming={streaming} world={worldView} worldError={world && world.runId === runId ? world.error : undefined} />
-        </div>
+            <TranscriptTimeline
+              key={runId ?? "none"}
+              rows={rows}
+              streaming={streaming}
+              view={view}
+              onViewChange={(v) => setParam("view", v === "stage" ? null : v)}
+              steps={progress.steps}
+              targetKey={targetKey}
+              arrivals={arrivals.current}
+              emptyText={runId ? (streamError ? "No events to show." : "Waiting for the first event…") : "Choose a run."}
+              renderDetails={(row) => <RowDetailsView details={rowDetails(row, { bundle, index, world: worldView })} />}
+              certificateHref={(row) =>
+                row.certificateId ? withRun(recordPath.certificate(row.certificateId), row.event?.runId) : undefined
+              }
+              renderCard={(row) => {
+                const card = heldCard(row, {
+                  mode,
+                  sample: !!entry && entry.state === "finished" && entry.sample,
+                  bundle,
+                  world: worldView,
+                  approvals: approvals.list,
+                  approvalsError: approvals.error === TOKEN_REQUIRED ? "Paste the session token above to load the approval list." : approvals.error,
+                });
+                if (!card) return undefined;
+                return (
+                  <HeldCardView
+                    card={card}
+                    onApprove={card.kind === "actionable" ? () => setDialog({ kind: "approve", item: card.pending }) : undefined}
+                    onReject={card.kind === "actionable" ? () => setDialog({ kind: "reject", item: card.pending }) : undefined}
+                  />
+                );
+              }}
+            />
+          </div>
+        </Section>
+
+        <CertificatesSection items={touched} runId={runId} streaming={streaming} world={worldView} worldError={world && world.runId === runId ? world.error : undefined} />
       </PageBody>
 
       {dialog && (
@@ -541,20 +457,32 @@ export function RunPage() {
   );
 }
 
-/* ------------------------------------------------------------------------------ stage bar */
+/* --------------------------------------------------------------------------------- stepper */
 
-function StageBar({ steps, finished }: { steps: StageStep[]; finished: boolean }) {
+/** Read · Test · Challenge · Certify · Enforce as a horizontal stepper; counts are this run's events per stage. */
+function Stepper({ steps, finished }: { steps: StageStep[]; finished: boolean }) {
   const current = steps.find((s) => s.current);
   return (
-    <ol className="run-stages" aria-label={`Progress: ${current ? `at ${current.label}` : finished ? "finished" : "not started"}`}>
-      {steps.map((s) => (
+    <ol className="run-stepper" aria-label={`Progress: ${current ? `at ${current.label}` : finished ? "finished" : "not started"}`}>
+      {steps.map((s, i) => (
         <li key={s.stage} data-state={s.state} data-current={s.current || undefined} aria-current={s.current ? "step" : undefined}>
-          <span className="run-stage-bar" aria-hidden="true" />
-          <span className="run-stage-label">
-            {s.label}
-            <span className="run-stage-count">{s.count}</span>
+          <span className="run-step-mark" aria-hidden="true">
+            {s.state === "done" ? (
+              <Check size={12} weight="bold" />
+            ) : s.state === "alert" ? (
+              <ExclamationMark size={12} weight="bold" />
+            ) : (
+              i + 1
+            )}
           </span>
-          {s.alerts.length > 0 && <span className="run-stage-alert">{s.alerts.join(", ")}</span>}
+          <span className="run-step-text">
+            <span className="run-step-label">{s.label}</span>
+            <span className="run-step-count">
+              {number(s.count)}
+              <span className="run-step-unit"> {s.count === 1 ? "event" : "events"}</span>
+            </span>
+            {s.alerts.length > 0 && <span className="run-step-alert">{s.alerts.join(", ")}</span>}
+          </span>
         </li>
       ))}
     </ol>
@@ -672,9 +600,9 @@ function StartRun({
   );
 }
 
-/* ------------------------------------------------------------------------- certificates rail */
+/* ---------------------------------------------------------------------- certificates section */
 
-function CertificatesRail({
+function CertificatesSection({
   items,
   runId,
   streaming,
@@ -689,13 +617,17 @@ function CertificatesRail({
   worldError?: string;
 }) {
   return (
-    <aside className="run-rail" aria-label="Certificates in this run">
-      <h2 className="ui-title ui-title-card">Certificates</h2>
+    <Section
+      className="run-certs"
+      aria-labelledby="run-certs-title"
+      title={<span id="run-certs-title">Certificates</span>}
+      description="Certificates this run issued or revoked, with their status now."
+    >
       {worldError && <p className="run-error">Certificates withheld: {worldError}</p>}
       {items.length === 0 ? (
-        <p className="run-muted">{streaming ? "No certificate issued or revoked in this run so far." : "This run issued or revoked no certificate."}</p>
+        <p className="run-muted run-certs-empty">{streaming ? "No certificate issued or revoked in this run so far." : "This run issued or revoked no certificate."}</p>
       ) : (
-        <ul className="run-rail-list">
+        <ul className="run-certs-list">
           {items.map((c) => {
             const cert = world?.certificates.find((x) => x.id === c.id);
             return (
@@ -705,7 +637,7 @@ function CertificatesRail({
                   tool={cert?.tool ?? c.id}
                   claimId={c.claimId ?? c.id}
                   revoked={c.current === "revoked"}
-                  href={`/app/certificates/${encodeURIComponent(c.id)}${runId ? `?run=${encodeURIComponent(runId)}` : ""}`}
+                  href={withRun(recordPath.certificate(c.id), runId)}
                   footer={
                     <>
                       {c.inRun} in this run
@@ -718,6 +650,6 @@ function CertificatesRail({
           })}
         </ul>
       )}
-    </aside>
+    </Section>
   );
 }

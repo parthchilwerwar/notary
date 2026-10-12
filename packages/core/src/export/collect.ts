@@ -115,11 +115,27 @@ export function latest(bundles: readonly RunBundle[], pred: (b: RunBundle) => bo
   return hits[hits.length - 1];
 }
 
-/** One newest bundle per (class, tool, mode): what the dashboard gets and what TOOLS.md reads. */
+/** One newest bundle per (class, tool, mode). */
 export function latestPerCategory(bundles: readonly RunBundle[]): RunBundle[] {
   const byKey = new Map<string, RunBundle>();
   for (const b of [...bundles].sort(order)) byKey.set(`${classify(b)}/${b.tool ?? "-"}/${b.mode}`, b);
   return [...byKey.values()].sort(order);
+}
+
+/** A real bundle certificates are built from: full notarize bundles, and queue runs / drift replays that carry belief events (never sample, never compare-priors arms). */
+export function isCertificateSource(b: RunBundle): boolean {
+  return !b.sample && (classify(b) === "notarize-full" || (b.beliefEvents.length > 0 && (b.kind === "run" || isDriftReplay(b))));
+}
+
+/**
+ * What `notary export` copies to the dashboard: the newest bundle per category, plus every certificate
+ * source, so each source bundle a certificate file cites is published with the same contentHash
+ * (a later notarize run of the same tool must not hide the earlier run whose probes a certificate cites).
+ */
+export function dashboardBundles(bundles: readonly RunBundle[]): RunBundle[] {
+  const byId = new Map(latestPerCategory(bundles).map((b) => [b.runId, b] as const));
+  for (const b of bundles) if (isCertificateSource(b)) byId.set(b.runId, b);
+  return [...byId.values()].sort(order);
 }
 
 /** Newest full notarize bundle (the one carrying beliefs and guards) for a tool. */

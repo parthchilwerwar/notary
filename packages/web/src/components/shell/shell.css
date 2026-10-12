@@ -1,26 +1,28 @@
-/* Dashboard shell (K3): white sidebar on the subtle canvas, like the landing's surfaces. Tokens only
-   (src/design/tokens.css); components from src/ui. */
+/* Dashboard shell: a quiet subtle-gray sidebar beside the white page (full-page layout, light
+   only). Tokens only (src/design/tokens.css); components from src/ui. */
 
 /* No global mode chrome (DECISIONS #182): the dashboard states the data mode only where a live
    action would fail (the Run page's start area, Approvals, Connections). Fixture runs keep their
-   disclosure (.fixture-banner). */
+   disclosure: one small pill on the page header's summary line (.fixture-banner). */
 body:has(.app-shell) {
-  background: var(--surface-subtle);
+  background: var(--page);
 }
 
 .app-shell {
   display: flex;
   min-height: 100dvh;
   /* The sidebar column runs the full page height, even when the page outgrows the viewport. */
-  background: linear-gradient(90deg, var(--card) 0 247px, var(--hairline-color) 247px 248px, var(--surface-subtle) 248px);
+  background: linear-gradient(90deg, var(--surface-subtle) 0 239px, var(--hairline-color) 239px 240px, var(--page) 240px);
   color: var(--text);
   font-family: var(--font-sans);
   font-size: 15px;
   line-height: 1.55;
   font-variant-numeric: tabular-nums;
 }
-/* Plain links are blue; zero-specificity so any component class (buttons, pills, cards) wins. */
-:where(.app-shell) a {
+/* Plain links are blue; zero-specificity so any component class (buttons, pills, cards) wins.
+   Hook Sidebar rows color themselves with Tailwind utilities (a layer this unlayered rule would
+   beat), so they are left out. */
+:where(.app-shell) a:where(:not([data-slot="hook-sidebar-item"])) {
   color: var(--accent-text);
   text-decoration-color: currentColor;
   text-underline-offset: 3px;
@@ -45,13 +47,13 @@ body:has(.app-shell) {
   top: 0;
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  flex: 0 0 248px;
-  width: 248px;
+  gap: 20px;
+  flex: 0 0 240px;
+  width: 240px;
   height: 100dvh;
-  padding: 24px 16px 16px;
+  padding: 20px 12px 16px;
   border-right: 1px solid var(--hairline-color);
-  background: var(--card);
+  background: var(--surface-subtle);
   overflow-y: auto;
 }
 .side-top {
@@ -62,10 +64,10 @@ body:has(.app-shell) {
   display: inline-flex;
   align-items: center;
   min-height: 40px;
-  padding: 0 12px;
+  padding: 0 10px;
   color: var(--text);
   font-family: var(--font-display);
-  font-size: 30px;
+  font-size: 26px;
   font-weight: 400;
   letter-spacing: -0.01em;
   line-height: 1;
@@ -76,11 +78,11 @@ body:has(.app-shell) {
   align-items: center;
   gap: 10px;
   width: 100%;
-  min-height: 40px;
-  padding: 0 8px 0 12px;
+  min-height: 36px;
+  padding: 0 8px 0 10px;
   border: 1px solid var(--hairline-color);
-  border-radius: var(--r-button);
-  background: var(--surface-subtle);
+  border-radius: 8px;
+  background: var(--card);
   color: var(--text-muted);
   font: inherit;
   font-size: 14px;
@@ -116,42 +118,19 @@ body:has(.app-shell) {
   display: flex;
   width: 100%;
 }
-.side-nav ul {
-  display: grid;
-  gap: 2px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+/* Page links: Rare UI's Hook Sidebar (src/components/ui/hook-sidebar.tsx). Its rows carry the
+   colors (muted, ink when current) and the accent rail that hooks into the current page; only the
+   row size and the badge alignment are set here. */
+.side-nav,
+.side-foot {
+  padding-left: 8px;
 }
 .side-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  min-height: 40px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: var(--r-button);
-  background: transparent;
-  color: var(--text-strong-muted);
-  font: inherit;
-  font-size: 15px;
+  min-height: 36px;
   font-weight: 500;
-  text-align: left;
-  text-decoration: none;
-  cursor: pointer;
-  transition: background-color 150ms ease-out, color 150ms ease-out;
 }
 .side-item > span:first-child {
   flex: 1;
-}
-.side-item:hover {
-  background: var(--surface-subtle);
-  color: var(--text);
-}
-.side-item[aria-current="page"] {
-  background: var(--accent-soft);
-  color: var(--accent-text);
 }
 .side-badge {
   display: inline-flex;
@@ -173,18 +152,6 @@ body:has(.app-shell) {
   margin-top: auto;
   padding-top: 16px;
   border-top: 1px solid var(--hairline-color);
-}
-.side-theme svg {
-  width: 16px;
-  height: 16px;
-}
-.side-theme > span:nth-child(2) {
-  flex: 1;
-}
-.side-theme-state {
-  color: var(--text-muted);
-  font-size: 13px;
-  font-weight: 400;
 }
 
 /* Phones: top bar + drawer */
@@ -263,16 +230,13 @@ body:has(.app-shell) {
   align-content: start;
   gap: 16px;
   width: 100%;
-  max-width: calc(1200px + 2 * 32px);
+  max-width: calc(1180px + 2 * 48px);
   margin: 0 auto;
-  padding: 32px 32px 96px;
+  padding: 40px 48px 96px;
   overflow-x: clip;
 }
 .app-main:focus {
   outline: none;
-}
-.app-main > .fixture-banner {
-  justify-self: end;
 }
 .gate-detail {
   margin-top: 8px;
@@ -288,7 +252,7 @@ body:has(.app-shell) {
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 14px;
+  font-size: 13px;
 }
 .band-crumbs li {
   min-width: 0;
@@ -297,11 +261,16 @@ body:has(.app-shell) {
 .band-crumbs li + li::before {
   content: "/";
   margin-right: 8px;
-  color: var(--text-strong-muted);
+  color: var(--text-faint);
 }
 .band-crumbs a {
-  color: var(--text);
+  color: var(--text-muted);
   font-weight: 500;
+  text-decoration: none;
+}
+.band-crumbs a:hover {
+  color: var(--text);
+  text-decoration: underline;
 }
 .band-crumbs [aria-current="page"] span {
   color: var(--text-strong-muted);
@@ -318,13 +287,10 @@ body:has(.app-shell) {
 @media (max-width: 767px) {
   .app-shell {
     flex-direction: column;
-    background: var(--surface-subtle);
+    background: var(--page);
   }
   .app-main {
-    padding: 16px 12px 64px;
-  }
-  .app-main > .fixture-banner {
-    justify-self: start;
+    padding: 24px 16px 64px;
   }
 }
 
@@ -346,7 +312,7 @@ body:has(.app-shell) {
   flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--hairline-color);
-  border-radius: 24px;
+  border-radius: 16px;
   background: var(--card);
   box-shadow: var(--shadow-float);
   color: var(--text);
@@ -427,6 +393,11 @@ body:has(.app-shell) {
   padding: 24px 12px;
   color: var(--text-muted);
 }
+@media (min-width: 768px) and (max-width: 1100px) {
+  .app-main {
+    padding: 32px 32px 96px;
+  }
+}
 @media (max-width: 767px) {
   .palette-overlay {
     padding-top: 16px;
@@ -444,7 +415,7 @@ body:has(.app-shell) {
   --error-bg: var(--card);
   --error-border: var(--status-unsafe);
   --error-text: var(--text);
-  --border-radius: 20px;
+  --border-radius: 12px;
   font-family: var(--font-sans);
 }
 [data-sonner-toaster] [data-sonner-toast] {

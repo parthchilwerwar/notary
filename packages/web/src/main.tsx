@@ -12,6 +12,8 @@ import "./ui/kit.css";
 
 // The dashboard is its own chunk, so the landing (`/`) never downloads it (Lighthouse, R4).
 const App = lazy(() => import("./App"));
+// The guide (/docs) is its own chunk too.
+const DocsPage = lazy(() => import("./docs/DocsPage"));
 function RouteScroll() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -40,6 +42,20 @@ createRoot(document.getElementById("root")!).render(
                 }
               >
                 <App />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/docs"
+            element={
+              <Suspense
+                fallback={
+                  <main className="app-loading">
+                    <PageSkeleton label="Loading the guide…" />
+                  </main>
+                }
+              >
+                <DocsPage />
               </Suspense>
             }
           />

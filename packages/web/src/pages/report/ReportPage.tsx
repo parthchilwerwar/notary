@@ -1,21 +1,21 @@
 // /app/report (sidebar footer): naive vs guarded within one world, cost per run, connections to
-// the live integrations, and receipts (neatlogs traces, Entire checkpoints, tool evidence).
+// the live integrations, and receipts (neatlogs traces, Entire checkpoints, tool evidence). Full-page
+// layout: header, stat row, then full-width sections. Only one cohort is ever loaded (real runs, or
+// fixture runs under the development-only ?fixtures=1, whose header carries the disclosure).
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import type { RunBundle } from "../../../../core/src/schema";
 import {
-  BrowserFrame,
   Button,
-  Card,
   DitherChart,
   EmptyState,
   Expander,
-  FixtureNote,
+  NoRunsYet,
   Page,
   PageBody,
+  PageHeader,
   PageSkeleton,
   Section,
-  SkyBand,
   Stat,
   StatRow,
   StatusPill,
@@ -36,7 +36,7 @@ import {
 } from "../../data";
 import { actionsByType } from "../../landing-data";
 import { useData } from "../../app/catalog";
-import { recordPath, withRun } from "../../app/links";
+import { NO_RUNS_COMMANDS, recordPath, withRun } from "../../app/links";
 import { dateTime } from "../../lib/time";
 import {
   byCohort,
@@ -51,10 +51,11 @@ import {
   type RoleCost,
 } from "./model";
 import { CodeText, EvidenceEntryView, EvidenceStatus, STATE_WORD, TraceRefView, integrationTone } from "./receipts";
+import { EntireSection } from "./EntireSection";
 import "./report.css";
 
 export function ReportPage() {
-  const { loading, error, bundles, bundle } = useData();
+  const { loading, error, bundles, bundle, fixtures } = useData();
   const pair = loading || error ? undefined : pickPair(comparisonPairs(bundles), bundle);
   const root = usePageMotion([pair?.world, loading]);
   if (loading) return <PageSkeleton label="Verifying bundle integrity…" />;
@@ -63,7 +64,7 @@ export function ReportPage() {
   const holds = rows.find((r) => r.key === "holds");
   return (
     <Page ref={root} className="report">
-      <SkyBand
+      <PageHeader
         title="Report"
         summary={
           pair
@@ -84,6 +85,14 @@ export function ReportPage() {
             <p>A published run failed its integrity check in this browser, so the comparison and costs are not shown.</p>
             <p className="report-detail">{error}</p>
           </EmptyState>
+        ) : !bundles.length ? (
+          fixtures ? (
+            <EmptyState title="No fixture runs published">
+              The fixture view lists <code>sample: true</code> bundles only, and none are published.
+            </EmptyState>
+          ) : (
+            <NoRunsYet commands={NO_RUNS_COMMANDS} />
+          )
         ) : (
           <>
             {pair && (
@@ -119,37 +128,42 @@ function formatDelta(row: MetricRow) {
   return row.format === "ratio" ? `${sign}${number(abs)} pts` : `${sign}${number(abs)}`;
 }
 
-function Comparison({ bundles, pair, rows }: { bundles: RunBundle[]; pair?: ComparisonPair; rows: MetricRow[] }) {
+function Comparison({
+  bundles,
+  pair,
+  rows,
+}: {
+  bundles: RunBundle[];
+  pair?: ComparisonPair;
+  rows: MetricRow[];
+}) {
   const others = comparisonPairs(bundles).filter((p) => p.world !== pair?.world);
   return (
     <Section
       id="comparison"
       aria-labelledby="comparison-title"
-      label="Proof"
       title={<span id="comparison-title">Naive vs guarded</span>}
       description="The same queue of money requests, run once without Notary and once with it. Same world only."
     >
       {!pair ? (
         <EmptyState title="Nothing to compare yet">
-          No world has both a naive and a guarded queue run. Real runs pair by seed; fixture runs pair by scenario. Run
-          both variants with <code>pnpm notary run</code>.
+          No seed has both a naive and a guarded queue run yet. Run both variants with <code>pnpm notary run</code>, then{" "}
+          <code>pnpm notary export</code>.
         </EmptyState>
       ) : (
         <>
-          {pair.sample && <FixtureNote />}
-          <BrowserFrame className="report-chart" title="Money actions by request type" tag={pair.sample ? "Fixture data" : undefined}>
+          <figure className="report-figure" data-reveal>
+            <figcaption className="report-figure-title">Money actions by request type</figcaption>
             <DitherChart rows={actionsByType(pair.naive, pair.guarded)} />
-          </BrowserFrame>
+          </figure>
           <p className="report-note">
             From <Link to={recordPath.run(pair.naive.runId)}>{pair.naive.runId}</Link> and{" "}
             <Link to={recordPath.run(pair.guarded.runId)}>{pair.guarded.runId}</Link>, graded by deterministic code from each
             run’s recorded effects. Missing values are shown as missing, never as zero.
           </p>
-          <Card data-reveal>
-            <Expander summary="Show every metric">
-              <PairTable pair={pair} rows={rows} />
-            </Expander>
-          </Card>
+          <Expander summary="Show every metric">
+            <PairTable pair={pair} rows={rows} />
+          </Expander>
         </>
       )}
       {others.length > 0 && (
@@ -159,7 +173,7 @@ function Comparison({ bundles, pair, rows }: { bundles: RunBundle[]; pair?: Comp
             <span key={p.world}>
               {i > 0 && ", "}
               <Link to={withRun("/app/report", p.guarded.runId)}>
-                {p.sample ? `fixture scenario ${p.world.slice("fixture:".length)}` : `real runs, seed ${p.world.slice(5)}`}
+                {p.sample ? `fixture scenario ${p.world.slice("fixture:".length)}` : `seed ${p.world.slice(5)}`}
               </Link>
             </span>
           ))}
@@ -207,7 +221,7 @@ function PairTable({ pair, rows }: { pair: ComparisonPair; rows: MetricRow[] }) 
 
 // ------------------------------------------------------------------------------ costs
 
-const COHORT_LABEL = { real: "Real runs", fixture: "Fixture runs", synthetic: "Synthetic sample" } as const;
+const COHORT_LABEL = { real: "Recorded runs", fixture: "Fixture runs", synthetic: "Synthetic sample" } as const;
 
 function UsdText({ cost }: { cost: ReturnType<typeof runCost> }) {
   if (cost.calls === 0 && cost.unknownRoles.length === 0) return <>{usd(0)}</>;
@@ -246,43 +260,71 @@ function Costs({ bundles, selected }: { bundles: RunBundle[]; selected?: RunBund
       )}
       {cohorts.map((g) => (
         <div className="report-cohort" key={g.cohort}>
-          {g.cohort === "fixture" && <FixtureNote />}
-          {g.cohort === "synthetic" && <p className="report-cohort-note">{g.runs[0]!.disclosure[0] ?? "Synthetic sample data"}</p>}
-          <ul className="report-runs" aria-label={`${COHORT_LABEL[g.cohort]}: cost per run`}>
-            {g.runs.map((b) => {
-              const cost = runCost(b);
-              return (
-                <li key={b.runId}>
-                  <Card padding="sm" className="report-run" data-selected={b.runId === selected?.runId || undefined}>
-                    <Link className="report-run-id" to={recordPath.run(b.runId)}>
-                      {b.runId}
-                    </Link>
-                    <span className="report-run-kind">
-                      {b.kind}
-                      {b.variant !== b.kind && ` / ${b.variant}`}
-                    </span>
-                    <span className="report-run-figure">
-                      {number(cost.creditsUsed)} <span>of {number(cost.creditsBudget)} credits</span>
-                    </span>
-                    <span className="report-run-figure">
-                      <UsdText cost={cost} /> <span>{number(cost.calls)} model calls</span>
-                    </span>
-                  </Card>
-                </li>
-              );
-            })}
-          </ul>
+          <div className="report-cohort-head">
+            <h3 className="report-cohort-title">
+              {COHORT_LABEL[g.cohort]} <span>{number(g.runs.length)}</span>
+            </h3>
+            {g.cohort === "synthetic" && <p className="report-cohort-note">{g.runs[0]!.disclosure[0] ?? "Synthetic sample data"}</p>}
+          </div>
+          <TableFrame className="report-runs">
+            <table>
+              <caption className="sr-only">{COHORT_LABEL[g.cohort]}: cost per run</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Run</th>
+                  <th scope="col">Kind</th>
+                  <th scope="col" className="num">
+                    Credits used
+                  </th>
+                  <th scope="col" className="num">
+                    Credit budget
+                  </th>
+                  <th scope="col" className="num">
+                    Model spend
+                  </th>
+                  <th scope="col" className="num">
+                    Model calls
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {g.runs.map((b) => {
+                  const cost = runCost(b);
+                  const current = b.runId === selected?.runId;
+                  return (
+                    <tr key={b.runId} data-selected={current || undefined} aria-current={current ? "true" : undefined}>
+                      <th scope="row">
+                        <Link className="report-run-id" to={recordPath.run(b.runId)}>
+                          {b.runId}
+                        </Link>
+                      </th>
+                      <td className="report-run-kind">
+                        {b.kind}
+                        {b.variant !== b.kind && ` / ${b.variant}`}
+                      </td>
+                      <td className="num">{number(cost.creditsUsed)}</td>
+                      <td className="num report-muted">{number(cost.creditsBudget)}</td>
+                      <td className="num">
+                        <UsdText cost={cost} />
+                      </td>
+                      <td className="num">{number(cost.calls)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </TableFrame>
         </div>
       ))}
       {selected && (
-        <Card data-reveal className="report-more">
+        <div className="report-more">
           <Expander summary={<>Show costs by role and endpoint for {selected.runId}</>}>
             <SelectedCost bundle={selected} />
           </Expander>
           <Expander summary="Business plan">
             <CfoPlan />
           </Expander>
-        </Card>
+        </div>
       )}
     </Section>
   );
@@ -421,7 +463,7 @@ function Connections() {
         ) : undefined
       }
     >
-      <Card data-reveal className="report-connections">
+      <div className="report-connections" data-reveal>
         {!ready ? (
           <p className="report-note" role="status">
             Looking for a local server…
@@ -477,7 +519,7 @@ function Connections() {
             )}
           </>
         )}
-      </Card>
+      </div>
     </Section>
   );
 }
@@ -495,8 +537,8 @@ function Receipts({ selected }: { selected?: RunBundle }) {
       description="neatlogs traces of the selected run, Entire review checkpoints, and the published tool evidence."
     >
       <div className="report-receipts">
-        <Card data-reveal className="report-receipt">
-          <h3 className="ui-title ui-title-card">Traces</h3>
+        <div className="report-receipt" data-reveal>
+          <h3 className="report-receipt-title">Traces</h3>
           {!selected ? (
             <p className="report-note">No run is selected.</p>
           ) : !traces.length ? (
@@ -520,16 +562,14 @@ function Receipts({ selected }: { selected?: RunBundle }) {
             </>
           )}
           <EvidenceStatus evidence={evidence} name="neatlogs" />
-        </Card>
-        <Card data-reveal className="report-receipt">
-          <h3 className="ui-title ui-title-card">Review checkpoints</h3>
-          <p>
-            Entire checkpoints recorded: <strong>none recorded</strong>.
-          </p>
+        </div>
+        <div className="report-receipt" data-reveal>
+          <h3 className="report-receipt-title">Review checkpoints</h3>
+          <EntireSection />
           <EvidenceStatus evidence={evidence} name="Entire" />
-        </Card>
+        </div>
       </div>
-      <Card data-reveal>
+      <div className="report-more">
         <Expander summary="Tool evidence">
           {evidence.status === "loading" ? (
             <p className="report-note" role="status">
@@ -554,7 +594,7 @@ function Receipts({ selected }: { selected?: RunBundle }) {
             </ul>
           )}
         </Expander>
-      </Card>
+      </div>
     </Section>
   );
 }

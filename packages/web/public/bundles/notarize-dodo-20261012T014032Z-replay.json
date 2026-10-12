@@ -1,0 +1,1172 @@
+{
+  "runId": "notarize-dodo-20261012T014032Z-replay",
+  "kind": "notarize",
+  "variant": "notarize",
+  "mode": "replay",
+  "sample": false,
+  "disclosure": [
+    "Notarize run: anomalies from the deterministic checker, rival hypotheses proposed by the reflector model, probes with predictions committed before each call, verdicts by deterministic rules. Beliefs are Beta(α, β) over the doc claim holding (only confirmed probes update), every cited span is checked against runs/<runId>/spans.jsonl, and candidates are reviewed by the adversary.",
+    "Replay of notarize-dodo-20261012T014032Z from its pinned cassettes (tool traffic, model answers, store snapshot); no network calls, no keys.",
+    "Probe ids and request tags use the recorded run id notarize-dodo-20261012T014032Z.",
+    "Dodo Payments test mode only; refund and change-plan probes use seeded probe-only payments and subscriptions the seeded queue does not reference.",
+    "Verification probes: 5 required claim(s) with no anomaly this run (dodo.payment.refunds-lists-issued-refund, dodo.refund.amount-minor-units, dodo.refund.full-retry-no-duplicate, dodo.refunds.amount-integer, dodo.subscription.change-plan-pending-409) were probed against a deterministic rival pair {honored, suspected class from src/contracts/priors-map.ts} built by code, not proposed by a model; same commit-then-run loop, caps and budget.",
+    "Transfer priors from crustdata notarize bundle notarize-crustdata-20261012T011404Z: each new belief started from Beta(1 + s(1 - r), 1 + s*r), r = the crustdata base rate of its claim's suspected defect class, s = 2 pseudo-counts (Beta(1, 1) when crustdata settled nothing relevant).",
+    "belief_precision is measured against the deterministic checker on the SAME recording (not an independent ground truth); see docs/AUDIT.md A-14"
+  ],
+  "startedAt": "2026-10-12T01:42:48.857Z",
+  "finishedAt": "2026-10-12T01:42:48.932Z",
+  "status": "completed",
+  "seed": 0,
+  "tool": "dodo",
+  "priorsFrom": "crustdata",
+  "replayOf": "notarize-dodo-20261012T014032Z",
+  "queue": [],
+  "decisions": [],
+  "claims": [
+    {
+      "id": "dodo.refund.amount-minor-units",
+      "tool": "dodo",
+      "operation": "dodo.createRefund",
+      "param": "items[].amount",
+      "docText": "the `amount` to refund in the smallest currency unit.",
+      "expect": {
+        "kind": "unit",
+        "field": "amount",
+        "unit": "minor"
+      },
+      "docUrl": "https://docs.dodopayments.com/features/transactions/refunds.md",
+      "endpoint": "POST /refunds",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.refund.full-retry-no-duplicate",
+      "tool": "dodo",
+      "operation": "dodo.createRefund",
+      "param": "refund_id",
+      "docText": "[implied] The refund, together with any earlier refunds on the payment, can't exceed the amount paid.",
+      "expect": {
+        "kind": "idempotentOnRetry"
+      },
+      "docUrl": "https://docs.dodopayments.com/features/transactions/refunds.md",
+      "endpoint": "POST /refunds",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.refunds.amount-integer",
+      "tool": "dodo",
+      "operation": "dodo.listRefunds",
+      "param": "",
+      "docText": "amount: integer or null (int32). The refunded amount.",
+      "expect": {
+        "kind": "type",
+        "field": "items[].amount",
+        "type": "integer|null"
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/refunds/get-refunds.md",
+      "endpoint": "GET /refunds",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.refunds.page-size-max-100",
+      "tool": "dodo",
+      "operation": "dodo.listRefunds",
+      "param": "page_size",
+      "docText": "Page size default is 10 max is 100",
+      "expect": {
+        "kind": "maxItems",
+        "max": 100
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/refunds/get-refunds.md",
+      "endpoint": "GET /refunds",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.payments.page-size-max-100",
+      "tool": "dodo",
+      "operation": "dodo.listPayments",
+      "param": "page_size",
+      "docText": "Page size default is 10 max is 100",
+      "expect": {
+        "kind": "maxItems",
+        "max": 100
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/payments/get-payments.md",
+      "endpoint": "GET /payments",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.payment.refunds-array-present",
+      "tool": "dodo",
+      "operation": "dodo.getPayment",
+      "param": "payment_id",
+      "docText": "refunds: List of refunds issued for this payment (required)",
+      "expect": {
+        "kind": "fieldPresent",
+        "field": "refunds"
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/payments/get-payments-1.md",
+      "endpoint": "GET /payments/{payment_id}",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.payment.refunds-lists-issued-refund",
+      "tool": "dodo",
+      "operation": "dodo.createRefund",
+      "param": "refund_id",
+      "docText": "[implied] refunds: List of refunds issued for this payment",
+      "expect": {
+        "kind": "consistentWithin",
+        "ms": 1000
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/payments/get-payments-1.md",
+      "endpoint": "POST /refunds",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.product.price-minor-units",
+      "tool": "dodo",
+      "operation": "dodo.createProduct",
+      "param": "price.price",
+      "docText": "The payment amount, in the smallest denomination of the currency (e.g., cents for USD).",
+      "expect": {
+        "kind": "unit",
+        "field": "price.price",
+        "unit": "minor"
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/products/post-products.md",
+      "endpoint": "POST /products",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.customer.missing-email-422",
+      "tool": "dodo",
+      "operation": "dodo.createCustomer",
+      "param": "email",
+      "docText": "required: name, email. 422: Invalid Request Object or Parameters",
+      "expect": {
+        "kind": "statusOnError",
+        "status": 422
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/customers/create-customer.md",
+      "endpoint": "POST /customers",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.subscription.change-plan-pending-409",
+      "tool": "dodo",
+      "operation": "dodo.changeSubscriptionPlan",
+      "param": "subscription_id",
+      "docText": "409: A pending plan change already exists for this subscription (PendingPlanChangeExists).",
+      "expect": {
+        "kind": "statusOnError",
+        "status": 409
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/subscriptions/change-plan.md",
+      "endpoint": "POST /subscriptions/{subscription_id}/change-plan",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.wallet.credit-amount-minor-units",
+      "tool": "dodo",
+      "operation": "dodo.createWalletLedgerEntry",
+      "param": "amount",
+      "docText": "`amount` is a positive integer in the smallest currency unit.",
+      "expect": {
+        "kind": "unit",
+        "field": "balance",
+        "unit": "minor"
+      },
+      "docUrl": "https://docs.dodopayments.com/features/customer-wallet.md",
+      "endpoint": "POST /customers/{customer_id}/wallets/ledger-entries",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.wallet.idempotency-key-no-duplicate",
+      "tool": "dodo",
+      "operation": "dodo.createWalletLedgerEntry",
+      "param": "",
+      "docText": "If you repeat a request with the same key, Dodo Payments creates no new entry and returns the current wallet.",
+      "expect": {
+        "kind": "maxItems",
+        "max": 1
+      },
+      "docUrl": "https://docs.dodopayments.com/features/customer-wallet.md",
+      "endpoint": "POST /customers/{customer_id}/wallets/ledger-entries",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.wallet.debit-insufficient-400",
+      "tool": "dodo",
+      "operation": "dodo.createWalletLedgerEntry",
+      "param": "entry_type",
+      "docText": "A debit larger than the balance fails with `400`.",
+      "expect": {
+        "kind": "statusOnError",
+        "status": 400
+      },
+      "docUrl": "https://docs.dodopayments.com/features/customer-wallet.md",
+      "endpoint": "POST /customers/{customer_id}/wallets/ledger-entries",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.wallets.total-balance-usd-integer",
+      "tool": "dodo",
+      "operation": "dodo.listCustomerWallets",
+      "param": "customer_id",
+      "docText": "total_balance_usd: integer (int64). Sum of all wallet balances converted to USD (in smallest unit)",
+      "expect": {
+        "kind": "type",
+        "field": "total_balance_usd",
+        "type": "integer"
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/customers/get-customer-wallets.md",
+      "endpoint": "GET /customers/{customer_id}/wallets",
+      "costCredits": 0
+    },
+    {
+      "id": "dodo.wallet.ledger-response-balance-integer",
+      "tool": "dodo",
+      "operation": "dodo.createWalletLedgerEntry",
+      "param": "",
+      "docText": "balance: integer (int64) (CustomerWalletResponse)",
+      "expect": {
+        "kind": "type",
+        "field": "balance",
+        "type": "integer"
+      },
+      "docUrl": "https://docs.dodopayments.com/api-reference/customers/post-customer-wallets-ledger-entries.md",
+      "endpoint": "POST /customers/{customer_id}/wallets/ledger-entries",
+      "costCredits": 0
+    }
+  ],
+  "anomalies": [],
+  "hypotheses": [
+    {
+      "id": "hyp-db223ee84503",
+      "anomalyId": "verify:dodo.payment.refunds-lists-issued-refund",
+      "class": "eventual_consistency",
+      "statement": "Verification rival (deterministic, not model-proposed; suspected class from src/contracts/priors-map.ts): eventual_consistency: a write is not visible to an immediate read; it appears later.",
+      "distinguishingTest": "write_then_read"
+    },
+    {
+      "id": "hyp-e39eef03124b",
+      "anomalyId": "verify:dodo.payment.refunds-lists-issued-refund",
+      "class": "honored",
+      "statement": "Verification rival (deterministic, not model-proposed; no anomaly observed): the documented claim holds for dodo.createRefund [refund_id].",
+      "distinguishingTest": "write_then_read"
+    },
+    {
+      "id": "hyp-d35a569b03f5",
+      "anomalyId": "verify:dodo.refund.amount-minor-units",
+      "class": "honored",
+      "statement": "Verification rival (deterministic, not model-proposed; no anomaly observed): the documented claim holds for dodo.createRefund [items[].amount].",
+      "distinguishingTest": "unit_roundtrip"
+    },
+    {
+      "id": "hyp-e9e37af8b503",
+      "anomalyId": "verify:dodo.refund.amount-minor-units",
+      "class": "unit_mismatch",
+      "statement": "Verification rival (deterministic, not model-proposed; suspected class from src/contracts/priors-map.ts): unit_mismatch: a number is in a different unit than documented (e.g. major vs minor currency units).",
+      "distinguishingTest": "unit_roundtrip"
+    },
+    {
+      "id": "hyp-661c1b2f1f7e",
+      "anomalyId": "verify:dodo.refund.full-retry-no-duplicate",
+      "class": "honored",
+      "statement": "Verification rival (deterministic, not model-proposed; no anomaly observed): the documented claim holds for dodo.createRefund [refund_id].",
+      "distinguishingTest": "retry_after_timeout"
+    },
+    {
+      "id": "hyp-6fcbaf9b0468",
+      "anomalyId": "verify:dodo.refund.full-retry-no-duplicate",
+      "class": "idempotency_hazard",
+      "statement": "Verification rival (deterministic, not model-proposed; suspected class from src/contracts/priors-map.ts): idempotency_hazard: repeating a request creates a duplicate effect.",
+      "distinguishingTest": "retry_after_timeout"
+    },
+    {
+      "id": "hyp-c744a27924fa",
+      "anomalyId": "verify:dodo.refunds.amount-integer",
+      "class": "honored",
+      "statement": "Verification rival (deterministic, not model-proposed; no anomaly observed): the documented claim holds for dodo.listRefunds.",
+      "distinguishingTest": "type_edge"
+    },
+    {
+      "id": "hyp-d6cbdd6239f9",
+      "anomalyId": "verify:dodo.refunds.amount-integer",
+      "class": "silent_coercion",
+      "statement": "Verification rival (deterministic, not model-proposed; suspected class from src/contracts/priors-map.ts): silent_coercion: a value is silently converted (type, rounding, clamping) instead of rejected.",
+      "distinguishingTest": "type_edge"
+    },
+    {
+      "id": "hyp-543363473162",
+      "anomalyId": "verify:dodo.subscription.change-plan-pending-409",
+      "class": "honored",
+      "statement": "Verification rival (deterministic, not model-proposed; no anomaly observed): the documented claim holds for dodo.changeSubscriptionPlan [subscription_id].",
+      "distinguishingTest": "retry_after_timeout"
+    },
+    {
+      "id": "hyp-7803f9a6a0c7",
+      "anomalyId": "verify:dodo.subscription.change-plan-pending-409",
+      "class": "idempotency_hazard",
+      "statement": "Verification rival (deterministic, not model-proposed; suspected class from src/contracts/priors-map.ts): idempotency_hazard: repeating a request creates a duplicate effect.",
+      "distinguishingTest": "retry_after_timeout"
+    }
+  ],
+  "probes": [],
+  "beliefs": {
+    "before": [
+      {
+        "id": "belief-dodo.customer.missing-email-422",
+        "claimId": "dodo.customer.missing-email-422",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createCustomer [email] — required: name, email. 422: Invalid Request Object or Parameters",
+        "alpha": 3,
+        "beta": 1,
+        "confidence": 0.875,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 3,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.113Z"
+      },
+      {
+        "id": "belief-dodo.payment.refunds-array-present",
+        "claimId": "dodo.payment.refunds-array-present",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.getPayment [payment_id] — refunds: List of refunds issued for this payment (required)",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:33.961Z"
+      },
+      {
+        "id": "belief-dodo.payment.refunds-lists-issued-refund",
+        "claimId": "dodo.payment.refunds-lists-issued-refund",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createRefund [refund_id] — [implied] refunds: List of refunds issued for this payment",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:33.978Z"
+      },
+      {
+        "id": "belief-dodo.payments.page-size-max-100",
+        "claimId": "dodo.payments.page-size-max-100",
+        "tool": "dodo",
+        "class": "honored",
+        "statement": "Doc claim holds: dodo.listPayments [page_size] — Page size default is 10 max is 100 [narrowed scope: dodo.listPayments rejects page_size values above 100 with HTTP 400, tested with a single API key and minimal dataset (1 record)]",
+        "alpha": 4,
+        "beta": 1,
+        "confidence": 0.9375,
+        "status": "notarized",
+        "evidence": [
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p001",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "1945989db8704aad",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p002",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "72b633a7b83766e5",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p003",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "e5099c5f7c0c3642",
+            "valid": true
+          }
+        ],
+        "adversary": {
+          "verdict": "narrow",
+          "reason": "The probes confirm that values above 100 are rejected (400), which is consistent with a max of 100. However, the control calls with page_size=1 and page_size=100 both return length=1, meaning there is only 1 record in the test dataset. This means the 'default is 10' part of the claim is completely untested (we can't distinguish default behavior with so little data), and more importantly, the rejection at 101+ could be due to a general input validation rule (e.g., any value > some threshold) rather than specifically a max of 100. No probe tested page_size=100 as a treatment (expecting success) vs page_size=101 as a boundary — the control already shows page_size=100 succeeds, but with only 1 record we can't confirm the max is exactly 100 vs. some other nearby value. The evidence only supports that values above 100 are rejected on this single endpoint with this single API key.",
+          "model": "claude-opus-4.6",
+          "backend": "bedrock",
+          "scope": "dodo.listPayments rejects page_size values above 100 with HTTP 400, tested with a single API key and minimal dataset (1 record)",
+          "reviewedAt": "2026-10-12T01:24:04.644Z"
+        },
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "probesToCandidate": 3,
+        "updatedAt": "2026-10-12T01:24:04.672Z"
+      },
+      {
+        "id": "belief-dodo.product.price-minor-units",
+        "claimId": "dodo.product.price-minor-units",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createProduct [price.price] — The payment amount, in the smallest denomination of the currency (e.g., cents for USD).",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.102Z"
+      },
+      {
+        "id": "belief-dodo.refund.amount-minor-units",
+        "claimId": "dodo.refund.amount-minor-units",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createRefund [items[].amount] — the `amount` to refund in the smallest currency unit.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:33.783Z"
+      },
+      {
+        "id": "belief-dodo.refund.full-retry-no-duplicate",
+        "claimId": "dodo.refund.full-retry-no-duplicate",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createRefund [refund_id] — [implied] The refund, together with any earlier refunds on the payment, can't exceed the amount paid.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:33.845Z"
+      },
+      {
+        "id": "belief-dodo.refunds.amount-integer",
+        "claimId": "dodo.refunds.amount-integer",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.listRefunds — amount: integer or null (int32). The refunded amount.",
+        "alpha": 3,
+        "beta": 1,
+        "confidence": 0.875,
+        "status": "abstained",
+        "evidence": [],
+        "prior": {
+          "alpha": 3,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:49.377Z"
+      },
+      {
+        "id": "belief-dodo.refunds.page-size-max-100",
+        "claimId": "dodo.refunds.page-size-max-100",
+        "tool": "dodo",
+        "class": "honored",
+        "statement": "Doc claim holds: dodo.listRefunds [page_size] — Page size default is 10 max is 100 [narrowed scope: The API rejects page_size values above 100 with HTTP 400 on GET /refunds for this single test account/key. The default-of-10 sub-claim is untested, and the functional effect of page_size on result count is unverified due to empty data.]",
+        "alpha": 4,
+        "beta": 1,
+        "confidence": 0.9375,
+        "status": "notarized",
+        "evidence": [
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p007",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "0e61d4642d36cf14",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p008",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "55bd76ed9155d3d3",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p009",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "a6d08cc4f6ea3782",
+            "valid": true
+          }
+        ],
+        "adversary": {
+          "verdict": "narrow",
+          "reason": "The control calls with page_size=1 and page_size=100 both return 0 items, meaning there is no refund data in the test account. Without data, the control cannot demonstrate that page_size actually controls the number of returned items (both return empty arrays regardless). The over-max probes (101, 110, 200) all get 400 errors, which confirms the API rejects values above 100, but the 400 could be a general input-validation rule (e.g., rejecting any value > 100 for any integer parameter) rather than specifically enforcing a page-size maximum of 100. More critically, the 'default is 10' part of the claim is completely untested. Additionally, all probes use a single API key/account and a single endpoint, so the evidence scope is limited. Untested alternative: The 400 error for page_size>100 could be a generic integer-range validation (e.g., max allowed integer value for any query param) rather than a page-size-specific maximum. With zero items in the account, there is no evidence that page_size actually limits result count or that the default is 10.",
+          "model": "claude-opus-4.6",
+          "backend": "bedrock",
+          "scope": "The API rejects page_size values above 100 with HTTP 400 on GET /refunds for this single test account/key. The default-of-10 sub-claim is untested, and the functional effect of page_size on result count is unverified due to empty data.",
+          "reviewedAt": "2026-10-12T01:24:14.365Z"
+        },
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "probesToCandidate": 3,
+        "updatedAt": "2026-10-12T01:24:14.373Z"
+      },
+      {
+        "id": "belief-dodo.subscription.change-plan-pending-409",
+        "claimId": "dodo.subscription.change-plan-pending-409",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.changeSubscriptionPlan [subscription_id] — 409: A pending plan change already exists for this subscription (PendingPlanChangeExists).",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.173Z"
+      },
+      {
+        "id": "belief-dodo.wallet.credit-amount-minor-units",
+        "claimId": "dodo.wallet.credit-amount-minor-units",
+        "tool": "dodo",
+        "class": "honored",
+        "statement": "Doc claim holds: dodo.createWalletLedgerEntry [amount] — `amount` is a positive integer in the smallest currency unit. [narrowed scope: amount is in minor units for USD wallets only]",
+        "alpha": 4,
+        "beta": 1,
+        "confidence": 0.9375,
+        "status": "notarized",
+        "evidence": [
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p010",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "3a8574d582bac49d",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p011",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "1bbe2f47612997f0",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p012",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "a2b43db07c66ed7f",
+            "valid": true
+          }
+        ],
+        "adversary": {
+          "verdict": "narrow",
+          "reason": "All probes test only USD currency. The claim states 'smallest currency unit' generically, but no other currencies (e.g., JPY where minor units differ, or EUR) were tested. The balance echoing the sent amount without scaling only confirms minor-unit behavior for USD (which has cents as minor units). A currency with zero decimal places (like JPY) or different minor-unit scaling was never probed, so the claim that amount is always in the smallest currency unit is only evidenced for USD. Untested alternative: The API might behave differently for currencies with different decimal structures (e.g., JPY with 0 decimals, BHD with 3 decimals), where the 'smallest currency unit' interpretation could differ or the API could apply unexpected scaling.",
+          "model": "claude-opus-4.6",
+          "backend": "bedrock",
+          "scope": "amount is in minor units for USD wallets only",
+          "reviewedAt": "2026-10-12T01:24:21.481Z"
+        },
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "probesToCandidate": 3,
+        "updatedAt": "2026-10-12T01:24:21.488Z"
+      },
+      {
+        "id": "belief-dodo.wallet.debit-insufficient-400",
+        "claimId": "dodo.wallet.debit-insufficient-400",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createWalletLedgerEntry [entry_type] — A debit larger than the balance fails with `400`.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.262Z"
+      },
+      {
+        "id": "belief-dodo.wallet.idempotency-key-no-duplicate",
+        "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+        "tool": "dodo",
+        "class": "honored",
+        "statement": "Doc claim holds: dodo.createWalletLedgerEntry — If you repeat a request with the same key, Dodo Payments creates no new entry and returns the current wallet. [narrowed scope: Idempotency key deduplication is confirmed for rapid successive credit entries in USD, but not verified for debit entries, other currencies, or longer time gaps between retries.]",
+        "alpha": 4,
+        "beta": 1,
+        "confidence": 0.9375,
+        "status": "notarized",
+        "evidence": [
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p013",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "ada7d2e6ce46f23f",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p014",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "8b9d81d00c515c93",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p015",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "2dda79e4e9691cad",
+            "valid": true
+          }
+        ],
+        "adversary": {
+          "verdict": "narrow",
+          "reason": "All three probes test only the 'credit' entry_type with USD currency. The claim is general ('repeat a request with the same key'), but no probes test 'debit' entries or other currencies. Additionally, the probes send identical requests in rapid succession (same parameters with same idempotency key), but do not test whether the idempotency key is still honored after a longer delay (e.g., minutes or hours), which is a common edge case for idempotency key expiration. The controls also do not vary the idempotency key itself — they simply omit the repeated writes — so the probes don't isolate whether it's the idempotency_key specifically (vs. some other deduplication mechanism) that prevents duplicates. Untested alternative: The API might be deduplicating based on something other than the idempotency key (e.g., identical request body hashing or rate limiting), since no probe sends the same idempotency key with different body parameters to confirm the key is the controlling factor.",
+          "model": "claude-opus-4.6",
+          "backend": "bedrock",
+          "scope": "Idempotency key deduplication is confirmed for rapid successive credit entries in USD, but not verified for debit entries, other currencies, or longer time gaps between retries.",
+          "reviewedAt": "2026-10-12T01:24:30.416Z"
+        },
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "probesToCandidate": 3,
+        "updatedAt": "2026-10-12T01:24:30.438Z"
+      },
+      {
+        "id": "belief-dodo.wallet.ledger-response-balance-integer",
+        "claimId": "dodo.wallet.ledger-response-balance-integer",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createWalletLedgerEntry — balance: integer (int64) (CustomerWalletResponse)",
+        "alpha": 3,
+        "beta": 1,
+        "confidence": 0.875,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 3,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.353Z"
+      },
+      {
+        "id": "belief-dodo.wallets.total-balance-usd-integer",
+        "claimId": "dodo.wallets.total-balance-usd-integer",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.listCustomerWallets [customer_id] — total_balance_usd: integer (int64). Sum of all wallet balances converted to USD (in smallest unit)",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.340Z"
+      }
+    ],
+    "after": [
+      {
+        "id": "belief-dodo.customer.missing-email-422",
+        "claimId": "dodo.customer.missing-email-422",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createCustomer [email] — required: name, email. 422: Invalid Request Object or Parameters",
+        "alpha": 3,
+        "beta": 1,
+        "confidence": 0.875,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 3,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.113Z"
+      },
+      {
+        "id": "belief-dodo.payment.refunds-array-present",
+        "claimId": "dodo.payment.refunds-array-present",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.getPayment [payment_id] — refunds: List of refunds issued for this payment (required)",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:33.961Z"
+      },
+      {
+        "id": "belief-dodo.payment.refunds-lists-issued-refund",
+        "claimId": "dodo.payment.refunds-lists-issued-refund",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createRefund [refund_id] — [implied] refunds: List of refunds issued for this payment",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:33.978Z"
+      },
+      {
+        "id": "belief-dodo.payments.page-size-max-100",
+        "claimId": "dodo.payments.page-size-max-100",
+        "tool": "dodo",
+        "class": "honored",
+        "statement": "Doc claim holds: dodo.listPayments [page_size] — Page size default is 10 max is 100 [narrowed scope: dodo.listPayments rejects page_size values above 100 with HTTP 400, tested with a single API key and minimal dataset (1 record)]",
+        "alpha": 4,
+        "beta": 1,
+        "confidence": 0.9375,
+        "status": "notarized",
+        "evidence": [
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p001",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "1945989db8704aad",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p002",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "72b633a7b83766e5",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p003",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "e5099c5f7c0c3642",
+            "valid": true
+          }
+        ],
+        "adversary": {
+          "verdict": "narrow",
+          "reason": "The probes confirm that values above 100 are rejected (400), which is consistent with a max of 100. However, the control calls with page_size=1 and page_size=100 both return length=1, meaning there is only 1 record in the test dataset. This means the 'default is 10' part of the claim is completely untested (we can't distinguish default behavior with so little data), and more importantly, the rejection at 101+ could be due to a general input validation rule (e.g., any value > some threshold) rather than specifically a max of 100. No probe tested page_size=100 as a treatment (expecting success) vs page_size=101 as a boundary — the control already shows page_size=100 succeeds, but with only 1 record we can't confirm the max is exactly 100 vs. some other nearby value. The evidence only supports that values above 100 are rejected on this single endpoint with this single API key.",
+          "model": "claude-opus-4.6",
+          "backend": "bedrock",
+          "scope": "dodo.listPayments rejects page_size values above 100 with HTTP 400, tested with a single API key and minimal dataset (1 record)",
+          "reviewedAt": "2026-10-12T01:24:04.644Z"
+        },
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "probesToCandidate": 3,
+        "updatedAt": "2026-10-12T01:24:04.672Z"
+      },
+      {
+        "id": "belief-dodo.product.price-minor-units",
+        "claimId": "dodo.product.price-minor-units",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createProduct [price.price] — The payment amount, in the smallest denomination of the currency (e.g., cents for USD).",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.102Z"
+      },
+      {
+        "id": "belief-dodo.refund.amount-minor-units",
+        "claimId": "dodo.refund.amount-minor-units",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createRefund [items[].amount] — the `amount` to refund in the smallest currency unit.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:33.783Z"
+      },
+      {
+        "id": "belief-dodo.refund.full-retry-no-duplicate",
+        "claimId": "dodo.refund.full-retry-no-duplicate",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createRefund [refund_id] — [implied] The refund, together with any earlier refunds on the payment, can't exceed the amount paid.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:33.845Z"
+      },
+      {
+        "id": "belief-dodo.refunds.amount-integer",
+        "claimId": "dodo.refunds.amount-integer",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.listRefunds — amount: integer or null (int32). The refunded amount.",
+        "alpha": 3,
+        "beta": 1,
+        "confidence": 0.875,
+        "status": "abstained",
+        "evidence": [],
+        "prior": {
+          "alpha": 3,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:49.377Z"
+      },
+      {
+        "id": "belief-dodo.refunds.page-size-max-100",
+        "claimId": "dodo.refunds.page-size-max-100",
+        "tool": "dodo",
+        "class": "honored",
+        "statement": "Doc claim holds: dodo.listRefunds [page_size] — Page size default is 10 max is 100 [narrowed scope: The API rejects page_size values above 100 with HTTP 400 on GET /refunds for this single test account/key. The default-of-10 sub-claim is untested, and the functional effect of page_size on result count is unverified due to empty data.]",
+        "alpha": 4,
+        "beta": 1,
+        "confidence": 0.9375,
+        "status": "notarized",
+        "evidence": [
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p007",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "0e61d4642d36cf14",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p008",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "55bd76ed9155d3d3",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p009",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "a6d08cc4f6ea3782",
+            "valid": true
+          }
+        ],
+        "adversary": {
+          "verdict": "narrow",
+          "reason": "The control calls with page_size=1 and page_size=100 both return 0 items, meaning there is no refund data in the test account. Without data, the control cannot demonstrate that page_size actually controls the number of returned items (both return empty arrays regardless). The over-max probes (101, 110, 200) all get 400 errors, which confirms the API rejects values above 100, but the 400 could be a general input-validation rule (e.g., rejecting any value > 100 for any integer parameter) rather than specifically enforcing a page-size maximum of 100. More critically, the 'default is 10' part of the claim is completely untested. Additionally, all probes use a single API key/account and a single endpoint, so the evidence scope is limited. Untested alternative: The 400 error for page_size>100 could be a generic integer-range validation (e.g., max allowed integer value for any query param) rather than a page-size-specific maximum. With zero items in the account, there is no evidence that page_size actually limits result count or that the default is 10.",
+          "model": "claude-opus-4.6",
+          "backend": "bedrock",
+          "scope": "The API rejects page_size values above 100 with HTTP 400 on GET /refunds for this single test account/key. The default-of-10 sub-claim is untested, and the functional effect of page_size on result count is unverified due to empty data.",
+          "reviewedAt": "2026-10-12T01:24:14.365Z"
+        },
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "probesToCandidate": 3,
+        "updatedAt": "2026-10-12T01:24:14.373Z"
+      },
+      {
+        "id": "belief-dodo.subscription.change-plan-pending-409",
+        "claimId": "dodo.subscription.change-plan-pending-409",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.changeSubscriptionPlan [subscription_id] — 409: A pending plan change already exists for this subscription (PendingPlanChangeExists).",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.173Z"
+      },
+      {
+        "id": "belief-dodo.wallet.credit-amount-minor-units",
+        "claimId": "dodo.wallet.credit-amount-minor-units",
+        "tool": "dodo",
+        "class": "honored",
+        "statement": "Doc claim holds: dodo.createWalletLedgerEntry [amount] — `amount` is a positive integer in the smallest currency unit. [narrowed scope: amount is in minor units for USD wallets only]",
+        "alpha": 4,
+        "beta": 1,
+        "confidence": 0.9375,
+        "status": "notarized",
+        "evidence": [
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p010",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "3a8574d582bac49d",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p011",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "1bbe2f47612997f0",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p012",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "a2b43db07c66ed7f",
+            "valid": true
+          }
+        ],
+        "adversary": {
+          "verdict": "narrow",
+          "reason": "All probes test only USD currency. The claim states 'smallest currency unit' generically, but no other currencies (e.g., JPY where minor units differ, or EUR) were tested. The balance echoing the sent amount without scaling only confirms minor-unit behavior for USD (which has cents as minor units). A currency with zero decimal places (like JPY) or different minor-unit scaling was never probed, so the claim that amount is always in the smallest currency unit is only evidenced for USD. Untested alternative: The API might behave differently for currencies with different decimal structures (e.g., JPY with 0 decimals, BHD with 3 decimals), where the 'smallest currency unit' interpretation could differ or the API could apply unexpected scaling.",
+          "model": "claude-opus-4.6",
+          "backend": "bedrock",
+          "scope": "amount is in minor units for USD wallets only",
+          "reviewedAt": "2026-10-12T01:24:21.481Z"
+        },
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "probesToCandidate": 3,
+        "updatedAt": "2026-10-12T01:24:21.488Z"
+      },
+      {
+        "id": "belief-dodo.wallet.debit-insufficient-400",
+        "claimId": "dodo.wallet.debit-insufficient-400",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createWalletLedgerEntry [entry_type] — A debit larger than the balance fails with `400`.",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.262Z"
+      },
+      {
+        "id": "belief-dodo.wallet.idempotency-key-no-duplicate",
+        "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+        "tool": "dodo",
+        "class": "honored",
+        "statement": "Doc claim holds: dodo.createWalletLedgerEntry — If you repeat a request with the same key, Dodo Payments creates no new entry and returns the current wallet. [narrowed scope: Idempotency key deduplication is confirmed for rapid successive credit entries in USD, but not verified for debit entries, other currencies, or longer time gaps between retries.]",
+        "alpha": 4,
+        "beta": 1,
+        "confidence": 0.9375,
+        "status": "notarized",
+        "evidence": [
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p013",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "ada7d2e6ce46f23f",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p014",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "8b9d81d00c515c93",
+            "valid": true
+          },
+          {
+            "probeId": "notarize-dodo-20261012T012315Z-p015",
+            "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+            "spanId": "2dda79e4e9691cad",
+            "valid": true
+          }
+        ],
+        "adversary": {
+          "verdict": "narrow",
+          "reason": "All three probes test only the 'credit' entry_type with USD currency. The claim is general ('repeat a request with the same key'), but no probes test 'debit' entries or other currencies. Additionally, the probes send identical requests in rapid succession (same parameters with same idempotency key), but do not test whether the idempotency key is still honored after a longer delay (e.g., minutes or hours), which is a common edge case for idempotency key expiration. The controls also do not vary the idempotency key itself — they simply omit the repeated writes — so the probes don't isolate whether it's the idempotency_key specifically (vs. some other deduplication mechanism) that prevents duplicates. Untested alternative: The API might be deduplicating based on something other than the idempotency key (e.g., identical request body hashing or rate limiting), since no probe sends the same idempotency key with different body parameters to confirm the key is the controlling factor.",
+          "model": "claude-opus-4.6",
+          "backend": "bedrock",
+          "scope": "Idempotency key deduplication is confirmed for rapid successive credit entries in USD, but not verified for debit entries, other currencies, or longer time gaps between retries.",
+          "reviewedAt": "2026-10-12T01:24:30.416Z"
+        },
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "probesToCandidate": 3,
+        "updatedAt": "2026-10-12T01:24:30.438Z"
+      },
+      {
+        "id": "belief-dodo.wallet.ledger-response-balance-integer",
+        "claimId": "dodo.wallet.ledger-response-balance-integer",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.createWalletLedgerEntry — balance: integer (int64) (CustomerWalletResponse)",
+        "alpha": 3,
+        "beta": 1,
+        "confidence": 0.875,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 3,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.353Z"
+      },
+      {
+        "id": "belief-dodo.wallets.total-balance-usd-integer",
+        "claimId": "dodo.wallets.total-balance-usd-integer",
+        "tool": "dodo",
+        "statement": "Doc claim holds: dodo.listCustomerWallets [customer_id] — total_balance_usd: integer (int64). Sum of all wallet balances converted to USD (in smallest unit)",
+        "alpha": 1,
+        "beta": 1,
+        "confidence": 0.5,
+        "status": "hypothesis",
+        "evidence": [],
+        "prior": {
+          "alpha": 1,
+          "beta": 1,
+          "from": "crustdata"
+        },
+        "updatedAt": "2026-10-12T01:23:34.340Z"
+      }
+    ]
+  },
+  "beliefEvents": [],
+  "guards": [],
+  "usageByRole": {
+    "executor": {
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "usd": 0,
+      "calls": 0
+    },
+    "reflector": {
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "usd": 0,
+      "calls": 0
+    },
+    "adversary": {
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "usd": 0,
+      "calls": 0
+    }
+  },
+  "credits": {
+    "byEndpoint": {},
+    "total": 0,
+    "budget": 200
+  },
+  "metrics": {
+    "claims": 15,
+    "anomalies": 0,
+    "hypotheses": 10,
+    "hypothesesRejected": 0,
+    "probes": 0,
+    "probes.confirmed": 0,
+    "probes.refuted": 0,
+    "probes.inconclusive": 0,
+    "probes.uninformative": 0,
+    "probes.invalid": 0,
+    "abstained": 0,
+    "anomaliesSkipped": 0,
+    "beliefs.hypothesis": 10,
+    "beliefs.candidate": 0,
+    "beliefs.notarized": 4,
+    "beliefs.refuted": 0,
+    "beliefs.abstained": 1,
+    "beliefs.unlearned": 0,
+    "evidence.checked": 0,
+    "evidence.invalid": 0,
+    "adversary.uphold": 0,
+    "adversary.narrow": 0,
+    "adversary.downgrade": 0,
+    "adversary.failed": 0,
+    "probes_to_candidate_mean": 3,
+    "probes_to_candidate_dodo.customer.missing-email-422": null,
+    "probes_to_candidate_dodo.payment.refunds-array-present": null,
+    "probes_to_candidate_dodo.payment.refunds-lists-issued-refund": null,
+    "probes_to_candidate_dodo.payments.page-size-max-100": 3,
+    "probes_to_candidate_dodo.product.price-minor-units": null,
+    "probes_to_candidate_dodo.refund.amount-minor-units": null,
+    "probes_to_candidate_dodo.refund.full-retry-no-duplicate": null,
+    "probes_to_candidate_dodo.refunds.amount-integer": null,
+    "probes_to_candidate_dodo.refunds.page-size-max-100": 3,
+    "probes_to_candidate_dodo.subscription.change-plan-pending-409": null,
+    "probes_to_candidate_dodo.wallet.credit-amount-minor-units": 3,
+    "probes_to_candidate_dodo.wallet.debit-insufficient-400": null,
+    "probes_to_candidate_dodo.wallet.idempotency-key-no-duplicate": 3,
+    "probes_to_candidate_dodo.wallet.ledger-response-balance-integer": null,
+    "probes_to_candidate_dodo.wallets.total-balance-usd-integer": null,
+    "priors_strength": 2,
+    "priors_applied": 0,
+    "priors_informative": 0,
+    "priors_preexisting": 15,
+    "unsafe_actions_total": null,
+    "unsafe_duplicates": null,
+    "unsafe_wrong_unit": null,
+    "unsafe_missed_existing_refund": null,
+    "decision_accuracy": null,
+    "automation_rate": null,
+    "holds": null,
+    "escalations": null,
+    "beliefs_hypothesis": 10,
+    "beliefs_candidate": 0,
+    "beliefs_notarized": 4,
+    "beliefs_refuted": 0,
+    "beliefs_abstained": 1,
+    "beliefs_unlearned": 0,
+    "belief_precision": 1,
+    "beliefs_false": 0,
+    "belief_precision_n": 4,
+    "unguarded_call_sites": 0,
+    "credits_total": 0,
+    "usd_executor": 0,
+    "tokens_executor": 0,
+    "usd_reflector": 0,
+    "tokens_reflector": 0,
+    "usd_adversary": 0,
+    "tokens_adversary": 0,
+    "usd_total": 0,
+    "probes_to_candidate": 3
+  },
+  "traceLinks": {},
+  "cassettes": [
+    "notarize-dodo-20261012T014032Z-recon@dd76d955ccad8d5be4a61db5f85d416e3558a7c8a5067362e5e764b047c5771a",
+    "notarize-dodo-20261012T014032Z-probes@4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "notarize-dodo-20261012T014032Z-llm@e78eb7c4098518bd6f09c3cd8bb953ca0bd91133dcc782bce44e9088eef99641",
+    "notarize-dodo-20261012T014032Z-inputs@9cb372a329ac14c6e552b09952f8992a2ec3b3a96f76b920ba312db293efc20f"
+  ],
+  "contentHash": "16807c03dc52f343a6d89d7df3c7e29e767b8c81da5fe903095d2aaf049104a1"
+}

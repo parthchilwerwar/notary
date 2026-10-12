@@ -2,7 +2,6 @@
 @import "./design/fonts.css";
 @import "./design/tokens.css";
 @import "./design/brand.css";
-@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 /*
  * Global styles for every page. Colors, type scale, spacing and radius come only from

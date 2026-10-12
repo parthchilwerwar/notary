@@ -12,14 +12,15 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "seed:dodo": "tsx scripts/seed-dodo.ts",
-    "make:drift": "tsx scripts/make-drift.ts"
+    "make:drift": "tsx scripts/make-drift.ts",
+    "publish:incidents": "tsx scripts/publish-incidents.ts"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.1148.0",
     "@hono/node-server": "^2.1.4",
     "commander": "^15.0.0",
     "hono": "^4.13.13",
-    "neatlogs": "^1.1.26",
+    "neatlogs": "1.1.26",
     "openai": "6.34.0",
     "zod": "^4.6.5"
   },

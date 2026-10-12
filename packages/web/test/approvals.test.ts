@@ -22,6 +22,7 @@ import {
   parseApprovalRecord,
   parseApprovalsList,
   rejectGate,
+  RECORDED_RUN_NOTE,
 } from "../src/pages/approvals/model";
 import { fetchApprovals, pendingId, submitDecision } from "../src/pages/approvals/api";
 import { LiveSource, LocalApiError, ReplayOnlyError, ReplaySource, approvalId } from "../src/data";
@@ -149,8 +150,9 @@ describe("mode gating", () => {
 
   it("sample runs are never actionable", () => {
     const sample = { ...ok, bundle: { sample: true } };
-    expect(approveGate(sample, item()).allowed).toBe(false);
-    expect(rejectGate(sample).allowed).toBe(false);
+    expect(approveGate(sample, item())).toEqual({ allowed: false, reason: RECORDED_RUN_NOTE });
+    expect(rejectGate(sample)).toEqual({ allowed: false, reason: RECORDED_RUN_NOTE });
+    expect(RECORDED_RUN_NOTE).toMatch(/not approvable/);
     const unknown = { ...ok, bundle: undefined };
     expect(approveGate(unknown, item()).allowed).toBe(false);
     expect(rejectGate(unknown).allowed).toBe(false);
@@ -184,7 +186,7 @@ describe("desk merging", () => {
     expect(desk.pending).toEqual([]);
     expect(desk.decided).toEqual([]);
     expect(desk.history.map((r) => r.decision.id)).toEqual(held.map((d) => d.id));
-    expect(desk.history.every((r) => /Fixture data/.test(r.note))).toBe(true);
+    expect(desk.history.every((r) => r.note === RECORDED_RUN_NOTE)).toBe(true);
   });
 
   it("drops pending items from sample runs (never offered)", () => {
@@ -351,7 +353,9 @@ describe("rendered desk", { timeout: 30_000 }, () => {
     const held = heldDecisions(guarded);
     for (const d of held) expect(html).toContain(`data-trail="${d.id}"`);
     expect(html).toContain("Evidence pack");
-    expect(html).toContain("Fixture data: recorded for review, never approvable.");
+    // Sample runs say why they are not approvable, without demo wording.
+    expect(html).toContain("Recorded run — not approvable. Approvals open only for live runs on a local <code>notary serve</code>.");
+    expect(html).not.toContain("Fixture data:");
   });
 
   it("local without a token: asks for the session token and offers no actions yet", async () => {

@@ -21,6 +21,8 @@ import type { NotaryDb } from "../store/db.js";
 import { ProbeSchema } from "../schema/index.js";
 import type { Claim, Probe } from "../schema/index.js";
 import { traceLog, withSpan } from "../trace/index.js";
+import { probeContradictionSummary } from "../incidents/derive.js";
+import { reportIncident } from "../incidents/live.js";
 import { BudgetExceededError } from "../tools/index.js";
 import type { CreditLedger } from "../tools/index.js";
 import { BurstCapError } from "./templates/types.js";
@@ -125,7 +127,9 @@ export async function runProbe(opts: RunProbeOptions): Promise<RunProbeResult> {
       try {
         exchanges = await template.execute(guardedIo, design, opts.ctx);
         observation = template.observe(exchanges, design, claim);
-        verdict = judge(template, design, observation);
+        const obs = observation;
+        // The verdict is deterministic code: one EVALUATOR span under the probe.
+        verdict = await withSpan("notary.probe.verdict", { "notary.probeId": probeId, "notary.claimId": claim.id, "notary.template": template.name }, () => judge(template, design, obs), { kind: "EVALUATOR" });
       } catch (err) {
         if (err instanceof BudgetExceededError || err instanceof BurstCapError) stoppedReason = err.message;
         else rethrow = err;
@@ -162,6 +166,19 @@ export async function runProbe(opts: RunProbeOptions): Promise<RunProbeResult> {
       });
       setAttr?.("notary.verdict", verdict.verdict);
       if (verdict.winningHypothesisId) setAttr?.("notary.winningHypothesisId", verdict.winningHypothesisId);
+      // Incident: the committed prediction of a defect hypothesis won, so reality contradicts the docs.
+      const winner = verdict.verdict === "confirmed" && verdict.winningHypothesisId ? predictions[verdict.winningHypothesisId] : undefined;
+      const winningClass = winner && typeof winner === "object" && typeof (winner as { class?: unknown }).class === "string" ? (winner as { class: string }).class : undefined;
+      if (winningClass && winningClass !== "honored") {
+        setAttr?.("notary.probe.contradictsDocs", true);
+        reportIncident({
+          kind: "probe_contradiction",
+          subject: probeId,
+          severity: "warning",
+          summary: probeContradictionSummary({ id: probeId, template: template.name, claimId: claim.id }, winningClass),
+          attrs: { "notary.probeId": probeId, "notary.claimId": claim.id, "notary.class": winningClass, "notary.tool": claim.tool },
+        });
+      }
       if (rethrow !== undefined) throw rethrow;
 
       const probe = ProbeSchema.parse({

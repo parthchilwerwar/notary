@@ -7,6 +7,12 @@
  *     .chat.completions.create({ model, messages, max_tokens, temperature: 0 })
  *   → { choices: [{ message: { content }, finish_reason }], usage: { prompt_tokens, completion_tokens } }
  *
+ * Tool calling (Notary Chat): the same call with `tools: [{type:"function", function:{name,
+ * description, parameters}}]` and `tool_choice`; the reply's `message.tool_calls` carry
+ * `{id, type:"function", function:{name, arguments}}` (finish_reason "tool_calls" → stop reason
+ * "tool_use"). Results go back as `{role:"tool", tool_call_id, content}` after the assistant message
+ * that holds the calls. Streamed replies assemble tool-call deltas by `index` (collectStream).
+ *
  * - `maxRetries: 0`: the SDK's own 429/5xx retries are off; Notary's limiter decides about retries,
  *   so a retried call can never be metered twice.
  * - Tracing: when neatlogs is on the client is wrapped with the SDK's `wrapOpenAI`, which emits the
@@ -50,7 +56,10 @@ type StreamChunk = {
   id?: string;
   model?: string;
   created?: number;
-  choices?: { delta?: { content?: string | null }; finish_reason?: string | null }[];
+  choices?: {
+    delta?: { content?: string | null; tool_calls?: { index?: number; id?: string; type?: string; function?: { name?: string; arguments?: string } }[] | null };
+    finish_reason?: string | null;
+  }[];
   usage?: ChatCompletion["usage"] | null;
 };
 type OpenAiClient = {
@@ -133,6 +142,7 @@ export async function collectStream(stream: AsyncIterable<StreamChunk>, onDelta:
   let id = "";
   let created = 0;
   let modelId = model;
+  const calls = new Map<number, { id: string; name: string; arguments: string }>();
   for await (const chunk of stream) {
     if (chunk.id) id = chunk.id;
     if (chunk.created) created = chunk.created;
@@ -144,14 +154,32 @@ export async function collectStream(stream: AsyncIterable<StreamChunk>, onDelta:
       text += delta;
       onDelta(delta);
     }
+    for (const tc of choice?.delta?.tool_calls ?? []) {
+      const i = tc.index ?? 0;
+      const cur = calls.get(i) ?? { id: "", name: "", arguments: "" };
+      if (tc.id) cur.id = tc.id;
+      if (tc.function?.name) cur.name += tc.function.name;
+      if (tc.function?.arguments) cur.arguments += tc.function.arguments;
+      calls.set(i, cur);
+    }
     if (choice?.finish_reason) finish = choice.finish_reason;
   }
+  const toolCalls = [...calls.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([, c]) => ({ id: c.id, type: "function" as const, function: { name: c.name, arguments: c.arguments } }));
   return {
     id,
     object: "chat.completion",
     created,
     model: modelId,
-    choices: [{ index: 0, message: { role: "assistant", content: text, refusal: null }, finish_reason: (finish ?? "stop") as "stop", logprobs: null }],
+    choices: [
+      {
+        index: 0,
+        message: { role: "assistant", content: text, refusal: null, ...(toolCalls.length ? { tool_calls: toolCalls } : {}) },
+        finish_reason: (finish ?? "stop") as "stop",
+        logprobs: null,
+      },
+    ],
     ...(usage ? { usage } : {}),
   } as ChatCompletion;
 }

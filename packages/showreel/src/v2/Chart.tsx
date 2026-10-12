@@ -1,15 +1,21 @@
 // The dither chart for the Enforce beat, drawn with the web's own DitherCanvas / DitherSwatch and the
-// landing chart's fills (ActionsChart FILLS: allowed solid accent, unsafe red dither, held amber
-// dither, 1.0 → 0.35). One column per request type morphs from the run without Notary to the run
+// fills the landing chart used when the film was cut (allowed solid accent, unsafe red dither, held
+// amber dither, 1.0 → 0.35). One column per request type morphs from the run without Notary to the run
 // with it: what Notary does not execute un-reveals row by row from the top (revealFromY), then the
 // held stacks rise row by row from the base, each 3-px row on the shared Bayer grid.
 import { useCurrentFrame } from "remotion";
 import { Card } from "@web/ui";
 import { DitherCanvas, DitherSwatch } from "@web/components/brand/DitherCanvas";
-import { FILLS } from "@web/components/landing/ActionsChart";
+import type { DitherFill } from "@web/components/brand/dither";
 import type { ShowreelData } from "../data-schema";
 import { C, SANS, display, p, mix, IN, LINE, OUT } from "../theme";
 import { chartState } from "./chart-state";
+
+const FILLS: Record<"allowed" | "unsafe" | "held", DitherFill> = {
+  allowed: { kind: "solid", color: "var(--accent)" },
+  unsafe: { kind: "dither", color: "var(--status-unsafe)", base: 1, top: 0.35 },
+  held: { kind: "dither", color: "var(--status-held)", base: 1, top: 0.35 },
+};
 
 type Row = ShowreelData["chart"]["rows"][number];
 type Counts = Row["naive"];

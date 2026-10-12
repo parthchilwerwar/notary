@@ -1,14 +1,50 @@
-// Small kit pieces: fixture note, facts list, filter pills, select, table frame.
+// Small kit pieces: notes, fixture note, facts list, filter pills, select, table frame.
 import type { ComponentProps, ReactNode } from "react";
 import { Link } from "react-router";
+import { InfoIcon as Info } from "@phosphor-icons/react/dist/csr/Info";
+import { WarningIcon as Warning } from "@phosphor-icons/react/dist/csr/Warning";
+import { WarningCircleIcon as WarningCircle } from "@phosphor-icons/react/dist/csr/WarningCircle";
+import { FlaskIcon as Flask } from "@phosphor-icons/react/dist/csr/Flask";
 import { FIXTURE_BANNER } from "../data/types";
 import { cn } from "../lib/utils";
 
-/** The fixture disclosure as the landing shows it: a quiet pill with the exact required text. */
+export type NoteTone = "info" | "warning" | "error";
+
+const NOTE_ICON = { info: Info, warning: Warning, error: WarningCircle } as const;
+
+/**
+ * A short note on the page: a 16px icon (Info, Warning or WarningCircle) and the text on a quiet
+ * tint. Replaces the old accent rule on the left. role="note" unless `role` says otherwise.
+ */
+export function Note({
+  tone = "info",
+  children,
+  className,
+  role = "note",
+}: {
+  tone?: NoteTone;
+  children: ReactNode;
+  className?: string;
+  role?: "note" | "status" | "alert";
+}) {
+  const Icon = NOTE_ICON[tone];
+  return (
+    <div className={cn("ui-note", className)} data-tone={tone} role={role}>
+      <Icon className="ui-note-icon" size={16} weight="regular" aria-hidden="true" />
+      <div className="ui-note-text">{children}</div>
+    </div>
+  );
+}
+
+/**
+ * The fixture disclosure: a quiet pill with the exact required text. Rendered only in the
+ * development-only fixture view (`?fixtures=1`), where every run shown is fixture data.
+ */
 export function FixtureNote({ className, children }: { className?: string; children?: ReactNode }) {
   return (
     <p className={cn("ui-fixture", className)} role="note">
-      {children ?? FIXTURE_BANNER}
+      <Flask className="ui-fixture-icon" size={14} weight="regular" aria-hidden="true" />
+      <span>{children ?? FIXTURE_BANNER}</span>
     </p>
   );
 }
@@ -66,7 +102,7 @@ export function Select({ children, className, ...props }: ComponentProps<"select
   );
 }
 
-/** Scrollable frame for the few tables kept behind "Show details". */
+/** A flat, horizontally scrollable table: hairline rules above, below and between rows; no box. */
 export function TableFrame({ children, className }: { children: ReactNode; className?: string }) {
   return <div className={cn("ui-table-frame", className)}>{children}</div>;
 }

@@ -7,7 +7,6 @@ import type { Certificate, Revocation, RunBundle } from "../../../../core/src/sc
 import {
   AgentBadge,
   Button,
-  Card,
   EmptyState,
   Expander,
   Facts,
@@ -22,7 +21,6 @@ import {
   TableFrame,
   Timeline,
   TimelineItem,
-  WashCard,
   usePageMotion,
 } from "../../ui";
 import { CertificateTrail } from "../../components/trail";
@@ -48,7 +46,7 @@ export function CertificateDetailPage() {
               <SkyBand title="Certificate not found" />
               <PageBody>
                 <EmptyState
-                  title={`Certificate ${certificateId} is not in this data world`}
+                  title={`Certificate ${certificateId} was not found`}
                   action={
                     <Button asChild>
                       <Link to={withRun("/app/certificates", selectedRunId)}>All certificates</Link>
@@ -56,7 +54,7 @@ export function CertificateDetailPage() {
                   }
                 >
                   {world.sample
-                    ? `Fixture scenario "${world.scenario ?? "unknown"}" has no certificate with this id. Pick a run from another scenario to look there.`
+                    ? `The "${world.scenario ?? "unknown"}" scenario has no certificate with this id. Pick a run from another scenario to look there.`
                     : "The recorded certificate export has no certificate with this id."}
                 </EmptyState>
               </PageBody>
@@ -105,21 +103,24 @@ function CertificateDetail({ certificate: c, world }: { certificate: Certificate
         </StatRow>
 
         <Section label="Predict, then test" title="What the docs say, and what came back">
-          <div className="cert-pair">
-            <Card data-reveal>
-              <p className="cert-pair-label">The docs say</p>
-              <p className="cert-pair-text">
+          <dl className="cert-pair" data-reveal>
+            <div>
+              <dt className="cert-pair-label">The docs say</dt>
+              <dd className="cert-pair-text">
                 <CodeText text={c.docsSay} />
-              </p>
-            </Card>
-            <Card data-reveal>
-              <p className="cert-pair-label">Observed</p>
-              <p className="cert-pair-text">
+              </dd>
+            </div>
+            <div>
+              <dt className="cert-pair-label">Observed</dt>
+              <dd className="cert-pair-text">
                 <CodeText text={c.observed} />
-              </p>
-            </Card>
-          </div>
-          <Card data-reveal>
+              </dd>
+            </div>
+          </dl>
+          <div className="cert-probes" data-reveal>
+            <h3 className="cert-sub-title">
+              {number(c.evidence.length)} {c.evidence.length === 1 ? "probe" : "probes"}, each prediction committed before it ran
+            </h3>
             <Timeline aria-label="Probes behind this certificate">
               {c.evidence.map((e) => {
                 const run = runWithProbe(bundles, e.probeId, c.sample);
@@ -148,12 +149,12 @@ function CertificateDetail({ certificate: c, world }: { certificate: Certificate
                 );
               })}
             </Timeline>
-          </Card>
+          </div>
         </Section>
 
         <Section label="Challenge" title="Reviewed before it was issued">
           {c.adversary ? (
-            <Card data-reveal className="cert-review">
+            <div data-reveal className="cert-review">
               <div className="cert-review-head">
                 <AgentBadge agent="adversary" model={c.adversary.model} />
                 <StatusPill value={c.adversary.verdict} />
@@ -161,15 +162,15 @@ function CertificateDetail({ certificate: c, world }: { certificate: Certificate
               </div>
               <p>{c.adversary.reason}</p>
               {c.adversary.backend && <p className="cert-muted">Reviewed via {c.adversary.backend}</p>}
-            </Card>
+            </div>
           ) : (
             <EmptyState title="No review recorded">The Adversary's review is missing from this certificate's record.</EmptyState>
           )}
-          {revocation && <RevocationCard revocation={revocation} bundles={bundles} />}
+          {revocation && <RevocationBlock revocation={revocation} bundles={bundles} />}
         </Section>
 
         <Section label="Scope" title="Where it holds">
-          <Card data-reveal className="cert-scope">
+          <div data-reveal className="cert-scope">
             <p className="cert-scope-text">{c.scope.text}</p>
             {c.scope.narrowed && (
               <p className="cert-muted">
@@ -200,10 +201,10 @@ function CertificateDetail({ certificate: c, world }: { certificate: Certificate
                 ]}
               />
             </Expander>
-          </Card>
+          </div>
         </Section>
 
-        <Card data-reveal className="cert-more">
+        <Section label="Records" title="Documentation and receipts" className="cert-more">
           <Expander summary="Documentation">
             {docs && (
               <a href={docs} target="_blank" rel="noreferrer">
@@ -256,7 +257,7 @@ function CertificateDetail({ certificate: c, world }: { certificate: Certificate
             <p className="cert-muted">From the documented claim to enforcement, every step tagged as verified or model said.</p>
             <CertificateTrail certificateId={c.id} />
           </Expander>
-        </Card>
+        </Section>
       </PageBody>
     </Page>
   );
@@ -267,15 +268,15 @@ function SourceRun({ runId, bundles }: { runId: string; bundles: RunBundle[] }) 
   return known ? <Link to={recordPath.run(runId)}>{runId}</Link> : <code>{runId}</code>;
 }
 
-function RevocationCard({ revocation: r, bundles }: { revocation: Revocation; bundles: RunBundle[] }) {
+function RevocationBlock({ revocation: r, bundles }: { revocation: Revocation; bundles: RunBundle[] }) {
   const held = heldAfterRevocation(r, bundles);
   return (
-    <WashCard wash="peach" className="revocation-block" aria-labelledby="cert-revocation" as="section" data-reveal>
+    <section className="revocation-block" aria-labelledby="cert-revocation" data-reveal>
       <div className="cert-review-head">
         <StatusPill tone="revoked">Revoked</StatusPill>
         <span className="cert-muted">{dateTime(r.revokedAt)}</span>
       </div>
-      <h3 id="cert-revocation" className="ui-title ui-title-card">
+      <h3 id="cert-revocation" className="cert-sub-title cert-revocation-title">
         Contrary evidence withdrew it
       </h3>
       <p>{r.reason}</p>
@@ -325,6 +326,6 @@ function RevocationCard({ revocation: r, bundles }: { revocation: Revocation; bu
           },
         ]}
       />
-    </WashCard>
+    </section>
   );
 }

@@ -1,0 +1,34 @@
+# Secrets never enter the build context.
+.env
+.env.*
+!.env.example
+**/*.pem
+**/*.key
+
+# Dependencies and build output are rebuilt inside the image.
+**/node_modules
+**/dist
+**/coverage
+**/*.tsbuildinfo
+
+# Local run state: only deploy/aws/data/runs (staged real bundles) goes in.
+packages/core/runs
+**/*.sqlite
+**/*.sqlite-journal
+**/*.db
+
+# Not needed at runtime.
+.git
+.claude
+.entire
+docs
+export
+packages/showreel/src
+packages/showreel/public
+packages/web/src
+packages/web/test
+packages/web/docs
+packages/web/scripts
+packages/core/test
+**/.vitest
+**/.DS_Store

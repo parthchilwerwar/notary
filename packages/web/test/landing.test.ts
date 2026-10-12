@@ -6,16 +6,21 @@ import { finishedEntries, PublishedFiles, ReplaySource, validateBundle, type Cer
 import {
   BANNED_RE,
   BUILT_WITH,
+  DOCS_HREF,
+  EVALUATION_TAG,
   EVALUATION_URL,
   FOOTER_LINKS,
   GITHUB_URL,
+  NO_RUNS_YET,
   REFUND_TYPES,
+  actionTotals,
   actionsByType,
   certifyView,
   challengeView,
   chatQuestions,
   clipText,
   fixturePair,
+  isRoute,
   landingResults,
   money,
   navLinks,
@@ -29,6 +34,7 @@ import {
   shortIds,
 } from "../src/landing-data";
 import { BAYER8, ditherOn, paintRect } from "../src/components/brand/dither";
+import { buildEconomicsBody, finalizeEconomics, parseCfoPlanCsv } from "../../core/src/economics/index";
 import { foldChat, presentable } from "../src/components/landing/chat-turn";
 
 const publicFile = (path: string) => JSON.parse(readFileSync(new URL(`../public/${path}`, import.meta.url), "utf8"));
@@ -60,26 +66,41 @@ const files = () =>
   });
 
 describe("landing: which pair the Proof section shows", () => {
-  it("uses the newest pair of one world when no real bundle exists", () => {
+  it("shows nothing when no real bundle exists: fixture runs are never a fallback", () => {
     const result = landingResults(index());
+    expect(result.sample).toBe(false);
+    expect(result.guarded).toBeUndefined();
+    expect(result.naive).toBeUndefined();
+    const pair = proofPair(index());
+    expect(pair.visible).toBe(0);
+    expect(pair.guarded).toBeUndefined();
+  });
+  it("uses the newest fixture pair of one world only in the ?fixtures=1 view", () => {
+    const result = landingResults(index(), { fixtures: true });
     expect(result.sample).toBe(true);
     expect(result.guarded?.runId).toBe("demo-run-guarded");
     expect(result.naive?.runId).toBe("demo-run-naive");
   });
-  it("prefers real runs and never fills a missing real side with a simulated run", () => {
+  it("uses real runs only and never fills a missing real side with a fixture run", () => {
     const live = { ...guarded, sample: false, runId: "live-guarded" };
     const result = landingResults([naive, guarded, live]);
     expect(result.sample).toBe(false);
     expect(result.guarded).toBe(live);
     expect(result.naive).toBeUndefined();
-  });
-  it("falls back to the evaluation-suite pair, with the reason, when the real pair is incomplete", () => {
-    const live = { ...guarded, sample: false, runId: "live-guarded" };
+    // The incomplete real pair stays incomplete: no evaluation-suite fallback.
     const pair = proofPair([naive, guarded, live]);
-    expect(pair.guarded).toBe(guarded);
-    expect(pair.naive).toBe(naive);
-    expect(pair.note).toMatch(/evaluation suite/);
-    expect(showable(pair.note!)).toBe(true);
+    expect(pair.guarded).toBe(live);
+    expect(pair.naive).toBeUndefined();
+    expect(pair.visible).toBe(1);
+  });
+  it("the ?fixtures=1 view never shows a real run", () => {
+    const live = { ...guarded, sample: false, runId: "live-guarded", startedAt: "2099-01-01T00:00:00.000Z" };
+    const result = landingResults([naive, guarded, live], { fixtures: true });
+    expect(result.guarded).toBe(guarded);
+    expect(result.naive).toBe(naive);
+  });
+  it("the empty state's copy passes the landing's copy rules", () => {
+    expect(showable(`${NO_RUNS_YET.title} ${NO_RUNS_YET.body} ${NO_RUNS_YET.commands.join(" ")}`)).toBe(true);
   });
   it("never pairs runs of two different worlds", () => {
     const result = fixturePair(index().filter((e) => e.runId !== "demo-run-naive"));
@@ -111,6 +132,16 @@ describe("landing: every number comes from the bundles", () => {
     }
     // The chart's unsafe columns add up to the grader's total.
     expect(rows.reduce((n, r) => n + r.naive.unsafe, 0)).toBe(naive.metrics.unsafe_actions_total);
+  });
+  it("sums the chart's takeaway from the same rows the bars draw", () => {
+    const rows = actionsByType(naive, guarded);
+    const money = (b: typeof naive) => b.decisions.filter((d) => d.action !== "none");
+    const t = actionTotals(rows);
+    expect(t.naiveExecuted).toBe(money(naive).filter((d) => d.status === "executed").length);
+    expect(t.naiveUnsafe).toBe(naive.metrics.unsafe_actions_total);
+    expect(t.guardedUnsafe).toBe(money(guarded).filter((d) => d.status === "executed" && (d.grade?.unsafe?.length ?? 0) > 0).length);
+    expect(t.guardedHeld).toBe(money(guarded).filter((d) => d.status === "held").length);
+    expect(actionTotals([])).toEqual({ naiveExecuted: 0, naiveUnsafe: 0, guardedUnsafe: 0, guardedHeld: 0 });
   });
   it("derives refund types from the schema and formats money with the record's currency", () => {
     expect([...REFUND_TYPES].sort()).toEqual(RequestTypeSchema.options.filter((t) => t.includes("refund")).sort());
@@ -155,18 +186,37 @@ describe("landing: How it works shows real records", () => {
 });
 
 describe("landing: pricing only from the cfo.ai plan", () => {
-  it("is hidden when economics.json is missing", () => {
-    expect(existsSync(new URL("../public/economics.json", import.meta.url))).toBe(false);
+  // TEST plan (synthetic tiers built here), finalized by the same core code that writes economics.json.
+  const withTiers = (n: number) => {
+    const csv = ["section,key,label,period,value,unit,detail", ...Array.from({ length: n }, (_, i) => `tier,t${i + 1},Plan ${i + 1},,${(i + 1) * 10},USD/contract/month,`)].join("\n");
+    const plan = parseCfoPlanCsv({ text: csv, file: "test.csv", importedAt: "2026-10-12T08:00:00.000Z" });
+    return finalizeEconomics(buildEconomicsBody({ bundles: [], skipped: [], certificates: null, certificatesRef: null, plan, planReason: null }));
+  };
+  it("is hidden when economics.json is missing, has no plan, or fails its hash", () => {
     expect(pricingPlans(undefined)).toBeNull();
+    expect(pricingPlans(finalizeEconomics(buildEconomicsBody({ bundles: [], skipped: [], certificates: null, certificatesRef: null, plan: null, planReason: null })))).toBeNull();
+    const tampered = structuredClone(withTiers(3));
+    tampered.plan!.tiers[0]!.price = 1;
+    expect(pricingPlans(tampered)).toBeNull();
   });
-  it("is hidden when the plan lacks prices or does not list three plans", () => {
-    expect(pricingPlans({ pricing: { plans: [{ name: "A", period: "month" }, { name: "B", period: "month" }, { name: "C", period: "month" }] } })).toBeNull();
-    expect(pricingPlans({ pricing: { plans: [{ name: "A", price: 1, period: "month" }] } })).toBeNull();
-    expect(pricingPlans({ runway: 12 })).toBeNull();
+  it("is hidden when the plan does not list exactly three tiers, or the file is another shape", () => {
+    expect(pricingPlans(withTiers(2))).toBeNull();
+    expect(pricingPlans(withTiers(4))).toBeNull();
+    expect(pricingPlans({ pricing: { plans: [1, 2, 3].map((n) => ({ name: `Plan ${n}`, price: n * 10, period: "month" })) } })).toBeNull();
   });
-  it("shows three priced plans as published", () => {
-    const plans = [1, 2, 3].map((n) => ({ name: `Plan ${n}`, price: n * 10, period: "month" }));
-    expect(pricingPlans({ pricing: { plans } })).toEqual(plans);
+  it("shows three priced tiers exactly as imported", () => {
+    expect(pricingPlans(withTiers(3))).toEqual([1, 2, 3].map((n) => ({ name: `Plan ${n}`, price: n * 10, currency: "USD", period: "contract/month" })));
+  });
+  it("links Docs to the in-app /docs route from the nav and the footer (router links, not anchors)", () => {
+    for (const links of [navLinks(false), [...FOOTER_LINKS]]) {
+      const docs = links.find((l) => l.label === "Docs")!;
+      expect(docs.href).toBe(DOCS_HREF);
+      expect(isRoute(docs)).toBe(true);
+    }
+    expect(DOCS_HREF).toBe("/docs");
+    expect(navLinks(false).filter((l) => !l.external && !l.href.startsWith("#")).map((l) => l.label)).toEqual(["Docs"]);
+    expect(isRoute({ label: "GitHub", href: GITHUB_URL, external: true })).toBe(false);
+    expect(isRoute({ label: "Chat", href: "#chat" })).toBe(false);
   });
   it("hides the nav link with the section", () => {
     expect(navLinks(false).some((l) => l.label === "Pricing")).toBe(false);
@@ -282,6 +332,11 @@ describe("landing: product-site copy (no demo-style words)", () => {
     const all = LANDING_FILES.map(src).join("\n");
     expect(all).toContain("See it work");
     expect(all).not.toMatch(/watch the demo/i);
+  });
+  it("discloses evaluation-suite data with one neutral tag, only where a sample bundle is rendered", () => {
+    expect(showable(EVALUATION_TAG)).toBe(true);
+    expect(src("components/landing/Proof.tsx")).toMatch(/tag=\{guarded\.sample \? EVALUATION_TAG : undefined\}/);
+    expect(src("components/landing/Hero.tsx")).toMatch(/sample \? EVALUATION_TAG : undefined/);
   });
   it("filters data-derived text with the same rule", () => {
     expect(showable("Refund q01 held — no certificate for dodo.payments.page-size-max-100")).toBe(true);

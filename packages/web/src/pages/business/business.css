@@ -1,0 +1,416 @@
+/* Business page: layout and chart marks only. Colors and type come from tokens (src/design). Series
+   colors: --accent is the series in focus ("primary"); --text-strong-muted is the comparison line
+   ("secondary"), always with a legend and table, never color alone. */
+.business .ui-section {
+  scroll-margin-top: 24px;
+}
+.biz-note {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.biz-cmd {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 4px 8px;
+  border-radius: var(--r-panel);
+  background: var(--surface-subtle);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.biz-hash {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+/* The two-source key. */
+.biz-key-line p {
+  margin: 0;
+  max-width: 78ch;
+  color: var(--text-strong-muted);
+  font-size: 15px;
+  line-height: 1.7;
+}
+.biz-key-line a,
+.biz-attrib a {
+  color: var(--accent-text);
+}
+.biz-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 10px;
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  vertical-align: 1px;
+}
+.biz-source[data-kind="computed"] {
+  background: var(--muted-surface);
+  color: var(--text-strong-muted);
+}
+.biz-source[data-kind="cfo"] {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+/* The section label slot uppercases; the tag keeps its own case. */
+.ui-section-label .biz-source {
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+.biz-attrib {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--text-strong-muted);
+  font-size: 14px;
+}
+.biz-attrib > svg {
+  flex: none;
+  color: var(--accent);
+}
+.biz-attrib a {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+/* Figures and charts. */
+.biz-multiples,
+.biz-two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 32px;
+}
+@media (max-width: 899px) {
+  .biz-multiples,
+  .biz-two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.biz-figure {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+}
+.biz-figcap {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+}
+.biz-chart {
+  position: relative;
+  min-width: 0;
+}
+.biz-svg {
+  display: block;
+  max-width: 100%;
+  overflow: visible;
+}
+.biz-svg:focus-visible,
+.biz-col:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+.biz-grid {
+  stroke: var(--hairline-color);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+.biz-axis {
+  stroke: var(--control-line);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+.biz-tick {
+  fill: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.biz-hit {
+  fill: transparent;
+}
+.biz-col {
+  outline: none;
+  cursor: default;
+}
+.biz-col-mark {
+  fill: var(--accent);
+  transition: fill 120ms ease;
+}
+.biz-col[data-active] .biz-col-mark {
+  fill: var(--accent-hover);
+}
+.biz-col[data-active] .biz-hit {
+  fill: var(--surface-subtle);
+}
+.biz-crosshair {
+  stroke: var(--text-faint);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+.biz-line-path {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.biz-line[data-tone="primary"] .biz-line-path {
+  stroke: var(--accent);
+}
+.biz-line[data-tone="secondary"] .biz-line-path {
+  stroke: var(--text-strong-muted);
+}
+.biz-dot {
+  stroke: var(--page);
+  stroke-width: 2;
+}
+.biz-line[data-tone="primary"] .biz-dot {
+  fill: var(--accent);
+}
+.biz-line[data-tone="secondary"] .biz-dot {
+  fill: var(--text-strong-muted);
+}
+.biz-tip {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  gap: 2px;
+  min-width: 160px;
+  padding: 8px 12px;
+  border: 1px solid var(--hairline-color);
+  border-radius: var(--r-panel);
+  background: var(--card);
+  box-shadow: var(--shadow-float);
+  color: var(--text-muted);
+  font-size: 12px;
+  pointer-events: none;
+}
+.biz-tip strong {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+.biz-tip-sub {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.biz-tip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.biz-key {
+  display: inline-block;
+  flex: none;
+  width: 14px;
+  height: 2px;
+  border-radius: 1px;
+}
+.biz-key[data-tone="primary"] {
+  background: var(--accent);
+}
+.biz-key[data-tone="secondary"] {
+  background: var(--text-strong-muted);
+}
+.biz-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-strong-muted);
+  font-size: 13px;
+}
+.biz-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Horizontal bars (nominal categories): one color, value at the tip. */
+.biz-bars {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.biz-bar-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "label value" "track track";
+  gap: 6px 12px;
+  align-items: baseline;
+  border-radius: 4px;
+  outline: none;
+}
+.biz-bar-row:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 4px;
+}
+.biz-bar-label {
+  grid-area: label;
+  min-width: 0;
+  color: var(--text);
+  font-size: 14px;
+  overflow-wrap: break-word;
+}
+.biz-bar-value {
+  grid-area: value;
+  justify-self: end;
+  color: var(--text);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.biz-bar-sub {
+  color: var(--text-muted);
+}
+.biz-bar-track {
+  grid-area: track;
+  display: block;
+  height: 12px;
+}
+.biz-bar {
+  display: block;
+  height: 12px;
+  min-width: 2px;
+  border-radius: 0 4px 4px 0;
+  background: var(--accent);
+  transition: background 120ms ease;
+}
+.biz-bar[data-zero] {
+  min-width: 0;
+}
+.biz-bar-row:hover .biz-bar,
+.biz-bar-row:focus-visible .biz-bar {
+  background: var(--accent-hover);
+}
+
+/* Pricing tiers: editorial columns, prices in the display serif. */
+.biz-tiers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--hairline-color);
+}
+.biz-tier {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 24px 24px 8px;
+  border-left: 1px solid var(--hairline-color);
+}
+.biz-tier:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+@media (max-width: 639px) {
+  .biz-tier {
+    padding: 20px 0;
+    border-left: 0;
+    border-top: 1px solid var(--hairline-color);
+  }
+  .biz-tier:first-child {
+    border-top: 0;
+  }
+}
+.biz-tier-name {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+}
+.biz-tier-price {
+  margin: 0;
+  color: var(--text);
+}
+.biz-tier-price .num-display {
+  font-size: 44px;
+  line-height: 1;
+}
+.biz-tier-per {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+.biz-tier-meter {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--accent-soft);
+}
+.biz-tier-meter > span {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.biz-tier-desc {
+  margin: 0;
+  color: var(--text-strong-muted);
+  font-size: 14px;
+}
+.biz-tier-features {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-strong-muted);
+  font-size: 14px;
+}
+
+/* The cfo.ai round trip. */
+.biz-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 0 32px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: none;
+}
+.biz-step {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 12px;
+  padding: 20px 0;
+  border-top: 1px solid var(--hairline-color);
+}
+.biz-step-n {
+  color: var(--accent);
+  font-size: 32px;
+  line-height: 1;
+}
+.biz-step-title {
+  margin: 0 0 4px;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+}
+.biz-step-body {
+  margin: 0 0 8px;
+  color: var(--text-strong-muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.biz-table {
+  margin-top: 4px;
+}

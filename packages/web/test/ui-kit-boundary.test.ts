@@ -5,7 +5,6 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { THEME_COLOR } from "../src/useTheme";
 
 const SRC = fileURLToPath(new URL("../src/", import.meta.url));
 
@@ -56,10 +55,21 @@ describe("UI kit boundary (K2)", () => {
     expect(readFileSync(join(SRC, "design/tokens.css"), "utf8")).toMatch(/--overlay:\s*rgb\(/);
   });
 
-  it("the browser theme-color matches the page token in both themes", () => {
+  it("the dashboard is light only: one page token, matching the browser theme-color, and nothing sets dark", () => {
     const tokens = readFileSync(join(SRC, "design/tokens.css"), "utf8");
     const pages = [...tokens.matchAll(/--page:\s*(#[0-9a-fA-F]{6})/g)].map((m) => m[1]!.toUpperCase());
-    expect(pages).toEqual([THEME_COLOR.light, THEME_COLOR.dark]);
+    const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+    const themeColor = /<meta name="theme-color" content="(#[0-9a-fA-F]{6})"/.exec(html)?.[1]?.toUpperCase();
+    expect(pages).toEqual([themeColor]);
+    expect(html).toMatch(/<html lang="en" data-theme="light">/);
+    expect(tokens).not.toMatch(/data-theme="dark"/);
+    const setsDark = walk(SRC)
+      .filter((p) => /\.(tsx?|css)$/.test(p))
+      .filter((p) => /dataset\.theme\s*=|data-theme="dark"\]\s*\{|notary-theme/.test(code(p)))
+      .map(rel)
+      // Chat's own token file is another page's; it only reacts to the attribute, which nothing sets.
+      .filter((p) => !p.startsWith("pages/chat/"));
+    expect(setsDark).toEqual([]);
   });
 
   it("font families come only from the token variables", () => {

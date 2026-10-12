@@ -2,7 +2,8 @@
 // comes from hash-verified data through the data layer; see landing-data.ts.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { finishedEntries, type DataSource } from "../../data";
-import { proofNumbers, proofPair, type PricingPlan } from "../../landing-data";
+import { NO_RUNS_YET, proofNumbers, proofPair, type PricingPlan } from "../../landing-data";
+import { fixturesInLocation } from "../../app/links";
 import { GridFrame } from "../brand/GridFrame";
 import { BuiltWith } from "./BuiltWith";
 import { ChatSection } from "./ChatSection";
@@ -47,14 +48,18 @@ export default function Below({ source, ready, plans }: { source: DataSource; re
     const { signal } = controller;
     (async () => {
       const all = finishedEntries(await source.listRuns(signal));
-      const pair = proofPair(all);
+      // Real runs only (fixture runs only under ?fixtures=1); never a fallback to fixture data.
+      const pair = proofPair(all, { fixtures: fixturesInLocation() });
       if (!pair.naive || !pair.guarded) {
         if (!signal.aborted)
-          setProof({
-            status: "empty",
-            message:
-              "No naive and guarded run pair from one scenario has been exported yet, so there is nothing to compare.",
-          });
+          setProof(
+            pair.visible === 0
+              ? { status: "empty", message: NO_RUNS_YET.body, title: NO_RUNS_YET.title, commands: NO_RUNS_YET.commands }
+              : {
+                  status: "empty",
+                  message: "No naive and guarded run pair from one seed has been exported yet, so there is nothing to compare.",
+                },
+          );
         return;
       }
       // Hash-verified by the data layer; a mismatch throws and the error is shown instead.
@@ -62,7 +67,7 @@ export default function Below({ source, ready, plans }: { source: DataSource; re
       const naive = await source.getRun(pair.naive.runId, signal);
       const guardedRun = await source.getRun(pair.guarded.runId, signal);
       if (signal.aborted) return;
-      setProof({ status: "ready", naive, guarded: guardedRun, numbers: proofNumbers(naive, guardedRun), note: pair.note });
+      setProof({ status: "ready", naive, guarded: guardedRun, numbers: proofNumbers(naive, guardedRun) });
     })().catch((e) => {
       if (!signal.aborted) setProof({ status: "error", message: message(e) });
     });

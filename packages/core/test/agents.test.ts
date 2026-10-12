@@ -87,13 +87,13 @@ const noNetwork: HealthProbes = {
 };
 
 describe("agent models come from config", () => {
-  it("one model id per model agent from NOTARY_MODEL_*; Notary Chat runs on the executor model", () => {
-    expect(agentModels(ENV)).toEqual({ executor: "test-haiku", reflector: "test-sonnet", adversary: "test-nova-pro", chat: "test-haiku" });
+  it("one model id per model agent from NOTARY_MODEL_*; Notary Chat falls back to the reflector model", () => {
+    expect(agentModels(ENV)).toEqual({ executor: "test-haiku", reflector: "test-sonnet", adversary: "test-nova-pro", chat: "test-sonnet" });
   });
 
   it("null when a variable is unset; a separation-of-duties breach still reports the configured ids (never throws)", () => {
     expect(agentModels({})).toEqual({ executor: null, reflector: null, adversary: null, chat: null });
-    expect(agentModels({ NOTARY_MODEL_REFLECTOR: "same", NOTARY_MODEL_ADVERSARY: "same" })).toEqual({ executor: null, reflector: "same", adversary: "same", chat: null });
+    expect(agentModels({ NOTARY_MODEL_REFLECTOR: "same", NOTARY_MODEL_ADVERSARY: "same" })).toEqual({ executor: null, reflector: "same", adversary: "same", chat: "same" });
   });
 
   it("the roster is AGENTS in display order; the Guard is a rule with no model", () => {
@@ -111,7 +111,7 @@ describe("GET /api/health agents", () => {
       { id: "executor", name: "Executor", role: AGENTS.executor.role, kind: "model", model: "test-haiku" },
       { id: "reflector", name: "Reflector", role: AGENTS.reflector.role, kind: "model", model: "test-sonnet" },
       { id: "adversary", name: "Adversary", role: AGENTS.adversary.role, kind: "model", model: "test-nova-pro" },
-      { id: "chat", name: "Notary Chat", role: AGENTS.chat.role, kind: "model", model: "test-haiku" },
+      { id: "chat", name: "Notary Chat", role: AGENTS.chat.role, kind: "model", model: "test-sonnet" },
       { id: "guard", name: "Guard", role: AGENTS.guard.role, kind: "rule", model: null },
     ]);
     // The key is never in the response.

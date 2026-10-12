@@ -8,5 +8,75 @@
     "startedAt": "2026-10-10T10:00:00.000Z",
     "status": "completed",
     "contentHash": "0311e2ecd763c30a32838856c2e13bf5e0ffe39237a33fb9dddb1b4279045ff0"
+  },
+  {
+    "runId": "notarize-crustdata-20261012T011404Z",
+    "kind": "notarize",
+    "variant": "notarize",
+    "mode": "live",
+    "sample": false,
+    "startedAt": "2026-10-12T01:14:04.667Z",
+    "status": "completed",
+    "contentHash": "77c3872868bee731453e616d60461c09f30987059a143ca56ad149d8ef9626e2"
+  },
+  {
+    "runId": "notarize-dodo-20261012T012315Z",
+    "kind": "notarize",
+    "variant": "notarize",
+    "mode": "live",
+    "sample": false,
+    "startedAt": "2026-10-12T01:23:15.107Z",
+    "status": "completed",
+    "contentHash": "047476038381d524113b7b312c4da7bc8ccf937446990e74c0836a16c0751fd5"
+  },
+  {
+    "runId": "recon-dodo-20261012T013640Z",
+    "kind": "notarize",
+    "variant": "notarize",
+    "mode": "live",
+    "sample": false,
+    "startedAt": "2026-10-12T01:36:40.797Z",
+    "status": "completed",
+    "contentHash": "0202521e5bcda3467fe9453626d7f4b09aaf7f68d0cbcfbe22a02ef249bb1ee8"
+  },
+  {
+    "runId": "notarize-dodo-20261012T014032Z",
+    "kind": "notarize",
+    "variant": "notarize",
+    "mode": "live",
+    "sample": false,
+    "startedAt": "2026-10-12T01:40:32.072Z",
+    "status": "completed",
+    "contentHash": "913ec6593d69b0081a90349a0897d4835d2862897ac479d5871cde61a50f9999"
+  },
+  {
+    "runId": "notarize-crustdata-20261012T011404Z-replay",
+    "kind": "notarize",
+    "variant": "notarize",
+    "mode": "replay",
+    "sample": false,
+    "startedAt": "2026-10-12T01:42:15.358Z",
+    "status": "completed",
+    "contentHash": "afda1e69da0071c48a15b68867ffff6feba9c7a20191e88a30ebd1b4f226f52f"
+  },
+  {
+    "runId": "recon-dodo-20261012T013640Z-replay",
+    "kind": "notarize",
+    "variant": "notarize",
+    "mode": "replay",
+    "sample": false,
+    "startedAt": "2026-10-12T01:42:48.775Z",
+    "status": "completed",
+    "contentHash": "0d2ae865cfc2f565275ff66fdddf644fb49e15f81f68d800aebf0858a8f936aa"
+  },
+  {
+    "runId": "notarize-dodo-20261012T014032Z-replay",
+    "kind": "notarize",
+    "variant": "notarize",
+    "mode": "replay",
+    "sample": false,
+    "startedAt": "2026-10-12T01:42:48.857Z",
+    "status": "completed",
+    "contentHash": "16807c03dc52f343a6d89d7df3c7e29e767b8c81da5fe903095d2aaf049104a1"
   }
 ]

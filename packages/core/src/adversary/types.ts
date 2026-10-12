@@ -1,7 +1,13 @@
 import type { AdversaryReview } from "../schema/index.js";
 
+/**
+ * The session backend's verdict commit and the Entire checkpoint linked to it (the commit's
+ * `Entire-Checkpoint` trailer; null when Entire did not checkpoint it, e.g. Entire not enabled).
+ */
+export type EntireLink = { commit: string; checkpointId: string | null };
+
 /** Result of one adversary review. `review` is null whenever anything failed (fail safe). */
-export type ReviewOutcome = { review: AdversaryReview | null; failure?: string };
+export type ReviewOutcome = { review: AdversaryReview | null; failure?: string; entire?: EntireLink };
 
 export type ProcessResult = { exitCode: number | null; stdout: string; stderr: string; timedOut?: boolean };
 

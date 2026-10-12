@@ -22,6 +22,9 @@ export const ChatToolNameSchema = z.enum([
   "crustdata_lookup",
   "dodo_lookup",
   "get_health",
+  // Added with the native tool-calling agent (additive: every earlier stored event still parses).
+  "get_guard_coverage",
+  "explain_decision",
 ]);
 
 // ok = tool ran; error = tool ran and failed (detail in output); unavailable = not connected / not in
@@ -62,7 +65,7 @@ export const ChatEventSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("note"),
     text: z.string().max(200), // short line (~20 words) explaining the next step
-    // model = written by the executor model (shown "Model said"); replay = written by the web's
+    // model = written by Notary Chat's model (shown "Model said"); replay = written by the web's
     // deterministic replay engine (shown "Replay engine" — no model ran).
     source: z.enum(["model", "replay"]),
   }),

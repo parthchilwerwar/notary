@@ -1,12 +1,11 @@
-// The white sidebar (K3): "Notary" in Instrument Serif, search, the selected-run switcher, the four
-// pages (Run, Certificates, Approvals with its count, Chat), and Report + theme at the bottom. No
-// mode item. Phones (< 768px): a top bar with the wordmark and a Menu button that opens the same
-// sidebar as a drawer (focus moves in and stays inside, Escape or the overlay closes it, focus
-// returns to Menu).
+// The sidebar: "Notary" in Instrument Serif, search, the selected-run switcher, the four pages
+// (Run, Certificates, Approvals with its count, Chat) on Rare UI's Hook Sidebar (an accent rail that
+// hooks into the current page), and Report at the bottom. No mode item and
+// no theme switch (the dashboard is light only). Phones (< 768px): a top bar with the wordmark and
+// a Menu button that opens the same sidebar as a drawer (focus moves in and stays inside, Escape or
+// the overlay closes it, focus returns to Menu).
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from "react";
 import { Link, useLocation } from "react-router";
-import { MoonIcon as Moon } from "@phosphor-icons/react/dist/csr/Moon";
-import { SunIcon as Sun } from "@phosphor-icons/react/dist/csr/Sun";
 import { ListIcon as List } from "@phosphor-icons/react/dist/csr/List";
 import { MagnifyingGlassIcon as MagnifyingGlass } from "@phosphor-icons/react/dist/csr/MagnifyingGlass";
 import { matchAppRoute, navRoutes, routeById, type AppRoute } from "../../routes";
@@ -16,6 +15,8 @@ import { number } from "../../data";
 import { RunPicker } from "./RunPicker";
 import { MOD_KEY_LABEL } from "./keys";
 import { useShellStatus } from "./status";
+// Rare UI's Hook Sidebar (credited in docs/CREDITS.md and on /docs): the accent rail follows the page.
+import { HookSidebar } from "../../ui";
 
 const MOBILE_QUERY = "(max-width: 767px)";
 
@@ -40,9 +41,9 @@ export function useIsMobile(): boolean {
   return mobile;
 }
 
-type ShellProps = { dark: boolean; setDark: (dark: boolean) => void; onPalette: () => void };
+type ShellProps = { onPalette: () => void };
 
-function SidebarBody({ dark, setDark, onPalette, onNavigate, firstRef }: ShellProps & { onNavigate?: () => void; firstRef?: RefObject<HTMLButtonElement | null> }) {
+function SidebarBody({ onPalette, onNavigate, firstRef }: ShellProps & { onNavigate?: () => void; firstRef?: RefObject<HTMLButtonElement | null> }) {
   const { pathname } = useLocation();
   const { selectedRunId } = useData();
   const { approvals } = useShellStatus();
@@ -73,49 +74,43 @@ function SidebarBody({ dark, setDark, onPalette, onNavigate, firstRef }: ShellPr
         </button>
         {!ownPicker && <RunPicker />}
       </div>
-      <nav className="side-nav" aria-label="Pages">
-        <ul>
-          {navRoutes().map((r) => (
-            <li key={r.id}>
-              <Link
-                className="side-item"
-                to={withRun(r.path, selectedRunId)}
-                aria-current={active === r.id ? "page" : undefined}
-                onClick={onNavigate}
-              >
-                <span>{r.title}</span>
-                {r.badge === "approvals" && waiting !== undefined && waiting > 0 && (
-                  <span className="side-badge">
-                    <span aria-hidden="true">{number(waiting)}</span>
-                    <span className="sr-only">
-                      {approvals.state === "ready" && approvals.readOnly
-                        ? `, ${number(waiting)} held in recorded runs`
-                        : `, ${number(waiting)} waiting`}
-                    </span>
-                  </span>
-                )}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
-      <div className="side-foot">
-        <Link
-          className="side-item"
-          to={withRun("/app/report", selectedRunId)}
-          aria-current={pathname.startsWith("/app/report") ? "page" : undefined}
-          onClick={onNavigate}
-        >
-          Report
-        </Link>
-        <button type="button" className="side-item side-theme" aria-pressed={dark} onClick={() => setDark(!dark)}>
-          {dark ? <Sun aria-hidden="true" /> : <Moon aria-hidden="true" />}
-          <span>Dark theme</span>
-          <span className="side-theme-state" aria-hidden="true">
-            {dark ? "On" : "Off"}
-          </span>
-        </button>
-      </div>
+      <HookSidebar
+        className="side-nav"
+        aria-label="Pages"
+        color="var(--accent)"
+        items={navRoutes().map((r) => ({
+          label: r.title,
+          href: withRun(r.path, selectedRunId),
+          active: active === r.id,
+          className: "side-item",
+          onClick: onNavigate,
+          badge:
+            r.badge === "approvals" && waiting !== undefined && waiting > 0 ? (
+              <span className="side-badge">
+                <span aria-hidden="true">{number(waiting)}</span>
+                <span className="sr-only">
+                  {approvals.state === "ready" && approvals.readOnly
+                    ? `, ${number(waiting)} held in recorded runs`
+                    : `, ${number(waiting)} waiting`}
+                </span>
+              </span>
+            ) : undefined,
+        }))}
+      />
+      <HookSidebar
+        as="div"
+        className="side-foot"
+        color="var(--accent)"
+        items={[
+          {
+            label: "Report",
+            href: withRun("/app/report", selectedRunId),
+            active: pathname.startsWith("/app/report"),
+            className: "side-item",
+            onClick: onNavigate,
+          },
+        ]}
+      />
     </>
   );
 }

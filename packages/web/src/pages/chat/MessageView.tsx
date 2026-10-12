@@ -1,11 +1,19 @@
 // Presentational pieces of Notary Chat: a user message, and an assistant message (agent badge →
-// work timeline with live steps and notes → streamed markdown answer with numbered citation chips
-// → sources and footer). No data loading here: pass a TurnView built by `reduceChatEvents`
-// (./model.ts), so other pages can show a recorded turn with the same components.
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+// Reasoning Steps fed by the turn's real steps, notes and cited records → streamed markdown answer
+// with numbered citation chips → sources and footer). No data loading here: pass a TurnView built
+// by `reduceChatEvents` (./model.ts), so other pages can show a recorded turn with the same
+// components.
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { Link } from "react-router";
+import { BracketsCurlyIcon as BracketsCurly } from "@phosphor-icons/react/dist/csr/BracketsCurly";
+import { FileTextIcon as FileText } from "@phosphor-icons/react/dist/csr/FileText";
+import { HandPalmIcon as HandPalm } from "@phosphor-icons/react/dist/csr/HandPalm";
+import { ListBulletsIcon as ListBullets } from "@phosphor-icons/react/dist/csr/ListBullets";
+import { PathIcon as Path } from "@phosphor-icons/react/dist/csr/Path";
+import { SealCheckIcon as SealCheck } from "@phosphor-icons/react/dist/csr/SealCheck";
 import type { ChatCitation } from "../../../../core/src/schema";
-import { AgentBadge, Card, CertificateCard, TableFrame, Timeline, TimelineItem, TimelineMarker, slideIn, type TimelineMark, type TimelineTone } from "../../ui";
+import { AgentBadge, Card, CertificateCard, TableFrame, TimelineMarker, type TimelineMark, type TimelineTone } from "../../ui";
+import { ReasoningSteps, type ReasoningLineItem, type ReasoningSource, type ReasoningStageItem, type ReasoningStageStatus } from "../../ui/reasoning-steps";
 import { CaretRight, CheckIcon, CopyIcon, External } from "./icons";
 import { Markdown } from "./MarkdownView";
 import {
@@ -23,9 +31,8 @@ import {
   stepTitle,
   tokensText,
   traceHref,
+  turnSteps,
   unknownMarkers,
-  workOpenByDefault,
-  workSummary,
   type ChatMode,
   type StepData,
   type StepState,
@@ -186,90 +193,143 @@ function StepDataView({ data, runId }: { data: StepData; runId?: string }) {
   }
 }
 
-/* -------------------------------------------------------------------------------- step */
+/* ------------------------------------------------------------------- reasoning (steps) */
 
-function StepRow({
-  step,
-  domId,
-  expanded,
-  highlighted,
-  onToggle,
-  runId,
-}: {
-  step: StepView;
-  domId: string;
-  expanded: boolean;
-  highlighted: boolean;
-  onToggle: () => void;
-  runId?: string;
-}) {
-  const bodyId = `${domId}-body`;
-  const meta = [
+/** A step's state as a Reasoning Steps status. */
+const STAGE_STATUS: Record<StepState, ReasoningStageStatus> = {
+  running: "active",
+  ok: "done",
+  error: "error",
+  unavailable: "skipped",
+  aborted: "stopped",
+};
+
+/** Recorded facts of one step: duration, cost, Crustdata credits (only what was recorded). */
+function stepMeta(step: StepView): string {
+  return [
     step.durationMs !== undefined ? durationText(step.durationMs) : undefined,
     step.costUsd !== undefined && step.costUsd !== null ? costText(step.costUsd, "live") : undefined,
     step.credits !== undefined ? `${step.credits} credit${step.credits === 1 ? "" : "s"}` : undefined,
-  ].filter(Boolean);
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+/** "4.2s · $0.0123" after the settled summary: total duration and cost, or how the turn ended. */
+function workFacts(view: TurnView, mode: ChatMode): string {
+  const steps = turnSteps(view);
+  const ms = view.done?.durationMs ?? (steps.length ? steps.reduce((a, s) => a + (s.durationMs ?? 0), 0) : undefined);
+  const parts = ms !== undefined ? [durationText(ms)] : [];
+  if (view.done) parts.push(costText(view.done.costUsd, view.done.mode));
+  else if (view.status === "stopped") parts.push("stopped");
+  else if (view.status === "error") parts.push("failed");
+  else parts.push(costText(undefined, mode));
+  return parts.join(" · ");
+}
+
+/** A finished step's details: its output and input, the result card, and the raw JSON. */
+function StepDetail({ step, runId }: { step: StepView; runId?: string }) {
   const data = classifyStepData(step.data);
-  const expandable = step.state !== "running";
-  const ref = useRef<HTMLLIElement>(null);
-  // Rows slide in as they stream (kit motion; nothing under reduced motion). Once per row: a
-  // second gsap.from (React StrictMode re-runs effects) would start from the first one's 0 opacity.
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || el.dataset.slid) return;
-    el.dataset.slid = "1";
-    slideIn(el);
-  }, []);
   return (
-    <TimelineItem
-      ref={ref}
-      {...MARK[step.state]}
-      markLabel={statusLabel(step.state)}
-      className="chat-step"
-      id={domId}
-      data-state={step.state}
-      data-open={(expanded && expandable) || undefined}
-      data-highlight={highlighted || undefined}
-      tabIndex={-1}
-      title={
-        <button
-          type="button"
-          className="chat-step-head"
-          aria-expanded={expandable ? expanded : undefined}
-          aria-controls={expandable ? bodyId : undefined}
-          disabled={!expandable}
-          onClick={onToggle}
-        >
-          <span className="chat-step-title">{stepTitle(step)}</span>
-          {expandable && <CaretRight className="chat-caret" />}
-        </button>
-      }
-      meta={meta.length > 0 ? <span className="chat-step-meta">{meta.join(" · ")}</span> : undefined}
-    >
-      {step.fix && (step.state === "unavailable" || step.state === "error") && (
-        <p className="chat-step-fix" data-state={step.state}>
-          <CodeText text={step.fix} />
+    <div className="chat-step-body">
+      {(step.output || step.input) && (
+        <p className="chat-step-output">
+          {step.output}
+          {step.input && (
+            <span className="chat-step-input">
+              Input <code translate="no">{step.input}</code>
+            </span>
+          )}
         </p>
       )}
-      {expanded && expandable && (
-        <div id={bodyId} className="chat-step-body">
-          {(step.output || step.input) && (
-            <p className="chat-step-output">
-              {step.output}
-              {step.input && (
-                <span className="chat-step-input">
-                  Input <code translate="no">{step.input}</code>
-                </span>
-              )}
-            </p>
-          )}
-          <StepDataView data={data} runId={runId} />
-          {step.data !== undefined && <JsonToggle data={step.data} />}
-        </div>
-      )}
-    </TimelineItem>
+      <StepDataView data={data} runId={runId} />
+      {step.data !== undefined && <JsonToggle data={step.data} />}
+    </div>
   );
 }
+
+const KIND_ICON: Record<ChatCitation["type"], () => ReactNode> = {
+  certificate: () => <SealCheck weight="bold" />,
+  run_event: () => <ListBullets weight="bold" />,
+  run: () => <Path weight="bold" />,
+  approval: () => <HandPalm weight="bold" />,
+  doc: () => <FileText weight="bold" />,
+  api_response: () => <BracketsCurly weight="bold" />,
+};
+
+/**
+ * The turn as Reasoning Steps input, from its recorded data only: every step is a stage (title,
+ * status, duration/cost, fix, details), every note a reasoning line attached to the step it comes
+ * before (a note explains the next step; a trailing one stays unattached), and every valid cited
+ * record a source chip on the step that produced it. Flagged citations stay out (they are listed,
+ * flagged, under the answer).
+ */
+export function reasoningInput(
+  view: TurnView,
+  mode: ChatMode,
+  ui: { domId: (id: string) => string; expanded: Set<string>; highlight?: string; toggle: (id: string) => void; showStep: (id: string) => void; runId?: string },
+) {
+  const stages: ReasoningStageItem[] = turnSteps(view).map((step) => {
+    const meta = stepMeta(step);
+    const hasDetail = step.state !== "running" && (!!step.output || !!step.input || step.data !== undefined);
+    return {
+      id: step.id,
+      label: stepTitle(step),
+      status: STAGE_STATUS[step.state],
+      statusLabel: statusLabel(step.state),
+      meta: meta || undefined,
+      note:
+        step.fix && (step.state === "unavailable" || step.state === "error") ? (
+          <p className="chat-step-fix" data-state={step.state}>
+            <CodeText text={step.fix} />
+          </p>
+        ) : undefined,
+      detail: hasDetail ? <StepDetail step={step} runId={ui.runId} /> : undefined,
+      expanded: ui.expanded.has(step.id),
+      onToggle: () => ui.toggle(step.id),
+      anchorId: ui.domId(step.id),
+      highlighted: ui.highlight === step.id,
+    };
+  });
+
+  const reasoning: ReasoningLineItem[] = [];
+  let pending: Extract<TurnView["items"][number], { kind: "note" }>[] = [];
+  const line = (n: (typeof pending)[number], stage?: string): ReasoningLineItem => {
+    const tag = noteTag(mode, n.source);
+    return { id: n.key, text: n.text, tag, tagTone: tag === "Replay engine" ? "accent" : "neutral", ...(stage ? { stage } : {}) };
+  };
+  for (const item of view.items) {
+    if (item.kind === "note") pending.push(item);
+    else if (view.steps[item.id]) {
+      reasoning.push(...pending.map((n) => line(n, item.id)));
+      pending = [];
+    }
+  }
+  reasoning.push(...pending.map((n) => line(n)));
+
+  const seen = new Set<string>();
+  const sources: ReasoningSource[] = view.citations.flatMap((c) => {
+    const key = `${c.type}:${c.id}`;
+    if (!c.valid || seen.has(key)) return [];
+    seen.add(key);
+    const href = citationHref(c, ui.runId);
+    const stage = c.stepId && view.steps[c.stepId] ? c.stepId : undefined;
+    return [
+      {
+        id: key,
+        label: c.label,
+        icon: KIND_ICON[c.type](),
+        title: `${TYPE_LABEL[c.type]} ${c.id}`,
+        ...(href ? { href: href.href, external: href.external } : stage ? { onSelect: () => ui.showStep(stage) } : {}),
+        ...(stage ? { stage } : {}),
+      },
+    ];
+  });
+  return { stages, reasoning, sources };
+}
+
+/** Replay paces what the steps show (the engine's own events are near-instant); live follows the data. */
+const REPLAY_PACE = { stageMs: 600, reasonMs: 260 };
 
 /** Text with `backticked` commands as code. */
 export function CodeText({ text }: { text: string }) {
@@ -314,17 +374,14 @@ export type MessageViewProps = {
 
 export function MessageView({ view, mode, messageKey, runId, traceLinks, compact = false }: MessageViewProps) {
   const finished = isTurnFinished(view);
-  const [workOpen, setWorkOpen] = useState(workOpenByDefault(view));
+  // The full step list starts closed (the running strip shows the current step) and closes itself
+  // once the steps settle; a citation chip opens it.
+  const [workOpen, setWorkOpen] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const [highlight, setHighlight] = useState<string>();
   const [copied, setCopied] = useState(false);
-  const wasFinished = useRef(finished);
-  const workId = useId();
-  // Collapse once the answer completes (the user can reopen it).
-  useEffect(() => {
-    if (finished && !wasFinished.current) setWorkOpen(false);
-    wasFinished.current = finished;
-  }, [finished]);
+  // A message that was already finished when it mounted (history) shows its steps settled at once.
+  const [finishedAtMount] = useState(finished);
   useEffect(() => {
     if (!highlight) return;
     const t = setTimeout(() => setHighlight(undefined), 2200);
@@ -374,8 +431,9 @@ export function MessageView({ view, mode, messageKey, runId, traceLinks, compact
     return <CiteChip key={key} c={c} view={view} runId={runId} onStep={showStep} />;
   };
 
-  const steps = view.items.filter((i) => i.kind === "step").length;
-  const hasWork = view.items.length > 0;
+  const reasoning = reasoningInput(view, mode, { domId, expanded, highlight, toggle, showStep, runId });
+  const hasWork = reasoning.stages.length > 0 || reasoning.reasoning.length > 0;
+  const live = mode === "live" || finishedAtMount;
   const trace = view.done?.traceId;
   const traceUrl = traceHref(trace, traceLinks);
   const copy = () => {
@@ -393,42 +451,20 @@ export function MessageView({ view, mode, messageKey, runId, traceLinks, compact
         <AgentBadge agent="chat" />
       </div>
       {(hasWork || !finished) && (
-        <section className="chat-work" data-open={workOpen || undefined} data-finished={finished || undefined}>
-          <button type="button" className="chat-work-toggle" aria-expanded={workOpen} aria-controls={workId} onClick={() => setWorkOpen((v) => !v)}>
-            {!finished && <span className="chat-spinner" aria-hidden="true" />}
-            <span className="chat-work-label">{finished ? workSummary(view, mode) : steps ? `Working… ${steps} step${steps === 1 ? "" : "s"}` : "Working…"}</span>
-            <CaretRight className="chat-caret" />
-          </button>
-          <Timeline id={workId} className="chat-steps" hidden={!workOpen} aria-live="polite" aria-relevant="additions" aria-label="Steps">
-            {view.items.map((item) =>
-              item.kind === "note" ? (
-                <TimelineItem
-                  key={item.key}
-                  mark="dot"
-                  className="chat-note"
-                  title={
-                    <span className="chat-note-line">
-                      <span className="chat-note-tag" data-source={noteTag(mode, item.source) === "Replay engine" ? "replay" : "model"}>
-                        {noteTag(mode, item.source)}
-                      </span>{" "}
-                      <span className="chat-note-text">{item.text}</span>
-                    </span>
-                  }
-                />
-              ) : view.steps[item.id] ? (
-                <StepRow
-                  key={item.id}
-                  step={view.steps[item.id]!}
-                  domId={domId(item.id)}
-                  expanded={expanded.has(item.id)}
-                  highlighted={highlight === item.id}
-                  onToggle={() => toggle(item.id)}
-                  runId={runId}
-                />
-              ) : null,
-            )}
-          </Timeline>
-        </section>
+        <ReasoningSteps
+          className="chat-work"
+          stages={reasoning.stages}
+          reasoning={reasoning.reasoning}
+          sources={reasoning.sources}
+          live={live}
+          running={!finished}
+          stageMs={REPLAY_PACE.stageMs}
+          reasonMs={REPLAY_PACE.reasonMs}
+          open={workOpen}
+          onOpenChange={setWorkOpen}
+          meta={workFacts(view, mode)}
+          label="Notary Chat's steps"
+        />
       )}
       {view.text && (
         <div className="chat-answer-wrap" aria-live="polite" aria-busy={!finished || undefined}>

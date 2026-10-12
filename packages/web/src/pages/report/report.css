@@ -1,4 +1,5 @@
-/* Report (K3): layout only; surfaces and type come from src/ui. Also styles the receipts shared
+/* Report: full-page layout (header, stat row, full-width sections); layout only, surfaces and
+   type come from src/ui. Also styles the receipts shared
    with the certificate page (receipts.tsx). */
 .report .ui-section {
   scroll-margin-top: 24px;
@@ -22,34 +23,97 @@
 td.report-unsafe {
   font-weight: 500;
 }
-.report-chart {
+.report-muted {
+  color: var(--text-muted);
+}
+.report-figure {
+  position: relative;
+  overflow: hidden; /* the chart's screen-reader table is positioned off-layout */
+  display: grid;
+  gap: 16px;
   min-width: 0;
+  margin: 0;
+  padding: 24px 0 8px;
+  border-top: 1px solid var(--hairline-color);
+  border-bottom: 1px solid var(--hairline-color);
+}
+.report-figure-title {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
 }
 .report-cohort {
   display: grid;
   gap: 12px;
+  min-width: 0;
+}
+.report-cohort-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+.report-cohort-title {
+  margin: 0;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+}
+.report-cohort-title span {
+  margin-left: 4px;
+  color: var(--text-muted);
+  font-weight: 400;
 }
 .report-cohort-note {
   margin: 0;
+  color: var(--text-muted);
   font-size: 13px;
-  color: var(--muted);
 }
-.report-runs {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 12px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+/* Same column grid in every cohort table, so fixtures and samples line up. */
+.report-runs table {
+  table-layout: fixed;
+  min-width: 640px;
 }
-.report-run {
-  display: grid;
-  gap: 6px;
-  height: 100%;
-  box-shadow: var(--shadow-soft);
+.report-runs th:nth-child(1) {
+  width: 34%;
 }
-.report-run[data-selected] {
-  border-color: var(--accent);
+.report-runs th:nth-child(2) {
+  width: 16%;
+}
+@media (max-width: 639px) {
+  /* Phones: run, credits used, spend and calls; kind and budget stay in the run's own page. */
+  .report-runs table {
+    min-width: 0;
+  }
+  .report-runs th:nth-child(1) {
+    width: 44%;
+  }
+  .report-runs th:nth-child(2),
+  .report-runs td:nth-child(2),
+  .report-runs th:nth-child(4),
+  .report-runs td:nth-child(4) {
+    display: none;
+  }
+  .report-runs th,
+  .report-runs td {
+    padding: 10px 8px;
+  }
+}
+/* The selected run: a quiet "Selected" tag after its id (the row also carries aria-current). */
+.report-runs tbody tr[data-selected] .report-run-id::after {
+  content: "Selected";
+  display: inline-block;
+  margin-left: 8px;
+  padding: 0 7px;
+  border-radius: var(--r-pill);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 18px;
+  vertical-align: 1px;
 }
 .report-run-id {
   color: var(--text);
@@ -63,19 +127,15 @@ td.report-unsafe {
 }
 .report-run-kind {
   color: var(--text-muted);
-  font-size: 13px;
-}
-.report-run-figure {
-  font-size: 15px;
-  font-variant-numeric: tabular-nums;
-}
-.report-run-figure > span {
-  color: var(--text-muted);
-  font-size: 13px;
+  white-space: nowrap;
 }
 .report-more {
   display: grid;
-  gap: 8px;
+  gap: 4px;
+  justify-items: start;
+}
+.report-more > .ui-expander {
+  width: 100%;
 }
 .report-split {
   display: grid;
@@ -109,9 +169,8 @@ td.report-unsafe {
   padding: 14px 0;
   border-top: 1px solid var(--hairline-color);
 }
-.report-conn-list li:first-child {
-  padding-top: 0;
-  border-top: 0;
+.report-conn-list li:last-child {
+  border-bottom: 1px solid var(--hairline-color);
 }
 .report-conn-name {
   font-weight: 500;
@@ -138,12 +197,35 @@ td.report-unsafe {
 .report-receipts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 16px;
+  gap: 24px 0;
+  border-top: 1px solid var(--hairline-color);
 }
 .report-receipt {
   display: grid;
   align-content: start;
   gap: 10px;
+  min-width: 0;
+  padding: 20px 28px 4px;
+  border-left: 1px solid var(--hairline-color);
+}
+.report-receipt:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+@media (max-width: 700px) {
+  .report-receipt {
+    padding: 20px 0 0;
+    border-left: 0;
+  }
+  .report-receipt + .report-receipt {
+    border-top: 1px solid var(--hairline-color);
+  }
+}
+.report-receipt-title {
+  margin: 0;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 500;
 }
 .report-receipt p {
   margin: 0;
@@ -205,9 +287,4 @@ td.report-unsafe {
   align-items: baseline;
   gap: 4px 8px;
   min-width: 0;
-}
-
-/* The chart's fixture tag is a disclosure: it never truncates on phones (the title wraps instead). */
-.report-chart .l-frame-tag {
-  flex-shrink: 0;
 }

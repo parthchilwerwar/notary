@@ -9,8 +9,13 @@
 //     restricted to GET (`allowedMethods`), so a Dodo write can't leave the process even if the wrap
 //     were bypassed.
 // Local tools read the verified bundles serve already loads (real runs only, sample:false), their
-// timelines, and — injected by server.ts so this module never imports approval/queue/certify code —
-// the certificate builder, the approvals list (read side) and the health checks.
+// timelines, and — injected by server.ts so this module never imports approval/queue/certify/guards
+// code — the certificate builder, the approvals list (read side), the health checks and the guard
+// coverage report (the same tsc walk as `notary guards coverage`). explain_decision is the
+// deterministic explain engine (src/explain, no model).
+//
+// Each tool is offered to the model as an OpenAI-style function tool (chatToolSpecs): its JSON
+// Schema is generated from the same zod schema that validates the model's arguments.
 //
 // A tool whose service isn't configured returns status "unavailable" with fix
 // "Not connected — set <VAR> in .env", and its model text tells the model it could not check. Every
@@ -21,6 +26,9 @@ import { SAFE_RUN_ID } from "../api/bundle-source.js";
 import type { LoadedBundle } from "../api/bundle-source.js";
 import { timelineFor } from "../api/ask-world.js";
 import { timelineEventId } from "../explain/citations.js";
+import { whyHeld } from "../explain/answers.js";
+import { makeWorld } from "../explain/world.js";
+import type { ToolSpec } from "../llm/client.js";
 import type { CertificatesResponse, HealthResponse } from "../schema/api.js";
 import type { ApprovalsList } from "../schema/approval.js";
 import type { Certificate, NoCertificate, Revocation } from "../schema/certificate.js";
@@ -65,7 +73,20 @@ export interface ToolRun {
   citables: Citable[];
 }
 
+/** The guard coverage report's shape as chat reads it (a subset of src/guards/coverage.ts CoverageReport). */
+export interface GuardCoverageSummary {
+  backend: string;
+  backendNote: string;
+  totals: { ops: number; sites: number; guarded: number; rawByDesign: number; unguarded: number };
+  unguarded_call_sites: number;
+  sites: { op: string; file: string; line: number; status: string; detail: string }[];
+  /** When this report was computed (ISO). */
+  computedAt: string;
+}
+
 export interface ChatSources {
+  /** Guard coverage of the tool-client call sites (server.ts: guards/coverage.ts runCoverage, cached). */
+  guardCoverage?: () => Promise<GuardCoverageSummary>;
   /** Certificates derived from the real runs (server.ts: realCertificates). */
   certificates?: () => Promise<CertificatesResponse>;
   /** The approvals desk's read side (server.ts: listApprovals). */
@@ -424,7 +445,7 @@ const listApprovalsTool: ChatToolDef = {
   title: () => "Checking held actions on the Approvals card",
   input: () => "",
   async run(_a, ctx) {
-    if (!ctx.approvals) return unavailable("Approvals are not available in this server", "Restart `pnpm notary serve`", "The approvals source is not wired into this server.");
+    if (!ctx.approvals) return unavailable("Approvals are not available in this server", "Approvals exist only on a local `pnpm notary serve` (the hosted site is read-only)", "This server has no approvals desk (the hosted site is read-only; approvals exist only on a local notary serve). Nothing about held actions can be checked here, but other tools still work.");
     const list = await ctx.approvals();
     const pending = list.pending.map((p) => ({ id: p.id, runId: p.runId, decisionId: p.decisionId, action: p.action, amount: p.amount, currency: p.currency, reason: oneLine(p.reason, 300), missingBeliefs: p.missingBeliefs }));
     const decided = list.decided.map((d) => ({ id: d.id, runId: d.runId, action: d.action, decision: d.decision, status: d.status, decidedAt: d.decidedAt }));
@@ -450,7 +471,7 @@ const getApproval: ChatToolDef = {
   title: (a) => `Opening approval ${String(a.id)}`,
   input: (a) => String(a.id),
   async run(a, ctx) {
-    if (!ctx.approvals) return unavailable("Approvals are not available in this server", "Restart `pnpm notary serve`", "The approvals source is not wired into this server.");
+    if (!ctx.approvals) return unavailable("Approvals are not available in this server", "Approvals exist only on a local `pnpm notary serve` (the hosted site is read-only)", "This server has no approvals desk (the hosted site is read-only; approvals exist only on a local notary serve). Nothing about held actions can be checked here, but other tools still work.");
     const id = String(a.id);
     const list = await ctx.approvals();
     const p = list.pending.find((x) => x.id === id);
@@ -699,6 +720,144 @@ const getHealth: ChatToolDef = {
   },
 };
 
+// ------------------------------------------------------------------------------ guard coverage
+
+/** How long one get_guard_coverage step waits for the (cached, child-process) coverage walk. */
+export const GUARD_COVERAGE_WAIT_MS = 90_000;
+
+const getGuardCoverage: ChatToolDef = {
+  name: "get_guard_coverage",
+  description:
+    "Guard coverage: (1) every tool-client call site in the code and whether it goes through a guard, is raw by design, or is UNGUARDED (the same static walk as `notary guards coverage`), and (2) the guards compiled from notarized beliefs in real runs (active or retired). Optional runId limits part 2 to one run.",
+  argsDoc: '{"runId": "<optional runId>"}',
+  args: z.object({ runId: z.string().regex(SAFE_RUN_ID, "not a valid run id").optional() }).strict(),
+  title: (a) => (a.runId ? `Checking guard coverage and the guards of ${String(a.runId)}` : "Checking guard coverage"),
+  input: (a) => (a.runId ? String(a.runId) : ""),
+  async run(a, ctx) {
+    const runId = a.runId ? String(a.runId) : undefined;
+    const real = realBundles(await ctx.loadBundles()).map((l) => l.bundle);
+    const runs = runId ? real.filter((b) => b.runId === runId) : real;
+    const runGuards = runs.map((b) => ({
+      runId: b.runId,
+      guards: b.guards.map((g) => ({ id: g.id, operation: g.operation, kind: g.kind, class: g.class, beliefId: g.beliefId, active: g.active, ...(g.retiredAt ? { retiredAt: g.retiredAt } : {}) })),
+    }));
+    let coverage: GuardCoverageSummary | null = null;
+    let coverageWhy = "";
+    if (!ctx.guardCoverage) coverageWhy = "the coverage report is not wired into this server";
+    else {
+      try {
+        let timer: NodeJS.Timeout | undefined;
+        const waited = new Promise<never>((_r, rej) => (timer = setTimeout(() => rej(new Error(`the walk is still running after ${GUARD_COVERAGE_WAIT_MS / 1000} s; ask again in a minute`)), GUARD_COVERAGE_WAIT_MS)));
+        try {
+          coverage = await abortable(Promise.race([ctx.guardCoverage(), waited]), ctx.signal);
+        } finally {
+          clearTimeout(timer);
+        }
+      } catch (err) {
+        if (ctx.signal.aborted) throw err;
+        coverageWhy = `the coverage walk failed (${oneLine(errText(err), 200)})`;
+      }
+    }
+    const callSites = coverage
+      ? {
+          backend: coverage.backend,
+          computedAt: coverage.computedAt,
+          totals: coverage.totals,
+          unguardedCallSites: coverage.unguarded_call_sites,
+          unguarded: coverage.sites.filter((x) => x.status === "UNGUARDED").map((x) => ({ op: x.op, at: `${x.file}:${x.line}`, detail: oneLine(x.detail, 160) })),
+          rawByDesign: coverage.sites.filter((x) => x.status === "raw-by-design").map((x) => ({ op: x.op, at: `${x.file}:${x.line}` })),
+        }
+      : null;
+    const guardTotal = runGuards.reduce((n, r) => n + r.guards.length, 0);
+    const active = runGuards.reduce((n, r) => n + r.guards.filter((g) => g.active).length, 0);
+    const parts = [
+      callSites
+        ? `call sites: ${callSites.totals.sites} (${callSites.totals.guarded} guarded, ${callSites.totals.rawByDesign} raw by design, ${callSites.unguardedCallSites} unguarded)`
+        : `call-site coverage not available: ${coverageWhy}`,
+      runId && runs.length === 0 ? `no real run ${runId}` : `${guardTotal} guard(s) compiled in ${runs.length} real run(s), ${active} active`,
+    ];
+    const output = parts.join("; ");
+    const data = { callSites, runGuards: runGuards.slice(-20) };
+    return {
+      status: "ok",
+      output,
+      data,
+      modelText: `${output}.\n${json(data)}${callSites ? "" : "\nCall-site coverage could NOT be checked; say so, do not guess it."}`,
+      citables: [
+        ...(callSites ? [apiCitable(STEP_ID_PLACEHOLDER, `Guard coverage (${callSites.backend} walk, ${callSites.computedAt})`)] : []),
+        ...runs.map((b) => ({ type: "run" as const, id: b.runId, label: `Run ${b.runId}` })),
+      ],
+    };
+  },
+};
+
+// ---------------------------------------------------------------------------- explain a decision
+
+const explainDecision: ChatToolDef = {
+  name: "explain_decision",
+  description:
+    "Explain one billing decision of a real run with deterministic code (no model): for a held item, why it was held (required vs missing beliefs, the guard or missing certificate that decided it, the evidence pack's probes, the Adversary review, the grade); for any other status, the recorded decision fields. Get decision ids from get_run (heldDecisions) or get_run_events.",
+  argsDoc: '{"runId": "<runId>", "decisionId": "<decision id>"}',
+  args: z.object({ runId: z.string().regex(SAFE_RUN_ID, "not a valid run id"), decisionId: z.string().min(1).max(200) }).strict(),
+  title: (a) => `Explaining decision ${String(a.decisionId)} in ${String(a.runId)}`,
+  input: (a) => `${String(a.runId)} · ${String(a.decisionId)}`,
+  async run(a, ctx) {
+    const runId = String(a.runId);
+    const decisionId = String(a.decisionId);
+    const real = realBundles(await ctx.loadBundles());
+    const loaded = real.find((l) => l.bundle.runId === runId);
+    if (!loaded) return { status: "ok", output: `No real run ${runId}`, data: { found: false, runId }, modelText: `No real run with id ${runId} exists on this server (sample/fixture runs are not used).`, citables: [] };
+    const b = loaded.bundle;
+    const d = b.decisions.find((x) => x.id === decisionId);
+    if (!d) {
+      const known = b.decisions.slice(0, 20).map((x) => x.id);
+      return {
+        status: "ok",
+        output: `No decision ${decisionId} in ${runId} (${b.decisions.length} decision(s) recorded)`,
+        data: { found: false, runId, decisionId, decisions: known },
+        modelText: `Run ${runId} records no decision ${decisionId}. It records ${b.decisions.length} decision(s)${known.length ? `: ${json(known)}` : ""}.`,
+        citables: [{ type: "run", id: runId, label: `Run ${runId}` }],
+      };
+    }
+    const events = timelineFor(loaded, ctx.runsDir).filter((e) => e.recordIds.includes(decisionId));
+    const eventCitables = events.slice(0, 6).map((e) => ({ type: "run_event" as const, id: timelineEventId(runId, e.seq), label: `${runId} event #${e.seq} (${e.type})` }));
+    const record = {
+      id: d.id,
+      requestId: d.requestId,
+      requestType: d.requestType,
+      status: d.status,
+      action: d.action,
+      policyOutcome: d.policyOutcome,
+      requiredBeliefs: d.requiredBeliefs,
+      missingBeliefs: d.missingBeliefs,
+      guardsApplied: d.guardsApplied,
+      ...(d.error ? { error: oneLine(d.error, 400) } : {}),
+      ...(d.evidencePack ? { evidenceReason: oneLine(d.evidencePack.reason, 400), evidenceProbeIds: d.evidencePack.relatedProbeIds.slice(0, 20) } : {}),
+      ...(d.grade ? { grade: d.grade } : {}),
+    };
+    let explanation: string | null = null;
+    let explainNote = "";
+    if (d.status === "held") {
+      try {
+        // The other real runs supply the probes the evidence pack cites (one data world: real).
+        const ans = whyHeld(b, decisionId, makeWorld(real.map((l) => l.bundle)));
+        explanation = ans.answer;
+      } catch (err) {
+        explainNote = `the explain engine could not explain it (${oneLine(errText(err), 200)})`;
+      }
+    }
+    const output = `${decisionId} in ${runId}: ${d.status} ${d.action}${explanation ? " — held; explained from the records" : ""}`;
+    const data = { runId, decision: record, ...(explanation ? { explanation } : {}), timelineEvents: eventCitables.map((c) => c.id) };
+    return {
+      status: "ok",
+      output,
+      data,
+      modelText: `${output}.\nDecision record: ${json(record)}${explanation ? `\nDeterministic explanation (src/explain, built from the records only):\n${explanation}` : explainNote ? `\nNo explanation: ${explainNote}.` : ""}`,
+      citables: [{ type: "run", id: runId, label: `Run ${runId}` }, ...eventCitables, apiCitable(STEP_ID_PLACEHOLDER, `Decision ${decisionId} explained (${runId})`)],
+    };
+  },
+};
+
 export const CHAT_TOOLS: readonly ChatToolDef[] = [
   searchCertificates,
   getCertificate,
@@ -711,7 +870,20 @@ export const CHAT_TOOLS: readonly ChatToolDef[] = [
   crustdataLookup,
   dodoLookup,
   getHealth,
+  getGuardCoverage,
+  explainDecision,
 ];
+
+/** A tool's JSON Schema parameters, generated from its zod args schema (input side: defaults are optional). */
+export function toolParameters(def: ChatToolDef): Record<string, unknown> {
+  const { $schema: _schema, ...rest } = z.toJSONSchema(def.args, { io: "input" }) as Record<string, unknown>;
+  return rest;
+}
+
+/** Every chat tool as an OpenAI-style function tool (sent as `tools` on each model call). */
+export function chatToolSpecs(defs: readonly ChatToolDef[] = CHAT_TOOLS): ToolSpec[] {
+  return defs.map((d) => ({ name: d.name, description: d.description, parameters: toolParameters(d) }));
+}
 
 export function toolByName(name: string): ChatToolDef | undefined {
   return CHAT_TOOLS.find((t) => t.name === name);

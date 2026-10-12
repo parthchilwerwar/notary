@@ -16,8 +16,8 @@
    - Geometry: the legacy --radius (12px) stays for the current dashboard controls until D3;
      new surfaces use --r-card 20px, --r-section 28px, --r-button 10px.
 
-   The light block is declared on :root AND .theme-light, so a subtree (the landing) can pin
-   itself to light even when the dashboard theme is dark (every alias is re-resolved there). */
+   The light block is declared on :root AND .theme-light (the landing's root class), so the landing
+   keeps resolving every alias locally. */
 
 :root,
 .theme-light {
@@ -80,9 +80,11 @@
   --r-section: 28px;
   --r-button: 10px;
   --r-pill: 999px;
+  /* Dashboard panels (hairline, flat, no shadow): held actions, compact certificates. */
+  --r-panel: 8px;
   --shadow-soft: 0 1px 2px rgb(11 15 25 / 0.04);
   --shadow-float: 0 1px 2px rgb(11 15 25 / 0.04), 0 8px 24px rgb(47 106 235 / 0.08);
-  /* Scrim under dialogs and the phone drawer (ink at 32%; the same in both themes). */
+  /* Scrim under dialogs and the phone drawer (ink at 32%). */
   --overlay: rgb(11 15 25 / 0.32);
   /* Instrument Sans for body/UI, Instrument Serif for titles and display figures. The serif has a
      single 400 weight: display type is never bolded; it is set larger with gentle negative
@@ -160,35 +162,8 @@
   --focus-ring: 2px solid var(--focus);
 }
 
-/* Dark tokens (defined in D1, applied to the dashboard in D3): navy page, same accent. */
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --page: #0b1220;
-  --surface-subtle: #0e1627;
-  --card: #111a2e;
-  --hairline-color: #1f2a44;
-  --text: #e8ecf4; /* 15.8:1 */
-  --text-muted: #9aa6bf; /* 7.65:1 on page, 7.09:1 on card */
-  --text-faint: #56647f; /* non-text only */
-  --text-strong-muted: #c3cbdb;
-  --muted-surface: #16213a;
-  --accent: #2f6aeb; /* fills; 3.91:1 on navy, so never small text */
-  --accent-hover: #4a7ff0;
-  --accent-soft: #15254a;
-  --accent-text: #7ea6f8; /* 7.75:1 on page, 7.18:1 on card */
-  --status-certified-text: #4ade80;
-  --status-certified-bg: #0f2a1c;
-  --status-unsafe-text: #f87171;
-  --status-unsafe-bg: #2c1418;
-  --status-held-text: #fbbf24;
-  --status-held-bg: #2b2210;
-  --status-revoked: #9ca3af;
-  --status-revoked-bg: #111a2e;
-  --sky-band: linear-gradient(180deg, #13213f, transparent);
-  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.3);
-  --shadow-float: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.35);
-  --control-line: #56647f; /* 3.14:1 on page */
-}
+/* Light only: the dashboard has no dark theme (the toggle and the OS-preference script were
+   removed). index.html pins <html data-theme="light">; nothing sets "dark". */
 
 .tabular,
 td,

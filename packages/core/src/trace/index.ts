@@ -76,9 +76,10 @@
  * from every exported span and log, and attribute keys that look like credentials are dropped.
  */
 import { AsyncLocalStorage } from "node:async_hooks";
-import { appendFileSync, mkdirSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
-import { dirname } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import type * as Neatlogs from "neatlogs";
 
 export type TracingState = { enabled: boolean; reason?: string };
@@ -144,6 +145,11 @@ function truthy(v: string | undefined): boolean {
 
 export function tracingEnabled(): boolean {
   return sdk !== null;
+}
+
+/** The run id stamped on spans (initTracing({ runId })), if any. */
+export function tracingRunId(): string | undefined {
+  return runId;
 }
 
 // What `notary serve`'s GET /api/health reports for neatlogs (src/api/health.ts): the last init
@@ -453,6 +459,55 @@ export function traceLog(message: string, attrs?: TraceAttrs): void {
   } catch {
     // ignore
   }
+}
+
+/** neatlogs log severities (the SDK's special `level` key). */
+export type LogLevel = "debug" | "info" | "warn" | "error";
+
+/**
+ * Like traceLog, at an explicit severity (`level` is the SDK's special key; every other key is
+ * recorded as a `log.<key>` attribute). The record is tied to the span active in the SDK's context
+ * when called. Returns true when the SDK accepted it (false: tracing off or the SDK threw).
+ */
+export function traceLogAt(level: LogLevel, message: string, attrs?: TraceAttrs): boolean {
+  if (!sdk) return false;
+  try {
+    sdk.log(message, { ...safeAttrs({ ...(runId ? { "notary.runId": runId } : {}), ...attrs }), level });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Ids of the innermost span opened by withSpan in this async context (undefined outside any). */
+export function currentSpanIds(): SpanIds | undefined {
+  const s = localContext.getStore();
+  return s ? { ...s } : undefined;
+}
+
+/** Version of the neatlogs SDK (its `__version__` export); undefined when it can't be loaded. */
+export async function neatlogsSdkVersion(): Promise<string | undefined> {
+  try {
+    const loaded = sdk as (Sdk & { __version__?: unknown }) | null;
+    if (loaded && typeof loaded.__version__ === "string") return loaded.__version__;
+  } catch {
+    // a module without the export (test doubles): fall through
+  }
+  // Not loaded: read the installed package.json next to the resolved entry (cheap; no SDK import).
+  try {
+    let dir = dirname(fileURLToPath(import.meta.resolve("neatlogs")));
+    for (let i = 0; i < 4; i++) {
+      const pkg = join(dir, "package.json");
+      if (existsSync(pkg)) {
+        const parsed = JSON.parse(readFileSync(pkg, "utf8")) as { name?: unknown; version?: unknown };
+        if (parsed.name === "neatlogs" && typeof parsed.version === "string") return parsed.version;
+      }
+      dir = dirname(dir);
+    }
+  } catch {
+    // fall through
+  }
+  return undefined;
 }
 
 /** Flush pending spans and logs. Never throws; no-op when tracing is off. */

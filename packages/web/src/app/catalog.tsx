@@ -29,9 +29,11 @@ import {
 import {
   baselineCandidates,
   defaultRunId,
+  fixturesRequested,
   groupRuns,
   pickBaseline,
   resolveDataMode,
+  visibleRuns,
   type DataMode,
   type RunGroup,
 } from "./links";
@@ -52,10 +54,15 @@ export type DataContextValue = {
   dataSource: DataSource;
   /** Runs the live server reports as still running (no bundle yet). Empty in replay. */
   running: RunEntry[];
-  /** Every index entry (real and fixture). Use `runGroups` to present them. */
+  /**
+   * True under `?fixtures=1` (development only): the catalog is the fixture runs and pages carry the
+   * fixture disclosure. Otherwise the catalog is real runs only; fixture runs are never listed.
+   */
+  fixtures: boolean;
+  /** The visible index entries (real runs, or fixture runs under `?fixtures=1`). Use `runGroups` to present them. */
   runs: BundleIndexEntry[];
   runGroups: RunGroup[];
-  /** Every verified bundle. Never mix `sample` and real bundles in one chart or table. */
+  /** Every visible verified bundle: one cohort only (real, or fixture under `?fixtures=1`). */
   bundles: RunBundle[];
   /** The selected run, hash-verified. Undefined while loading, on error or when nothing is published. */
   bundle?: RunBundle;
@@ -81,6 +88,11 @@ export function useData(): DataContextValue {
   return ctx;
 }
 
+/** The data world when inside a DataProvider; undefined in isolated renders (tests). */
+export function useOptionalData(): DataContextValue | undefined {
+  return useContext(DataContext) ?? undefined;
+}
+
 type CatalogState =
   | { status: "loading" }
   | { status: "error"; error: string }
@@ -95,6 +107,7 @@ type CatalogState =
 export function DataProvider({ children }: { children: ReactNode }) {
   const { source: dataSource, mode: sourceMode, ready: sourceReady } = useDataSource();
   const [params, setParams] = useSearchParams();
+  const fixtures = fixturesRequested(params);
   const [catalog, setCatalog] = useState<CatalogState>({ status: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
   const [evidence, setEvidence] = useState<Loadable<EvidenceEntry[]>>({
@@ -109,7 +122,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const controller = new AbortController();
     setCatalog({ status: "loading" });
     (async () => {
-      const runs = await dataSource.listRuns(controller.signal);
+      // Real runs only, or fixture runs only under ?fixtures=1. Hidden runs are not even fetched.
+      const runs = visibleRuns(await dataSource.listRuns(controller.signal), fixtures);
       const entries = finishedEntries(runs).sort(byNewest);
       // Every bundle is schema-checked and hash-verified by the data layer before it arrives here.
       const bundles = (
@@ -131,7 +145,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           setCatalog({ status: "error", error: e.message });
       });
     return () => controller.abort();
-  }, [reloadKey, dataSource, sourceMode, sourceReady]);
+  }, [reloadKey, dataSource, sourceMode, sourceReady, fixtures]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -225,6 +239,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     mode: resolveDataMode(source, bundle),
     source,
     dataSource,
+    fixtures,
     running: ready?.running ?? [],
     runs: entries,
     runGroups: groupRuns(entries, source),

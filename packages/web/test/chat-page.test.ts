@@ -34,7 +34,7 @@ import {
   workSummary,
 } from "../src/pages/chat/model";
 import { inlineText, parseInline, parseMarkdown, safeHref } from "../src/pages/chat/markdown";
-import { MessageView } from "../src/pages/chat/MessageView";
+import { MessageView, reasoningInput } from "../src/pages/chat/MessageView";
 import { chatPrefillPath } from "../src/components/shell/CommandPalette";
 import { matchAppRoute, navRoutes, redirectTarget, redirects } from "../src/routes";
 
@@ -262,21 +262,49 @@ describe("MessageView", () => {
   const render = (view: ReturnType<typeof reduceChatEvents>, mode: "live" | "replay" = "live") =>
     renderToStaticMarkup(createElement(MemoryRouter, null, createElement(MessageView, { view, mode, messageKey: "m1", runId: "demo-run-guarded" })));
 
-  it("while working: open work section, live region, spinner and the unavailable fix inline", () => {
+  it("while working: reasoning steps show the current step with a spinner and a live region, compact", () => {
     const html = render(reduceChatEvents([turn[0]!, STEP, ...UNAVAILABLE]));
-    expect(html).toContain("Working… 2 steps");
+    expect(html).toContain('data-slot="reasoning-steps"');
+    expect(html).toContain('data-state="running"');
+    expect(html).toContain('data-glyph="running"');
     expect(html).toContain('aria-live="polite"');
-    expect(html).toContain('aria-label="In progress"');
-    expect(html).toContain('aria-label="Unavailable"');
-    expect(html).toContain("Crustdata not connected — set CRUSTDATA_API_KEY");
-    expect(html).toContain("Model said");
-    expect(html).not.toMatch(/<ol[^>]*class="[^"]*chat-steps[^"]*"[^>]*hidden/);
+    // The header carries the latest step (live mode follows the data), and how many have run.
+    expect(html).toContain("Looking up Acme Corp in Crustdata");
+    expect(html).toContain("step 2");
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).not.toContain('data-slot="reasoning-steps-list"');
+  });
+
+  it("maps the turn's own data to reasoning steps: steps → stages, notes → lines, valid citations → sources", () => {
+    const view = reduceChatEvents(turn);
+    const showStep = vi.fn();
+    const { stages, reasoning, sources } = reasoningInput(view, "live", { domId: (id) => `d-${id}`, expanded: new Set(["s1"]), toggle: () => {}, showStep, runId: "demo-run-guarded" });
+    expect(stages.map((s) => [s.id, s.label, s.status, s.statusLabel])).toEqual([
+      ["s1", "Checking certificate dodo.refund.amount-minor-units", "done", "Done"],
+      ["s2", "Looking up Acme Corp in Crustdata", "skipped", "Unavailable"],
+    ]);
+    expect(stages[0]!.meta).toBe("12ms");
+    expect(stages[0]!.expanded).toBe(true);
+    expect(stages[0]!.anchorId).toBe("d-s1");
+    expect(stages[1]!.note).toBeDefined(); // the fix (CRUSTDATA_API_KEY) under the unavailable step
+    // The note comes before s1, so it explains s1.
+    expect(reasoning).toEqual([{ id: "n0", text: "Checking the certificate first.", tag: "Model said", tagTone: "neutral", stage: "s1" }]);
+    // Only the valid citation becomes a source (the flagged doc stays in the Sources list), linked to its record.
+    expect(sources).toHaveLength(1);
+    expect(sources[0]).toMatchObject({ label: CITE.label, stage: "s1", href: "/app/certificates/cert-93e8d5ff6c3c99a5?run=demo-run-guarded", external: false });
+    // Nothing invented: no steps, notes or citations → nothing to show.
+    expect(reasoningInput(EMPTY_TURN, "live", { domId: (id) => id, expanded: new Set(), toggle: () => {}, showStep })).toEqual({ stages: [], reasoning: [], sources: [] });
+    // A trailing note (no step after it yet) stays unattached.
+    const trailing = reasoningInput(reduceChatEvents([STEP, FINISH, { type: "note", text: "Next: the run.", source: "replay" }]), "replay", { domId: (id) => id, expanded: new Set(), toggle: () => {}, showStep });
+    expect(trailing.reasoning).toEqual([{ id: "n1", text: "Next: the run.", tag: "Replay engine", tagTone: "accent" }]);
   });
 
   it("finished: collapsed summary, citation chips, flagged citations, footer with cost/tokens and trace id as text", () => {
     const html = render(reduceChatEvents(turn));
-    expect(html).toContain("Checked 2 sources · 4.2s · $0.0123");
-    expect(html).toMatch(/<ol[^>]*class="[^"]*chat-steps[^"]*"[^>]*hidden/);
+    expect(html).toContain("Reasoned in 2 steps");
+    expect(html).toContain("4.2s · $0.0123");
+    expect(html).toContain('data-state="settled"');
+    expect(html).not.toContain('data-slot="reasoning-steps-list"');
     expect(html).toContain('aria-label="Citation 1: dodo.refund.amount-minor-units. Show the step that produced it"');
     expect(html).toContain("citation 2, flagged");
     expect(html).toContain("citation 3, missing");
@@ -288,7 +316,10 @@ describe("MessageView", () => {
 
   it("tags replay notes as the replay engine, never as model text", () => {
     const replayNote = { type: "note" as const, text: "Checking the certificate first.", source: "replay" as const };
-    const html = render(reduceChatEvents([replayNote, STEP]), "replay");
+    // Replay paces the steps, so a static render shows none yet; the mapping carries the tag.
+    const replay = reasoningInput(reduceChatEvents([replayNote, STEP]), "replay", { domId: (id) => id, expanded: new Set(), toggle: () => {}, showStep: () => {} });
+    expect(replay.reasoning.map((l) => l.tag)).toEqual(["Replay engine"]);
+    const html = render(reduceChatEvents([replayNote, STEP]), "live");
     expect(html).toContain("Replay engine");
     expect(html).not.toContain("Model said");
     // The tag follows who wrote the note: a model-written note is "Model said" in any mode.
@@ -309,7 +340,7 @@ describe("MessageView", () => {
     await src.chat.sendMessage(id, "Why was refund q02 held?", (e) => events.push(e));
     const html = render(reduceChatEvents(events, { finished: true }), "replay");
     expect(html).toContain("no model call");
-    expect(html).toContain("Answering from fixture scenario default");
+    expect(html).toContain("Answering from recorded scenario runs, not live data.");
     expect(html).toContain("chat-cite");
   });
 });

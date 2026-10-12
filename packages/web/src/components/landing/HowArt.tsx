@@ -30,7 +30,7 @@ function loadHow(replay: ReplaySource): Promise<HowData> {
   let p = cache.get(replay);
   if (!p) {
     p = (async () => {
-      const { entries, guarded } = await replayPair(replay);
+      const { entries, preview: guarded } = await replayPair(replay);
       if (!guarded) return {};
       const entry = entries.find((e) => e.runId === guarded.runId);
       const sources: RunBundle[] = [];

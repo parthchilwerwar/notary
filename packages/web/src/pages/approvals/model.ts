@@ -25,6 +25,10 @@ export type DeskMode = "local" | "hosted";
 export const deskMode = (source: DataSource): DeskMode =>
   source === "api" ? "local" : "hosted";
 
+/** Why a recorded (sample) run is never approvable: the rule, without demo wording. */
+export const RECORDED_RUN_NOTE =
+  "Recorded run — not approvable. Approvals open only for live runs on a local `notary serve`.";
+
 export const HOSTED_NOTE =
   "Read-only. Approving or rejecting a held action happens only against a local `notary serve` in Dodo test mode.";
 
@@ -60,7 +64,7 @@ export function rejectGate(ctx: GateContext): Gate {
   if (ctx.mode !== "local") return deny(HOSTED_NOTE);
   if (!ctx.bundle)
     return deny("This run's bundle is not loaded, so its evidence can't be shown. No decision is offered.");
-  if (ctx.bundle.sample) return deny("Fixture data is never approvable.");
+  if (ctx.bundle.sample) return deny(RECORDED_RUN_NOTE);
   if (!ctx.token) return deny("Paste the session token from `notary serve` first.");
   return { allowed: true };
 }
@@ -238,7 +242,7 @@ export function buildDesk({
 }
 
 function historyNote(mode: DeskMode, bundle: RunBundle): string {
-  if (bundle.sample) return "Fixture data: recorded for review, never approvable.";
+  if (bundle.sample) return RECORDED_RUN_NOTE;
   if (mode === "hosted") return "Recorded history. Decide it on a local `notary serve`.";
   return "Not listed by the local server: only verified, live, guarded runs under runs/ with a write action are approvable.";
 }

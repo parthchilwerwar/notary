@@ -142,8 +142,8 @@ try {
     await page.getByRole("textbox", { name: "Message Notary" }).fill("Look up Acme Corp in Crustdata");
     await page.keyboard.press("Enter");
     await expect(page.locator(".chat-footer")).toBeVisible({ timeout: 20000 });
-    await expect(page.locator(".chat-work-toggle")).toContainText(/Checked \d+ sources?/);
-    await page.locator(".chat-work-toggle").click();
+    await expect(page.locator('[data-slot="reasoning-steps-header"]')).toContainText(/Reasoned in \d+ steps?/);
+    await page.locator('[data-slot="reasoning-steps-header"]').click();
     await expect(page.locator(".chat-step-fix", { hasText: "CRUSTDATA_API_KEY" }).first()).toBeVisible();
     await settle(page);
     await page.screenshot({ path: resolve(out, `chat-answer-${theme}-${width}.png`), animations: "disabled" });

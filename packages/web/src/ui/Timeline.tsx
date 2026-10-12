@@ -1,4 +1,6 @@
 import type { ComponentPropsWithRef, ReactNode } from "react";
+import { CheckIcon as Check } from "@phosphor-icons/react/dist/csr/Check";
+import { XIcon as X } from "@phosphor-icons/react/dist/csr/X";
 import { cn } from "../lib/utils";
 
 export type TimelineMark = "dot" | "check" | "x" | "spinner" | "pending";
@@ -26,16 +28,8 @@ export function TimelineMarker({ mark = "dot", tone = "neutral", label }: { mark
   const text = label ?? MARK_LABEL[mark];
   return (
     <span className="ui-tl-mark" data-mark={mark} data-tone={tone} role={text ? "img" : undefined} aria-label={text || undefined} aria-hidden={text ? undefined : true}>
-      {mark === "check" && (
-        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
-          <path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      )}
-      {mark === "x" && (
-        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
-          <path d="M4.5 4.5l7 7m0-7l-7 7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-        </svg>
-      )}
+      {mark === "check" && <Check size={12} weight="bold" aria-hidden="true" />}
+      {mark === "x" && <X size={12} weight="bold" aria-hidden="true" />}
       {mark === "spinner" && <span className="ui-spinner" aria-hidden="true" />}
     </span>
   );

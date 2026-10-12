@@ -1,10 +1,11 @@
-// Desk pieces (K3): one peach WashCard per held action — the amount in Instrument Serif, customer
-// and request type, why it was held in one sentence, Approve (black) / Reject (white) — with the
-// evidence pack and the decision trail behind "Show details". Decided records and the token form.
+// Desk pieces: one row per held action, between hairlines — request and customer on the left, the
+// amount in Instrument Serif on the right, why it was held in one sentence, Approve / Reject — with
+// the evidence pack and the decision trail behind a disclosure. Decided records and the token form.
 import { useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router";
+import { LockSimpleIcon as LockSimple } from "@phosphor-icons/react/dist/csr/LockSimple";
 import type { ApprovalRecord, Decision, RunBundle } from "../../../../core/src/schema";
-import { AgentBadge, Button, Card, Expander, Facts, RecordLinks, StatusPill, Trace, WashCard } from "../../ui";
+import { AgentBadge, Button, Expander, Facts, RecordLinks, StatusPill, Trace } from "../../ui";
 import { DecisionTrail } from "../../components/trail";
 import { label, number } from "../../data";
 import { dateTime as date } from "../../lib/time";
@@ -114,12 +115,20 @@ export function NoteText({ text }: { text: string }) {
   return <>{text.split("`").map((part, i) => (i % 2 ? <code key={i}>{part}</code> : part))}</>;
 }
 
-function GateNote({ gate }: { gate: Gate }) {
-  return gate.allowed ? null : (
+/** Why an action is not available: a lock icon and the reason, quiet text under the buttons. */
+function GateText({ text }: { text: string }) {
+  return (
     <p className="desk-gate">
-      <NoteText text={gate.reason} />
+      <LockSimple className="desk-gate-icon" size={16} weight="regular" aria-hidden="true" />
+      <span>
+        <NoteText text={text} />
+      </span>
     </p>
   );
+}
+
+function GateNote({ gate }: { gate: Gate }) {
+  return gate.allowed ? null : <GateText text={gate.reason} />;
 }
 
 /** The amount, big: digits in Instrument Serif, the unit beside it (never converted or guessed). */
@@ -153,19 +162,19 @@ function HeldShell({
   highlight?: boolean;
 }) {
   return (
-    <WashCard as="article" wash="peach" className="desk-item" data-highlight={highlight || undefined} data-reveal>
+    <article className="desk-item" data-highlight={highlight || undefined} data-reveal>
       <header className="desk-item-head">
-        <div>
+        <div className="desk-item-id">
           <span className="desk-kicker">{kicker}</span>
           <h3 className="desk-title">{title}</h3>
+          <div className="desk-pills">{status}</div>
         </div>
-        <div className="desk-pills">{status}</div>
+        {amount}
       </header>
-      {amount}
       <p className="desk-why">{why}</p>
       {footer && <footer className="desk-item-foot">{footer}</footer>}
       {children}
-    </WashCard>
+    </article>
   );
 }
 
@@ -263,9 +272,9 @@ export function RecordView({ record, bundle }: { record: ApprovalRecord; bundle?
 export function DecidedItem({ row, highlight }: { row: DecidedRow; highlight?: boolean }) {
   const { record, bundle, decision } = row;
   return (
-    <Card as="article" className="desk-decided" data-highlight={highlight || undefined} data-reveal>
+    <article className="desk-item desk-decided" data-highlight={highlight || undefined} data-reveal>
       <header className="desk-item-head">
-        <div>
+        <div className="desk-item-id">
           <span className="desk-kicker">{`${record.runId} · ${label(record.action)} · human override`}</span>
           <h3 className="desk-title">
             <DecisionLink runId={record.runId} decisionId={record.decisionId} requestId={record.requestId} known={Boolean(decision)} />
@@ -284,11 +293,12 @@ export function DecidedItem({ row, highlight }: { row: DecidedRow; highlight?: b
           </div>
         </Expander>
       )}
-    </Card>
+    </article>
   );
 }
 
-export function HistoryItem({ row, openTrail }: { row: HistoryRow; openTrail?: boolean }) {
+/** `showNote` false when the list states the (shared) note once above its rows. */
+export function HistoryItem({ row, openTrail, showNote = true }: { row: HistoryRow; openTrail?: boolean; showNote?: boolean }) {
   const { bundle, decision } = row;
   const request = bundle.queue.find((q) => q.id === decision.requestId);
   return (
@@ -304,9 +314,7 @@ export function HistoryItem({ row, openTrail }: { row: HistoryRow; openTrail?: b
       amount={<Amount amount={request?.amount} currency={request?.currency} missing="No amount in the request" />}
       why={decision.evidencePack?.reason ?? `Policy ${label(decision.policyOutcome)}; held for a person.`}
       footer={
-        <p className="desk-gate">
-          <NoteText text={row.note} />
-        </p>
+        showNote ? <GateText text={row.note} /> : undefined
       }
     >
       <Details bundle={bundle} decision={decision} open={openTrail} />
@@ -319,12 +327,12 @@ export function TokenForm({ token, setToken, error }: { token: string | null; se
   const [draft, setDraft] = useState("");
   if (token)
     return (
-      <Card padding="sm" className="desk-token saved">
+      <div className="desk-token saved">
         <span>Session token saved for this tab.</span>
         <Button variant="secondary" size="sm" onClick={() => setToken(null)}>
           Forget token
         </Button>
-      </Card>
+      </div>
     );
   const save = (e: FormEvent) => {
     e.preventDefault();
@@ -332,7 +340,7 @@ export function TokenForm({ token, setToken, error }: { token: string | null; se
     setDraft("");
   };
   return (
-    <Card as="form" className="desk-token" onSubmit={save}>
+    <form className="desk-token" onSubmit={save}>
       <label htmlFor="approvals-token">
         Session token (printed once by <code>pnpm notary serve</code>)
       </label>
@@ -354,6 +362,6 @@ export function TokenForm({ token, setToken, error }: { token: string | null; se
           {error}
         </p>
       )}
-    </Card>
+    </form>
   );
 }

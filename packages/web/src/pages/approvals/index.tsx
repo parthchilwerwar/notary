@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ApprovalRecord, ApprovalsList } from "../../../../core/src/schema";
 import { Link } from "react-router";
-import { Button, Card, EmptyState, Page, PageBody, Section, Skeleton, SkyBand, Stat, StatRow, usePageMotion } from "../../ui";
+import { Button, EmptyState, Note, Page, PageBody, PageHeader, Section, Skeleton, Stat, StatRow, usePageMotion } from "../../ui";
 import { useData } from "../../app/catalog";
 import { LocalApiError, number, useSessionToken } from "../../data";
 import { withRun } from "../../app/links";
@@ -23,7 +23,7 @@ import {
   rejectGate,
   type PendingRow,
 } from "./model";
-import { DecidedItem, HistoryItem, PendingItem, TokenForm } from "./parts";
+import { DecidedItem, HistoryItem, NoteText, PendingItem, TokenForm } from "./parts";
 import "./approvals.css";
 
 type ListState =
@@ -89,6 +89,9 @@ export function ApprovalsPage() {
       }
     : undefined;
   const heldInSelected = heldDecisions(selected).length;
+  // Every history row of one run usually carries the same note: say it once above the rows.
+  const sharedNote =
+    desk.history.length > 1 && desk.history.every((r) => r.note === desk.history[0]!.note) ? desk.history[0]!.note : undefined;
 
   const root = usePageMotion([selected.runId, list.status, desk.pending.length]);
   const summary =
@@ -100,7 +103,7 @@ export function ApprovalsPage() {
 
   return (
     <Page ref={root}>
-      <SkyBand
+      <PageHeader
         title="Approvals"
         summary={summary}
         action={
@@ -120,20 +123,20 @@ export function ApprovalsPage() {
 
         {mode === "hosted" ? (
           <>
-            <Card padding="sm" className="desk-note" role="note">
+            <Note className="desk-note">
               Read-only history. Approving or rejecting a held action happens only against a local <code>notary serve</code>{" "}
               in Dodo test mode. Start the server to approve live.
-            </Card>
+            </Note>
             <RecordedHolds />
           </>
         ) : (
           <section className="desk-local" aria-label="Local approvals">
             <TokenForm token={token} setToken={setToken} error={tokenError} />
             {data && !data.testMode && (
-              <p className="desk-gate" role="note">
+              <Note tone="warning">
                 Approvals are disabled: this <code>notary serve</code> is not in Dodo test mode, and approvals execute only
                 in test mode. Rejecting needs no external call and stays available.
-              </p>
+              </Note>
             )}
 
             {list.status === "loading" && (
@@ -162,33 +165,38 @@ export function ApprovalsPage() {
 
             {latestRow && (
               <Section title="Latest decision" aria-live="polite">
-                <DecidedItem row={latestRow} highlight />
+                <div className="desk-rows">
+                  <DecidedItem row={latestRow} highlight />
+                </div>
               </Section>
             )}
 
             {data && (
               <Section title="Awaiting a human" description={`${number(desk.pending.length)} pending across local runs`}>
                 {desk.pending.length ? (
-                  desk.pending.map((row, i) => {
-                    const ctx = { mode, testMode: data.testMode, token, bundle: row.bundle };
-                    return (
-                      <PendingItem
-                        key={row.key}
-                        row={row}
-                        approve={approveGate(ctx, row.item)}
-                        reject={rejectGate(ctx)}
-                        onApprove={() => setDialog({ kind: "approve", row })}
-                        onReject={() => setDialog({ kind: "reject", row })}
-                        openTrail={i === 0}
-                      />
-                    );
-                  })
+                  <div className="desk-rows">
+                    {desk.pending.map((row, i) => {
+                      const ctx = { mode, testMode: data.testMode, token, bundle: row.bundle };
+                      return (
+                        <PendingItem
+                          key={row.key}
+                          row={row}
+                          approve={approveGate(ctx, row.item)}
+                          reject={rejectGate(ctx)}
+                          onApprove={() => setDialog({ kind: "approve", row })}
+                          onReject={() => setDialog({ kind: "reject", row })}
+                          openTrail={i === 0}
+                        />
+                      );
+                    })}
+                  </div>
                 ) : (
                   <EmptyState title="Nothing waiting for review.">
                     The local server lists held write actions only from verified, live, guarded runs under{" "}
                     <code>runs/</code>. None are held right now
                     {data.decided.length ? ", and every listed item has been decided" : ""}.
-                    {desk.droppedSample > 0 && ` ${number(desk.droppedSample)} item(s) from fixture runs were not offered.`}
+                    {desk.droppedSample > 0 &&
+                      ` ${number(desk.droppedSample)} ${desk.droppedSample === 1 ? "item" : "items"} from recorded, non-live runs ${desk.droppedSample === 1 ? "was" : "were"} not offered.`}
                   </EmptyState>
                 )}
               </Section>
@@ -196,11 +204,13 @@ export function ApprovalsPage() {
 
             {data && desk.decided.length > 0 && (
               <Section title="Decided" description={`${number(desk.decided.length)} recorded`}>
-                {desk.decided
-                  .filter((row) => row.record.id !== latest?.id)
-                  .map((row) => (
-                    <DecidedItem key={row.record.id} row={row} />
-                  ))}
+                <div className="desk-rows">
+                  {desk.decided
+                    .filter((row) => row.record.id !== latest?.id)
+                    .map((row) => (
+                      <DecidedItem key={row.record.id} row={row} />
+                    ))}
+                </div>
               </Section>
             )}
           </section>
@@ -215,11 +225,18 @@ export function ApprovalsPage() {
           }
         >
           {desk.history.length ? (
-            <div className="desk-list">
-              {desk.history.map((row, i) => (
-                <HistoryItem key={row.key} row={row} openTrail={i === 0 && mode === "local"} />
-              ))}
-            </div>
+            <>
+              {sharedNote && (
+                <Note className="desk-shared-note">
+                  <NoteText text={sharedNote} />
+                </Note>
+              )}
+              <div className="desk-rows">
+                {desk.history.map((row, i) => (
+                  <HistoryItem key={row.key} row={row} openTrail={i === 0 && mode === "local"} showNote={!sharedNote} />
+                ))}
+              </div>
+            </>
           ) : (
             <EmptyState title={heldInSelected ? "Nothing else held" : "Nothing waiting for review."}>
               {heldInSelected

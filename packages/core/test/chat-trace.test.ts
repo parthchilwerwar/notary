@@ -17,7 +17,8 @@ import type { ChatCallOptions, ChatRequest, ChatReply } from "../src/llm/litellm
 import type { HealthResponse } from "../src/schema/api.js";
 import { withSpan } from "../src/trace/index.js";
 import type { SpanRecord } from "../src/trace/index.js";
-import { FINAL, act, events, makeApp, newConversation, send } from "./chat-helpers.js";
+import { FINAL, act, events, makeApp, newConversation, send, toToolCalls } from "./chat-helpers.js";
+import type { ToolReply } from "./chat-helpers.js";
 
 const PLANTED_ENV = "NOTARY_TEST_PLANTED_SECRET";
 const PLANTED = "planted-chat-s3cret-9d2e71";
@@ -44,12 +45,14 @@ const ENV = {
   LITELLM_BASE_URL: "http://127.0.0.1:4000",
   LITELLM_API_KEY: LITELLM_KEY,
   NOTARY_MODEL_EXECUTOR: "test-executor",
+  NOTARY_MODEL_CHAT: "test-chat",
   [PLANTED_ENV]: PLANTED,
 };
 
 /** A LiteLLM transport double: streams through onDelta in chunks and opens an LLM-kind span (like wrapOpenAI). */
-function transport(replies: string[], opts: { stream?: boolean } = {}) {
-  const queue = [...replies];
+function transport(replies: (string | ToolReply)[], opts: { stream?: boolean } = {}) {
+  const queue = replies.filter((r) => r !== FINAL);
+  let n = 0;
   const bodies: ChatRequest[] = [];
   const t = async (body: ChatRequest, o?: ChatCallOptions): Promise<ChatReply> =>
     await withSpan(
@@ -57,7 +60,10 @@ function transport(replies: string[], opts: { stream?: boolean } = {}) {
       { "llm.model_name": body.model },
       async () => {
         bodies.push(body);
-        const text = queue.shift() ?? "";
+        const next = queue.shift() ?? "";
+        const reply: ToolReply = typeof next === "string" ? { text: next, toolCalls: [] } : next;
+        const text = reply.text;
+        const calls = toToolCalls(reply, ++n).map((c) => ({ id: c.id, type: "function" as const, function: { name: c.name, arguments: c.arguments } }));
         if (o?.onDelta && opts.stream !== false) for (let i = 0; i < text.length; i += 5) o.onDelta(text.slice(i, i + 5));
         return {
           completion: {
@@ -65,7 +71,7 @@ function transport(replies: string[], opts: { stream?: boolean } = {}) {
             object: "chat.completion",
             created: 0,
             model: body.model,
-            choices: [{ index: 0, message: { role: "assistant", content: text, refusal: null }, finish_reason: "stop", logprobs: null }],
+            choices: [{ index: 0, message: { role: "assistant", content: text, refusal: null, ...(calls.length ? { tool_calls: calls } : {}) }, finish_reason: calls.length ? "tool_calls" : "stop", logprobs: null }],
             usage: { prompt_tokens: 20, completion_tokens: 8, total_tokens: 28 },
           } as ChatReply["completion"],
           headers: {},
@@ -97,10 +103,10 @@ let n = 0;
 const sinkFile = () => join(root, `chat-${++n}.jsonl`);
 
 describe("one trace per message", () => {
-  it("root WORKFLOW -> TOOL step + notary.llm per model call (provider LLM span beneath); done.traceId is the root's", async () => {
+  it("root WORKFLOW -> AGENT loop -> TOOL step + notary.llm per model call (provider LLM span beneath); done.traceId is the root's", async () => {
     const spansPath = sinkFile();
     const t = transport([act("get_health", {}, "Checking what is connected"), FINAL, 'Crustdata is not connected [1].\nCITATIONS: [{"n":1,"type":"api_response","id":"s1"}]']);
-    const env = { ...ENV, NOTARY_PRICE_EXECUTOR_IN: "1", NOTARY_PRICE_EXECUTOR_OUT: "5" };
+    const env = { ...ENV, NOTARY_PRICE_CHAT_IN: "1", NOTARY_PRICE_CHAT_OUT: "5" };
     let flushes = 0;
     const { app, session } = makeApp({
       chatOpts: { env, llm: () => new LlmClient({ env, chatTransport: t }), spansPath, health, flush: () => ((flushes += 1), new Promise(() => {})) },
@@ -120,32 +126,39 @@ describe("one trace per message", () => {
     expect(done.traceId).toBe(rootSpan.traceId);
     for (const s of spans) expect(s.traceId).toBe(rootSpan.traceId);
 
+    const agent = spans.find((s) => s.name === "notary.chat.agent")!;
+    expect(agent).toMatchObject({ kind: "AGENT", parentSpanId: rootSpan.spanId });
+    expect(agent.attrs).toMatchObject({ "notary.agent_id": "chat", "notary.chat.steps": 1, "notary.chat.model_calls": 2 });
     const tools = spans.filter((s) => s.name === "notary.chat.tool");
     expect(tools).toHaveLength(1);
-    expect(tools[0]).toMatchObject({ kind: "TOOL", parentSpanId: rootSpan.spanId });
-    expect(tools[0]!.attrs).toMatchObject({ "notary.chat.tool": "get_health", "notary.chat.step_id": "s1", "notary.chat.status": "ok" });
+    expect(tools[0]).toMatchObject({ kind: "TOOL", parentSpanId: agent.spanId });
+    expect(tools[0]!.attrs).toMatchObject({ "notary.tool": "get_health", "notary.chat.tool": "get_health", "notary.chat.step_id": "s1", "notary.chat.status": "ok", "notary.recordIds": "s1", "notary.agent_id": "chat" });
 
     const llms = spans.filter((s) => s.name === "notary.llm");
-    expect(llms).toHaveLength(3);
+    expect(llms).toHaveLength(2);
     for (const l of llms) {
-      expect(l).toMatchObject({ kind: "CHAIN", parentSpanId: rootSpan.spanId });
+      expect(l).toMatchObject({ kind: "CHAIN", parentSpanId: agent.spanId });
       expect(l.attrs["llm.usd"]).toBeGreaterThan(0);
     }
-    // P2: every span of the turn names the agent (AGENTS.chat), model calls included (role stays executor).
-    for (const s of [rootSpan, ...tools, ...llms]) expect(s.attrs["notary.agent"]).toBe(AGENTS.chat.name);
-    for (const l of llms) expect(l.attrs["notary.role"]).toBe("executor");
+    // P2: every span of the turn names the agent (AGENTS.chat), model calls included (own role: chat).
+    for (const s of [rootSpan, agent, ...tools, ...llms]) expect(s.attrs["notary.agent"]).toBe(AGENTS.chat.name);
+    for (const l of llms) expect(l.attrs["notary.role"]).toBe("chat");
     const provider = spans.filter((s) => s.name === "fake.provider.chat");
-    expect(provider).toHaveLength(3);
+    expect(provider).toHaveLength(2);
+    // The provider got real function tools and, on the second call, the tool call + its tool result.
+    expect(t.bodies[0]!.tools!.map((x) => (x as { function: { name: string } }).function.name)).toContain("get_health");
+    expect(t.bodies[0]!.tool_choice).toBe("auto");
+    const second = t.bodies[1]!.messages;
+    expect(second.at(-2)).toMatchObject({ role: "assistant", tool_calls: [{ type: "function", function: { name: "get_health" } }] });
+    expect(second.at(-1)).toMatchObject({ role: "tool", tool_call_id: "call_1_0" });
     for (const p of provider) expect(llms.map((l) => l.spanId)).toContain(p.parentSpanId);
 
     // Cost attributes on the root, equal to done.
     expect(rootSpan.attrs["notary.chat.usd"]).toBeCloseTo(done.costUsd!, 9);
     expect(done.costUsd).toBeGreaterThan(0);
-    expect(rootSpan.attrs).toMatchObject({ "notary.chat.steps": 1, "notary.chat.model_calls": 3, "notary.chat.input_tokens": 60, "notary.chat.output_tokens": 24, "notary.chat.status": "done" });
-    expect(done.tokens).toEqual({ input: 60, output: 24 });
-
-    // Streamed: many deltas (LiteLLM path with onDelta), the answer phase asked for a stream.
-    expect(ev.filter((e) => e.type === "text_delta").length).toBeGreaterThan(3);
+    expect(rootSpan.attrs).toMatchObject({ "notary.chat.steps": 1, "notary.chat.model_calls": 2, "notary.chat.input_tokens": 40, "notary.chat.output_tokens": 16, "notary.chat.status": "done" });
+    expect(done.tokens).toEqual({ input: 40, output: 16 });
+    expect(ev.filter((e) => e.type === "text_delta").length).toBeGreaterThan(0);
 
     // No question text, prompt, token or secret in any attribute.
     const attrs = JSON.stringify(spans.map((s) => s.attrs));

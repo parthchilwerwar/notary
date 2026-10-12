@@ -1,0 +1,8 @@
+run_id,started_at,month,kind,variant,tool,mode,status,model_usd,usd_executor,usd_reflector,usd_adversary,tokens,crustdata_credits,unsafe_actions,held_actions,notarized_beliefs
+notarize-crustdata-20261012T011404Z,2026-10-12T01:14:04.667Z,2026-10,notarize,notarize,crustdata,live,completed,0.0394163,0,0.0196383,0.019778,4519,62,,,1
+notarize-dodo-20261012T012315Z,2026-10-12T01:23:15.107Z,2026-10,notarize,notarize,dodo,live,completed,0.086911,0,0,0.086911,11378,0,,,4
+recon-dodo-20261012T013640Z,2026-10-12T01:36:40.797Z,2026-10,notarize,notarize,dodo,live,completed,0,0,0,0,0,0,,,0
+notarize-dodo-20261012T014032Z,2026-10-12T01:40:32.072Z,2026-10,notarize,notarize,dodo,live,completed,0,0,0,0,0,0,,,4
+notarize-crustdata-20261012T011404Z-replay,2026-10-12T01:42:15.358Z,2026-10,notarize,notarize,crustdata,replay,completed,0.0394163,0,0.0196383,0.019778,4519,62,,,1
+recon-dodo-20261012T013640Z-replay,2026-10-12T01:42:48.775Z,2026-10,notarize,notarize,dodo,replay,completed,0,0,0,0,0,0,,,0
+notarize-dodo-20261012T014032Z-replay,2026-10-12T01:42:48.857Z,2026-10,notarize,notarize,dodo,replay,completed,0,0,0,0,0,0,,,4

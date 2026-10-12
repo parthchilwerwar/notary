@@ -12,6 +12,10 @@ import { AGENTS } from "../schema/agents.js";
 import type { LlmLike } from "../llm/index.js";
 import type { Belief, Claim, Probe } from "../schema/index.js";
 import { withSpan } from "../trace/index.js";
+import { withAgent } from "../trace/agent.js";
+import { reportIncident } from "../incidents/live.js";
+import { adversaryFailureSummary } from "../incidents/derive.js";
+import type { SpanIds } from "../trace/index.js";
 import { reviewWithBedrock } from "./bedrock.js";
 import { buildEvidencePacket } from "./evidence-packet.js";
 import { reviewWithSession } from "./session.js";
@@ -47,7 +51,10 @@ export async function reviewBelief(args: ReviewBeliefArgs): Promise<ReviewOutcom
   }
   const { packet, json } = built;
   let setAttr: ((k: string, v: string | number | boolean) => void) | undefined;
-  return withSpan(
+  let setAgentAttr: ((k: string, v: string | number | boolean) => void) | undefined;
+  let reviewSpan: SpanIds | undefined;
+  // One Adversary run = one AGENT span; its review is the EVALUATOR span inside (model call under it).
+  return withAgent("adversary", { "notary.beliefId": args.belief.id, "notary.claimId": args.claim.id, "notary.adversary.backend": args.backend }, () => withSpan(
     "notary.adversary",
     {
       [AGENT_SPAN_ATTR]: AGENTS.adversary.name,
@@ -73,10 +80,32 @@ export async function reviewBelief(args: ReviewBeliefArgs): Promise<ReviewOutcom
         setAttr("notary.verdict", outcome.review?.verdict ?? "none");
         if (outcome.failure) setAttr("notary.adversary.failure", outcome.failure.slice(0, 300));
       }
+      setAgentAttr?.("notary.verdict", outcome.review?.verdict ?? "none");
+      if (outcome.failure && reviewSpan) {
+        // Incident: no usable review (fail-safe: the belief is not certified). Same id as derive.ts.
+        reportIncident({
+          kind: "model_error",
+          subject: reviewSpan.spanId,
+          severity: "error",
+          summary: adversaryFailureSummary(args.belief.id, outcome.failure),
+          attrs: { "notary.beliefId": args.belief.id, "notary.claimId": args.claim.id, "notary.agent_id": "adversary" },
+        });
+      }
+      const review = outcome.review;
+      if (review && (review.verdict === "downgrade" || review.verdict === "narrow")) {
+        // Incident: the Adversary refused to uphold a belief the Reflector wanted certified.
+        reportIncident({
+          kind: "adversary_downgrade",
+          subject: `${args.belief.id}|${review.reviewedAt ?? ""}`,
+          severity: "warning",
+          summary: `The Adversary ${review.verdict === "narrow" ? "narrowed" : "downgraded"} ${args.belief.id} instead of upholding it (model ${review.model}).`,
+          attrs: { "notary.beliefId": args.belief.id, "notary.claimId": args.claim.id, "notary.verdict": review.verdict, "notary.tool": args.belief.tool },
+        });
+      }
       return outcome;
     },
-    { kind: "EVALUATOR", onSpan: (_ids, set) => (setAttr = set) },
-  );
+    { kind: "EVALUATOR", onSpan: (ids, set) => ((reviewSpan = ids), (setAttr = set)) },
+  ), { onSpan: (_ids, set) => (setAgentAttr = set) });
 }
 
 export {

@@ -20,6 +20,9 @@ import { isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CassetteMissError, ReadOnlyRequestError, RequestNotSentError, TestModeLockError, ToolNetworkError } from "./errors.js";
 import { RateLimitScope, VirtualClock, rateLimitScope, setRateLimitScope } from "./ratelimit.js";
+import { withSpan } from "../trace/index.js";
+import type { SpanIds } from "../trace/index.js";
+import { reportIncident } from "../incidents/live.js";
 
 export type RecorderMode = "live" | "replay";
 
@@ -400,7 +403,42 @@ export class Recorder {
     );
   }
 
+  /**
+   * One tool call = one neatlogs TOOL span "notary.tool.call": tool, op, method, mode, HTTP status,
+   * latency, credits, exchange id (never headers, bodies or the URL). A 429 is an incident (warn log).
+   * The span output is only the status; the response body stays out of the trace.
+   */
   async request(spec: RequestSpec): Promise<RecordedResponse> {
+    let out: RecordedResponse | undefined;
+    let ids: SpanIds | undefined;
+    let set: (k: string, v: string | number | boolean) => void = () => {};
+    await withSpan(
+      "notary.tool.call",
+      { "notary.tool": spec.tool, "notary.tool.op": spec.op, "http.method": spec.method.toUpperCase(), "notary.tool.mode": this.mode },
+      async () => {
+        out = await this.requestUntraced(spec, (ex) => {
+          set("http.status_code", ex.status);
+          set("notary.tool.latency_ms", ex.latencyMs);
+          if (ex.credits !== null) set("notary.tool.credits", ex.credits);
+          set("notary.exchangeId", ex.id);
+          if (ex.status === 429 && ids) {
+            reportIncident({
+              kind: "rate_limited",
+              subject: ids.spanId,
+              severity: "warning",
+              summary: `${spec.op} answered 429 (rate limited).`,
+              attrs: { "notary.tool": spec.tool, "notary.tool.op": spec.op, "http.status_code": 429 },
+            });
+          }
+        });
+        return { status: out.status };
+      },
+      { kind: "TOOL", onSpan: (spanIds, setter) => ((ids = spanIds), (set = setter)) },
+    );
+    return out!;
+  }
+
+  private async requestUntraced(spec: RequestSpec, onExchange: (ex: Exchange) => void): Promise<RecordedResponse> {
     const method = spec.method.toUpperCase();
     const requestHash = this.hashRequest(method, spec.url, spec.body);
     const occurrence = this.occurrences.get(requestHash) ?? 0;
@@ -430,6 +468,11 @@ export class Recorder {
     }
 
     this.recorded.push(exchange);
+    try {
+      onExchange(exchange);
+    } catch {
+      // tracing must never break a call
+    }
     if (this.mode === "live" && this.opts.record) this.save();
     for (const listener of this.listeners) listener(exchange, { mode: this.mode });
 
@@ -488,12 +531,28 @@ export class Recorder {
         error: r.string(err instanceof Error ? err.message : String(err)),
       };
     }
-    const text = await res.text();
-    const latencyMs = Math.round(performance.now() - started);
     const rawHeaders: Record<string, string> = {};
     res.headers.forEach((v, k) => {
       rawHeaders[k.toLowerCase()] = v;
     });
+    let text: string;
+    try {
+      text = await res.text();
+    } catch (err) {
+      // The request reached the API (it answered with headers) but the body never arrived (socket
+      // reset, timeout mid-body). Record it like a network error, so the write the API may have
+      // applied is on the cassette and replay re-throws the same ToolNetworkError instead of a miss.
+      return {
+        ...base,
+        status: 0,
+        responseHeaders: r.headers(rawHeaders),
+        responseBody: null,
+        latencyMs: Math.round(performance.now() - started),
+        credits: null,
+        error: r.string(`response body not received after HTTP ${res.status}: ${err instanceof Error ? err.message : String(err)}`),
+      };
+    }
+    const latencyMs = Math.round(performance.now() - started);
     let body: unknown = text;
     if (text.length === 0) body = null;
     else {

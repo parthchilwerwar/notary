@@ -36,6 +36,14 @@
  * wait and the attempt count are attributes on the same `notary.llm` span (llm.waited_ms,
  * llm.attempts, llm.retry_after_ms) plus a log event per retry — no extra LLM span from Notary.
  *
+ * Tool calling (Notary Chat's agent loop): `completeTools` sends OpenAI-style function tools
+ * (LiteLLM: `tools` / `tool_choice`, assistant `tool_calls` and `tool` result messages fed back;
+ * Bedrock: Converse `toolConfig`, `toolUse` / `toolResult` blocks) and returns the model's tool
+ * calls next to its text. Same budget cap, limiter, scrubbing, pricing and span as `complete`; it
+ * never executes a tool. A fourth model role, "chat" (NOTARY_MODEL_CHAT, falling back to
+ * NOTARY_MODEL_REFLECTOR), is accounted in its own meter bucket that totalUsd() counts but that is
+ * never written into a bundle's usageByRole (the frozen schema keeps three roles).
+ *
  * Every call opens a neatlogs span "notary.llm" (CHAIN) with the agent's display name (`notary.agent`,
  * e.g. "Reflector", "Notary Chat"; P2), role, model id, token counts and USD;
  * prompts are never put in its attributes. Under it, the SDK's provider wrapper (wrapBedrock /
@@ -47,6 +55,8 @@ import type { ConverseCommandInput, ConverseCommandOutput } from "@aws-sdk/clien
 import type { Role, UsageByRole } from "../schema/index.js";
 import { MissingCredentialError } from "../tools/errors.js";
 import { traceBedrockClient, traceLog, withSpan } from "../trace/index.js";
+import type { SpanIds } from "../trace/index.js";
+import { incidentId, reportIncident, reportResolution } from "../incidents/live.js";
 import type { AgentId } from "../schema/agents.js";
 import { AGENT_SPAN_ATTR, agentName } from "./agents.js";
 import { LLM_MAX_429_RETRIES, LLM_MAX_BACKOFF_MS, LlmRateLimitedError, defaultBackOffMs, llmLimiter, rateLimitInfo } from "./limiter.js";
@@ -54,8 +64,8 @@ import type { LlmLimiter, LlmSlot } from "./limiter.js";
 import { costUsd, priceCall, reportedCostUsd, resolvePrice } from "./pricing.js";
 import type { PriceSource } from "./pricing.js";
 import { UsdCapExceededError, estimateInputTokens, maxUsdFromEnv } from "./budget.js";
-import { ROLES, requireModel, resolveModels } from "./roles.js";
-import type { ModelRoster } from "./roles.js";
+import { ROLES, requireRoleModel, resolveModels } from "./roles.js";
+import type { ModelRole, ModelRoster } from "./roles.js";
 import { AWS_REGION_ENV, LITELLM_API_KEY_ENV, LITELLM_BASE_URL_ENV, llmInvalid, llmMissing, llmProvider, normalizeLiteLlmBaseUrl } from "./config.js";
 import type { LlmProvider } from "./config.js";
 import { liteLlmTransport, stopReasonFromFinish } from "./litellm.js";
@@ -65,8 +75,21 @@ type Env = Record<string, string | undefined>;
 
 export type LlmMessage = { role: "user" | "assistant"; content: string };
 
+/** One function tool offered to the model (JSON Schema parameters). */
+export type ToolSpec = { name: string; description: string; parameters: Record<string, unknown> };
+/** One tool call the model made; `arguments` is the raw JSON text it produced. */
+export type ToolCall = { id: string; name: string; arguments: string };
+/** A message in a tool-calling conversation. */
+export type AgentMessage =
+  | { role: "user"; content: string }
+  | { role: "assistant"; content: string; toolCalls?: ToolCall[] }
+  | { role: "tool"; toolCallId: string; name: string; content: string };
+/** "auto": the model decides; "required": it must call a tool; "none": it must answer in text; {name}: that tool. */
+export type ToolChoice = "auto" | "required" | "none" | { name: string };
+
 export type CompleteRequest = {
-  role: Role;
+  /** The model role: a bundle role, or "chat" (Notary Chat). */
+  role: ModelRole;
   /**
    * Which agent (src/schema/agents.ts) makes this call, for the `notary.agent` span attribute.
    * Default: the agent that owns `role` (executor → Executor, ...). Notary Chat runs on the executor
@@ -105,6 +128,16 @@ export type CompleteResult = {
 
 /** Anything that can complete a prompt; lets callers (e.g. the reflector) accept a narrower type. */
 export type LlmLike = { complete(req: CompleteRequest): Promise<CompleteResult> };
+
+export type ToolCompleteRequest = Omit<CompleteRequest, "messages"> & {
+  messages: AgentMessage[];
+  tools: ToolSpec[];
+  /** Default "auto". */
+  toolChoice?: ToolChoice;
+};
+export type ToolCompleteResult = CompleteResult & { toolCalls: ToolCall[] };
+/** A model that can call tools (LlmClient; Notary Chat's test doubles). */
+export type ToolLlmLike = { completeTools(req: ToolCompleteRequest): Promise<ToolCompleteResult> };
 
 /** Sends one Converse request. Injectable so tests never reach AWS. `abortSignal` cancels it. */
 export type ConverseTransport = (input: ConverseCommandInput, opts?: { abortSignal?: AbortSignal }) => Promise<ConverseCommandOutput>;
@@ -200,11 +233,13 @@ export class UsageMeter {
     reflector: { inputTokens: 0, outputTokens: 0, usd: 0, calls: 0 },
     adversary: { inputTokens: 0, outputTokens: 0, usd: 0, calls: 0 },
   };
+  /** Notary Chat's usage: counted by totalUsd() (NOTARY_MAX_USD), never part of snapshot(). */
+  private readonly chat = { inputTokens: 0, outputTokens: 0, usd: 0, calls: 0 };
   /** Pricing problems (unknown model, bad override). De-duplicated. */
   readonly warnings: string[] = [];
 
-  add(role: Role, u: { inputTokens: number; outputTokens: number; usd: number }): void {
-    const r = this.usage[role];
+  add(role: ModelRole, u: { inputTokens: number; outputTokens: number; usd: number }): void {
+    const r = role === "chat" ? this.chat : this.usage[role];
     r.inputTokens += u.inputTokens;
     r.outputTokens += u.outputTokens;
     r.usd = Math.round((r.usd + u.usd) * 1e9) / 1e9;
@@ -219,7 +254,12 @@ export class UsageMeter {
 
   /** USD recorded so far across all roles (the run's model spend). */
   totalUsd(): number {
-    return Math.round((this.usage.executor.usd + this.usage.reflector.usd + this.usage.adversary.usd) * 1e9) / 1e9;
+    return Math.round((this.usage.executor.usd + this.usage.reflector.usd + this.usage.adversary.usd + this.chat.usd) * 1e9) / 1e9;
+  }
+
+  /** Notary Chat's usage (not part of any bundle). A copy. */
+  chatUsage(): { inputTokens: number; outputTokens: number; usd: number; calls: number } {
+    return { ...this.chat };
   }
 
   /** The bundle's `usageByRole` shape, always with all three roles. A copy. */
@@ -263,13 +303,14 @@ export type LlmClientOptions = {
 /** One provider reply, normalized. */
 type ProviderReply = {
   text: string;
+  toolCalls: ToolCall[];
   inputTokens: number;
   outputTokens: number;
   stopReason: string;
   /** Cost the provider reported for this response (LiteLLM `x-litellm-response-cost`), else null. */
   reportedUsd: number | null;
 };
-type ProviderRequest = { system?: string; messages: LlmMessage[]; maxTokens: number };
+type ProviderRequest = { system?: string; messages: AgentMessage[]; maxTokens: number; tools?: ToolSpec[]; toolChoice?: ToolChoice };
 /** Per-call I/O options (not part of the prompt, never priced or traced). */
 type ProviderIo = { signal?: AbortSignal; onDelta?: (delta: string) => void };
 type ProviderCall = (modelId: string, req: ProviderRequest, io?: ProviderIo) => Promise<ProviderReply>;
@@ -333,8 +374,8 @@ export class LlmClient implements LlmLike {
   }
 
   /** The configured model id for a role, or the BLOCKED error. */
-  modelFor(role: Role): string {
-    return requireModel(this.roster, role);
+  modelFor(role: ModelRole): string {
+    return requireRoleModel(this.env, this.roster, role);
   }
 
   private getTransport(): ConverseTransport {
@@ -364,18 +405,25 @@ export class LlmClient implements LlmLike {
       return async (modelId, req, io) => {
         const body: ChatRequest = {
           model: modelId,
-          messages: [
-            ...(req.system ? [{ role: "system" as const, content: req.system }] : []),
-            ...req.messages.map((m) => ({ role: m.role, content: m.content })),
-          ],
+          messages: [...(req.system ? [{ role: "system" as const, content: req.system }] : []), ...req.messages.map(toOpenAiMessage)],
           max_tokens: req.maxTokens,
           temperature: 0,
+          ...(req.tools?.length
+            ? {
+                tools: req.tools.map((t) => ({ type: "function" as const, function: { name: t.name, description: t.description, parameters: t.parameters } })),
+                tool_choice: toOpenAiToolChoice(req.toolChoice ?? "auto"),
+              }
+            : {}),
         };
         const { completion, headers } = await (io?.signal || io?.onDelta ? transport(body, { ...(io.signal ? { signal: io.signal } : {}), ...(io.onDelta ? { onDelta: io.onDelta } : {}) }) : transport(body));
         const choice = completion.choices?.[0];
         const content = choice?.message?.content;
+        const toolCalls: ToolCall[] = (choice?.message?.tool_calls ?? []).flatMap((tc) =>
+          tc.type === "function" ? [{ id: tc.id, name: tc.function.name, arguments: tc.function.arguments ?? "" }] : [],
+        );
         return {
           text: typeof content === "string" ? content : "",
+          toolCalls,
           inputTokens: completion.usage?.prompt_tokens ?? 0,
           outputTokens: completion.usage?.completion_tokens ?? 0,
           stopReason: stopReasonFromFinish(choice?.finish_reason),
@@ -385,11 +433,13 @@ export class LlmClient implements LlmLike {
     }
     const transport = this.getTransport();
     return async (modelId, req, io) => {
+      const toolMode = Boolean(req.tools?.length) || req.messages.some((m) => m.role === "tool" || (m.role === "assistant" && m.toolCalls?.length));
       const input: ConverseCommandInput = {
         modelId,
-        messages: req.messages.map((m) => ({ role: m.role, content: [{ text: m.content }] })),
+        messages: toolMode ? toConverseMessages(req.messages) : req.messages.map((m) => ({ role: m.role as "user" | "assistant", content: [{ text: m.content }] })),
         inferenceConfig: { maxTokens: req.maxTokens, temperature: 0 },
         ...(req.system ? { system: [{ text: req.system }] } : {}),
+        ...(req.tools?.length ? { toolConfig: toConverseToolConfig(req.tools, req.toolChoice ?? "auto") } : {}),
       };
       let out: ConverseCommandOutput;
       try {
@@ -399,8 +449,12 @@ export class LlmClient implements LlmLike {
         throw err;
       }
       const blocks = out.output && "message" in out.output ? (out.output.message?.content ?? []) : [];
+      const toolCalls: ToolCall[] = blocks.flatMap((b) =>
+        "toolUse" in b && b.toolUse?.name ? [{ id: b.toolUse.toolUseId ?? "", name: b.toolUse.name, arguments: JSON.stringify(b.toolUse.input ?? {}) }] : [],
+      );
       return {
         text: blocks.map((b) => ("text" in b && typeof b.text === "string" ? b.text : "")).join(""),
+        toolCalls,
         inputTokens: out.usage?.inputTokens ?? 0,
         outputTokens: out.usage?.outputTokens ?? 0,
         stopReason: String(out.stopReason ?? "unknown"),
@@ -414,24 +468,42 @@ export class LlmClient implements LlmLike {
    * run's spend plus a high estimate of this call (0 when the price isn't known up front) would
    * exceed the cap. No I/O.
    */
-  private checkUsdCap(role: Role, modelId: string, req: ProviderRequest): void {
+  private checkUsdCap(role: ModelRole, modelId: string, req: ProviderRequest): void {
     if (this.maxUsd === null) return;
     const spent = this.meter.totalUsd();
     const known = resolvePrice(role, modelId, this.env);
-    const chars = (req.system?.length ?? 0) + req.messages.reduce((n, m) => n + m.content.length, 0);
+    const chars =
+      (req.system?.length ?? 0) +
+      req.messages.reduce((n, m) => n + m.content.length + (m.role === "assistant" ? (m.toolCalls ?? []).reduce((k, t) => k + t.arguments.length + t.name.length, 0) : 0), 0) +
+      (req.tools ? JSON.stringify(req.tools).length : 0);
     const estimate = known.price ? costUsd(known.price, estimateInputTokens(chars), req.maxTokens) : 0;
     if (spent >= this.maxUsd || spent + estimate > this.maxUsd) throw new UsdCapExceededError(role, this.maxUsd, spent, estimate);
   }
 
   async complete(req: CompleteRequest): Promise<CompleteResult> {
+    const { toolCalls: _toolCalls, ...res } = await this.invoke(req, req.messages);
+    return res;
+  }
+
+  /**
+   * One tool-calling turn: the model sees `tools` and the conversation so far (its earlier tool calls
+   * and their results included) and replies with text and/or tool calls. Running the calls is the
+   * caller's job; this method never executes a tool.
+   */
+  async completeTools(req: ToolCompleteRequest): Promise<ToolCompleteResult> {
+    return this.invoke(req, req.messages, req.tools, req.toolChoice);
+  }
+
+  private async invoke(req: Omit<CompleteRequest, "messages">, messages: readonly AgentMessage[], tools?: ToolSpec[], toolChoice?: ToolChoice): Promise<ToolCompleteResult> {
     const modelId = this.modelFor(req.role);
     const call = this.providerCall();
     // P9 (AUDIT-08): backstop — no secret env value is ever sent to a model, whatever built the prompt.
     const clean = scrubber(this.env);
     const scrubbed: ProviderRequest = {
-      messages: req.messages.map((m) => ({ role: m.role, content: clean(m.content) })),
+      messages: messages.map((m) => scrubMessage(m, clean)),
       maxTokens: req.maxTokens ?? 2048,
       ...(req.system ? { system: clean(req.system) } : {}),
+      ...(tools?.length ? { tools, toolChoice: toolChoice ?? "auto" } : {}),
     };
 
     // Streaming: deltas go to the caller as they arrive; a non-streaming provider gets one delta at the end.
@@ -453,10 +525,34 @@ export class LlmClient implements LlmLike {
     };
 
     let setAttr: ((k: string, v: string | number | boolean) => void) | undefined;
+    let spanIds: SpanIds | undefined;
+    const agentLabel = agentName(req.agent ?? req.role);
+    // Incidents on this span (same ids as src/incidents/derive.ts: subject = this span id).
+    const failed = (err: unknown): unknown => {
+      try {
+        const aborted = err instanceof Error && (err.name === "AbortError" || req.signal?.aborted === true);
+        if (spanIds && !aborted) {
+          const usdCap = err instanceof UsdCapExceededError;
+          reportIncident({
+            kind: usdCap ? "budget_stop" : "model_error",
+            subject: spanIds.spanId,
+            severity: "error",
+            summary: usdCap
+              ? `The ${agentLabel}'s next ${modelId} call would exceed NOTARY_MAX_USD; it was not sent.`
+              : `A ${modelId} call by the ${agentLabel} failed: ${clean(err instanceof Error ? `${err.name}: ${err.message}` : String(err)).slice(0, 160)}`,
+            attrs: { "notary.role": req.role, "llm.model_id": modelId, "llm.provider": this.provider },
+          });
+        }
+      } catch {
+        // never mask the real error
+      }
+      return err;
+    };
     return withSpan(
       "notary.llm",
-      { [AGENT_SPAN_ATTR]: agentName(req.agent ?? req.role), "notary.role": req.role, "llm.model_id": modelId, "llm.provider": this.provider },
+      { [AGENT_SPAN_ATTR]: agentName(req.agent ?? req.role), "notary.agent_id": req.agent ?? req.role, "notary.role": req.role, "llm.model_id": modelId, "llm.provider": this.provider },
       async () => {
+        const startedMs = Date.now();
         if (setAttr && this.maxUsd !== null) setAttr("llm.usd_cap", this.maxUsd);
         const limiter = this.limiter();
         let out: ProviderReply | undefined;
@@ -465,7 +561,11 @@ export class LlmClient implements LlmLike {
         while (!out) {
           attempt += 1;
           // NOTARY_MAX_USD before every attempt (a retry is a new spend decision).
-          this.checkUsdCap(req.role, modelId, scrubbed);
+          try {
+            this.checkUsdCap(req.role, modelId, scrubbed);
+          } catch (err) {
+            throw failed(err);
+          }
           throwIfAborted(req.signal);
           let slot: LlmSlot | null = null;
           if (limiter) {
@@ -477,22 +577,34 @@ export class LlmClient implements LlmLike {
             out = await call(modelId, scrubbed, io);
           } catch (err) {
             const rl = limiter ? rateLimitInfo(err) : null;
-            if (!rl || !limiter) throw scrubError(err, clean);
+            if (!rl || !limiter) throw failed(scrubError(err, clean));
             const limits = { rpm: limiter.rpm, concurrency: limiter.concurrency };
-            if (attempt > LLM_MAX_429_RETRIES) throw new LlmRateLimitedError(req.role, modelId, attempt, rl.retryAfterMs, limits);
+            if (attempt > LLM_MAX_429_RETRIES) throw failed(new LlmRateLimitedError(req.role, modelId, attempt, rl.retryAfterMs, limits));
             const backOffMs = rl.retryAfterMs ?? defaultBackOffMs(attempt);
             if (backOffMs > LLM_MAX_BACKOFF_MS) {
-              throw new LlmRateLimitedError(req.role, modelId, attempt, backOffMs, limits, `the provider asked to wait ${Math.ceil(backOffMs / 1000)} s, longer than Notary waits (${LLM_MAX_BACKOFF_MS / 1000} s)`);
+              throw failed(new LlmRateLimitedError(req.role, modelId, attempt, backOffMs, limits, `the provider asked to wait ${Math.ceil(backOffMs / 1000)} s, longer than Notary waits (${LLM_MAX_BACKOFF_MS / 1000} s)`));
             }
             limiter.backOff(backOffMs);
             setAttr?.("llm.retry_after_ms", backOffMs);
             setAttr?.("llm.attempts", attempt + 1);
             traceLog("llm retry after 429 for {role}: attempt {attempt}, back-off {retryAfterMs} ms", { role: req.role, attempt: attempt + 1, retryAfterMs: backOffMs });
+            if (spanIds) {
+              reportIncident({
+                kind: "rate_limited",
+                subject: spanIds.spanId,
+                severity: "warning",
+                summary: `${modelId} answered 429 (rate limited) for the ${agentLabel}; the call was retried.`,
+                attrs: { "notary.role": req.role, "llm.model_id": modelId, "llm.provider": this.provider, "llm.retry_after_ms": backOffMs, "llm.attempts": attempt + 1 },
+              });
+            }
           } finally {
             slot?.release();
           }
         }
-        const { inputTokens, outputTokens, text, stopReason } = out;
+        const { inputTokens, outputTokens, text, stopReason, toolCalls } = out;
+        if (attempt > 1 && spanIds) {
+          reportResolution(incidentId("rate_limited", spanIds.spanId), { status: "resolved", action: "retried", summary: `Succeeded on attempt ${attempt} after a ${waitedMs} ms wait in the limiter.`, recordIds: [spanIds.spanId] });
+        }
         if (req.onText && streamed) {
           const tail = streamClean!.end();
           if (tail) req.onText(tail);
@@ -510,13 +622,90 @@ export class LlmClient implements LlmLike {
           setAttr("llm.usd", usd);
           setAttr("llm.price_source", priced.source);
           setAttr("llm.stop_reason", stopReason);
+          setAttr("llm.latency_ms", Date.now() - startedMs);
           setAttr("llm.attempts", attempt);
           if (limiter) setAttr("llm.waited_ms", waitedMs);
         }
-        return { text, inputTokens, outputTokens, usd, modelId, stopReason, priceSource: priced.source };
+        return { text, toolCalls, inputTokens, outputTokens, usd, modelId, stopReason, priceSource: priced.source };
       },
       // CHAIN, not LLM: the wrapped provider client emits the LLM child span (no double capture).
-      { kind: "CHAIN", onSpan: (_ids, set) => (setAttr = set) },
+      { kind: "CHAIN", onSpan: (ids, set) => ((spanIds = ids), (setAttr = set)) },
     );
   }
+}
+
+// ------------------------------------------------------------------------- tool-calling mapping
+
+function scrubMessage(m: AgentMessage, clean: (s: string) => string): AgentMessage {
+  if (m.role === "tool") return { role: "tool", toolCallId: m.toolCallId, name: m.name, content: clean(m.content) };
+  if (m.role === "assistant") {
+    return { role: "assistant", content: clean(m.content), ...(m.toolCalls?.length ? { toolCalls: m.toolCalls.map((t) => ({ id: t.id, name: t.name, arguments: clean(t.arguments) })) } : {}) };
+  }
+  return { role: "user", content: clean(m.content) };
+}
+
+type OpenAiMessage = ChatRequest["messages"][number];
+
+/** AgentMessage → OpenAI chat message (assistant tool_calls; tool results keyed by tool_call_id). */
+export function toOpenAiMessage(m: AgentMessage): OpenAiMessage {
+  if (m.role === "tool") return { role: "tool", tool_call_id: m.toolCallId, content: m.content };
+  if (m.role === "assistant" && m.toolCalls?.length) {
+    return {
+      role: "assistant",
+      content: m.content.trim() ? m.content : null,
+      tool_calls: m.toolCalls.map((t) => ({ id: t.id, type: "function" as const, function: { name: t.name, arguments: t.arguments || "{}" } })),
+    };
+  }
+  return { role: m.role, content: m.content };
+}
+
+export function toOpenAiToolChoice(c: ToolChoice): NonNullable<ChatRequest["tool_choice"]> {
+  return typeof c === "string" ? c : { type: "function", function: { name: c.name } };
+}
+
+type ConverseMessage = NonNullable<ConverseCommandInput["messages"]>[number];
+type ConverseBlock = NonNullable<ConverseMessage["content"]>[number];
+type ConverseToolConfig = NonNullable<ConverseCommandInput["toolConfig"]>;
+
+function parseArgs(raw: string): Record<string, unknown> {
+  try {
+    const v: unknown = JSON.parse(raw || "{}");
+    return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * AgentMessage[] → Converse messages: assistant tool calls become toolUse blocks, tool results become
+ * toolResult blocks in a user message, and neighbours with the same role are merged (Converse needs
+ * strict user/assistant alternation).
+ */
+export function toConverseMessages(msgs: readonly AgentMessage[]): ConverseMessage[] {
+  const out: ConverseMessage[] = [];
+  for (const m of msgs) {
+    const role: "user" | "assistant" = m.role === "assistant" ? "assistant" : "user";
+    const blocks: ConverseBlock[] = [];
+    if (m.role === "tool") blocks.push({ toolResult: { toolUseId: m.toolCallId, content: [{ text: m.content || "(empty)" }] } } as ConverseBlock);
+    else {
+      if (m.content.trim()) blocks.push({ text: m.content } as ConverseBlock);
+      if (m.role === "assistant") for (const t of m.toolCalls ?? []) blocks.push({ toolUse: { toolUseId: t.id, name: t.name, input: parseArgs(t.arguments) } } as unknown as ConverseBlock);
+      if (!blocks.length) blocks.push({ text: "(empty)" } as ConverseBlock);
+    }
+    const last = out[out.length - 1];
+    if (last && last.role === role) last.content = [...(last.content ?? []), ...blocks];
+    else out.push({ role, content: blocks });
+  }
+  return out;
+}
+
+/**
+ * Converse toolConfig. Converse has no "none" choice and needs toolConfig whenever the history holds
+ * toolUse blocks, so "none" is sent as auto (the caller's prompt asks for a text answer).
+ */
+export function toConverseToolConfig(tools: readonly ToolSpec[], choice: ToolChoice): ConverseToolConfig {
+  return {
+    tools: tools.map((t) => ({ toolSpec: { name: t.name, description: t.description, inputSchema: { json: t.parameters } } })) as unknown as ConverseToolConfig["tools"],
+    toolChoice: typeof choice === "object" ? { tool: { name: choice.name } } : choice === "required" ? { any: {} } : { auto: {} },
+  } as ConverseToolConfig;
 }

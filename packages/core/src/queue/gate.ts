@@ -38,12 +38,15 @@ export function createGate(src: GateSources): GateHook {
     let set: (k: string, v: string | number | boolean) => void = () => {};
     return withSpan(
       "notary.guard",
-      { [AGENT_SPAN_ATTR]: AGENTS.guard.name, "notary.requestId": ctx.request.id, "notary.guard.action": action, "notary.guard.forEscalation": ctx.forEscalation === true },
+      { [AGENT_SPAN_ATTR]: AGENTS.guard.name, "notary.agent_id": "guard", "notary.guard.id": "certificate-gate", "notary.requestId": ctx.request.id, "notary.guard.action": action, "notary.guard.forEscalation": ctx.forEscalation === true },
       () => {
         const v = verdictFor(action);
         set("notary.guard.allow", v.allow);
         set("notary.guard.required", v.requiredBeliefs.length);
         set("notary.guard.missing", v.missingBeliefs.length);
+        set("notary.guard.decision", v.allow ? "allow" : "hold");
+        if (v.missingBeliefs.length) set("notary.guard.missingBeliefs", v.missingBeliefs.join(","));
+        set("notary.guard.requiredBeliefs", v.requiredBeliefs.join(","));
         return v;
       },
       { kind: "GUARDRAIL", onSpan: (_ids, setter) => (set = setter) },

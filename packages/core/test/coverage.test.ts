@@ -1,20 +1,25 @@
 /**
  * `notary guards coverage` (FR-17). The tsc backend runs on the real repo (must be 0 unguarded) and on
- * a throwaway fixture project with deliberate raw calls. The entire backend is UNVERIFIED: its command
- * and parser are tested against samples built from docs.entire.io/cli-reference/graph (read
- * 2026-10-10) and entire-graph@f22e6c95 source, never against output from a real `entire` install.
+ * a throwaway fixture project with deliberate raw calls. The entire backend is tested against REAL
+ * output captured from Entire CLI 0.11.4 + entire-graph v0.4.0 (test/fixtures/entire/); the live run on
+ * this repo (`pnpm notary guards coverage --backend entire`, 1-5 min) is not part of the unit suite.
  */
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
-  ENTIRE_STATUS,
+  ENTIRE_CHECKED_WITH,
   RAW_BY_DESIGN,
   coverageExitCode,
+  entireEdgesArgs,
   entireNeighborsArgs,
+  entireRawCallers,
   formatCoverage,
+  parseEntireEdges,
   parseEntireNeighbors,
+  parseEntireSymbolId,
   runCoverage,
 } from "../src/guards/coverage.js";
 import type { CoverageConfig, CoverageReport } from "../src/guards/coverage.js";
@@ -229,98 +234,109 @@ export const probeTools = () => [createTools(), createTools()];
   });
 });
 
-// Every sample below is BUILT FROM DOCS AND SOURCE, not captured from a real `entire` run (none is
-// installed here; ENTIRE_STATUS). Text: first line per docs.entire.io/cli-reference/graph (read
-// 2026-10-10), the rest per entire-graph@f22e6c95 writeAgentNeighborsFull. JSON: per that commit's
-// neighborResponse / neighborEdge / callSite struct tags (the binary's default --format).
-describe("entire backend (UNVERIFIED): documented command and output parsing", () => {
-  it("builds the command from documented flags only (no --format/--file/--line/--exclude-tests)", () => {
+// Every sample below is REAL output captured on 2026-10-12 from Entire CLI 0.11.4 + entire-graph v0.4.0
+// (test/fixtures/entire/; repo_root redacted). edges-with-raw-call.ndjson is a trimmed
+// `entire graph edges --worktree --relation CALLS,ASYNC_CALLS,CONSTRUCTS --format ndjson` run on a
+// scratch clone of this repo with a deliberate raw call added (packages/core/src/entire-probe-raw.ts:
+// `client.createRefund(…)` on line 4 and `new DodoClient(…)` on line 7); the header, the summary and a
+// few unrelated relations are kept as Entire printed them. neighbors-createRefund.json is the
+// follow-up `entire graph neighbors --symbol DodoClient.createRefund --direction in --format json`.
+describe("entire backend: real command and output (Entire CLI 0.11.4, entire-graph v0.4.0)", () => {
+  const fixture = (name: string) => readFileSync(join(dirname(fileURLToPath(import.meta.url)), "fixtures", "entire", name), "utf8");
+  const edges = fixture("edges-with-raw-call.ndjson");
+  const neighbors = fixture("neighbors-createRefund.json");
+
+  it("builds the verified commands", () => {
+    expect(entireEdgesArgs("/repo")).toEqual([
+      "graph", "edges", "--repo", "/repo", "--format", "ndjson", "--worktree", "--relation", "CALLS,ASYNC_CALLS,CONSTRUCTS",
+    ]);
     expect(entireNeighborsArgs("/repo", { className: "DodoClient", name: "createRefund" })).toEqual([
       "graph", "neighbors", "--repo", "/repo", "--symbol", "DodoClient.createRefund",
-      "--relation", "CALLS", "--direction", "in", "--limit", "500", "--internal-only",
+      "--relation", "CALLS", "--direction", "in", "--limit", "500", "--internal-only", "--format", "json",
     ]);
+    expect(ENTIRE_CHECKED_WITH).toContain("Entire CLI 0.11.4");
   });
 
-  it("marks the backend UNVERIFIED with the doc URL and read date", () => {
-    expect(ENTIRE_STATUS).toMatch(/^UNVERIFIED: /);
-    expect(ENTIRE_STATUS).toContain("docs.entire.io/cli-reference/graph (read 2026-10-10)");
+  it("parses the real edges stream: header, relations, summary, skipped files", () => {
+    const parsed = parseEntireEdges(edges);
+    expect(parsed).toMatchObject({ provider: "entire-graph", providerVersion: "v0.4.0", repoKey: "local/eclone", worktree: true, completeness: "ok", partialFailures: 1 });
+    expect(parsed.commit).toMatch(/^[0-9a-f]{40}$/);
+    expect(parsed.failedFiles).toEqual([{ code: "E_MINIFIED", file: "adversary/inbox/belief-crustdata.enrich.headcount-total-integer.json" }]);
+    expect(parsed.edges).toHaveLength(9);
+    const raw = parsed.edges.find((e) => e.toId.endsWith(":method:DodoClient.createRefund"))!;
+    expect(raw).toMatchObject({ type: "CALLS", resolution: "type_inferred", confidence: 0.83 });
+    expect(raw.evidence).toMatchObject({ file: "packages/core/src/entire-probe-raw.ts", detail: "client.createRefund" });
+    expect(parseEntireSymbolId(raw.toId)).toEqual({ language: "TypeScript", path: "packages/core/src/tools/dodo.ts", kind: "method", name: "DodoClient.createRefund" });
+    expect(parseEntireSymbolId("local/eclone:file:packages/core/src/tools/dodo.ts")).toBeNull();
   });
 
-  it("a tsc report carries no unverified marker; an entire report would print it", () => {
-    const base: CoverageReport = {
-      backend: "tsc", backendNote: "x", ops: [], sites: [], createToolsCalls: [],
-      totals: { ops: 0, sites: 0, guarded: 0, rawByDesign: 0, unguarded: 0 }, unguarded_call_sites: 0,
-    };
-    expect(formatCoverage(base)).not.toContain("UNVERIFIED");
-    expect(formatCoverage({ ...base, backend: "entire", unverified: ENTIRE_STATUS })).toContain(`UNVERIFIED backend: ${ENTIRE_STATUS}`);
-  });
-
-  const text = [
-    "Index: cache-miss (812ms) | Query: 4ms | Total: 820ms",
-    "Focus: DodoClient.createRefund (packages/core/src/tools/dodo.ts:363) def=363 span=363-380",
-    "Callers:",
-    "- refundDirect (packages/core/src/bad.ts:7, def :3) [receiver_type]",
-    "  packages/core/src/bad.ts:5-9",
-    "    7 | return client.createRefund(\"pay_1\");",
-    "- Mod.other (packages/core/src/other.ts:12) [+2 more call sites, name_only]",
-    "- <module> (packages/core/scripts/x.ts) [file-level]",
-    "Callees: not queried (--direction in); rerun with --direction both to include them",
-    "",
-  ].join("\n");
-
-  it("parses the documented text output (Index: header, Callers section)", () => {
-    const parsed = parseEntireNeighbors(text);
-    expect(parsed).toMatchObject({ format: "text", exactMatch: true, disambiguationRequired: false, truncated: false });
+  it("parses the real neighbors JSON with the exact call line", () => {
+    const parsed = parseEntireNeighbors(neighbors);
+    expect(parsed).toMatchObject({ exactMatch: true, disambiguationRequired: false, truncated: false });
     expect(parsed.callers).toEqual([
-      { caller: "refundDirect", file: "packages/core/src/bad.ts", line: 7, resolution: "receiver_type" },
-      { caller: "Mod.other", file: "packages/core/src/other.ts", line: 12, resolution: "name_only", additionalSites: 2 },
-      { caller: "<module>", file: "packages/core/scripts/x.ts", line: 0 },
+      { caller: "sneakyRefund", file: "packages/core/src/entire-probe-raw.ts", line: 4, resolution: "type_inferred", confidence: 0.83 },
     ]);
-  });
-
-  it("text: no callers, truncation, ambiguity, fuzzy and no-match are distinguished", () => {
-    const head = "Index: cache-hit (3ms) | Query: 1ms | Total: 4ms";
-    const none = parseEntireNeighbors([head, "Focus: DodoClient.listRefunds (a.ts:9)", "Callers:", "- none", "Callees: not queried (--direction in); x"].join("\n"));
-    expect(none).toMatchObject({ callers: [], exactMatch: true });
-    expect(parseEntireNeighbors([head, "Focus: X.y (a.ts:1)", "Callers:", "- a (b.ts:2)", "Neighbor lists truncated; increase --limit for more callers or callees."].join("\n")).truncated).toBe(true);
-    expect(parseEntireNeighbors([head, '"X.y" matches 2 definitions; all are listed, the first 2 with source.', "- X.y (a.ts:1) [method]  a.ts:1"].join("\n")).disambiguationRequired).toBe(true);
-    expect(parseEntireNeighbors([head, 'No exact match for "X.y". Closest 1 by prefix match:', "- X.yy (a.ts:1)", "Focus: X.yy (a.ts:1)", "Callers:", "- none"].join("\n")).exactMatch).toBe(false);
-    expect(parseEntireNeighbors([head, 'No symbols matched "X.y". Run `entire graph query --query "X.y"` to find the name.'].join("\n")).exactMatch).toBe(false);
   });
 
   it("rejects output it does not recognize instead of reporting zero callers", () => {
-    expect(() => parseEntireNeighbors("!output-truncated\nF a.ts:1\n")).toThrow(/unrecognized/);
-    expect(() => parseEntireNeighbors("Index: cache-hit (1ms) | Query: 1ms | Total: 2ms\nFocus: X.y (a.ts:1)\nCallers:\n- garbage line\n")).toThrow(/caller line/);
-    expect(() => parseEntireNeighbors("Index: cache-hit (1ms) | Query: 1ms | Total: 2ms\nFocus: X.y (a.ts:1)\nCallers: not queried (--direction out); x\n")).toThrow(/did not query callers/);
-  });
-
-  it("also parses the binary's default JSON output (per source; the docs list no --format)", () => {
-    const sample = JSON.stringify({
-      format_version: 1, repo_root: "/repo", profile: "full", relation: "CALLS", direction: "in", query: "DodoClient.createRefund",
-      index_cache_hit: false, truncated: false, focus_matches_total: 1, focus_matches_truncated: false, disambiguation_required: false,
-      matches: [
-        {
-          symbol: { id: "s1", name: "createRefund", qualified_name: "DodoClient.createRefund", kind: "method", file_path: "packages/core/src/tools/dodo.ts", start_line: 363 },
-          incoming: [
-            {
-              direction: "in", relation: "CALLS", confidence: 0.9, resolution: "receiver_type",
-              endpoint: { id: "s2", name: "refundDirect", file_path: "packages/core/src/bad.ts", start_line: 3 },
-              call_site: { file_path: "packages/core/src/bad.ts", line: 7, additional_sites: 1 },
-            },
-            { direction: "in", relation: "CALLS", confidence: 0.5, endpoint: { id: "s3", name: "other", qualified_name: "Mod.other", file_path: "packages/core/src/other.ts", start_line: 12 } },
-          ],
-          outgoing: [],
-        },
-      ],
-      partial_failures: [],
-    });
-    const parsed = parseEntireNeighbors(sample);
-    expect(parsed).toMatchObject({ format: "json", exactMatch: true, disambiguationRequired: false, truncated: false });
-    expect(parsed.callers).toEqual([
-      { caller: "refundDirect", file: "packages/core/src/bad.ts", line: 7, resolution: "receiver_type", confidence: 0.9, additionalSites: 1 },
-      { caller: "Mod.other", file: "packages/core/src/other.ts", line: 12, confidence: 0.5 },
-    ]);
+    expect(() => parseEntireEdges("")).toThrow(/printed nothing/);
+    expect(() => parseEntireEdges('{"provider":"other"}\n')).toThrow(/unrecognized header/);
+    const cut = edges.trim().split("\n").slice(0, -1).join("\n");
+    expect(() => parseEntireEdges(cut)).toThrow(/no summary record/);
+    expect(() => parseEntireNeighbors("Index: cache-hit (3ms)\nFocus: X.y (a.ts:1)\n")).toThrow(/expected JSON/);
     expect(parseEntireNeighbors(JSON.stringify({ disambiguation_required: true, matches: [] })).disambiguationRequired).toBe(true);
     expect(parseEntireNeighbors(JSON.stringify({ fuzzy_match: true, matches: [{ incoming: [] }] })).exactMatch).toBe(false);
+  });
+
+  const repo = join(tmpdir(), "entire-fixture-repo");
+  const cfg: CoverageConfig = {
+    projectDir: join(repo, "packages", "core"),
+    displayRoot: repo,
+    scanDirs: ["src", "scripts"],
+    toolsIndex: "src/tools/index.ts",
+    clients: [{ className: "DodoClient", file: "src/tools/dodo.ts", opPrefix: "dodo" }],
+    allowList: [],
+  };
+  const client = cfg.clients[0]!;
+  const methods = ["createRefund", "createCustomer", "listCustomers"].map((name) => ({ key: `DodoClient.${name}`, name, file: "packages/core/src/tools/dodo.ts", client }));
+  const ops = new Map(methods.map((m) => [m.key, `dodo.${m.name}`]));
+  const real = (args: string[]) => ({ status: 0, stdout: args[1] === "edges" ? edges : neighbors, stderr: "" });
+
+  it("finds the raw call (exact line via neighbors) and the raw construction; internal this.call edges are not callers", () => {
+    const calls: string[][] = [];
+    const { sites, graph } = entireRawCallers(cfg, methods, ops, (args) => {
+      calls.push(args);
+      return real(args);
+    });
+    expect(calls.map((a) => a[1])).toEqual(["edges", "neighbors"]); // one bulk pass, one line lookup
+    expect(sites).toEqual([
+      expect.objectContaining({ op: "new DodoClient", file: "packages/core/src/entire-probe-raw.ts", line: 6, status: "UNGUARDED" }),
+      expect.objectContaining({ op: "dodo.createRefund", file: "packages/core/src/entire-probe-raw.ts", line: 4, status: "UNGUARDED" }),
+    ]);
+    expect(graph).toMatchObject({ providerVersion: "v0.4.0", worktree: true, callEdges: 4, constructEdges: 5, clientEdges: 3, partialFailures: 1 });
+    expect(graph.skippedFiles).toEqual(["adversary/inbox/belief-crustdata.enrich.headcount-total-integer.json (E_MINIFIED)"]);
+  });
+
+  it("does not repeat a construction the TypeScript wiring check already reported", () => {
+    const wiring = [{ op: "new DodoClient", file: "packages/core/src/entire-probe-raw.ts", line: 7, status: "UNGUARDED" as const, detail: "tsc" }];
+    expect(entireRawCallers(cfg, methods, ops, real, wiring).sites.map((s) => s.op)).toEqual(["dodo.createRefund"]);
+  });
+
+  it("fails loudly when Entire could not parse scanned source or the command fails", () => {
+    const blind = edges.replace("adversary/inbox/belief-crustdata.enrich.headcount-total-integer.json", "packages/core/src/tools/dodo.ts");
+    expect(() => entireRawCallers(cfg, methods, ops, () => ({ status: 0, stdout: blind, stderr: "" }))).toThrow(/could not parse scanned source/);
+    expect(() => entireRawCallers(cfg, methods, ops, () => ({ status: 1, stdout: "", stderr: "boom" }))).toThrow(/failed: boom/);
+  });
+
+  it("formats an entire report with the graph facts", () => {
+    const { graph } = entireRawCallers(cfg, methods, ops, real);
+    const base: CoverageReport = {
+      backend: "entire", backendNote: "x", ops: [], sites: [], createToolsCalls: [], entire: graph,
+      totals: { ops: 0, sites: 0, guarded: 0, rawByDesign: 0, unguarded: 0 }, unguarded_call_sites: 0,
+    };
+    const text = formatCoverage(base);
+    expect(text).toContain("entire graph edges --repo . --format ndjson --worktree --relation CALLS,ASYNC_CALLS,CONSTRUCTS");
+    expect(text).toMatch(/graph: entire-graph v0\.4\.0, commit [0-9a-f]{12} \+ working tree, completeness ok/);
+    expect(text).not.toContain("UNVERIFIED");
   });
 });

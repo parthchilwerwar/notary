@@ -7,6 +7,9 @@ import { ArrowUpRightIcon as ArrowUpRight } from "@phosphor-icons/react/dist/csr
 import { SealCheckIcon as SealCheck } from "@phosphor-icons/react/dist/csr/SealCheck";
 import { ChatCircleDotsIcon as ChatCircleDots } from "@phosphor-icons/react/dist/csr/ChatCircleDots";
 import { WarningIcon as Warning } from "@phosphor-icons/react/dist/csr/Warning";
+import { GavelIcon as Gavel } from "@phosphor-icons/react/dist/csr/Gavel";
+import { SealWarningIcon as SealWarning } from "@phosphor-icons/react/dist/csr/SealWarning";
+import { ShieldCheckIcon as ShieldCheck } from "@phosphor-icons/react/dist/csr/ShieldCheck";
 import type { RunBundle } from "../../../../core/src/schema";
 import { StatusPill } from "../../ui";
 import { useData } from "../../app/catalog";
@@ -111,7 +114,10 @@ function TrailView({
           data-kind={model.decidedBy.kind}
           data-unsafe={model.unsafe?.length ? "true" : undefined}
         >
-          <span className="eyebrow">Decided by</span>
+          <span className="trail-decided-head">
+            <DecidedIcon kind={model.decidedBy.kind} unsafe={!!model.unsafe?.length} />
+            <span className="eyebrow">Decided by</span>
+          </span>
           <p>{model.decidedBy.text}</p>
           {model.unsafe?.length ? (
             <p className="trail-unsafe">
@@ -291,4 +297,10 @@ function RecordChip({ record }: { record: RecordRef }) {
       {record.id}
     </Link>
   );
+}
+
+/** The icon that leads "Decided by": what decided it (a guard, a certificate problem, the policy). */
+function DecidedIcon({ kind, unsafe }: { kind: string; unsafe: boolean }) {
+  const Icon = unsafe ? Warning : kind === "revoked_certificate" || kind === "missing_certificate" ? SealWarning : kind === "guard" ? ShieldCheck : Gavel;
+  return <Icon className="trail-decided-icon" size={16} weight="regular" aria-hidden="true" />;
 }

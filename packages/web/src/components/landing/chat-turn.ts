@@ -72,7 +72,7 @@ export function loadChatTurn(replay: ReplaySource): Promise<ChatTurn | null> {
   let p = turns.get(replay);
   if (!p) {
     p = (async () => {
-      const { guarded } = await replayPair(replay);
+      const { preview: guarded } = await replayPair(replay);
       if (!guarded) return null;
       const world = await replay.certificates(entryOfBundle(guarded));
       const chat = new ReplayChat(replay, { store: memoryChatStore(), pace: "instant" });

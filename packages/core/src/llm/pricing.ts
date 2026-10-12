@@ -20,7 +20,7 @@
  * Anthropic list prices for Bedrock global endpoints. Only model ids whose exact Bedrock id is
  * known are listed; anything else (including newer models) needs the env override.
  */
-import type { Role } from "../schema/index.js";
+import type { ModelRole } from "./roles.js";
 import { baseModelId } from "./roles.js";
 import { AGENTS } from "../schema/agents.js";
 
@@ -68,7 +68,7 @@ function envNumber(env: Env, name: string): number | undefined | "invalid" {
   return Number.isFinite(n) && n >= 0 ? n : "invalid";
 }
 
-export function resolvePrice(role: Role, modelId: string, env: Env = process.env): ResolvedPrice {
+export function resolvePrice(role: ModelRole, modelId: string, env: Env = process.env): ResolvedPrice {
   const inName = `NOTARY_PRICE_${role.toUpperCase()}_IN`;
   const outName = `NOTARY_PRICE_${role.toUpperCase()}_OUT`;
   const inP = envNumber(env, inName);
@@ -117,7 +117,7 @@ export type PricedCall = {
  * `reportedUsd` is the proxy's own figure for this response, when it sent one.
  */
 export function priceCall(
-  role: Role,
+  role: ModelRole,
   modelId: string,
   tokens: { inputTokens: number; outputTokens: number },
   env: Env = process.env,

@@ -1,4 +1,7 @@
-/* Certificates list and detail (K3): layout only; surfaces and type come from src/ui. */
+/* Certificates list and detail: full-page layout. No cards — content sits on the page in sections,
+   rows and columns separated by hairlines. Type and status colors come from src/ui and the tokens. */
+
+/* ------------------------------------------------------------------ list */
 .certs-filters {
   display: flex;
   flex-wrap: wrap;
@@ -6,23 +9,175 @@
   justify-content: space-between;
   gap: 12px 24px;
 }
-.certs-grid {
+.certs-note code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+
+/* The list: a column header on wide screens, then one row per certificate between hairlines. */
+.certs-list {
+  min-width: 0;
+  border-top: 1px solid var(--hairline-color);
+}
+.certs-list ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.certs-row {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) 7.5rem 7rem 4.5rem 11rem;
+  align-items: start;
+  gap: 4px 24px;
+  border-bottom: 1px solid var(--hairline-color);
 }
-@media (max-width: 899px) {
-  .certs-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
+.certs-head {
+  padding: 10px 12px;
+  color: var(--text-muted);
+  font-size: 13px;
 }
-.certs-note {
-  color: var(--text-strong-muted);
+.certs-head .num,
+.certs-cell.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
-.certs-claim code {
-  overflow-wrap: anywhere;
+.certs-item {
+  position: relative;
+  padding: 18px 12px;
+  transition: background-color 150ms ease-out;
+}
+.certs-item:hover {
+  background: var(--surface-subtle);
+}
+.certs-item:has(.certs-claim:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+.certs-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+}
+.certs-seal {
+  flex: none;
+  margin-top: 3px;
+}
+.certs-text {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
 }
 .certs-claim {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.certs-claim code {
+  font-size: inherit;
+}
+/* The claim link covers the whole row, so the row is one click target. */
+.certs-claim::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.certs-claim:focus-visible {
+  outline: none;
+}
+.certs-item:hover .certs-claim {
+  color: var(--accent-text);
+}
+.certs-item[data-revoked] .certs-claim code {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+.certs-sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 0;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.certs-sub > span + span::before {
+  content: "·";
+  margin: 0 8px;
+}
+.certs-scope {
+  margin: 0;
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.certs-revoked-line {
+  margin: 0;
+  color: var(--text-strong-muted);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.certs-cell {
+  padding-top: 2px;
+  color: var(--text);
+  font-size: 14px;
+}
+.certs-date {
+  color: var(--text-muted);
+}
+/* Column labels: the header row names the columns on wide screens; on phones each value carries
+   its own label. Screen readers always hear the label. */
+.certs-k {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+@media (max-width: 899px) {
+  .certs-head {
+    display: none;
+  }
+  .certs-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* The meta line lines up under the claim text (seal 14px + 14px gap). */
+  .certs-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    padding: 16px 4px 16px 32px;
+  }
+  .certs-main {
+    flex: 1 1 100%;
+    margin-left: -28px;
+  }
+  .certs-cell {
+    padding-top: 0;
+  }
+  .certs-cell.num {
+    text-align: left;
+  }
+  .certs-k {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    color: var(--text-muted);
+  }
+}
+
+.certs-claim-cell code {
+  overflow-wrap: anywhere;
+}
+.certs-claim-cell {
   min-width: 14rem;
 }
 .certs-why {
@@ -47,28 +202,56 @@ tr[data-highlight="true"] > * {
   background: var(--accent-soft);
 }
 
-/* Detail */
+/* ---------------------------------------------------------------- detail */
 .cert-title {
   font-size: 0.8em;
   overflow-wrap: anywhere;
 }
+.cert-sub-title {
+  margin: 0;
+  color: var(--text-strong-muted);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* What the docs say | what was observed: two columns split by a hairline, no boxes. */
 .cert-pair {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  margin: 0;
+  border-block: 1px solid var(--hairline-color);
+}
+.cert-pair > div {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  padding: 20px 32px 24px 0;
+}
+.cert-pair > div + div {
+  padding: 20px 0 24px 32px;
+  border-left: 1px solid var(--hairline-color);
 }
 @media (max-width: 767px) {
   .cert-pair {
     grid-template-columns: minmax(0, 1fr);
   }
+  .cert-pair > div,
+  .cert-pair > div + div {
+    padding: 16px 0;
+    border-left: 0;
+  }
+  .cert-pair > div + div {
+    border-top: 1px solid var(--hairline-color);
+  }
 }
 .cert-pair-label {
-  margin: 0 0 8px;
+  margin: 0;
   color: var(--text-muted);
   font-size: 14px;
 }
-/* Recorded text (a claim, an observation) reads as body copy, like the landing's prediction card:
-   sans at the lede size. Serif stays for titles and figures. */
+/* Recorded text (a claim, an observation) reads as body copy: sans at the lede size. Serif stays
+   for titles and figures. */
 .cert-pair-text {
   margin: 0;
   color: var(--text);
@@ -77,15 +260,46 @@ tr[data-highlight="true"] > * {
   text-wrap: pretty;
   overflow-wrap: anywhere;
 }
-.cert-review,
-.revocation-block {
+.cert-probes {
   display: grid;
   gap: 12px;
+  min-width: 0;
+  padding-top: 8px;
+}
+.cert-review,
+.revocation-block,
+.cert-scope {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  max-width: 80ch;
 }
 .cert-review p,
 .revocation-block p {
   margin: 0;
   overflow-wrap: anywhere;
+}
+.cert-review > p:first-of-type {
+  font-size: 16px;
+  line-height: 1.55;
+}
+/* The revocation follows the review on a quiet panel (no rule), led by its Revoked pill. */
+.revocation-block {
+  max-width: none;
+  margin-top: 8px;
+  padding: 20px 24px;
+  border: 1px solid var(--hairline-color);
+  border-radius: var(--r-panel);
+  background: var(--surface-subtle);
+}
+@media (max-width: 639px) {
+  .revocation-block {
+    padding: 16px;
+  }
+}
+.cert-revocation-title {
+  color: var(--text);
+  font-size: 17px;
 }
 .cert-review-head {
   display: flex;
@@ -97,37 +311,48 @@ tr[data-highlight="true"] > * {
   color: var(--text-muted);
   font-size: 14px;
 }
-.cert-scope {
-  display: grid;
-  gap: 12px;
-}
 .cert-scope-text {
   margin: 0;
   font-size: 17px;
+  line-height: 1.55;
   overflow-wrap: anywhere;
 }
-.cert-more {
-  display: grid;
-  gap: 8px;
+
+/* Records: one disclosure per line, between hairlines. */
+.cert-more > .ui-expander {
+  padding: 8px 0;
+  border-top: 1px solid var(--hairline-color);
+}
+.cert-more > .ui-expander:last-child {
+  border-bottom: 1px solid var(--hairline-color);
+}
+.cert-more > .ui-expander > summary {
+  width: 100%;
+  min-height: 44px;
+}
+.cert-more > .ui-expander > .ui-expander-body {
+  padding-bottom: 16px;
 }
 .cert-quote {
   max-width: 80ch;
   margin: 0;
-  padding: 4px 0 4px 16px;
-  border-left: 2px solid var(--hairline-color);
+  padding: 12px 16px;
+  border-radius: var(--r-panel);
+  background: var(--surface-subtle);
   color: var(--text-strong-muted);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 .cert-receipts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
   gap: 16px 32px;
 }
 .cert-receipts > div {
   display: grid;
   align-content: start;
   gap: 8px;
+  min-width: 0;
 }
 .cert-receipt-title {
   margin: 0;

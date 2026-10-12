@@ -1,0 +1,428 @@
+/* Reasoning Steps (src/components/ui/reasoning-steps.tsx). Styled against its data-slot
+   attributes; every color is a token from src/design/tokens.css. Light only, flat: hairlines and
+   tints, no floating shadows, no colored vertical bars. The glyph column (16px + 8px gap) lines the
+   strip and the step list up under the header text. */
+
+[data-slot="reasoning-steps"] {
+  --rs-glyph: 16px;
+  --rs-gap: 8px;
+  --rs-indent: calc(var(--rs-glyph) + var(--rs-gap));
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: 20px;
+  color: var(--text-muted);
+}
+
+/* ------------------------------------------------------------------------------ header */
+
+[data-slot="reasoning-steps-header"] {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: var(--rs-gap);
+  max-width: calc(100% + 16px);
+  min-width: 0;
+  min-height: 32px;
+  margin-left: -8px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--r-button);
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+
+[data-slot="reasoning-steps-header"]:hover {
+  background: var(--surface-subtle);
+  color: var(--text);
+}
+
+[data-slot="reasoning-steps"] :is(button, a):focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+[data-slot="reasoning-steps-glyph"] {
+  position: relative;
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: var(--rs-glyph);
+  height: var(--rs-glyph);
+}
+
+[data-slot="reasoning-steps-glyph"] > span {
+  display: inline-grid;
+  place-items: center;
+}
+
+[data-slot="reasoning-steps-glyph"] svg,
+[data-slot="reasoning-steps-stage-mark"] svg {
+  width: 15px;
+  height: 15px;
+}
+
+[data-glyph="running"],
+[data-glyph="active"] {
+  color: var(--accent);
+}
+
+[data-glyph="done"] {
+  color: var(--text-muted);
+}
+
+[data-slot="reasoning-steps-stage-mark"][data-glyph="done"] {
+  color: var(--accent);
+}
+
+[data-glyph="error"] {
+  color: var(--status-unsafe);
+}
+
+[data-glyph="stopped"],
+[data-glyph="skipped"],
+[data-glyph="pending"] {
+  color: var(--text-muted);
+}
+
+[data-slot="reasoning-steps"] [data-spin] {
+  animation: rs-spin 0.9s linear infinite;
+}
+
+[data-slot="reasoning-steps-label"] {
+  position: relative;
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+}
+
+[data-slot="reasoning-steps-label-text"] {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+[data-slot="reasoning-steps"][data-state="running"] [data-slot="reasoning-steps-label-text"] {
+  color: var(--text-strong-muted);
+  font-weight: var(--weight-medium);
+}
+
+[data-slot="reasoning-steps-meta"] {
+  flex: none;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+[data-slot="reasoning-steps-meta"]::before {
+  content: "·";
+  margin-right: var(--rs-gap);
+}
+
+[data-slot="reasoning-steps-caret"] {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  color: var(--text-muted);
+  transition: transform 150ms ease-out;
+}
+
+[aria-expanded="true"] > [data-slot="reasoning-steps-caret"] {
+  transform: rotate(90deg);
+}
+
+/* The active label: a sweep of accent blue across strong-muted text. */
+[data-slot="reasoning-steps"] [data-shimmer] {
+  background-image: linear-gradient(100deg, var(--text-strong-muted) 0%, var(--text-strong-muted) 38%, var(--accent) 50%, var(--text-strong-muted) 62%, var(--text-strong-muted) 100%);
+  background-size: 250% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: rs-shimmer 2.2s linear infinite;
+}
+
+/* -------------------------------------------------------------------- running strip */
+
+[data-slot="reasoning-steps-strip"] {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding-left: var(--rs-indent);
+}
+
+[data-slot="reasoning-steps-reasoning"] {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+[data-slot="reasoning-steps-strip"] > [data-slot="reasoning-steps-reasoning"] {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  max-height: 92px; /* four lines; older lines fade out at the top */
+  overflow: hidden;
+}
+
+[data-slot="reasoning-steps-reasoning"][data-overflow] {
+  -webkit-mask-image: linear-gradient(to bottom, transparent, var(--page) 28px);
+  mask-image: linear-gradient(to bottom, transparent, var(--page) 28px);
+}
+
+[data-slot="reasoning-steps-reasoning-line"] {
+  min-width: 0;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+
+[data-slot="reasoning-steps-reasoning-tag"] {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 7px;
+  border-radius: 6px;
+  background: var(--muted-surface);
+  color: var(--text-strong-muted);
+  font-size: 11px;
+  font-weight: var(--weight-medium);
+  line-height: 18px;
+  vertical-align: 1px;
+}
+
+[data-slot="reasoning-steps-reasoning-tag"][data-tone="accent"] {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+/* --------------------------------------------------------------------------- sources */
+
+[data-slot="reasoning-steps-sources"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+[data-slot="reasoning-steps-sources"] > li {
+  min-width: 0;
+  max-width: 100%;
+}
+
+[data-slot="reasoning-steps-source"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  height: 28px;
+  padding: 0 11px 0 9px;
+  border: 1px solid var(--hairline-color);
+  border-radius: var(--r-pill);
+  background: var(--card);
+  color: var(--text-strong-muted);
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out;
+}
+
+[data-slot="reasoning-steps-source"]:is(a, button):hover {
+  border-color: var(--accent-soft);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+[data-slot="reasoning-steps-source"][data-static] {
+  cursor: default;
+}
+
+[data-slot="reasoning-steps-source-icon"] {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  color: var(--accent-text);
+}
+
+[data-slot="reasoning-steps-source-icon"] svg {
+  width: 14px;
+  height: 14px;
+}
+
+[data-slot="reasoning-steps-source-label"] {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ------------------------------------------------------------------------ step list */
+
+[data-slot="reasoning-steps-body"] {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+[data-slot="reasoning-steps-body"] > [data-slot="reasoning-steps-reasoning"],
+[data-slot="reasoning-steps-body"] > [data-slot="reasoning-steps-sources"] {
+  padding-left: var(--rs-indent);
+}
+
+[data-slot="reasoning-steps-list"] {
+  display: grid;
+  gap: 2px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+[data-slot="reasoning-steps-stage"] {
+  display: grid;
+  grid-template-columns: var(--rs-glyph) minmax(0, 1fr);
+  column-gap: var(--rs-gap);
+  margin-inline: -8px;
+  padding: 6px 8px;
+  border-radius: 12px;
+  scroll-margin-block: calc(var(--topbar-height) + var(--space-6)) 180px;
+  transition: background-color 200ms ease-out, box-shadow 200ms ease-out;
+}
+
+[data-slot="reasoning-steps-stage"][data-highlight] {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+[data-slot="reasoning-steps-stage"]:focus {
+  outline: none;
+}
+
+[data-slot="reasoning-steps-stage"]:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 0;
+}
+
+[data-slot="reasoning-steps-stage-mark"] {
+  display: grid;
+  place-items: center;
+  width: var(--rs-glyph);
+  height: 20px;
+}
+
+[data-slot="reasoning-steps-stage-main"] {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+[data-slot="reasoning-steps-stage-head"] {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-self: start;
+  gap: 2px 8px;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+}
+
+button[data-slot="reasoning-steps-stage-head"] {
+  cursor: pointer;
+}
+
+button[data-slot="reasoning-steps-stage-head"]:hover [data-slot="reasoning-steps-stage-label"]:not([data-shimmer]) {
+  color: var(--accent-text);
+}
+
+[data-slot="reasoning-steps-stage-head"] > [data-slot="reasoning-steps-caret"] {
+  align-self: center;
+}
+
+[data-slot="reasoning-steps-stage-label"] {
+  min-width: 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+  transition: color 150ms ease-out;
+}
+
+[data-slot="reasoning-steps-stage"][data-status="skipped"] [data-slot="reasoning-steps-stage-label"],
+[data-slot="reasoning-steps-stage"][data-status="stopped"] [data-slot="reasoning-steps-stage-label"] {
+  color: var(--text-strong-muted);
+}
+
+[data-slot="reasoning-steps-stage-meta"] {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+[data-slot="reasoning-steps-stage-detail"] {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* -------------------------------------------------------------------------- motion */
+
+@keyframes rs-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes rs-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0% 0;
+  }
+}
+
+[data-slot="reasoning-steps"][data-reduced] [data-spin] {
+  animation: none;
+}
+
+[data-slot="reasoning-steps"][data-reduced] [data-shimmer] {
+  animation: none;
+  background: none;
+  color: var(--accent-text);
+  -webkit-text-fill-color: currentColor;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="reasoning-steps"] [data-spin] {
+    animation: none;
+  }
+  [data-slot="reasoning-steps"] [data-shimmer] {
+    animation: none;
+    background: none;
+    color: var(--accent-text);
+    -webkit-text-fill-color: currentColor;
+  }
+  [data-slot="reasoning-steps"] * {
+    transition: none !important;
+  }
+}

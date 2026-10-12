@@ -107,3 +107,12 @@ export * from "./certificate.js";
 export * from "./api.js";
 export * from "./chat.js";
 export * from "./agents.js";
+
+// Unit economics + the imported cfo.ai plan (packages/web/public/economics.json).
+export * from "./economics.js";
+
+// Incidents per run, tied to neatlogs spans (runs/<runId>/incidents.json, public/bundles/incidents.json).
+export * from "./incidents.js";
+
+// Entire checkpoints + entire-graph guard coverage (packages/web/public/evidence/entire.json).
+export * from "./entire.js";

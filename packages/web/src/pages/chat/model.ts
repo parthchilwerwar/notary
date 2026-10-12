@@ -142,6 +142,8 @@ const TOOL_TITLE: Record<ChatToolName, string> = {
   crustdata_lookup: "Looking up a company in Crustdata",
   dodo_lookup: "Looking up a record in Dodo Payments",
   get_health: "Checking integrations",
+  get_guard_coverage: "Checking guard coverage",
+  explain_decision: "Explaining a decision",
 };
 
 /** The step's own plain title, else one built from the tool and its input. */

@@ -1,0 +1,41 @@
+{
+  "name": "recon-dodo-20261012T013640Z-inputs",
+  "tool": "notary",
+  "createdAt": "2026-10-12T01:36:45.292Z",
+  "exchanges": [
+    {
+      "id": "notary.inputs#d87be2b0458a#0",
+      "tool": "notary",
+      "op": "notary.inputs",
+      "method": "GET",
+      "url": "notary://inputs/recon-dodo-20261012T013640Z",
+      "requestHeaders": {},
+      "requestBody": {
+        "runId": "recon-dodo-20261012T013640Z"
+      },
+      "status": 200,
+      "responseHeaders": {},
+      "responseBody": {
+        "version": 1,
+        "runId": "recon-dodo-20261012T013640Z",
+        "kind": "notarize",
+        "variant": "notarize",
+        "tool": "dodo",
+        "seed": 0,
+        "identityRunId": "recon-dodo-20261012T013640Z",
+        "reconOnly": true,
+        "params": {
+          "creditBudget": 200
+        },
+        "files": {},
+        "store": null
+      },
+      "latencyMs": 0,
+      "credits": null,
+      "recordedAt": "2026-10-12T01:36:45.292Z",
+      "requestHash": "d87be2b0458a33cc49b0ee28da4fa85a248394409a419dbf4e9aef7823cbaa1f",
+      "occurrence": 0
+    }
+  ],
+  "contentHash": "e3060966c15d601f58bae2d76725474f18dc44e0f5f1c83b85fbfbafef43c6a9"
+}

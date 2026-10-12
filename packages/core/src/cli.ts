@@ -211,6 +211,7 @@ export function buildProgram(): Command {
     .option("--no-checks", "skip running `pnpm test` and `guards coverage` for EVALUATION.md")
     .option("--content", "only write the dashboard glossary (generated from code) to packages/web/public/content/glossary.json (--out: its directory)")
     .option("--evidence", "only regenerate packages/web/public/evidence/evidence.json from facts on disk (doctor record, trace link template, entire, docs/BUSINESS.md)")
+    .option("--entire", "only write packages/web/public/evidence/entire.json from the real Entire CLI: checkpoints on this branch + guard coverage via entire graph (--no-checks skips coverage)")
     .option("--certificates", "only write certificates from REAL bundles: packages/web/public/certificates/<tool>.json + report.json and export/REPORT.md (--out: certificates directory, --runs-dir, --root)")
     .option("--fixture", "with --certificates: build from the FIXTURE demo bundles (packages/core/runs/demo) into certificates/fixture/ and export/REPORT.fixture.md")
     .option("--explain", "only write deterministic explain answers for every published run (real and fixture worlds kept apart) to packages/web/public/content/explain.json (--out: its directory)")
@@ -236,6 +237,12 @@ export function buildProgram(): Command {
           ...(opts.root ? { exportDir: join(at(opts.root), "export") } : {}),
         });
         for (const line of result.lines) console.log(line);
+        return;
+      }
+      if ((opts as { entire?: boolean }).entire) {
+        const { writeEntireFile } = await import("./entire/index.js");
+        const { runCoverage } = await import("./guards/coverage.js");
+        for (const line of writeEntireFile({ coverage: opts.checks ? () => runCoverage({ backend: "entire" }) : null }).lines) console.log(line);
         return;
       }
       if ((opts as { evidence?: boolean }).evidence) {
@@ -274,6 +281,24 @@ export function buildProgram(): Command {
       const { bundlePath, indexPath } = await writeBundle(buildSampleBundle(seed), dir);
       console.log(`SAMPLE bundle (synthetic, not a run result) written to ${bundlePath}`);
       console.log(`index updated: ${indexPath}`);
+    });
+
+  program
+    .command("economics")
+    .description("Write packages/web/public/economics.json, docs/BUSINESS.md and export/cfo-inputs.csv: unit economics from REAL bundles plus the imported cfo.ai plan")
+    .option("--cfo-import <file>", "import a cfo.ai plan exported as notary-cfo-plan-csv/1 (see docs/BUSINESS.md); without it the plan already in economics.json is kept")
+    .option("--runs-dir <dir>", "read real bundles from this directory instead of packages/core/runs/")
+    .option("--out <file>", "write economics.json here instead of packages/web/public/economics.json (docs/BUSINESS.md and export/cfo-inputs.csv are then not written)")
+    .action(async (opts: { cfoImport?: string; runsDir?: string; out?: string }) => {
+      const { writeEconomics } = await import("./economics/index.js");
+      const { resolve } = await import("node:path");
+      const at = (p: string): string => resolve(process.env.INIT_CWD ?? process.cwd(), p);
+      const result = writeEconomics({
+        ...(opts.cfoImport ? { cfoImport: at(opts.cfoImport) } : {}),
+        ...(opts.runsDir ? { runsDir: at(opts.runsDir) } : {}),
+        ...(opts.out ? { economicsJson: at(opts.out), businessMd: null, cfoInputsCsv: null } : {}),
+      });
+      for (const line of result.lines) console.log(line);
     });
 
   program
@@ -319,9 +344,9 @@ export function buildProgram(): Command {
     .description("Guard registry commands")
     .command("coverage")
     .description("raw-client caller check (TypeScript checker; entire graph when installed); non-zero exit on any unguarded call site")
-    .option("--json", "machine-readable report (unguarded_call_sites, sites, totals; `unverified` when backend is entire)")
+    .option("--json", "machine-readable report (unguarded_call_sites, sites, totals; `entire` graph facts when backend is entire)")
     .addOption(
-      new Option("--backend <backend>", "caller backend; auto uses entire when on PATH, else tsc (entire is UNVERIFIED: never run against a real install)")
+      new Option("--backend <backend>", "caller backend; auto uses entire when `entire graph` is installed, else tsc (entire: one `entire graph edges` pass, checked with Entire CLI 0.11.4 + entire-graph v0.4.0)")
         .choices(["auto", "entire", "tsc"])
         .default("auto"),
     )
@@ -389,7 +414,7 @@ export function buildProgram(): Command {
         return;
       }
       const { runDoctor } = await import("./trace/doctor.js");
-      const report = await runDoctor();
+      const report = await runDoctor({ readBack: true });
       console.log(JSON.stringify(report, null, 2));
       if (report.spanEmitted) return;
       // A missing key is a BLOCKED precondition (exit 3), like every other keyed command; a key that

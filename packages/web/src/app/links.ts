@@ -6,7 +6,7 @@ import type { CatalogOrigin as DataSource } from "../data";
 /**
  * Live     = the data layer is in live mode (a local `notary serve` answered /api/health) and the selected run is real.
  * Recorded = real published bundles from static files.
- * Fixture  = the selected run is sample data (simulated APIs), wherever it came from.
+ * Fixture  = the selected run is fixture data (bundle.sample), wherever it came from.
  */
 export type DataMode = "live" | "recorded" | "fixture";
 
@@ -17,6 +17,38 @@ export function resolveDataMode(
   if (selected?.sample) return "fixture";
   return source === "api" ? "live" : "recorded";
 }
+
+/**
+ * `?fixtures=1`: the development-only view of the fixture runs (bundles/fixture, sample: true).
+ * Without it the dashboard and the landing show real runs only, and an empty state when none is
+ * published; with it they show fixture runs only, under the fixture disclosure. Never both at once.
+ */
+export const FIXTURES_PARAM = "fixtures";
+
+/** True when a query string (or URLSearchParams) asks for the fixture view. */
+export function fixturesRequested(search: string | URLSearchParams | null | undefined): boolean {
+  if (!search) return false;
+  const params = typeof search === "string" ? new URLSearchParams(search) : search;
+  return params.get(FIXTURES_PARAM) === "1";
+}
+
+/** The fixture flag of the page the browser is on (false outside a browser). */
+export const fixturesInLocation = (): boolean => fixturesRequested(globalThis.location?.search);
+
+/**
+ * The runs a view may show. Default: real runs only (live ones still running included). With the
+ * fixture flag: finished fixture runs only. A fixture run is never shown without the flag, and a
+ * real run is never mixed into the fixture view.
+ */
+export function visibleRuns<T extends { sample?: boolean; state?: string }>(entries: readonly T[], fixtures: boolean): T[] {
+  return entries.filter((e) => {
+    const sample = e.state === "running" ? false : !!e.sample;
+    return fixtures ? sample && e.state !== "running" : !sample;
+  });
+}
+
+/** The empty state's next step when no real run is published. */
+export const NO_RUNS_COMMANDS = ["pnpm notary notarize --tool crustdata", "pnpm notary export"] as const;
 
 export const MODE_LABEL: Record<DataMode, string> = {
   live: "Live",
@@ -30,7 +62,10 @@ export type RunGroup = {
   runs: BundleIndexEntry[];
 };
 
-/** Run picker sections. Fixture and real runs are never in the same section. Empty sections are dropped. */
+/**
+ * Run picker sections: real runs first, then recorded fixtures. Fixture and real runs are never in
+ * the same section. Empty sections are dropped.
+ */
 export function groupRuns(
   entries: BundleIndexEntry[],
   source: DataSource,
@@ -42,27 +77,32 @@ export function groupRuns(
   const fixture = sorted.filter((e) => e.sample);
   const groups: RunGroup[] = [
     source === "api"
-      ? { kind: "live", label: "Live runs (local API)", runs: real }
+      ? { kind: "live", label: "Live runs", runs: real }
       : { kind: "recorded", label: "Recorded runs", runs: real },
     {
       kind: "fixture",
-      label: "Fixture runs (simulated APIs)",
+      label: "Fixture runs",
       runs: fixture,
     },
   ];
   return groups.filter((g) => g.runs.length > 0);
 }
 
-/** Default selection: a guarded queue run, preferring real data; else the newest run. */
+/**
+ * Default selection: a guarded queue run, preferring real data; else the newest run. Within a
+ * cohort, live recordings come before their replays (a replay re-serves cassettes and carries
+ * fewer events).
+ */
 export function defaultRunId(
-  entries: Pick<BundleIndexEntry, "runId" | "sample" | "kind" | "variant" | "startedAt">[],
+  entries: Pick<BundleIndexEntry, "runId" | "sample" | "kind" | "variant" | "startedAt" | "mode">[],
 ): string | undefined {
   const sorted = [...entries].sort((a, b) =>
     b.startedAt.localeCompare(a.startedAt),
   );
-  const cohort = sorted.some((e) => !e.sample)
+  const real = sorted.some((e) => !e.sample)
     ? sorted.filter((e) => !e.sample)
     : sorted;
+  const cohort = [...real.filter((e) => e.mode !== "replay"), ...real.filter((e) => e.mode === "replay")];
   return (
     cohort.find((e) => e.kind === "run" && e.variant === "guarded") ??
     cohort[0]
@@ -92,7 +132,7 @@ export function pickBaseline(
       (b) =>
         b.kind === "run" &&
         b.variant === (bundle?.variant === "naive" ? "guarded" : "naive") &&
-        // Fixture scenarios share a runId prefix; prefer the same simulated world.
+        // Fixture scenarios share a runId prefix; prefer the same scenario.
         scenarioKey(b.runId) === scenarioKey(bundle!.runId),
     ) ??
     candidates.find(
@@ -129,6 +169,8 @@ export function withRun(
   if (run) params.set("run", run);
   for (const [k, v] of own) if (k !== "run") params.set(k, v);
   for (const [k, v] of Object.entries(extra)) if (v) params.set(k, v);
+  // The development-only fixture view stays on while navigating inside the dashboard.
+  if (fixturesInLocation() && !params.has(FIXTURES_PARAM)) params.set(FIXTURES_PARAM, "1");
   const q = params.toString();
   return q ? `${base}?${q}` : base;
 }
@@ -139,13 +181,19 @@ export function withRun(
  * certificates have their own page.
  */
 export const recordPath = {
-  decision: (id: string) => `/app/run?decision=${encodeURIComponent(id)}`,
-  probe: (id: string) => `/app/run?probe=${encodeURIComponent(id)}`,
-  belief: (id: string) => `/app/certificates?belief=${encodeURIComponent(id)}`,
-  certificate: (id: string) => `/app/certificates/${encodeURIComponent(id)}`,
-  run: (id: string) => `/app/run?run=${encodeURIComponent(id)}`,
-  report: (tool: string) => `/app/certificates?tool=${encodeURIComponent(tool)}`,
+  decision: (id: string) => keepView(`/app/run?decision=${encodeURIComponent(id)}`),
+  probe: (id: string) => keepView(`/app/run?probe=${encodeURIComponent(id)}`),
+  belief: (id: string) => keepView(`/app/certificates?belief=${encodeURIComponent(id)}`),
+  certificate: (id: string) => keepView(`/app/certificates/${encodeURIComponent(id)}`),
+  run: (id: string) => keepView(`/app/run?run=${encodeURIComponent(id)}`),
+  report: (tool: string) => keepView(`/app/certificates?tool=${encodeURIComponent(tool)}`),
 };
+
+/** Keep the development-only fixture view (`?fixtures=1`) on a dashboard path when it is on now. */
+export function keepView(path: string): string {
+  if (!fixturesInLocation() || /[?&]fixtures=1(&|$)/.test(path)) return path;
+  return `${path}${path.includes("?") ? "&" : "?"}${FIXTURES_PARAM}=1`;
+}
 
 export type PaletteEntry = {
   group: "Decisions" | "Probes" | "Beliefs" | "Certificates";

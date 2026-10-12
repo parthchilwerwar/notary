@@ -5,7 +5,8 @@ import { withRun } from "../../app/links";
 import { matchAppRoute, routeById } from "../../routes";
 
 /**
- * Selected-run picker. One <optgroup> per cohort (live or recorded, fixture), never mixed.
+ * Selected-run picker. One <optgroup> per cohort, real runs first (live or recorded), then
+ * recorded fixtures; never mixed.
  * Switching runs on a record page returns to that record's list, since records belong to a world.
  */
 export function RunPicker() {

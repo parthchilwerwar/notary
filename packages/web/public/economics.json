@@ -1,0 +1,301 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "pnpm notary economics",
+  "sample": false,
+  "sources": {
+    "bundles": [
+      {
+        "runId": "notarize-crustdata-20261012T011404Z",
+        "contentHash": "77c3872868bee731453e616d60461c09f30987059a143ca56ad149d8ef9626e2",
+        "file": "core/runs/notarize-crustdata-20261012T011404Z/notarize-crustdata-20261012T011404Z.json"
+      },
+      {
+        "runId": "notarize-dodo-20261012T012315Z",
+        "contentHash": "047476038381d524113b7b312c4da7bc8ccf937446990e74c0836a16c0751fd5",
+        "file": "core/runs/notarize-dodo-20261012T012315Z/notarize-dodo-20261012T012315Z.json"
+      },
+      {
+        "runId": "recon-dodo-20261012T013640Z",
+        "contentHash": "0202521e5bcda3467fe9453626d7f4b09aaf7f68d0cbcfbe22a02ef249bb1ee8",
+        "file": "core/runs/recon-dodo-20261012T013640Z/recon-dodo-20261012T013640Z.json"
+      },
+      {
+        "runId": "notarize-dodo-20261012T014032Z",
+        "contentHash": "913ec6593d69b0081a90349a0897d4835d2862897ac479d5871cde61a50f9999",
+        "file": "core/runs/notarize-dodo-20261012T014032Z/notarize-dodo-20261012T014032Z.json"
+      },
+      {
+        "runId": "notarize-crustdata-20261012T011404Z-replay",
+        "contentHash": "afda1e69da0071c48a15b68867ffff6feba9c7a20191e88a30ebd1b4f226f52f",
+        "file": "core/runs/notarize-crustdata-20261012T011404Z-replay/notarize-crustdata-20261012T011404Z-replay.json"
+      },
+      {
+        "runId": "recon-dodo-20261012T013640Z-replay",
+        "contentHash": "0d2ae865cfc2f565275ff66fdddf644fb49e15f81f68d800aebf0858a8f936aa",
+        "file": "core/runs/recon-dodo-20261012T013640Z-replay/recon-dodo-20261012T013640Z-replay.json"
+      },
+      {
+        "runId": "notarize-dodo-20261012T014032Z-replay",
+        "contentHash": "16807c03dc52f343a6d89d7df3c7e29e767b8c81da5fe903095d2aaf049104a1",
+        "file": "core/runs/notarize-dodo-20261012T014032Z-replay/notarize-dodo-20261012T014032Z-replay.json"
+      }
+    ],
+    "skipped": [
+      {
+        "file": "web/public/bundles/sample-42.json",
+        "reason": "SAMPLE/fixture bundle — never a source of results"
+      }
+    ],
+    "certificatesReport": {
+      "file": "web/public/certificates/report.json",
+      "sha256": "f58df3697dfa5767579e6f68b2f7cc52828c2e08d55f2d6496523c3d3d24f298"
+    }
+  },
+  "computed": {
+    "runs": [
+      {
+        "runId": "notarize-crustdata-20261012T011404Z",
+        "contentHash": "77c3872868bee731453e616d60461c09f30987059a143ca56ad149d8ef9626e2",
+        "kind": "notarize",
+        "variant": "notarize",
+        "mode": "live",
+        "tool": "crustdata",
+        "seed": 0,
+        "startedAt": "2026-10-12T01:14:04.667Z",
+        "status": "completed",
+        "modelUsd": 0.0394163,
+        "usdByRole": {
+          "executor": 0,
+          "reflector": 0.0196383,
+          "adversary": 0.019778
+        },
+        "tokens": 4519,
+        "credits": 62,
+        "creditsByEndpoint": {
+          "crustdata.enrichCompany": 62,
+          "crustdata.getCreditBalance": 0,
+          "crustdata.identifyCompany": 0
+        },
+        "unsafeActions": null,
+        "holds": null,
+        "beliefsNotarized": 1
+      },
+      {
+        "runId": "notarize-dodo-20261012T012315Z",
+        "contentHash": "047476038381d524113b7b312c4da7bc8ccf937446990e74c0836a16c0751fd5",
+        "kind": "notarize",
+        "variant": "notarize",
+        "mode": "live",
+        "tool": "dodo",
+        "seed": 0,
+        "startedAt": "2026-10-12T01:23:15.107Z",
+        "status": "completed",
+        "modelUsd": 0.086911,
+        "usdByRole": {
+          "executor": 0,
+          "reflector": 0,
+          "adversary": 0.086911
+        },
+        "tokens": 11378,
+        "credits": 0,
+        "creditsByEndpoint": {},
+        "unsafeActions": null,
+        "holds": null,
+        "beliefsNotarized": 4
+      },
+      {
+        "runId": "recon-dodo-20261012T013640Z",
+        "contentHash": "0202521e5bcda3467fe9453626d7f4b09aaf7f68d0cbcfbe22a02ef249bb1ee8",
+        "kind": "notarize",
+        "variant": "notarize",
+        "mode": "live",
+        "tool": "dodo",
+        "seed": 0,
+        "startedAt": "2026-10-12T01:36:40.797Z",
+        "status": "completed",
+        "modelUsd": 0,
+        "usdByRole": {
+          "executor": 0,
+          "reflector": 0,
+          "adversary": 0
+        },
+        "tokens": 0,
+        "credits": 0,
+        "creditsByEndpoint": {},
+        "unsafeActions": null,
+        "holds": null,
+        "beliefsNotarized": 0
+      },
+      {
+        "runId": "notarize-dodo-20261012T014032Z",
+        "contentHash": "913ec6593d69b0081a90349a0897d4835d2862897ac479d5871cde61a50f9999",
+        "kind": "notarize",
+        "variant": "notarize",
+        "mode": "live",
+        "tool": "dodo",
+        "seed": 0,
+        "startedAt": "2026-10-12T01:40:32.072Z",
+        "status": "completed",
+        "modelUsd": 0,
+        "usdByRole": {
+          "executor": 0,
+          "reflector": 0,
+          "adversary": 0
+        },
+        "tokens": 0,
+        "credits": 0,
+        "creditsByEndpoint": {},
+        "unsafeActions": null,
+        "holds": null,
+        "beliefsNotarized": 4
+      },
+      {
+        "runId": "notarize-crustdata-20261012T011404Z-replay",
+        "contentHash": "afda1e69da0071c48a15b68867ffff6feba9c7a20191e88a30ebd1b4f226f52f",
+        "kind": "notarize",
+        "variant": "notarize",
+        "mode": "replay",
+        "tool": "crustdata",
+        "seed": 0,
+        "startedAt": "2026-10-12T01:42:15.358Z",
+        "status": "completed",
+        "modelUsd": 0.0394163,
+        "usdByRole": {
+          "executor": 0,
+          "reflector": 0.0196383,
+          "adversary": 0.019778
+        },
+        "tokens": 4519,
+        "credits": 62,
+        "creditsByEndpoint": {
+          "crustdata.enrichCompany": 62,
+          "crustdata.getCreditBalance": 0,
+          "crustdata.identifyCompany": 0
+        },
+        "unsafeActions": null,
+        "holds": null,
+        "beliefsNotarized": 1
+      },
+      {
+        "runId": "recon-dodo-20261012T013640Z-replay",
+        "contentHash": "0d2ae865cfc2f565275ff66fdddf644fb49e15f81f68d800aebf0858a8f936aa",
+        "kind": "notarize",
+        "variant": "notarize",
+        "mode": "replay",
+        "tool": "dodo",
+        "seed": 0,
+        "startedAt": "2026-10-12T01:42:48.775Z",
+        "status": "completed",
+        "modelUsd": 0,
+        "usdByRole": {
+          "executor": 0,
+          "reflector": 0,
+          "adversary": 0
+        },
+        "tokens": 0,
+        "credits": 0,
+        "creditsByEndpoint": {},
+        "unsafeActions": null,
+        "holds": null,
+        "beliefsNotarized": 0
+      },
+      {
+        "runId": "notarize-dodo-20261012T014032Z-replay",
+        "contentHash": "16807c03dc52f343a6d89d7df3c7e29e767b8c81da5fe903095d2aaf049104a1",
+        "kind": "notarize",
+        "variant": "notarize",
+        "mode": "replay",
+        "tool": "dodo",
+        "seed": 0,
+        "startedAt": "2026-10-12T01:42:48.857Z",
+        "status": "completed",
+        "modelUsd": 0,
+        "usdByRole": {
+          "executor": 0,
+          "reflector": 0,
+          "adversary": 0
+        },
+        "tokens": 0,
+        "credits": 0,
+        "creditsByEndpoint": {},
+        "unsafeActions": null,
+        "holds": null,
+        "beliefsNotarized": 4
+      }
+    ],
+    "totals": {
+      "runs": 7,
+      "liveRuns": 4,
+      "replayRuns": 3,
+      "modelUsd": 0.1263273,
+      "credits": 62,
+      "tokens": 15897
+    },
+    "usdByRole": {
+      "executor": 0,
+      "reflector": 0.0196383,
+      "adversary": 0.106689
+    },
+    "creditsByEndpoint": {
+      "crustdata.enrichCompany": 62,
+      "crustdata.getCreditBalance": 0,
+      "crustdata.identifyCompany": 0
+    },
+    "costPerRun": {
+      "usd": 0.031581825,
+      "credits": 15.5,
+      "basis": "Model USD (executor + reflector + adversary) and Crustdata credits summed over live real bundles, divided by the number of live bundles. Replays are excluded: they spend nothing new.",
+      "reason": null
+    },
+    "costPerNotarizedBelief": {
+      "usd": 0.02526546,
+      "credits": 12.4,
+      "basis": "Model USD and credits of every live notarize bundle, divided by the distinct notarized beliefs in each tool's newest full notarize bundle (beliefs persist across runs, so they are counted once).",
+      "reason": null
+    },
+    "costPerCertificate": {
+      "usd": null,
+      "credits": null,
+      "basis": "The same live notarize spend, divided by the certified claims in public/certificates/report.json (only when that report counted exactly bundles found here).",
+      "reason": "The certificates report predates notarize-crustdata-20261012T011404Z-replay, notarize-dodo-20261012T014032Z-replay. Re-run `pnpm notary export --certificates`, then `pnpm notary economics`."
+    },
+    "tools": [
+      {
+        "tool": "crustdata",
+        "runs": 1,
+        "modelUsd": 0.0394163,
+        "credits": 62,
+        "notarizedBeliefs": 1,
+        "certified": null,
+        "costPerCertificateUsd": null
+      },
+      {
+        "tool": "dodo",
+        "runs": 3,
+        "modelUsd": 0.086911,
+        "credits": 0,
+        "notarizedBeliefs": 4,
+        "certified": null,
+        "costPerCertificateUsd": null
+      }
+    ],
+    "pairs": [],
+    "unsafeActionsPrevented": {
+      "value": null,
+      "basis": "Grader `unsafe_actions_total`, naive minus guarded, newest live pair per world (seed), summed over worlds.",
+      "reason": "No world has both a live naive and a live guarded queue run yet. Run `pnpm notary run --queue <file> --naive` and `pnpm notary run --queue <file>` with the same seed."
+    },
+    "heldActions": {
+      "value": null,
+      "basis": "Grader `holds` of the guarded run in each pair: money actions held for a person instead of executed.",
+      "reason": "No world has both a live naive and a live guarded queue run yet. Run `pnpm notary run --queue <file> --naive` and `pnpm notary run --queue <file>` with the same seed."
+    }
+  },
+  "computedReason": null,
+  "plan": null,
+  "planReason": "No cfo.ai plan imported yet. Import your cfo.ai plan: pnpm notary economics --cfo-import <file>",
+  "combined": {
+    "incidentsPreventedValue": null
+  },
+  "contentHash": "2b09ce7bd04c596ecbd61b8ca55746680b2dc1bad50ae28c14822692a6e593a8"
+}

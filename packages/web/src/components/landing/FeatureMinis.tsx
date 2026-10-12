@@ -3,8 +3,9 @@
 //   01 certificate card — the replay guarded run's certificate world (most-evidenced active one)
 //   02 held refund — the Run page's TranscriptRow + heldCard for the guarded run's first held refund
 //   03 mini chat — the replay chat engine's recorded turn (first steps, first answer paragraph)
-//   04 revocation — the fixture scenario that records a revocation (change-api): its certificate
-//      flips from Certified to Revoked
+//   04 revocation — a revoked certificate of the guarded run's own certificate world (real runs);
+//      under the development-only ?fixtures=1, the fixture scenario that records one (change-api).
+//      Its certificate flips from Certified to Revoked.
 // Interactive controls inside the cards are inert: the landing never acts.
 import { useEffect, useRef, useState } from "react";
 import type { Certificate, Revocation, RunBundle } from "../../../../core/src/schema";
@@ -29,6 +30,7 @@ import { gsap, MOTION_OK, ScrollTrigger, useGSAP } from "./gsap";
 import { AgentBadge } from "../../ui/AgentBadge";
 import "../../ui/kit.css";
 import { replayFor, replayPair } from "./replay";
+import { fixturesInLocation } from "../../app/links";
 
 // ------------------------------------------------------------------------------- loaders
 
@@ -47,7 +49,7 @@ function memo<T>(fn: (r: ReplaySource) => Promise<T>) {
 
 type CertData = { certificate: Certificate; runId: string; sample: boolean } | null;
 const loadCertificate = memo<CertData>(async (replay) => {
-  const { guarded } = await replayPair(replay);
+  const { preview: guarded } = await replayPair(replay);
   if (!guarded) return null;
   const world = await replay.certificates(entryOfBundle(guarded));
   const certificate = featuredCertificate(world);
@@ -68,6 +70,13 @@ const loadHeld = memo<HeldData>(async (replay) => {
 
 type RevData = { revocation: Revocation; certificate?: Certificate; scenario: string } | null;
 const loadRevocation = memo<RevData>(async (replay) => {
+  if (!fixturesInLocation()) {
+    // Real runs: a revocation from the guarded run's own certificate world, or nothing.
+    const { preview } = await replayPair(replay);
+    if (!preview) return null;
+    const found = featuredRevocation(await replay.certificates(entryOfBundle(preview)));
+    return found ? { ...found, scenario: "" } : null;
+  }
   const pick = revocationScenario(await loadFixtureCertificateIndex());
   if (!pick) return null;
   const runs = await replay.listRuns();
@@ -138,7 +147,7 @@ function CertificateMini({ source }: { source: DataSource }) {
   const s = useLoad(loadCertificate, source);
   if (s.status === "loading") return <div className="l-mini l-mini-pending" aria-hidden="true" />;
   if (s.status === "error") return <Missing text={`Certificates withheld: ${s.message}`} />;
-  if (!s.value) return <Missing text="No active certificate is published for this run’s world." />;
+  if (!s.value) return <Missing text="No active certificate is published yet." />;
   const { certificate: c } = s.value;
   return (
     <div className="l-mini l-mini-cert">
@@ -267,7 +276,7 @@ function RevocationMini({ source }: { source: DataSource }) {
 
   if (s.status === "loading") return <div className="l-mini l-mini-pending" aria-hidden="true" />;
   if (s.status === "error") return <Missing text={`Certificates withheld: ${s.message}`} />;
-  if (!s.value) return <Missing text="No published scenario records a revocation." />;
+  if (!s.value) return <Missing text="No certificate has been revoked yet." />;
   const { revocation: r, certificate: c, scenario } = s.value;
   return (
     <div ref={root} className="l-mini l-mini-rev">

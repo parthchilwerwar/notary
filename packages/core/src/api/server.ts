@@ -29,12 +29,13 @@
 // Only each bundle directory's own index.json is read; subdirectories of public/bundles are NOT
 // scanned, so the fixture-demo bundles in public/bundles/fixture/ (own index) are never merged
 // into the list. Under runs/, every immediate subdirectory is a bundle dir (runs/<runId>/).
+import { spawn } from "node:child_process";
 import { existsSync, readdirSync, statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join, relative, resolve, isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Hono } from "hono";
-import type { Context } from "hono";
+import type { Context, MiddlewareHandler } from "hono";
 import { cors } from "hono/cors";
 import { streamSSE } from "hono/streaming";
 import { verifyBundle } from "../bundle/hash.js";
@@ -48,6 +49,7 @@ import { loadVerifiedBundles } from "./bundle-source.js";
 import { mountCertificates, realCertificates } from "./certificates.js";
 import { CHAT_SPANS_DIR, mountChat } from "./chat.js";
 import type { ChatOptions } from "./chat.js";
+import type { GuardCoverageSummary } from "../chat/tools.js";
 import { createHealth } from "./health.js";
 import type { HealthOptions } from "./health.js";
 import { mountRuns } from "./runs.js";
@@ -92,6 +94,58 @@ export interface ApiOptions {
   runs?: Pick<RunsOptions, "env" | "now" | "runQueue" | "notarize" | "precheck">;
   /** Receives this app's run tracker (tests). */
   onRunTracker?: (tracker: RunTracker) => void;
+  /**
+   * Hosted, read-only deployment (src/api/hosted.ts): ask and chat use `guard` (a bearer token from
+   * AWS Secrets Manager) instead of localhost + session token; approvals and starting runs are not
+   * mounted at all (404 / 405); CORS allows `allowedOrigins` instead of loopback dev origins.
+   */
+  hosted?: { guard: MiddlewareHandler; allowedOrigins: readonly string[] };
+  /** Guard coverage for Notary Chat (default: src/guards/coverage.ts, tsc walk, cached GUARD_COVERAGE_TTL_MS). */
+  guardCoverage?: () => Promise<GuardCoverageSummary>;
+}
+
+/** How long a computed guard coverage report is reused by chat (the walk takes seconds). */
+export const GUARD_COVERAGE_TTL_MS = 10 * 60_000;
+
+/** A coverage walk that runs longer than this is killed (the tool then says it could not check). */
+export const GUARD_COVERAGE_TIMEOUT_MS = 240_000;
+
+/** Run src/agents/coverage-child.ts in a child process (same runtime flags, so tsx works) and parse its one JSON line. */
+export function guardCoverageInChild(timeoutMs = GUARD_COVERAGE_TIMEOUT_MS): Promise<GuardCoverageSummary> {
+  return new Promise((res, rej) => {
+    const child = spawn(process.execPath, [...process.execArgv, fileURLToPath(new URL("../agents/coverage-child.ts", import.meta.url))], { stdio: ["ignore", "pipe", "pipe"], windowsHide: true });
+    let out = "";
+    let err = "";
+    const timer = setTimeout(() => {
+      child.kill();
+      rej(new Error(`the coverage walk took longer than ${Math.round(timeoutMs / 1000)} s`));
+    }, timeoutMs);
+    child.stdout.on("data", (d: Buffer) => (out += d.toString("utf8")));
+    child.stderr.on("data", (d: Buffer) => (err = (err + d.toString("utf8")).slice(-2000)));
+    child.on("error", (e) => (clearTimeout(timer), rej(e)));
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      const line = out.trim().split(/\r?\n/).at(-1) ?? "";
+      try {
+        if (code !== 0) throw new Error(`exit ${code}: ${err.trim().split(/\r?\n/).at(-1) ?? ""}`);
+        res(JSON.parse(line) as GuardCoverageSummary);
+      } catch (e) {
+        rej(e instanceof Error ? e : new Error(String(e)));
+      }
+    });
+  });
+}
+
+/** Default guard coverage source: the same tsc walk as `notary guards coverage`, in a child process, computed lazily and cached. */
+export function cachedGuardCoverage(ttlMs = GUARD_COVERAGE_TTL_MS, now: () => number = Date.now): () => Promise<GuardCoverageSummary> {
+  let cached: { at: number; value: Promise<GuardCoverageSummary> } | null = null;
+  return () => {
+    if (cached && now() - cached.at < ttlMs) return cached.value;
+    const value = guardCoverageInChild();
+    cached = { at: now(), value };
+    value.catch(() => (cached = null));
+    return value;
+  };
 }
 
 interface IndexedEntry {
@@ -161,7 +215,7 @@ export function createApp(opts: ApiOptions = {}): Hono {
   app.use(
     "/api/*",
     cors({
-      origin: (origin) => (LOOPBACK_ORIGIN.test(origin) ? origin : null),
+      origin: (origin) => (opts.hosted ? (opts.hosted.allowedOrigins.includes(origin) ? origin : null) : LOOPBACK_ORIGIN.test(origin) ? origin : null),
       // POST + Authorization + Content-Type for the token-protected ask/approvals endpoints; loopback origins only.
       allowMethods: ["GET", "HEAD", "POST", "DELETE", "OPTIONS"],
       allowHeaders: ["Last-Event-ID", "Cache-Control", "Authorization", "Content-Type"],
@@ -274,6 +328,13 @@ export function createApp(opts: ApiOptions = {}): Hono {
 
   mountCertificates(app, { verifiedBundles });
 
+  // Hosted: read-only. Starting runs and the approvals desk are refused before any other handler.
+  if (opts.hosted) {
+    app.post("/api/runs", (c) => c.json({ error: "the hosted Notary site is read-only: runs are started from the CLI or the agents task" }, 405));
+    app.all("/api/approvals", (c) => c.json({ error: "approvals are not available on the hosted read-only site; use a local notary serve" }, 404));
+    app.all("/api/approvals/*", (c) => c.json({ error: "approvals are not available on the hosted read-only site; use a local notary serve" }, 404));
+  }
+
   // Runs (POST is token + localhost); reads are open like the bundle endpoints.
   const { tracker } = mountRuns(app, {
     ...opts.runs,
@@ -294,6 +355,7 @@ export function createApp(opts: ApiOptions = {}): Hono {
     // so they never land in an approval's runs/<runId>/spans.jsonl (approvals swap the global sink).
     spansPath: runsDir === null ? null : join(runsDir, ASK_SPANS_DIR, "spans.jsonl"),
     ...opts.ask,
+    ...(opts.hosted ? { guard: opts.hosted.guard } : {}),
     session,
     bundleDirs: () => bundleDirectories(opts),
   });
@@ -304,18 +366,23 @@ export function createApp(opts: ApiOptions = {}): Hono {
     runsDir,
     spansPath: runsDir === null ? null : join(runsDir, CHAT_SPANS_DIR, "spans.jsonl"),
     certificates: () => realCertificates({ verifiedBundles }),
-    approvals: () => listApprovals(approvalsRead),
+    // Hosted: the approvals desk is not exposed, not even read-only through chat.
+    ...(opts.hosted ? {} : { approvals: () => listApprovals(approvalsRead) }),
     health: () => health.check(),
+    guardCoverage: opts.guardCoverage ?? cachedGuardCoverage(),
     ...opts.chat,
+    ...(opts.hosted ? { guard: opts.hosted.guard } : {}),
     session,
     bundleDirs: () => bundleDirectories(opts),
   });
-  mountApprovals(app, {
-    ...opts.approvals,
-    session,
-    runsDir: opts.runsDir === undefined ? DEFAULT_RUNS_DIR : opts.runsDir,
-    bus,
-  });
+  if (!opts.hosted) {
+    mountApprovals(app, {
+      ...opts.approvals,
+      session,
+      runsDir: opts.runsDir === undefined ? DEFAULT_RUNS_DIR : opts.runsDir,
+      bus,
+    });
+  }
 
   // Everything else is read-only: any other write is refused explicitly.
   app.on(["POST", "PUT", "PATCH", "DELETE"], "/api/*", (c) => c.json({ error: "the Notary API is read-only" }, 405));
@@ -332,11 +399,17 @@ export interface StartedServer {
 
 /** Bind the API with @hono/node-server. Loopback by default. */
 export async function startServer(
-  opts: Omit<ApiOptions, "session"> & { port?: number; host?: string; eventJournal?: string | null; session?: CreatedSession } = {},
+  opts: Omit<ApiOptions, "session"> & { port?: number; host?: string; eventJournal?: string | null; session?: CreatedSession; prewarmGuardCoverage?: boolean } = {},
 ): Promise<StartedServer> {
   const { serve } = await import("@hono/node-server");
   const session = opts.session ?? createSession();
-  const app = createApp({ ...opts, session });
+  // Notary Chat's get_guard_coverage: start the (slow, child-process) walk now so the first question finds it ready.
+  let guardCoverage = opts.guardCoverage;
+  if (!guardCoverage && opts.prewarmGuardCoverage !== false) {
+    guardCoverage = cachedGuardCoverage();
+    void guardCoverage().catch(() => undefined);
+  }
+  const app = createApp({ ...opts, session, ...(guardCoverage ? { guardCoverage } : {}) });
   // Pick up events from `notary run` / `notary notarize` running in other processes.
   const tail = opts.eventJournal === null ? null : tailEventJournal(opts.eventJournal ?? DEFAULT_EVENT_JOURNAL, opts.bus ?? defaultBus);
   const host = opts.host ?? "127.0.0.1";

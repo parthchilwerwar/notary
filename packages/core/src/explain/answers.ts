@@ -380,8 +380,12 @@ export function toolKnowledge(tool: Tool, bundles: readonly RunBundle[] | World,
     );
   }
 
-  // Probes.
-  const probes = world.bundles.flatMap((b) => b.probes.filter((p) => p.tool === tool).map((p) => ({ probe: p, runId: b.runId })));
+  // Probes. A replay bundle re-serves its recorded run's probes from the cassette; when that run is
+  // published too, its probes are counted once (from the recorded run), not once per replay.
+  const published = new Set(world.bundles.map((b) => b.runId));
+  const probes = world.bundles
+    .filter((b) => !(b.replayOf !== undefined && published.has(b.replayOf)))
+    .flatMap((b) => b.probes.filter((p) => p.tool === tool).map((p) => ({ probe: p, runId: b.runId })));
   if (probes.length) {
     w.say(
       `${plural(probes.length, "probe")} ran on ${tool} claims in this world; verdicts: ${tally(probes.map((x) => x.probe.verdict ?? "not run"))}; templates: ${tally(

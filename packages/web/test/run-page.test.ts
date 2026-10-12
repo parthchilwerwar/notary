@@ -45,7 +45,18 @@ import {
   unsafeDecisionIds,
   type RunRow,
 } from "../src/pages/run/model";
-import { HeldCardView, TranscriptRow, TranscriptRows } from "../src/pages/run/Transcript";
+import {
+  HeldCardView,
+  TranscriptRow,
+  TranscriptRows,
+  TranscriptTimeline,
+  clockTime,
+  filterCounts,
+  matchesFilter,
+  moneyOf,
+  parseView,
+  transcriptGroups,
+} from "../src/pages/run/Transcript";
 import { RunPage } from "../src/pages/run/RunPage";
 
 const PUBLIC = new URL("../public/", import.meta.url);
@@ -469,6 +480,9 @@ describe("runs and controls", () => {
     const replayHtml = render(source);
     expect(replayHtml).not.toContain("Start Run");
     expect(replayHtml).toContain("Starting a run needs live mode");
+    // Full-page layout: a stepper under the header, no demo/simulation wording in the page copy.
+    expect(replayHtml).toContain("run-stepper");
+    expect(replayHtml).not.toMatch(/simulat|ui-band-sky/i);
     const liveHtml = render(new LiveSource({ base: "http://127.0.0.1:1", fetchImpl: diskFetch() }));
     expect(liveHtml).toContain("Start Run");
     expect(liveHtml).toContain("Queue run (guarded)");
@@ -484,5 +498,98 @@ describe("exports for the landing", () => {
     expect(html).not.toContain("<button");
     const one = renderToStaticMarkup(createElement(TranscriptRow, { row: rows[1]!, onToggle: () => {} }));
     expect(one).toContain('aria-expanded="false"');
+  });
+});
+
+describe("transcript event rail (Hook Sidebar)", () => {
+  it("money actions come from the recorded decision event: action, amount from minor units, status", () => {
+    for (const l of loaded.values())
+      for (const r of rowsOf(l)) {
+        const m = moneyOf(r);
+        const data = r.event?.data ?? {};
+        if (r.type !== "decision" || typeof data.action !== "string" || data.action === "none") {
+          expect(m).toBeNull();
+          continue;
+        }
+        expect(m!.action).toBe(data.action);
+        expect(m!.status).toBe(data.status);
+        expect(m!.amountText).toBe(typeof data.amount === "number" ? moneyText(data.amount, data.currency as string | undefined) : undefined);
+      }
+  });
+
+  it("filter counts are counts of rows, and every group keeps recorded order within its stage", () => {
+    for (const l of loaded.values()) {
+      const rows = rowsOf(l);
+      const counts = filterCounts(rows);
+      expect(counts.all).toBe(rows.length);
+      for (const f of ["money", "held", "issues"] as const) expect(counts[f]).toBe(rows.filter((r) => matchesFilter(r, f)).length);
+      const groups = transcriptGroups(rows, { view: "stage" });
+      expect(groups.map((g) => g.stage)).toEqual(STAGES.filter((s) => rows.some((r) => r.stage === s)));
+      expect(groups.flatMap((g) => g.rows).length).toBe(rows.length);
+      for (const g of groups) {
+        expect(g.rows.every((r) => r.stage === g.stage)).toBe(true);
+        expect(g.rows.map((r) => rows.indexOf(r))).toEqual([...g.rows.map((r) => rows.indexOf(r))].sort((a, b) => a - b));
+      }
+      const order = transcriptGroups(rows, { view: "order" });
+      expect(order.length).toBe(1);
+      expect(order[0]!.rows).toEqual(rows);
+      const held = transcriptGroups(rows, { view: "stage", filter: "held" }).flatMap((g) => g.rows);
+      expect(held.length).toBe(counts.held);
+    }
+    expect(parseView("order")).toBe("order");
+    expect(parseView(null)).toBe("stage");
+    expect(clockTime("2026-10-10T08:46:38.139Z")).toBe("08:46:38.139");
+  });
+
+  it("renders one rail item per row with the recorded time, the amount, and a visible Rare UI credit", () => {
+    const l = get("demo-run-guarded");
+    const rows = rowsOf(l);
+    const html = renderToStaticMarkup(
+      createElement(
+        MemoryRouter,
+        null,
+        createElement(TranscriptTimeline, {
+          rows,
+          streaming: false,
+          view: "stage",
+          onViewChange: () => {},
+          emptyText: "none",
+          renderDetails: () => null,
+        }),
+      ),
+    );
+    expect((html.match(/data-slot="hook-sidebar-item"/g) ?? []).length).toBe(rows.length);
+    for (const r of rows) {
+      expect(html).toContain(r.title.replace(/&/g, "&amp;"));
+      expect(html.toLowerCase()).toContain(`datetime="${r.at.toLowerCase()}"`);
+    }
+    for (const r of rows) {
+      const m = moneyOf(r);
+      if (m?.amountText) expect(html).toContain(m.amountText);
+    }
+    expect(html).toContain('href="https://rareui.com"');
+    // With no selection and no stream, the newest event is selected and its panel shown.
+    const latest = rows.at(-1)!;
+    expect(html).toContain('aria-current="true"');
+    expect(html).toContain(`${latest.title.replace(/&/g, "&amp;")}</h3>`);
+    // A deep link (?decision=) selects its row instead of the newest one.
+    const target = rows.find((r) => r.type === "decision" && r !== latest && r.held)!;
+    const linked = renderToStaticMarkup(
+      createElement(
+        MemoryRouter,
+        null,
+        createElement(TranscriptTimeline, {
+          rows,
+          streaming: false,
+          view: "stage",
+          onViewChange: () => {},
+          targetKey: target.key,
+          emptyText: "none",
+          renderDetails: () => null,
+        }),
+      ),
+    );
+    expect(linked).toContain(`${target.title.replace(/&/g, "&amp;")}</h3>`);
+    expect(linked).not.toContain(`${latest.title.replace(/&/g, "&amp;")}</h3>`);
   });
 });

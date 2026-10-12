@@ -11,10 +11,10 @@
  *      function together with an ops table, and that function must call its wrap parameter. Each
  *      ops-table entry is then the op's single GUARDED site. A construction anywhere else is UNGUARDED.
  *   3. Raw callers of each method, by backend:
- *      - `entire` (UNVERIFIED, see ENTIRE_STATUS): `entire graph neighbors --repo <root> --symbol
- *        <Class>.<method> --relation CALLS --direction in --limit 500 --internal-only`, using only
- *        flags documented at https://docs.entire.io/cli-reference/graph (read 2026-10-10). The docs
- *        list no output-format flag for neighbors, so the parser reads either shape it may print.
+ *      - `entire` (default when `entire graph` is installed; ENTIRE_CHECKED_WITH): one bulk
+ *        `entire graph edges --worktree --relation CALLS,ASYNC_CALLS,CONSTRUCTS --format ndjson`
+ *        over the repo; any relation into a public raw-client method from src/ or scripts/ is a raw
+ *        caller (exact lines then from `entire graph neighbors --format json`). See section 3b.
  *      - `tsc` (fallback, always available): a checker walk over packages/core/{src,scripts}. A
  *        property access is raw when it resolves to the method's own symbol or its receiver is typed
  *        as the client class. `tools.dodo.x()` on the createTools() surface resolves to a mapped
@@ -55,8 +55,8 @@ export interface CoverageOp {
 export interface CoverageReport {
   backend: CoverageBackend;
   backendNote: string;
-  /** Present only when backend is `entire`: ENTIRE_STATUS (the backend has never run against a real install). */
-  unverified?: string;
+  /** Present only when backend is `entire`: what Entire's code graph covered (version, tree, edge counts). */
+  entire?: EntireGraphRun;
   ops: CoverageOp[];
   /** Raw-method references and raw-client constructions. */
   sites: CoverageSite[];
@@ -177,6 +177,8 @@ export interface RunCoverageOptions {
   /** auto: entire when `entire graph version` succeeds, else tsc. */
   backend?: "auto" | CoverageBackend;
   entireBin?: string;
+  /** Replaces spawning `entire` (tests feed captured real output). */
+  runEntire?: RunEntire;
 }
 
 export function runCoverage(opts: RunCoverageOptions = {}): CoverageReport {
@@ -191,11 +193,14 @@ export function runCoverage(opts: RunCoverageOptions = {}): CoverageReport {
   let backend: CoverageBackend = "tsc";
   let backendNote = "TypeScript checker walk over " + config.scanDirs.join(", ") + " (entire not on PATH)";
   let rawRefs: CoverageSite[] | undefined;
+  let graph: EntireGraphRun | undefined;
   if (want === "entire" || (want === "auto" && entireAvailable(bin))) {
     try {
-      rawRefs = entireRawCallers(config, methods, wiring.opByMethod, bin);
+      const got = entireRawCallers(config, methods, wiring.opByMethod, opts.runEntire ?? spawnEntireWith(bin), wiring.sites);
+      rawRefs = got.sites;
+      graph = got.graph;
       backend = "entire";
-      backendNote = "entire graph neighbors --relation CALLS --direction in per method; wiring and createTools() checks via TypeScript";
+      backendNote = `entire graph edges (entire-graph ${got.graph.providerVersion}, ${got.graph.worktree ? "working tree" : "HEAD"}): ${got.graph.callEdges} call and ${got.graph.constructEdges} construct relations scanned, ${got.graph.clientEdges} reach a raw client; wiring and createTools() checks via TypeScript`;
     } catch (err) {
       if (want === "entire") throw err;
       backendNote = `TypeScript checker walk (entire graph failed: ${(err as Error).message.split("\n")[0]})`;
@@ -219,7 +224,7 @@ export function runCoverage(opts: RunCoverageOptions = {}): CoverageReport {
   return {
     backend,
     backendNote,
-    ...(backend === "entire" ? { unverified: ENTIRE_STATUS } : {}),
+    ...(backend === "entire" && graph ? { entire: graph } : {}),
     ops,
     sites,
     createToolsCalls,
@@ -535,58 +540,171 @@ function tscRawReferences(project: Project, config: CoverageConfig, methods: Raw
 // 3b. entire backend
 
 /**
- * The `entire` backend is UNVERIFIED: it has never run against a real local Entire install (none on
- * PATH here). Sources, in order of authority for this adapter:
- *   - https://docs.entire.io/cli-reference/graph, read 2026-10-10. Documents `neighbors` with
- *     `--repo`, `--symbol NAME|FILE:LINE`, `--relation TYPE` (default CALLS), `--direction both|in|out`,
- *     `--depth`, `--limit N` (default 20), `--internal-only`, `--head`. It documents NO output-format
- *     flag for neighbors and shows no sample output beyond "Text output begins with
- *     `Index: cache-hit` or `Index: cache-miss`."
- *   - entireio/entire-graph@f22e6c95 (main as of 2026-09-23), internal/cli/neighbors.go: the binary
- *     also accepts `--format json|text|agent` and DEFAULTS to json; text is writeAgentNeighborsFull.
- * So the command uses documented flags only (no `--format`, `--file`, `--line`, `--exclude-tests`),
- * and parseEntireNeighbors accepts both the source's default JSON and the documented text output.
- * Unknown either way: whether its TypeScript resolver links `tools.dodo.x()` on the Pick<> surface
- * to DodoClient.x (a false positive).
+ * The `entire` backend, checked against a real install on 2026-10-12: Entire CLI 0.11.4 (GitHub
+ * release entireio/cli v0.11.4) with the official graph plugin, entire-graph v0.4.0
+ * (`entire plugin install graph`). Reality differs from the docs read on 2026-10-10 (DECISIONS #61,
+ * #99, #102): `entire graph` is a plugin, not a built-in; `neighbors` accepts `--format json|text|agent`
+ * and prints JSON by default; and every graph query re-indexes a dirty working tree (~50 s for this
+ * repo), so one `neighbors` call per method (22 methods) would take ~18 minutes.
+ *
+ * So the backend makes ONE bulk call, `entire graph edges --worktree --relation
+ * CALLS,ASYNC_CALLS,CONSTRUCTS --format ndjson`, and keeps the relations whose destination is a
+ * public method of a raw client class (`<repo>:TypeScript:<file>:method:<Class>.<method>`) and whose
+ * source file is under the scanned dirs (src/, scripts/; tests are out of scope, as with tsc).
+ * Bulk edges carry the caller's span, not the call line, so for a method that does have raw callers
+ * the exact lines come from one `entire graph neighbors --direction in --format json` call each.
+ * CONSTRUCTS edges to a client class outside src/tools/index.ts are raw constructions too (the
+ * TypeScript wiring check sees them as well; a construction only Entire found is added).
  */
-export const ENTIRE_STATUS =
-  "UNVERIFIED: never run against a real Entire install; command from docs.entire.io/cli-reference/graph (read 2026-10-10), output parsing from those docs plus entire-graph@f22e6c95 source";
+export const ENTIRE_CHECKED_WITH = "Entire CLI 0.11.4 + entire-graph v0.4.0 (checked 2026-10-12)";
+
+/** One relation from `entire graph edges` (real field names: type, from_id, to_id, evidence[]). */
+export interface EntireEdge {
+  type: string;
+  fromId: string;
+  toId: string;
+  resolution?: string;
+  confidence?: number;
+  /** First evidence record: the caller's span for CALLS (start line of the enclosing body). */
+  evidence?: { file: string; line: number; detail?: string };
+}
+
+export interface EntireEdgesParse {
+  provider: string;
+  providerVersion: string;
+  repoKey: string;
+  commit: string | null;
+  tree: string | null;
+  /** True when the summary carries W_WORKTREE_SNAPSHOT (the working tree, not HEAD, was read). */
+  worktree: boolean;
+  completeness: string;
+  partialFailures: number;
+  /** Files Entire could not parse (summary.partial_failures), e.g. E_MINIFIED for a one-line JSON. */
+  failedFiles: Array<{ code: string; file: string }>;
+  edges: EntireEdge[];
+}
+
+/**
+ * Parse `entire graph edges --format ndjson`: a header record (schema_version, provider…), relation
+ * records (record_type "relation"), then a summary record. A stream without its summary was cut short
+ * and is rejected, as is anything that is not entire-graph output.
+ */
+export function parseEntireEdges(ndjson: string): EntireEdgesParse {
+  const lines = ndjson.replace(/^\uFEFF/, "").split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length === 0) throw new Error("entire graph edges printed nothing");
+  const parse = (l: string, i: number): Record<string, unknown> => {
+    try {
+      const v = JSON.parse(l) as unknown;
+      if (v === null || typeof v !== "object" || Array.isArray(v)) throw new Error("not an object");
+      return v as Record<string, unknown>;
+    } catch {
+      throw new Error(`entire graph edges: line ${i + 1} is not a JSON object`);
+    }
+  };
+  const header = parse(lines[0]!, 0);
+  if (header.provider !== "entire-graph" || typeof header.schema_version !== "string") {
+    throw new Error(`entire graph edges: unrecognized header ${JSON.stringify(lines[0]!.slice(0, 80))}`);
+  }
+  const str = (v: unknown): string | null => (typeof v === "string" && v.length > 0 ? v : null);
+  const edges: EntireEdge[] = [];
+  let summary: Record<string, unknown> | undefined;
+  for (let i = 1; i < lines.length; i++) {
+    const rec = parse(lines[i]!, i);
+    if (rec.record_type === "summary") {
+      summary = rec;
+      continue;
+    }
+    if (rec.record_type !== "relation") continue;
+    const type = str(rec.type);
+    const fromId = str(rec.from_id);
+    const toId = str(rec.to_id);
+    if (!type || !fromId || !toId) throw new Error(`entire graph edges: relation on line ${i + 1} lacks type/from_id/to_id`);
+    const ev = Array.isArray(rec.evidence) ? (rec.evidence[0] as Record<string, unknown> | undefined) : undefined;
+    const evFile = ev ? str(ev.file_path) : null;
+    edges.push({
+      type,
+      fromId,
+      toId,
+      ...(str(rec.resolution) ? { resolution: rec.resolution as string } : {}),
+      ...(typeof rec.confidence === "number" ? { confidence: rec.confidence } : {}),
+      ...(ev && evFile
+        ? {
+            evidence: {
+              file: evFile.split("\\").join("/"),
+              line: typeof ev.start_line === "number" ? ev.start_line : 0,
+              ...(str(ev.detail) ? { detail: ev.detail as string } : {}),
+            },
+          }
+        : {}),
+    });
+  }
+  if (!summary) throw new Error("entire graph edges: no summary record (the stream was cut short)");
+  const stats = (summary.stats ?? {}) as Record<string, unknown>;
+  const warnings = Array.isArray(summary.warnings) ? (summary.warnings as Array<Record<string, unknown>>) : [];
+  const failures = Array.isArray(summary.partial_failures) ? (summary.partial_failures as Array<Record<string, unknown>>) : [];
+  const failedFiles = failures.map((f) => ({ code: str(f.code) ?? "?", file: (str(f.file_path) ?? "").split("\\").join("/") }));
+  return {
+    provider: "entire-graph",
+    providerVersion: str(header.provider_version) ?? "unknown",
+    repoKey: str(header.repo_key) ?? "",
+    commit: str(header.commit),
+    tree: str(header.tree),
+    worktree: warnings.some((w) => w.code === "W_WORKTREE_SNAPSHOT"),
+    completeness: str(stats.completeness_level) ?? "unknown",
+    partialFailures: typeof stats.partial_failures === "number" ? stats.partial_failures : failedFiles.length,
+    failedFiles,
+    edges,
+  };
+}
+
+/** `<repoKey>:<Language>:<path>:<kind>:<qualified name>` (stable-symbol-id-v1); file ids are `<repoKey>:file:<path>`. */
+export function parseEntireSymbolId(id: string): { language: string; path: string; kind: string; name: string } | null {
+  const parts = id.split(":");
+  if (parts.length < 5 || parts[1] === "file") return null;
+  return { language: parts[1]!, path: parts[2]!, kind: parts[3]!, name: parts.slice(4).join(":") };
+}
+
+/** The bulk call (verified flags; see ENTIRE_CHECKED_WITH). */
+export function entireEdgesArgs(repo: string): string[] {
+  return ["graph", "edges", "--repo", repo, "--format", "ndjson", "--worktree", "--relation", "CALLS,ASYNC_CALLS,CONSTRUCTS"];
+}
+
+/** Per-method caller lookup, used only to get exact call lines for a method that has raw callers. */
+export function entireNeighborsArgs(repo: string, method: { className: string; name: string }): string[] {
+  return [
+    "graph", "neighbors",
+    "--repo", repo,
+    "--symbol", `${method.className}.${method.name}`,
+    "--relation", "CALLS",
+    "--direction", "in",
+    "--limit", "500",
+    "--internal-only",
+    "--format", "json",
+  ];
+}
 
 export interface EntireCaller {
   caller: string;
   /** As reported (relative to --repo). */
   file: string;
-  /** 0 when Entire reported no line (a file-level endpoint without a resolved call site). */
+  /** 0 when Entire reported no line. */
   line: number;
   resolution?: string;
   confidence?: number;
-  /** Further call sites of this method inside the same caller that Entire folds into one edge. */
   additionalSites?: number;
 }
 
 export interface EntireNeighborsParse {
-  /** Which shape stdout was in: `json` (entire-graph's default per source) or `text` (per docs). */
-  format: "json" | "text";
   callers: EntireCaller[];
-  /** False when the symbol matched nothing, or only fuzzily (Entire then reports other symbols). */
   exactMatch: boolean;
   disambiguationRequired: boolean;
   truncated: boolean;
 }
 
-/**
- * Parse `entire graph neighbors --direction in` stdout. JSON when it starts with `{`, else the text
- * output, which must start with the documented `Index: cache-hit|miss` line. Anything else throws.
- */
+/** Parse `entire graph neighbors --format json` (real shape: matches[].incoming[].endpoint / call_site). */
 export function parseEntireNeighbors(stdout: string): EntireNeighborsParse {
-  const body = stdout.replace(/^\uFEFF/, "").trimStart();
-  if (body.startsWith("{")) return parseEntireNeighborsJson(body);
-  if (/^Index: cache-(hit|miss)\b/.test(body)) return parseEntireNeighborsText(body);
-  throw new Error(`unrecognized entire graph neighbors output (expected JSON or "Index: cache-…"): ${JSON.stringify(body.slice(0, 80))}`);
-}
-
-/** JSON shape per entire-graph@f22e6c95 neighborResponse / neighborFocus / neighborEdge / callSite tags. */
-function parseEntireNeighborsJson(body: string): EntireNeighborsParse {
+  const body = stdout.replace(/^\uFEFF/, "").trim();
+  if (!body.startsWith("{")) throw new Error(`unrecognized entire graph neighbors output (expected JSON): ${JSON.stringify(body.slice(0, 80))}`);
   const raw = JSON.parse(body) as {
     disambiguation_required?: boolean;
     truncated?: boolean;
@@ -619,7 +737,6 @@ function parseEntireNeighborsJson(body: string): EntireNeighborsParse {
     }
   }
   return {
-    format: "json",
     callers,
     exactMatch: (raw.matches?.length ?? 0) > 0 && raw.fuzzy_match !== true,
     disambiguationRequired: raw.disambiguation_required === true,
@@ -627,101 +744,136 @@ function parseEntireNeighborsJson(body: string): EntireNeighborsParse {
   };
 }
 
+/** What the entire backend saw, for the report and the dashboard (packages/web/public/evidence/entire.json). */
+export interface EntireGraphRun {
+  provider: string;
+  providerVersion: string;
+  commit: string | null;
+  tree: string | null;
+  worktree: boolean;
+  completeness: string;
+  partialFailures: number;
+  /** Files Entire skipped outside the scanned source (they cannot hide a raw call). */
+  skippedFiles: string[];
+  /** CALLS + ASYNC_CALLS relations in the stream. */
+  callEdges: number;
+  /** CONSTRUCTS relations in the stream. */
+  constructEdges: number;
+  /** Of those, relations that reach a public raw-client method or construct a raw client. */
+  clientEdges: number;
+  command: string;
+}
+
+type RunEntire = (args: string[]) => { status: number | null; stdout: string; stderr: string; error?: Error };
+
+const spawnEntireWith =
+  (bin: string): RunEntire =>
+  (args) => {
+    const r = spawnSync(bin, args, { encoding: "utf8", maxBuffer: 256 * 1024 * 1024, timeout: 600_000, windowsHide: true });
+    return { status: r.status, stdout: r.stdout ?? "", stderr: r.stderr ?? "", ...(r.error ? { error: r.error } : {}) };
+  };
+
 /**
- * Text shape. Only the first line is documented; the rest follows entire-graph@f22e6c95
- * writeAgentNeighborsFull: `Focus: …`, then `Callers:` with one `- <name> (<file>:<line>[, def :<n>])
- * [annotations]` line per edge (or `- none`), each optionally followed by indented call-context
- * lines; `Callees: …`; `Neighbor lists truncated; …` when --limit cut the list.
+ * Raw callers and constructions of the client classes, from Entire's code graph. Exported with an
+ * injectable runner so tests feed real captured output without spawning Entire.
  */
-function parseEntireNeighborsText(body: string): EntireNeighborsParse {
-  const callers: EntireCaller[] = [];
-  let focus = 0;
-  let inCallers = false;
-  let sawCallers = false;
-  let fuzzy = false;
-  let noMatch = false;
-  let disambiguationRequired = false;
-  let truncated = false;
-  const edgeRe = /^- (.*) \(([^()]*?)(?::(\d+))?(?:, def :\d+)?\)(?: \[([^\]]*)\])?$/;
-  const moreRe = /^\+(\d+) more call sites?$/;
-  for (const line of body.split(/\r?\n/)) {
-    if (line.startsWith("Focus: ")) {
-      focus++;
-      inCallers = false;
-    } else if (line === "Callers:") {
-      inCallers = sawCallers = true;
-    } else if (line.startsWith("Callers: not queried")) {
-      throw new Error("entire graph neighbors did not query callers (--direction in was not honored)");
-    } else if (line.startsWith("No symbols matched ")) {
-      noMatch = true;
-    } else if (line.startsWith("No exact match for ")) {
-      fuzzy = true;
-    } else if (/^".*" matches \d+ definitions;/.test(line)) {
-      disambiguationRequired = true;
-    } else if (line.startsWith("Neighbor lists truncated")) {
-      truncated = true;
-      inCallers = false;
-    } else if (inCallers && line.startsWith("- ")) {
-      if (line === "- none") continue;
-      const m = edgeRe.exec(line);
-      if (!m) throw new Error(`unrecognized entire graph caller line: ${JSON.stringify(line)}`);
-      const notes = m[4] ? m[4].split(", ") : [];
-      const more = notes.map((n) => moreRe.exec(n)).find((x) => x !== null);
-      const resolution = notes.find((n) => n !== "file-level" && !moreRe.test(n) && !/^[A-Z_]+$/.test(n));
-      callers.push({
-        caller: m[1]!,
-        file: m[2]!.split("\\").join("/"),
-        line: m[3] ? Number(m[3]) : 0,
-        ...(resolution ? { resolution } : {}),
-        ...(more ? { additionalSites: Number(more[1]) } : {}),
+export function entireRawCallers(
+  config: CoverageConfig,
+  methods: Array<{ key: string; name: string; file: string; client: ClientSpec }>,
+  opByMethod: Map<string, string>,
+  run: RunEntire,
+  wiringSites: CoverageSite[] = [],
+): { sites: CoverageSite[]; graph: EntireGraphRun } {
+  const scanRoots = config.scanDirs.map((d) => relative(config.displayRoot, join(config.projectDir, d)).split(sep).join("/") + "/");
+  const toolsIndex = relative(config.displayRoot, join(config.projectDir, config.toolsIndex)).split(sep).join("/");
+  const args = entireEdgesArgs(config.displayRoot);
+  const r = run(args);
+  if (r.error || r.status !== 0) throw new Error(`entire ${args.join(" ")} failed: ${r.error?.message ?? r.stderr.trim()}`);
+  const parsed = parseEntireEdges(r.stdout);
+  // A file Entire skipped matters only if it is source we scan (a minified JSON inbox file does not).
+  const inScope = (file: string) => scanRoots.some((root) => file.startsWith(root));
+  const blind = parsed.failedFiles.filter((f) => !f.file || inScope(f.file));
+  if (blind.length > 0 || parsed.failedFiles.length < parsed.partialFailures) {
+    const list = blind.map((f) => `${f.code} ${f.file || "(no file)"}`).join(", ") || `${parsed.partialFailures} unlisted`;
+    throw new Error(`entire graph could not parse scanned source (${list}); the call graph is incomplete`);
+  }
+
+  const byTarget = new Map<string, (typeof methods)[number]>();
+  for (const m of methods) byTarget.set(`${m.file}\0${m.key}`, m);
+  const classFiles = new Map(methods.map((m) => [m.client.className, m.file]));
+
+  const out: CoverageSite[] = [];
+  const hit = new Set<(typeof methods)[number]>();
+  let callEdges = 0;
+  let constructEdges = 0;
+  let clientEdges = 0;
+  for (const e of parsed.edges) {
+    const to = parseEntireSymbolId(e.toId);
+    const from = parseEntireSymbolId(e.fromId);
+    if (e.type === "CALLS" || e.type === "ASYNC_CALLS") {
+      callEdges++;
+      if (!to || to.kind !== "method") continue;
+      const m = byTarget.get(`${to.path}\0${to.name}`);
+      if (!m) continue;
+      clientEdges++;
+      const file = e.evidence?.file ?? from?.path ?? "";
+      if (inScope(file)) hit.add(m);
+    } else if (e.type === "CONSTRUCTS") {
+      constructEdges++;
+      if (!to || to.kind !== "class" || classFiles.get(to.name) !== to.path) continue;
+      clientEdges++;
+      const file = e.evidence?.file ?? from?.path ?? "";
+      if (!inScope(file) || file === toolsIndex) continue;
+      // The TypeScript wiring check reports constructions too; add only one it did not see.
+      if (wiringSites.some((s) => s.op === `new ${to.name}` && s.file === file)) continue;
+      out.push({
+        op: `new ${to.name}`,
+        file,
+        line: e.evidence?.line ?? 0,
+        status: "UNGUARDED",
+        detail: `constructed in ${from?.name ?? "?"} outside ${toolsIndex} (entire graph CONSTRUCTS, ${e.resolution ?? "?"})`,
       });
-    } else if (inCallers && line.length > 0 && !line.startsWith(" ")) {
-      inCallers = false; // `Callees: …`, `Two-hop path family …`, or anything else unindented
     }
   }
-  if (!disambiguationRequired && !noMatch && focus > 0 && !sawCallers) {
-    throw new Error("entire graph neighbors text output has a Focus but no Callers section");
-  }
-  return { format: "text", callers, exactMatch: focus > 0 && !fuzzy && !noMatch, disambiguationRequired, truncated };
-}
 
-/** Documented flags only (docs.entire.io/cli-reference/graph, read 2026-10-10); see ENTIRE_STATUS. */
-export function entireNeighborsArgs(repo: string, method: { className: string; name: string }): string[] {
-  return [
-    "graph", "neighbors",
-    "--repo", repo,
-    "--symbol", `${method.className}.${method.name}`,
-    "--relation", "CALLS",
-    "--direction", "in",
-    "--limit", "500",
-    "--internal-only",
-  ];
-}
-
-function entireRawCallers(config: CoverageConfig, methods: RawMethod[], opByMethod: Map<string, string>, bin: string): CoverageSite[] {
-  const scanRoots = config.scanDirs.map((d) => relative(config.displayRoot, join(config.projectDir, d)).split(sep).join("/") + "/");
-  const out: CoverageSite[] = [];
+  // Exact call lines for the (normally zero) methods that do have raw callers.
   for (const m of methods) {
-    const args = entireNeighborsArgs(config.displayRoot, { className: m.client.className, name: m.name });
-    const r = spawnSync(bin, args, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024, timeout: 120_000 });
-    if (r.error || r.status !== 0) throw new Error(`entire ${args.join(" ")} failed: ${r.error?.message ?? r.stderr.trim()}`);
-    const parsed = parseEntireNeighbors(r.stdout);
-    if (parsed.disambiguationRequired) throw new Error(`entire graph could not resolve ${m.key} to one definition`);
-    if (!parsed.exactMatch) throw new Error(`entire graph found no exact definition for ${m.key}`);
-    if (parsed.truncated) throw new Error(`entire graph truncated the callers of ${m.key}`);
+    if (!hit.has(m)) continue;
+    const nargs = entireNeighborsArgs(config.displayRoot, { className: m.client.className, name: m.name });
+    const nr = run(nargs);
+    if (nr.error || nr.status !== 0) throw new Error(`entire ${nargs.join(" ")} failed: ${nr.error?.message ?? nr.stderr.trim()}`);
+    const n = parseEntireNeighbors(nr.stdout);
+    if (n.disambiguationRequired) throw new Error(`entire graph could not resolve ${m.key} to one definition`);
+    if (!n.exactMatch) throw new Error(`entire graph found no exact definition for ${m.key}`);
+    if (n.truncated) throw new Error(`entire graph truncated the callers of ${m.key}`);
     const op = opByMethod.get(m.key) ?? `${m.client.opPrefix}.${m.name}`;
-    for (const c of parsed.callers) {
+    for (const c of n.callers) {
       const file = isAbsolute(c.file) ? relative(config.displayRoot, c.file).split(sep).join("/") : c.file;
-      // Keeps only scanned dirs, which also drops test/ (`--exclude-tests` is not documented).
-      if (!scanRoots.some((r0) => file.startsWith(r0))) continue;
+      if (!inScope(file)) continue;
       const notes = [c.resolution, c.confidence === undefined ? undefined : String(c.confidence), c.additionalSites ? `+${c.additionalSites} more in this caller` : undefined]
         .filter(Boolean)
         .join(" ");
-      const how = `called from ${c.caller}${notes ? ` [${notes}]` : ""}${c.line === 0 ? " (no line reported)" : ""}`;
-      out.push({ op, file, line: c.line, status: "UNGUARDED", detail: `${how} (entire graph, UNVERIFIED backend, ${parsed.format} output)` });
+      out.push({ op, file, line: c.line, status: "UNGUARDED", detail: `called from ${c.caller}${notes ? ` [${notes}]` : ""} (entire graph)` });
     }
   }
-  return out;
+
+  return {
+    sites: out,
+    graph: {
+      provider: parsed.provider,
+      providerVersion: parsed.providerVersion,
+      commit: parsed.commit,
+      tree: parsed.tree,
+      worktree: parsed.worktree,
+      completeness: parsed.completeness,
+      partialFailures: parsed.partialFailures,
+      skippedFiles: parsed.failedFiles.map((f) => `${f.file} (${f.code})`),
+      callEdges,
+      constructEdges,
+      clientEdges,
+      command: `entire ${entireEdgesArgs(".").join(" ")}`,
+    },
+  };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -825,7 +977,11 @@ export function formatCoverage(report: CoverageReport): string {
   const lines: string[] = [];
   lines.push(`notary guards coverage  backend: ${report.backend}`);
   lines.push(`  ${report.backendNote}`);
-  if (report.unverified) lines.push(`  UNVERIFIED backend: ${report.unverified}`);
+  if (report.entire) {
+    const g = report.entire;
+    lines.push(`  ${g.command}`);
+    lines.push(`  graph: ${g.provider} ${g.providerVersion}, commit ${g.commit?.slice(0, 12) ?? "?"}${g.worktree ? " + working tree" : ""}, completeness ${g.completeness}, ${g.partialFailures} partial failures`);
+  }
   const table = (title: string, rows: CoverageSite[]) => {
     lines.push("", title);
     if (rows.length === 0) {

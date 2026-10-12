@@ -10,6 +10,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { canonicalJson, finalizeBundle, writeBundle } from "../bundle/index.js";
 import { recordRunTimeline } from "../timeline/write.js";
+import { incidentsLine, recordRunIncidents } from "../incidents/record.js";
 import type { UnhashedBundle } from "../bundle/index.js";
 import { consolidateMetrics, withMetricDisclosures } from "../eval/metrics.js";
 import { INPUTS_VERSION, saveInputs } from "../replay/inputs.js";
@@ -207,9 +208,10 @@ export async function reconOnly(opts: ReconOnlyOptions): Promise<ReconOnlyResult
   const dir = join(opts.runsDir ?? RUNS_DIR, runId);
   const { bundlePath } = await writeBundle(bundle, dir);
   recordRunTimeline(bundle, dir, { runsDir: opts.runsDir ?? RUNS_DIR });
+  const incidentReport = await recordRunIncidents(bundle, dir);
   return {
     exitCode: 0,
-    lines: formatReconSummary(recon, { runId, bundlePath }),
+    lines: [...formatReconSummary(recon, { runId, bundlePath }), incidentsLine(incidentReport)],
     status,
     runId,
     bundlePath,

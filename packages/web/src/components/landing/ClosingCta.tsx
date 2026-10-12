@@ -25,7 +25,10 @@ export function ClosingCta() {
     { scope: root },
   );
   return (
-    <section ref={root} className="l-cta sky" aria-labelledby="cta-title">
+    <section ref={root} className="l-cta sky" aria-labelledby="cta-title" data-nav-dark>
+      {/* Where the band is deep blue, for the nav text color (Nav.tsx). */}
+      <span className="l-cta-mark l-cta-dark-start" data-nav-dark-start aria-hidden="true" />
+      <span className="l-cta-mark l-cta-dark-end" data-nav-dark-end aria-hidden="true" />
       <svg className="l-cta-orbits" viewBox="-600 -260 1200 520" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
         <defs>
           {ORBITS.map((o, i) => (

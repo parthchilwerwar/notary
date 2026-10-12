@@ -38,6 +38,7 @@ import { fileURLToPath } from "node:url";
 import { finalizeBundle, verifyBundle, writeBundle } from "../bundle/index.js";
 import type { UnhashedBundle } from "../bundle/index.js";
 import { recordRunTimeline } from "../timeline/write.js";
+import { incidentsLine, recordRunIncidents } from "../incidents/record.js";
 import { consolidateMetrics, withMetricDisclosures } from "../eval/metrics.js";
 import { cassetteNames, pinIfPresent } from "../replay/pins.js";
 import { INPUTS_VERSION, saveInputs, snapshotStore } from "../replay/inputs.js";
@@ -769,6 +770,8 @@ async function writeNotarizeBundle(a: {
   const dir = join(a.opts.runsDir ?? RUNS_DIR, runId);
   const { bundlePath } = await writeBundle(bundle, dir);
   recordRunTimeline(bundle, dir, { runsDir: a.opts.runsDir ?? RUNS_DIR });
+  // Incidents (derived from the records) -> runs/<runId>/incidents.json + neatlogs warn/error logs.
+  const incidentReport = await recordRunIncidents(bundle, dir);
 
   const lines = [
     `notarize: tool=${tool} mode=${a.mode} runId=${runId}`,
@@ -792,6 +795,7 @@ async function writeNotarizeBundle(a: {
   // Unknown prices are recorded as $0: say so next to the run, naming the env vars to set.
   for (const w of a.llm.meter?.warnings ?? []) lines.push(`pricing: ${w}`);
   lines.push(`bundle: ${bundlePath}`);
+  lines.push(incidentsLine(incidentReport));
   const blockedCandidates = beliefs.adversaryBlocked !== undefined && beliefs.after.some((b) => b.status === "candidate");
   return { exitCode: blockedCandidates ? 3 : 0, lines, status, runId, bundlePath, loop, beliefs };
 }

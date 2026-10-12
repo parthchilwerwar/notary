@@ -107,13 +107,13 @@ try {
     for (let i = 0; i < 200 && !(state.steps >= 3 && state.text > 900); i++) {
       await chat.clock.runFor(20);
       state = await chat.evaluate(() => ({
-        steps: document.querySelectorAll(".chat-steps > *").length,
+        steps: Number(document.querySelector('[data-slot="reasoning-steps"]')?.getAttribute("data-stage-count") ?? 0),
         text: document.querySelector(".chat-msg-assistant")?.textContent?.length ?? 0,
         footer: !!document.querySelector(".chat-footer"),
       }));
     }
     if (state.footer || state.steps < 3) throw new Error(`chat: not captured mid-answer (${JSON.stringify(state)})`);
-    if (!(await chat.locator(".chat-work").first().getAttribute("data-open"))) await chat.locator(".chat-work-toggle").first().click();
+    if (!(await chat.locator('[data-slot="reasoning-steps"]').first().getAttribute("data-open"))) await chat.locator('[data-slot="reasoning-steps-header"]').first().click();
     await shoot(chat, `chat-${suffix}`, { frames: false });
     await chatContext.close();
 

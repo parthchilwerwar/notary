@@ -60,6 +60,7 @@ import { REQUIRED_GAPS } from "./required.js";
 import { RunStateStore } from "./run-state.js";
 import { createSentinel, sentinelModeFromEnv } from "./sentinel.js";
 import { liveDecisionEmitter, publishTimeline, recordRunTimeline } from "../timeline/write.js";
+import { incidentsLine, recordRunIncidents } from "../incidents/record.js";
 import type { Sentinel, SentinelMode } from "./sentinel.js";
 import { SimplePaymentPool, probeIoFromTools } from "../reflect/templates/index.js";
 import { probePoolFromManifest, sentinelProbeTools } from "../reflect/notarize.js";
@@ -698,6 +699,7 @@ async function writeRunBundle(a: {
 
   const { bundlePath } = await writeBundle(bundle, join(opts.runsDir ?? RUNS_DIR, runId));
   recordRunTimeline(bundle, join(opts.runsDir ?? RUNS_DIR, runId), { runsDir: opts.runsDir ?? RUNS_DIR });
+  const incidentReport = await recordRunIncidents(bundle, join(opts.runsDir ?? RUNS_DIR, runId));
   a.runState?.finishRun(runId);
   emitEvent("run.finished", { runId, variant: opts.variant, status, metrics, bundlePath });
   const webDir = opts.webBundlesDir === undefined ? WEB_BUNDLES_DIR : opts.webBundlesDir;
@@ -709,6 +711,7 @@ async function writeRunBundle(a: {
     ...Object.entries(metrics).map(([k, v]) => `  ${k}: ${v === null ? "null" : v}`),
     `credits: ${snap.total}/${snap.budget}`,
     `bundle: ${bundlePath}`,
+    incidentsLine(incidentReport),
   ];
   if (webDir !== null) {
     const web = await writeBundle(bundle, webDir);

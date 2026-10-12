@@ -3,7 +3,7 @@
  * DATA. The Bedrock transport, the `claude` session runner and the git runner are TEST DOUBLES:
  * nothing reaches AWS, no Claude Code session is spawned and the real repo's history is untouched.
  */
-import { existsSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -17,6 +17,7 @@ import {
   reviewBelief,
 } from "../src/adversary/index.js";
 import type { EvidencePacket, GitRunner, SessionRunner } from "../src/adversary/index.js";
+import { HEAD_CHECKPOINT_GIT_ARGS, canonicalRepoRoot, parseHeadCheckpoint } from "../src/adversary/session.js";
 import { LlmClient } from "../src/llm/index.js";
 import type { ConverseTransport } from "../src/llm/index.js";
 import { AdversaryReviewSchema } from "../src/schema/belief.js";
@@ -262,7 +263,8 @@ describe("session backend", () => {
     for (const d of dirs.splice(0)) await rm(d, { recursive: true, force: true });
   });
   async function tempRepo(): Promise<string> {
-    const d = await mkdtemp(join(tmpdir(), "notary-adversary-"));
+    // Long canonical path: reviewWithSession resolves Windows 8.3 short names (C:\Users\ABCDEF~1).
+    const d = realpathSync.native(await mkdtemp(join(tmpdir(), "notary-adversary-")));
     dirs.push(d);
     return d;
   }
@@ -327,6 +329,7 @@ describe("session backend", () => {
     expect(gitCalls).toEqual([
       { args: ["add", "--", ...paths], cwd: repo },
       { args: ["commit", "-m", `adversary: uphold ${belief.id}`, "--", ...paths], cwd: repo },
+      { args: HEAD_CHECKPOINT_GIT_ARGS, cwd: repo },
     ]);
   });
 
@@ -345,6 +348,43 @@ describe("session backend", () => {
     });
     expect(out.review?.verdict).toBe("downgrade");
     expect(gitCalls).toHaveLength(0);
+    expect(out.entire).toBeUndefined();
+  });
+
+  it("links the verdict commit to its Entire checkpoint (the commit's Entire-Checkpoint trailer)", async () => {
+    const repo = await tempRepo();
+    // Real shape: `git log -1 --format=%H%n%(trailers:key=Entire-Checkpoint,valueonly)` after an
+    // Entire-enabled verdict commit (scratch clone, 2026-10-12).
+    const logOut = "e6cb269672b674cd3990aac2b212134419ce66c0\n01M4PYAG60V4ZBFR9WN79VAWB1\n\n";
+    const git: GitRunner = async (args) => ({ exitCode: 0, stdout: args[0] === "log" ? logOut : "", stderr: "" });
+    const out = await reviewBelief({
+      belief,
+      claim,
+      probes,
+      backend: "session",
+      repoRoot: repo,
+      sessionRunner: runnerWriting('{"verdict":"narrow","reason":"r","scope":"USD only"}', SESSION_STDOUT),
+      gitRunner: git,
+    });
+    expect(out.review?.verdict).toBe("narrow");
+    expect(out.entire).toEqual({ commit: "e6cb269672b674cd3990aac2b212134419ce66c0", checkpointId: "01M4PYAG60V4ZBFR9WN79VAWB1" });
+    // Without Entire the commit has no trailer: the link says so, and the review stands.
+    expect(parseHeadCheckpoint("e6cb269672b674cd3990aac2b212134419ce66c0\n\n")).toEqual({ commit: "e6cb269672b674cd3990aac2b212134419ce66c0", checkpointId: null });
+    expect(parseHeadCheckpoint("fatal: not a git repository")).toBeNull();
+    const failingLog: GitRunner = async (args) => ({ exitCode: args[0] === "log" ? 128 : 0, stdout: "", stderr: "" });
+    const kept = await reviewBelief({
+      belief, claim, probes, backend: "session", repoRoot: repo,
+      sessionRunner: runnerWriting('{"verdict":"uphold","reason":"r"}', SESSION_STDOUT),
+      gitRunner: failingLog,
+    });
+    expect(kept.review?.verdict).toBe("uphold");
+    expect(kept.entire).toBeUndefined();
+  });
+
+  it("runs claude in the long canonical repo path (Windows 8.3 short cwd made the inbox Read rule miss)", () => {
+    const long = realpathSync.native(tmpdir());
+    expect(canonicalRepoRoot(tmpdir())).toBe(long);
+    expect(canonicalRepoRoot(join(long, "does-not-exist-xyz"))).toBe(join(long, "does-not-exist-xyz"));
   });
 
   it("strips tool secrets from the child env", async () => {

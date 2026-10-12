@@ -20,7 +20,7 @@ export default function RunPreview({ replay }: { replay: ReplaySource }) {
   useEffect(() => {
     let live = true;
     replayPair(replay)
-      .then(async ({ guarded }) => (guarded ? { bundle: guarded, events: await replay.getTimeline(guarded.runId) } : null))
+      .then(async ({ preview }) => (preview ? { bundle: preview, events: await replay.getTimeline(preview.runId) } : null))
       .then((d) => live && setData(d), () => undefined);
     return () => {
       live = false;

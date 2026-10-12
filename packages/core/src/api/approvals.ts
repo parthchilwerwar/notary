@@ -46,6 +46,8 @@ import { appendTimelineEvents } from "../timeline/store.js";
 import { CreditLedger, DODO_TEST_BASE_URL, TestModeLockError, assertTestMode, createTools, isBlocked } from "../tools/index.js";
 import type { Wrap } from "../tools/index.js";
 import { flushTracing, setSpanSink, spanSinkPath, withSpan } from "../trace/index.js";
+import { incidentId, reportResolution } from "../incidents/live.js";
+import { recordRunIncidents } from "../incidents/record.js";
 import { bus as defaultBus } from "./bus.js";
 import type { EventBus } from "./bus.js";
 import { loadVerifiedBundles, runSubdirectories } from "./bundle-source.js";
@@ -324,7 +326,16 @@ async function decideLocked(req: ApprovalRequest, opts: ApprovalsOptions): Promi
           rec = await executeApproved(item, req.confirmedAmount, base, opts);
         }
         if ("blocked" in rec) setAttr?.("notary.approval.status", "blocked");
-        else setAttr?.("notary.approval.status", rec.status);
+        else {
+          setAttr?.("notary.approval.status", rec.status);
+          // The held action's guard_hold incident is resolved by this person (info log on this span).
+          reportResolution(incidentId("guard_hold", item.decision.id), {
+            status: "resolved",
+            action: rec.decision,
+            summary: rec.decision === "approved" ? `A person approved it (human override); the action ${rec.status}.` : "A person rejected it.",
+            recordIds: [rec.id],
+          });
+        }
         return rec;
       },
       { kind: "GUARDRAIL", onSpan: (ids, set) => ((traceId = ids.traceId), (setAttr = set)) },
@@ -334,6 +345,8 @@ async function decideLocked(req: ApprovalRequest, opts: ApprovalsOptions): Promi
     if (traceId) record = { ...record, traceId };
 
     writeApprovalsFile(item.runDir, { runId: file.runId, approvals: [...file.approvals, record] });
+    // Re-derive runs/<runId>/incidents.json so the hold shows as resolved (no new log events).
+    await recordRunIncidents(item.bundle, item.runDir, { emit: false });
 
     let event: TimelineEvent | undefined;
     try {
