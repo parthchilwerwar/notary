@@ -30,6 +30,20 @@ const SITE_LINKS = [
 const reducedMotion = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 /**
+ * A table-of-contents jump: scroll the section into place (smoothly unless reduced motion is asked
+ * for) and move keyboard focus to it, so Tab continues from the chosen section and screen readers
+ * announce it. Sections carry tabIndex={-1}; `preventScroll` keeps focus from cutting the smooth
+ * scroll short with an instant jump of its own.
+ */
+export function jumpToSection(
+  el: Pick<HTMLElement, "scrollIntoView" | "focus">,
+  smooth: boolean,
+): void {
+  el.scrollIntoView({ behavior: smooth ? "smooth" : "instant", block: "start" });
+  el.focus({ preventScroll: true });
+}
+
+/**
  * The section in view: the first section (in page order) crossing a reading line 30% down the
  * viewport, or the last section once the end of the page is visible.
  */
@@ -213,7 +227,7 @@ export default function DocsPage() {
     const el = document.getElementById(id);
     if (!el) return;
     setPinned(id);
-    el.scrollIntoView({ behavior: reducedMotion() ? "instant" : "smooth", block: "start" });
+    jumpToSection(el, !reducedMotion());
     if (hash !== `#${id}`) navigate({ hash: id }, { preventScrollReset: true });
     // On phones, fold the Contents list away after a choice.
     if (contentsRef.current) contentsRef.current.open = false;
@@ -269,7 +283,7 @@ export default function DocsPage() {
           </header>
 
           {SECTIONS.map((s) => (
-            <section key={s.id} id={s.id} className="docs-section" aria-labelledby={`${s.id}-heading`}>
+            <section key={s.id} id={s.id} className="docs-section" aria-labelledby={`${s.id}-heading`} tabIndex={-1}>
               <p className="section-label docs-section-group">{s.group}</p>
               <h2 id={`${s.id}-heading`}>{s.title}</h2>
               <div className="docs-prose">{s.body}</div>

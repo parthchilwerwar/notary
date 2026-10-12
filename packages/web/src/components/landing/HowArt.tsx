@@ -21,32 +21,26 @@ import {
 import { AgentBadge } from "../../ui/AgentBadge";
 import "../../ui/kit.css";
 import { gsap, MOTION_OK, useGSAP } from "./gsap";
-import { replayFor, replayPair } from "./replay";
+import { memoByView, replayFor, replayPair } from "./replay";
+import { SuiteLink } from "./SuiteLink";
+import { fixturesInLocation } from "../../app/links";
 
 type HowData = { predict?: PredictView; challenge?: ChallengeView; certify?: CertifyView };
 
-const cache = new WeakMap<ReplaySource, Promise<HowData>>();
-function loadHow(replay: ReplaySource): Promise<HowData> {
-  let p = cache.get(replay);
-  if (!p) {
-    p = (async () => {
-      const { entries, preview: guarded } = await replayPair(replay);
-      if (!guarded) return {};
-      const entry = entries.find((e) => e.runId === guarded.runId);
-      const sources: RunBundle[] = [];
-      for (const s of entry ? worldNotarizeRuns(entries, entry) : []) sources.push(await replay.getRun(s.runId));
-      const world = await replay.certificates(entryOfBundle(guarded));
-      return {
-        predict: sources.map(predictView).find(Boolean),
-        challenge: challengeView(world, sources),
-        certify: certifyView(world, guarded),
-      };
-    })();
-    p.catch(() => cache.delete(replay));
-    cache.set(replay, p);
-  }
-  return p;
-}
+/** Memoized per (source, view): the fixture flag is re-read on every call (see replay.ts). */
+const loadHow = memoByView<HowData>(async (replay: ReplaySource, fixtures: boolean) => {
+  const { entries, preview: guarded } = await replayPair(replay, fixtures);
+  if (!guarded) return {};
+  const entry = entries.find((e) => e.runId === guarded.runId);
+  const sources: RunBundle[] = [];
+  for (const s of entry ? worldNotarizeRuns(entries, entry) : []) sources.push(await replay.getRun(s.runId));
+  const world = await replay.certificates(entryOfBundle(guarded));
+  return {
+    predict: sources.map(predictView).find(Boolean),
+    challenge: challengeView(world, sources),
+    certify: certifyView(world, guarded),
+  };
+});
 
 /** Plays `build(tl)` once when the root enters the viewport (motion allowed only). */
 function useOnce(root: React.RefObject<HTMLElement | null>, ready: boolean, build: (tl: gsap.core.Timeline) => void) {
@@ -66,7 +60,13 @@ function useOnce(root: React.RefObject<HTMLElement | null>, ready: boolean, buil
   );
 }
 
-const Missing = ({ text }: { text: string }) => <p className="h-missing">{text}</p>;
+/** An honest empty state; with `suite`, the real view links to the same step on the evaluation suite. */
+const Missing = ({ text, suite = false }: { text: string; suite?: boolean }) => (
+  <div className="h-missing">
+    <p>{text}</p>
+    {suite && <SuiteLink />}
+  </div>
+);
 
 /* ------------------------------------------------------------------------------------ predict */
 
@@ -201,8 +201,9 @@ function Certify({ view }: { view: CertifyView }) {
   useOnce(root, true, (tl) => {
     tl.from(".h-cert", { y: 18, opacity: 0 })
       .fromTo(".h-seal-text", { rotation: -140, transformOrigin: "50% 50%" }, { rotation: 0, duration: 1.6, ease: "power3.out" }, "-=0.2")
-      .from(".h-seal-check", { opacity: 0, duration: 0.3 }, "-=0.6")
-      .from(".h-guard", { x: -16, opacity: 0, stagger: 0.45 }, "-=0.3");
+      .from(".h-seal-check", { opacity: 0, duration: 0.3 }, "-=0.6");
+    // A certificate without decisions to show (a notarize run) has no guard rows: never tween nothing.
+    if (view.rows.length) tl.from(".h-guard", { x: -16, opacity: 0, stagger: 0.45 }, "-=0.3");
   });
   return (
     <div ref={root} className="h-certify">
@@ -258,20 +259,22 @@ export default function HowArt({ kind, source }: { kind: HowStepId; source: Data
   const [state, setState] = useState<{ status: "loading" } | { status: "ready"; data: HowData } | { status: "error"; message: string }>({
     status: "loading",
   });
+  // Re-read on every render; the landing also remounts when the view changes.
+  const fixtures = fixturesInLocation();
   useEffect(() => {
     let live = true;
-    loadHow(replayFor(source)).then(
+    loadHow(replayFor(source, fixtures), fixtures).then(
       (data) => live && setState({ status: "ready", data }),
       (e: unknown) => live && setState({ status: "error", message: e instanceof Error ? e.message : String(e) }),
     );
     return () => {
       live = false;
     };
-  }, [source]);
+  }, [source, fixtures]);
   if (state.status === "loading") return <div className="l-how-pending" aria-hidden="true" />;
   if (state.status === "error") return <Missing text={`Records withheld: ${state.message}`} />;
   const { predict, challenge, certify } = state.data;
-  if (kind === "predict") return predict ? <Predict view={predict} /> : <Missing text="No contradicted prediction is published yet." />;
-  if (kind === "challenge") return challenge ? <Challenge view={challenge} /> : <Missing text="No reviewed certificate is published yet." />;
-  return certify ? <Certify view={certify} /> : <Missing text="No certificate is published yet." />;
+  if (kind === "predict") return predict ? <Predict view={predict} /> : <Missing text="No contradicted prediction is published yet." suite />;
+  if (kind === "challenge") return challenge ? <Challenge view={challenge} /> : <Missing text="No reviewed certificate is published yet." suite />;
+  return certify ? <Certify view={certify} /> : <Missing text="No certificate is published yet." suite />;
 }

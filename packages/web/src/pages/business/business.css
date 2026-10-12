@@ -414,3 +414,68 @@
 .biz-table {
   margin-top: 4px;
 }
+
+/* cfo.ai connection panel (CfoPanel.tsx). */
+.biz-cfo-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--text-strong-muted);
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.biz-cfo-line > svg {
+  flex: none;
+  color: var(--accent);
+}
+.biz-cfo-line[data-state="disconnected"] > svg {
+  color: var(--text-muted);
+}
+.biz-cfo-live {
+  display: grid;
+  gap: 14px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--hairline-color);
+}
+.biz-cfo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.biz-cfo-token {
+  display: grid;
+  gap: 10px;
+  max-width: 640px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--hairline-color);
+}
+.biz-cfo-token label {
+  font-weight: 500;
+}
+.biz-cfo-token-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.biz-cfo-token input {
+  flex: 1 1 220px;
+  min-width: 0;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--control-line);
+  border-radius: var(--r-button);
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+}
+.biz-cfo-token input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.biz-cfo-error {
+  margin: 0;
+  color: var(--status-unsafe-text);
+  font-size: 14px;
+}

@@ -37,14 +37,64 @@ export const fixturesInLocation = (): boolean => fixturesRequested(globalThis.lo
 
 /**
  * The runs a view may show. Default: real runs only (live ones still running included). With the
- * fixture flag: finished fixture runs only. A fixture run is never shown without the flag, and a
- * real run is never mixed into the fixture view.
+ * fixture flag: finished fixture runs only — the fixture scenarios of bundles/fixture, never the
+ * dashboard's synthetic SAMPLE bundle (kind/variant "sample", e.g. sample-42), which is its own data
+ * world and would otherwise be counted next to the scenarios. A fixture run is never shown without
+ * the flag, and a real run is never mixed into the fixture view.
  */
-export function visibleRuns<T extends { sample?: boolean; state?: string }>(entries: readonly T[], fixtures: boolean): T[] {
+export function visibleRuns<T extends { sample?: boolean; state?: string; kind?: string; variant?: string }>(
+  entries: readonly T[],
+  fixtures: boolean,
+): T[] {
   return entries.filter((e) => {
     const sample = e.state === "running" ? false : !!e.sample;
-    return fixtures ? sample && e.state !== "running" : !sample;
+    if (!fixtures) return !sample;
+    return sample && e.state !== "running" && !isSyntheticSample(e);
   });
+}
+
+/** The dashboard's synthetic SAMPLE bundle (not a fixture scenario, not a real run). */
+export const isSyntheticSample = (e: { kind?: string; variant?: string }) => e.kind === "sample" || e.variant === "sample";
+
+// --------------------------------------------------------------------------- replays
+
+/**
+ * Replays (bundle.mode === "replay") re-serve a recorded run's cassettes: no new tool calls, no new
+ * spend. They are always labelled as such and listed after the live recordings.
+ */
+export const isReplayRun = (e: object | null | undefined): boolean =>
+  !!e && "mode" in e && (e as { mode?: unknown }).mode === "replay";
+
+/** What a replay's spend cell says instead of credits/USD (the original run holds the real spend). */
+export const REPLAY_SPEND_TEXT = "Re-served from the recording — no new spend";
+
+/**
+ * The run a replay reproduces, read from its verified bundle (`replayOf`). Undefined for live runs
+ * and when the bundle is not loaded (the label then says just "Replay"; nothing is guessed from ids).
+ */
+export function replayOfRun(
+  e: { runId: string } | undefined,
+  bundles: readonly Pick<RunBundle, "runId" | "replayOf">[] = [],
+): string | undefined {
+  if (!e || !isReplayRun(e)) return undefined;
+  const own = "replayOf" in e ? (e as { replayOf?: string }).replayOf : undefined;
+  return own ?? bundles.find((b) => b.runId === e.runId)?.replayOf;
+}
+
+/** "Replay of <original>" (or "Replay" when the original is unknown); undefined for live runs. */
+export function replayBadge(
+  e: { runId: string } | undefined,
+  bundles: readonly Pick<RunBundle, "runId" | "replayOf">[] = [],
+): string | undefined {
+  if (!e || !isReplayRun(e)) return undefined;
+  const of = replayOfRun(e, bundles);
+  return of ? `Replay of ${of}` : "Replay";
+}
+
+/** Live recordings first (newest first), then replays (newest first). Running runs count as live. */
+export function liveFirst<T extends { mode?: string; startedAt: string }>(entries: readonly T[]): T[] {
+  const sorted = [...entries].sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+  return [...sorted.filter((e) => !isReplayRun(e)), ...sorted.filter((e) => isReplayRun(e))];
 }
 
 /** The empty state's next step when no real run is published. */
@@ -64,15 +114,14 @@ export type RunGroup = {
 
 /**
  * Run picker sections: real runs first, then recorded fixtures. Fixture and real runs are never in
- * the same section. Empty sections are dropped.
+ * the same section. Within a section, live recordings come before replays. Empty sections are dropped.
  */
 export function groupRuns(
   entries: BundleIndexEntry[],
   source: DataSource,
 ): RunGroup[] {
-  const sorted = [...entries].sort((a, b) =>
-    b.startedAt.localeCompare(a.startedAt),
-  );
+  // Live recordings before their replays, newest first within each.
+  const sorted = liveFirst(entries);
   const real = sorted.filter((e) => !e.sample);
   const fixture = sorted.filter((e) => e.sample);
   const groups: RunGroup[] = [
@@ -89,24 +138,25 @@ export function groupRuns(
 }
 
 /**
- * Default selection: a guarded queue run, preferring real data; else the newest run. Within a
- * cohort, live recordings come before their replays (a replay re-serves cassettes and carries
- * fewer events).
+ * Default selection, in order: a guarded queue run; else the newest LIVE run that recorded work
+ * (probes or decisions, when the caller passes bundles that carry them); else the newest live run;
+ * replays only when no live run exists (a replay re-serves cassettes and is never the first thing
+ * shown). Real data before fixture data. Pass verified bundles once they are loaded: index entries
+ * alone carry no probe/decision counts, so they can only rank by kind and recency.
  */
 export function defaultRunId(
-  entries: Pick<BundleIndexEntry, "runId" | "sample" | "kind" | "variant" | "startedAt" | "mode">[],
+  entries: (Pick<BundleIndexEntry, "runId" | "sample" | "kind" | "variant" | "startedAt" | "mode"> & {
+    probes?: readonly unknown[];
+    decisions?: readonly unknown[];
+  })[],
 ): string | undefined {
-  const sorted = [...entries].sort((a, b) =>
-    b.startedAt.localeCompare(a.startedAt),
-  );
-  const real = sorted.some((e) => !e.sample)
-    ? sorted.filter((e) => !e.sample)
-    : sorted;
-  const cohort = [...real.filter((e) => e.mode !== "replay"), ...real.filter((e) => e.mode === "replay")];
-  return (
-    cohort.find((e) => e.kind === "run" && e.variant === "guarded") ??
-    cohort[0]
-  )?.runId;
+  const sorted = [...entries].sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+  const real = sorted.some((e) => !e.sample) ? sorted.filter((e) => !e.sample) : sorted;
+  const live = real.filter((e) => !isReplayRun(e));
+  const replays = real.filter((e) => isReplayRun(e));
+  const guarded = (list: typeof real) => list.find((e) => e.kind === "run" && e.variant === "guarded");
+  const worked = (e: (typeof real)[number]) => (e.probes?.length ?? 0) > 0 || (e.decisions?.length ?? 0) > 0;
+  return (guarded(live) ?? live.find(worked) ?? live[0] ?? guarded(replays) ?? replays.find(worked) ?? replays[0])?.runId;
 }
 
 /** Same-cohort baseline candidates (fixture with fixture, real with real), never the run itself. */

@@ -45,6 +45,7 @@ import {
   type TrailLine,
 } from "../../components/trail/model";
 import { ReplayOnlyError, approvalId, safeLink, type CertificateView, type DataMode, type RunEntry } from "../../data";
+import { liveFirst, replayBadge } from "../../app/links";
 
 /* ------------------------------------------------------------------------------------- stages */
 
@@ -107,6 +108,11 @@ export const isFinished = (events: readonly TimelineEvent[]) => events.some((e) 
 export function stageProgress(
   events: readonly TimelineEvent[],
   unsafe: ReadonlySet<string> = new Set(),
+  /**
+   * Stages of transcript rows read from the bundle rather than the timeline (the opening "Read docs"
+   * row). Counted at their stage so the stepper, the filters and the rail count the same row set.
+   */
+  derived: readonly TimelineStage[] = [],
 ): { steps: StageStep[]; current: TimelineStage | null; finished: boolean } {
   const finished = isFinished(events);
   const current = finished ? null : (events.at(-1)?.stage ?? null);
@@ -119,8 +125,9 @@ export function stageProgress(
     }
     const alerts = [...alertCounts].map(([why, n]) => (why.startsWith("run ") ? why : `${n} ${why}${n === 1 ? "" : "s"}`));
     const isCurrent = current === stage;
-    const state: StepState = alerts.length ? "alert" : mine.length === 0 ? "idle" : isCurrent ? "active" : "done";
-    return { stage, label: STAGE_LABEL[stage], state, count: mine.length, current: isCurrent, alerts };
+    const count = mine.length + derived.filter((d) => d === stage).length;
+    const state: StepState = alerts.length ? "alert" : count === 0 ? "idle" : isCurrent ? "active" : "done";
+    return { stage, label: STAGE_LABEL[stage], state, count, current: isCurrent, alerts };
   });
   return { steps, current, finished };
 }
@@ -1134,6 +1141,8 @@ export type HeldContext = {
   approvals: ApprovalsList | null;
   /** Why the approvals list is not loaded (shown on read-only cards). */
   approvalsError?: string;
+  /** The hosted build (never probes): read-only notes say how to go live, not "start the server". */
+  hosted?: boolean;
 };
 
 /** Evidence summary for a held decision: what was missing, which guards stopped it, as recorded. */
@@ -1174,7 +1183,12 @@ export function heldCard(row: RunRow, ctx: HeldContext): HeldCard | null {
   const reason = pending?.reason ?? d?.error ?? d?.evidencePack?.reason ?? row.event?.summary ?? "held";
   const evidence = heldEvidence(d, ctx, idx);
   if (ctx.mode === "replay")
-    return { kind: "readonly", reason, evidence, why: new ReplayOnlyError("Approving or rejecting a held action").message };
+    return {
+      kind: "readonly",
+      reason,
+      evidence,
+      why: ctx.hosted ? HOSTED_APPROVE_NOTE : new ReplayOnlyError("Approving or rejecting a held action").message,
+    };
   if (ctx.sample)
     return { kind: "readonly", reason, evidence, why: "Recorded fixture: approvals exist only for real runs on a local `notary serve`." };
   const decided = ctx.approvals?.decided.find((r) => r.runId === runId && r.decisionId === row.decisionId);
@@ -1276,26 +1290,65 @@ export function parseSpeed(value: string | null | undefined): Speed {
   return 1;
 }
 
+/**
+ * The replay speed for a query string. An explicit ?speed= wins; otherwise a deep link to a probe,
+ * decision or event (?probe= / ?decision= / ?event=) replays instantly, so the linked row is there at
+ * once and selected, instead of replaying the run from its start at 1×.
+ */
+export function replaySpeed(params: URLSearchParams): Speed {
+  const explicit = params.get("speed");
+  if (explicit) return parseSpeed(explicit);
+  return params.get("probe") ?? params.get("decision") ?? params.get("event") ? "instant" : 1;
+}
+
+/**
+ * Which run the Run page opens. An explicit ?run= always wins (never navigated away from). Without
+ * one, the dashboard's default (catalog.selectedRunId: a guarded queue run, else the newest live run
+ * that recorded probes or decisions, read from the verified bundles), waiting while the catalog is
+ * still loading so the page never starts one run's stream and then switches to another.
+ * Outside the dashboard (no catalog): the page's own fallback (pickRun with no request).
+ */
+export function runDefaultState(
+  requested: string | null,
+  catalog: { loading: boolean; selectedRunId?: string } | null | undefined,
+): { requested: string | null; waiting: boolean } {
+  if (requested) return { requested, waiting: false };
+  if (!catalog) return { requested: null, waiting: false };
+  if (catalog.loading) return { requested: null, waiting: true };
+  return { requested: catalog.selectedRunId ?? null, waiting: false };
+}
+
 /* ---------------------------------------------------------------------------- runs, controls */
 
 export type RunGroups = { real: RunEntry[]; fixture: RunEntry[] };
 
-/** Real runs (finished and running) and fixture runs, never mixed in one group. */
+/**
+ * Real runs (finished and running) and fixture runs, never mixed in one group. Within a group, live
+ * recordings (and running runs) come first, newest first, then replays.
+ */
 export function groupRuns(runs: readonly RunEntry[]): RunGroups {
+  const ordered = liveFirst(runs.map((r) => ({ ...r, mode: r.state === "finished" ? r.mode : undefined }))).map(
+    (o) => runs.find((r) => r.runId === o.runId)!,
+  );
   return {
-    real: runs.filter((r) => r.state === "running" || !r.sample),
-    fixture: runs.filter((r) => r.state === "finished" && r.sample),
+    real: ordered.filter((r) => r.state === "running" || !r.sample),
+    fixture: ordered.filter((r) => r.state === "finished" && r.sample),
   };
 }
 
 export const isFixtureRun = (r?: RunEntry) => r?.state === "finished" && r.sample;
 
-export function runLabel(r: RunEntry): string {
+/**
+ * The run selector's label. A replay says so ("Replay of <original>", the original read from its
+ * verified bundle when `bundles` has it) so it is never mistaken for a new live run.
+ */
+export function runLabel(r: RunEntry, bundles: readonly Pick<RunBundle, "runId" | "replayOf">[] = []): string {
   if (r.state === "running") return `${r.runId} · ${r.kind} · running`;
-  return `${r.runId} · ${r.kind === "run" ? `${r.variant} run` : r.kind} · ${words(r.status)}`;
+  const replay = replayBadge(r, bundles);
+  return `${r.runId} · ${r.kind === "run" ? `${r.variant} run` : r.kind} · ${words(r.status)}${replay ? ` · ${replay}` : ""}`;
 }
 
-/** The ?run= run when listed, else the newest real run, else the newest fixture run. */
+/** The ?run= run when listed, else the newest live real run (replays after), else the newest fixture run. */
 export function pickRun(runs: readonly RunEntry[], requested: string | null): RunEntry | undefined {
   if (requested) {
     const hit = runs.find((r) => r.runId === requested);
@@ -1312,13 +1365,19 @@ export type RunControls = {
   approvals: { actionable: boolean; note?: string };
 };
 
+/** The hosted build never probes for a local server: say how to go live instead of "start the server". */
+export const HOSTED_START_NOTE =
+  "This hosted build always replays and never connects to a local server. To start runs, clone the repository, run `pnpm notary serve`, then `pnpm --filter @notary/web dev` and open the local page.";
+export const HOSTED_APPROVE_NOTE =
+  "This hosted build always replays and never connects to a local server; held actions are decided on a local `notary serve` in Dodo test mode.";
+
 /** Which controls a mode offers. Live-only controls do not render in replay. */
-export function runControls(mode: DataMode, entry?: RunEntry): RunControls {
+export function runControls(mode: DataMode, entry?: RunEntry, hosted = false): RunControls {
   if (mode === "replay")
     return {
-      start: { visible: false, note: new ReplayOnlyError("Starting a run").message },
+      start: { visible: false, note: hosted ? HOSTED_START_NOTE : new ReplayOnlyError("Starting a run").message },
       speed: { visible: true },
-      approvals: { actionable: false, note: new ReplayOnlyError("Approving a held action").message },
+      approvals: { actionable: false, note: hosted ? HOSTED_APPROVE_NOTE : new ReplayOnlyError("Approving a held action").message },
     };
   const fixture = isFixtureRun(entry);
   return {

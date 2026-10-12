@@ -26,7 +26,7 @@ import { dateTime as date } from "../../lib/time";
 import { useData } from "../../app/catalog";
 import { recordPath, withRun } from "../../app/links";
 import { WithCertificates } from "./WithCertificates";
-import { filterWorld, reasonText, resolveBelief, worldTools } from "./model";
+import { certificatesSummary, filterWorld, reasonText, resolveBelief, worldTools } from "./model";
 import "./certificates.css";
 
 type StatusFilter = "all" | "active" | "revoked";
@@ -71,14 +71,8 @@ function CertificatesView({ world }: { world: CertificateView }) {
     }
     return `/app/certificates?${next.toString()}`;
   };
-  const counts = view.counts;
-  const summary = [
-    `${number(active)} active`,
-    `${number(revoked)} revoked`,
-    counts ? `${number(counts.unproven)} claims still unproven` : undefined,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  // The header counts the same rows as the stat row and the table below (certificatesSummary).
+  const summary = certificatesSummary(view);
 
   return (
     <Page ref={root}>

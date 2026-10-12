@@ -1187,3 +1187,26 @@ button.run-row-head:hover,
     transition: none;
   }
 }
+
+/* Start-run confirmation: what will run, Dodo test mode, the USD cap as reported. */
+.run-start-facts {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 4px;
+}
+.run-start-facts > div {
+  display: grid;
+  grid-template-columns: minmax(0, 9rem) minmax(0, 1fr);
+  gap: 12px;
+}
+.run-start-facts dt {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.run-start-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.run-replay-note a {
+  overflow-wrap: anywhere;
+}

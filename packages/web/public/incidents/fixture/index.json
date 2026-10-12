@@ -11,97 +11,7 @@
       ],
       "incidents": [
         {
-          "id": "inc-5040030ea5c2c477",
-          "runId": "demo-run-guarded",
-          "kind": "adversary_downgrade",
-          "severity": "warning",
-          "at": "2026-10-10T08:46:34.575Z",
-          "agent": "adversary",
-          "tool": "dodo",
-          "summary": "The Adversary downgraded belief-dodo.payments.page-size-max-100 instead of upholding it (model fixture.adversary-double).",
-          "recordIds": [
-            "belief-dodo.payments.page-size-max-100",
-            "dodo.payments.page-size-max-100"
-          ],
-          "claimId": "dodo.payments.page-size-max-100",
-          "beliefId": "belief-dodo.payments.page-size-max-100",
-          "exported": false,
-          "resolution": {
-            "status": "resolved",
-            "action": "belief_abstained",
-            "summary": "The objection kept belief-dodo.payments.page-size-max-100 out of certification (status abstained); no guard relies on it and money actions that need it are held.",
-            "at": "2026-10-10T08:46:34.796Z",
-            "recordIds": [
-              "belief-dodo.payments.page-size-max-100"
-            ]
-          },
-          "data": {
-            "verdict": "downgrade",
-            "backend": "bedrock"
-          }
-        },
-        {
-          "id": "inc-03ce280646d9a591",
-          "runId": "demo-run-guarded",
-          "kind": "adversary_downgrade",
-          "severity": "warning",
-          "at": "2026-10-10T08:46:34.646Z",
-          "agent": "adversary",
-          "tool": "dodo",
-          "summary": "The Adversary narrowed belief-dodo.wallet.credit-amount-minor-units instead of upholding it (model fixture.adversary-double).",
-          "recordIds": [
-            "belief-dodo.wallet.credit-amount-minor-units",
-            "dodo.wallet.credit-amount-minor-units"
-          ],
-          "claimId": "dodo.wallet.credit-amount-minor-units",
-          "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
-          "exported": false,
-          "resolution": {
-            "status": "resolved",
-            "action": "certified",
-            "summary": "Certified only within the narrowed scope (USD only: dodo.createWalletLedgerEntry was probed with USD amounts; other curre…); guards refuse calls outside it.",
-            "at": "2026-10-10T08:46:34.648Z",
-            "recordIds": [
-              "belief-dodo.wallet.credit-amount-minor-units"
-            ]
-          },
-          "data": {
-            "verdict": "narrow",
-            "backend": "bedrock"
-          }
-        },
-        {
-          "id": "inc-257b717b9eadd439",
-          "runId": "demo-run-guarded",
-          "kind": "adversary_downgrade",
-          "severity": "warning",
-          "at": "2026-10-10T08:46:34.657Z",
-          "agent": "adversary",
-          "tool": "dodo",
-          "summary": "The Adversary narrowed belief-dodo.wallet.idempotency-key-no-duplicate instead of upholding it (model fixture.adversary-double).",
-          "recordIds": [
-            "belief-dodo.wallet.idempotency-key-no-duplicate",
-            "dodo.wallet.idempotency-key-no-duplicate"
-          ],
-          "claimId": "dodo.wallet.idempotency-key-no-duplicate",
-          "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
-          "exported": false,
-          "resolution": {
-            "status": "resolved",
-            "action": "certified",
-            "summary": "Certified only within the narrowed scope (USD only: dodo.createWalletLedgerEntry was probed with USD amounts; other curre…); guards refuse calls outside it.",
-            "at": "2026-10-10T08:46:34.659Z",
-            "recordIds": [
-              "belief-dodo.wallet.idempotency-key-no-duplicate"
-            ]
-          },
-          "data": {
-            "verdict": "narrow",
-            "backend": "bedrock"
-          }
-        },
-        {
-          "id": "inc-998c740a1d5fc9d1",
+          "id": "inc-f48ee676a837ec4e",
           "runId": "demo-run-guarded",
           "kind": "guard_hold",
           "severity": "warning",
@@ -135,7 +45,7 @@
           }
         },
         {
-          "id": "inc-14161f74c0198fe7",
+          "id": "inc-48a71ac2d1e8313c",
           "runId": "demo-run-guarded",
           "kind": "guard_hold",
           "severity": "warning",
@@ -169,7 +79,7 @@
           }
         },
         {
-          "id": "inc-a59ddc3f9cc38ea4",
+          "id": "inc-c82aaede38482a98",
           "runId": "demo-run-guarded",
           "kind": "guard_hold",
           "severity": "warning",
@@ -204,7 +114,7 @@
           }
         },
         {
-          "id": "inc-d6818ed4d1c92436",
+          "id": "inc-d4aeaad3744287cf",
           "runId": "demo-run-guarded",
           "kind": "guard_hold",
           "severity": "warning",
@@ -238,7 +148,7 @@
           }
         },
         {
-          "id": "inc-1a263ae887dccf9d",
+          "id": "inc-fae23c882ae2a4ee",
           "runId": "demo-run-guarded",
           "kind": "guard_hold",
           "severity": "warning",
@@ -272,7 +182,7 @@
           }
         },
         {
-          "id": "inc-ecd38c57d6cf8252",
+          "id": "inc-1a2d6570b5059561",
           "runId": "demo-run-guarded",
           "kind": "guard_hold",
           "severity": "warning",
@@ -306,7 +216,7 @@
           }
         },
         {
-          "id": "inc-c66b35a57913e66b",
+          "id": "inc-003c3bdfc9957c2e",
           "runId": "demo-run-guarded",
           "kind": "guard_block",
           "severity": "warning",
@@ -341,7 +251,7 @@
           }
         },
         {
-          "id": "inc-7a3cebd2eb97b338",
+          "id": "inc-c07cb74f390c5766",
           "runId": "demo-run-guarded",
           "kind": "guard_hold",
           "severity": "warning",
@@ -376,7 +286,7 @@
           }
         },
         {
-          "id": "inc-08f4f13a0ee86682",
+          "id": "inc-b5bdd090a4f5337c",
           "runId": "demo-run-guarded",
           "kind": "guard_hold",
           "severity": "warning",
@@ -411,7 +321,7 @@
           }
         },
         {
-          "id": "inc-f80d045850fd6184",
+          "id": "inc-36f3cd8027803bed",
           "runId": "demo-run-guarded",
           "kind": "guard_block",
           "severity": "warning",
@@ -446,7 +356,7 @@
           }
         },
         {
-          "id": "inc-5060d466232ea7d7",
+          "id": "inc-281ef3750f9d0099",
           "runId": "demo-run-guarded",
           "kind": "guard_block",
           "severity": "warning",
@@ -481,7 +391,7 @@
           }
         },
         {
-          "id": "inc-dee3af9f37f3083d",
+          "id": "inc-bdcd9c765f001fe6",
           "runId": "demo-run-guarded",
           "kind": "guard_hold",
           "severity": "warning",
@@ -526,7 +436,7 @@
       ],
       "incidents": [
         {
-          "id": "inc-feaf14b1f87c8365",
+          "id": "inc-47a523df872da74b",
           "runId": "demo-run-naive",
           "kind": "unsafe_action_executed",
           "severity": "error",
@@ -555,7 +465,7 @@
           }
         },
         {
-          "id": "inc-8f17aab8e2240d47",
+          "id": "inc-c41eeb892c8155ee",
           "runId": "demo-run-naive",
           "kind": "unsafe_action_executed",
           "severity": "error",
@@ -584,7 +494,7 @@
           }
         },
         {
-          "id": "inc-638d0f185c60fbad",
+          "id": "inc-894b957a15a08887",
           "runId": "demo-run-naive",
           "kind": "unsafe_action_executed",
           "severity": "error",
@@ -613,7 +523,7 @@
           }
         },
         {
-          "id": "inc-90af9ddcc7e0b4db",
+          "id": "inc-bc7f991cc80d4cdd",
           "runId": "demo-run-naive",
           "kind": "unsafe_action_executed",
           "severity": "error",
@@ -642,7 +552,7 @@
           }
         },
         {
-          "id": "inc-238e5a487a8062ea",
+          "id": "inc-95302e0b35652af0",
           "runId": "demo-run-naive",
           "kind": "unsafe_action_executed",
           "severity": "error",
@@ -671,7 +581,7 @@
           }
         },
         {
-          "id": "inc-14df866101f686e6",
+          "id": "inc-b3ccfc03703202c4",
           "runId": "demo-run-naive",
           "kind": "unsafe_action_executed",
           "severity": "error",
@@ -700,7 +610,7 @@
           }
         },
         {
-          "id": "inc-a1ee009c30c6c42b",
+          "id": "inc-15c20f87d3120559",
           "runId": "demo-run-naive",
           "kind": "unsafe_action_executed",
           "severity": "error",
@@ -729,7 +639,7 @@
           }
         },
         {
-          "id": "inc-cf75ad00b26c122d",
+          "id": "inc-b030d443c0064d2e",
           "runId": "demo-run-naive",
           "kind": "unsafe_action_executed",
           "severity": "error",
@@ -758,7 +668,7 @@
           }
         },
         {
-          "id": "inc-74131ba34aae4e85",
+          "id": "inc-462e4bd77a4f162f",
           "runId": "demo-run-naive",
           "kind": "unsafe_action_executed",
           "severity": "error",
@@ -799,7 +709,7 @@
       ],
       "incidents": [
         {
-          "id": "inc-840b374e66688999",
+          "id": "inc-bb971a548949fece",
           "runId": "demo-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -834,7 +744,7 @@
           }
         },
         {
-          "id": "inc-c64a68391ffa2e86",
+          "id": "inc-4f825c6c23f2dbcf",
           "runId": "demo-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -869,7 +779,7 @@
           }
         },
         {
-          "id": "inc-6d92802dc918b425",
+          "id": "inc-0e8a76d84e5fe0e2",
           "runId": "demo-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -904,7 +814,7 @@
           }
         },
         {
-          "id": "inc-b030601ee166af70",
+          "id": "inc-5e165be11d754314",
           "runId": "demo-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -938,7 +848,7 @@
           }
         },
         {
-          "id": "inc-de77adff18eb6713",
+          "id": "inc-1abb8fff06186f33",
           "runId": "demo-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -972,7 +882,7 @@
           }
         },
         {
-          "id": "inc-6a99ff5596d5f787",
+          "id": "inc-ad4e68f64d413bde",
           "runId": "demo-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -1006,7 +916,7 @@
           }
         },
         {
-          "id": "inc-ea4909a259d86341",
+          "id": "inc-b062d82ca8a0ab40",
           "runId": "demo-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -1041,7 +951,7 @@
           }
         },
         {
-          "id": "inc-60e6cb29b9988546",
+          "id": "inc-e426cddeb3097162",
           "runId": "demo-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -1076,7 +986,7 @@
           }
         },
         {
-          "id": "inc-1d10cb98289f44d5",
+          "id": "inc-56d7936a57bcd523",
           "runId": "demo-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -1111,7 +1021,7 @@
           }
         },
         {
-          "id": "inc-eefbd3189af0d0aa",
+          "id": "inc-b567c08791f4e42e",
           "runId": "demo-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -1146,7 +1056,7 @@
           }
         },
         {
-          "id": "inc-01cdb2c6d1fa9c72",
+          "id": "inc-48632ea065f715b2",
           "runId": "demo-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -1181,7 +1091,7 @@
           }
         },
         {
-          "id": "inc-05527b6a118f6111",
+          "id": "inc-927f9a141cb58d3c",
           "runId": "demo-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -1216,7 +1126,7 @@
           }
         },
         {
-          "id": "inc-feef8502731eaba3",
+          "id": "inc-2172dc3733cc71f5",
           "runId": "demo-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -1251,7 +1161,7 @@
           }
         },
         {
-          "id": "inc-8f21e8311f6c9659",
+          "id": "inc-f14542ba4c4a3dcd",
           "runId": "demo-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -1286,7 +1196,7 @@
           }
         },
         {
-          "id": "inc-f98f72c0f9493ac5",
+          "id": "inc-a2329768b4c0e633",
           "runId": "demo-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -1321,7 +1231,7 @@
           }
         },
         {
-          "id": "inc-c7eecfdad02ae4c1",
+          "id": "inc-430b878707e6ba51",
           "runId": "demo-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -1356,7 +1266,7 @@
           }
         },
         {
-          "id": "inc-59f5017520cb9e79",
+          "id": "inc-4dcd8708e7147e1a",
           "runId": "demo-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -1391,7 +1301,7 @@
           }
         },
         {
-          "id": "inc-5040030ea5c2c477",
+          "id": "inc-d7ea324be6db5a99",
           "runId": "demo-notarize-dodo",
           "kind": "adversary_downgrade",
           "severity": "warning",
@@ -1423,7 +1333,7 @@
           }
         },
         {
-          "id": "inc-03ce280646d9a591",
+          "id": "inc-1b07854b38d56bf3",
           "runId": "demo-notarize-dodo",
           "kind": "adversary_downgrade",
           "severity": "warning",
@@ -1455,7 +1365,7 @@
           }
         },
         {
-          "id": "inc-257b717b9eadd439",
+          "id": "inc-4ab376fa748f53c0",
           "runId": "demo-notarize-dodo",
           "kind": "adversary_downgrade",
           "severity": "warning",
@@ -1487,32 +1397,7 @@
           }
         },
         {
-          "id": "inc-25ba1b9b5523a3e4",
-          "runId": "demo-notarize-dodo",
-          "kind": "checker_anomaly",
-          "severity": "warning",
-          "at": "2026-10-12T00:14:41.015Z",
-          "tool": "dodo",
-          "summary": "The checker saw dodo.payments.page-size-max-100 disagree with the docs: expected {\"maxItems\":100,\"onRequestAboveMax\":\"non-2xx (limit enforced)\"}, observed {\"param\":\"page_size\",\"requested\":101,\"status\":200,\"listLength\":100}.",
-          "recordIds": [
-            "anom-d1297feb612d",
-            "dodo.payments.page-size-max-100"
-          ],
-          "claimId": "dodo.payments.page-size-max-100",
-          "beliefId": "belief-dodo.payments.page-size-max-100",
-          "exported": false,
-          "resolution": {
-            "status": "open",
-            "action": "belief_abstained",
-            "summary": "Notary abstained on belief-dodo.payments.page-size-max-100: not enough evidence to certify; no guard relies on it.",
-            "at": "2026-10-10T08:46:34.796Z",
-            "recordIds": [
-              "belief-dodo.payments.page-size-max-100"
-            ]
-          }
-        },
-        {
-          "id": "inc-5be67105acd703b2",
+          "id": "inc-1142f1bda0b3da95",
           "runId": "demo-notarize-dodo",
           "kind": "checker_anomaly",
           "severity": "warning",
@@ -1538,7 +1423,7 @@
           }
         },
         {
-          "id": "inc-cd73ddad2e684d2c",
+          "id": "inc-307e3fd12511d48f",
           "runId": "demo-notarize-dodo",
           "kind": "checker_anomaly",
           "severity": "warning",
@@ -1563,7 +1448,32 @@
           }
         },
         {
-          "id": "inc-ef73de9c3d712147",
+          "id": "inc-569e33111d1c4a33",
+          "runId": "demo-notarize-dodo",
+          "kind": "checker_anomaly",
+          "severity": "warning",
+          "at": "2026-10-12T00:14:41.015Z",
+          "tool": "dodo",
+          "summary": "The checker saw dodo.payments.page-size-max-100 disagree with the docs: expected {\"maxItems\":100,\"onRequestAboveMax\":\"non-2xx (limit enforced)\"}, observed {\"param\":\"page_size\",\"requested\":101,\"status\":200,\"listLength\":100}.",
+          "recordIds": [
+            "anom-d1297feb612d",
+            "dodo.payments.page-size-max-100"
+          ],
+          "claimId": "dodo.payments.page-size-max-100",
+          "beliefId": "belief-dodo.payments.page-size-max-100",
+          "exported": false,
+          "resolution": {
+            "status": "open",
+            "action": "belief_abstained",
+            "summary": "Notary abstained on belief-dodo.payments.page-size-max-100: not enough evidence to certify; no guard relies on it.",
+            "at": "2026-10-10T08:46:34.796Z",
+            "recordIds": [
+              "belief-dodo.payments.page-size-max-100"
+            ]
+          }
+        },
+        {
+          "id": "inc-95ca1993ab118167",
           "runId": "demo-notarize-dodo",
           "kind": "checker_anomaly",
           "severity": "warning",
@@ -1601,7 +1511,7 @@
       ],
       "incidents": [
         {
-          "id": "inc-a05cb667b61ef6de",
+          "id": "inc-653fc099caff0f9d",
           "runId": "demo-notarize-crustdata",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -1635,7 +1545,7 @@
           }
         },
         {
-          "id": "inc-08e70910ed6bedb0",
+          "id": "inc-81ec30e5641fc6ba",
           "runId": "demo-notarize-crustdata",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -1669,7 +1579,7 @@
           }
         },
         {
-          "id": "inc-393b9dc93f271221",
+          "id": "inc-8998fb582768de15",
           "runId": "demo-notarize-crustdata",
           "kind": "checker_anomaly",
           "severity": "warning",
@@ -1706,67 +1616,7 @@
       ],
       "incidents": [
         {
-          "id": "inc-fe7cc6f2273ea88d",
-          "runId": "demo-change-api-run-guarded",
-          "kind": "adversary_downgrade",
-          "severity": "warning",
-          "at": "2026-10-10T08:46:20.378Z",
-          "agent": "adversary",
-          "tool": "dodo",
-          "summary": "The Adversary narrowed belief-dodo.wallet.credit-amount-minor-units instead of upholding it (model fixture.adversary-double).",
-          "recordIds": [
-            "belief-dodo.wallet.credit-amount-minor-units",
-            "dodo.wallet.credit-amount-minor-units"
-          ],
-          "claimId": "dodo.wallet.credit-amount-minor-units",
-          "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
-          "exported": false,
-          "resolution": {
-            "status": "resolved",
-            "action": "certified",
-            "summary": "Certified only within the narrowed scope (USD only: dodo.createWalletLedgerEntry was probed with USD amounts; other curre…); guards refuse calls outside it.",
-            "at": "2026-10-10T08:46:20.379Z",
-            "recordIds": [
-              "belief-dodo.wallet.credit-amount-minor-units"
-            ]
-          },
-          "data": {
-            "verdict": "narrow",
-            "backend": "bedrock"
-          }
-        },
-        {
-          "id": "inc-38158e6695907b71",
-          "runId": "demo-change-api-run-guarded",
-          "kind": "adversary_downgrade",
-          "severity": "warning",
-          "at": "2026-10-10T08:46:20.389Z",
-          "agent": "adversary",
-          "tool": "dodo",
-          "summary": "The Adversary narrowed belief-dodo.wallet.idempotency-key-no-duplicate instead of upholding it (model fixture.adversary-double).",
-          "recordIds": [
-            "belief-dodo.wallet.idempotency-key-no-duplicate",
-            "dodo.wallet.idempotency-key-no-duplicate"
-          ],
-          "claimId": "dodo.wallet.idempotency-key-no-duplicate",
-          "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
-          "exported": false,
-          "resolution": {
-            "status": "resolved",
-            "action": "certified",
-            "summary": "Certified only within the narrowed scope (USD only: dodo.createWalletLedgerEntry was probed with USD amounts; other curre…); guards refuse calls outside it.",
-            "at": "2026-10-10T08:46:20.391Z",
-            "recordIds": [
-              "belief-dodo.wallet.idempotency-key-no-duplicate"
-            ]
-          },
-          "data": {
-            "verdict": "narrow",
-            "backend": "bedrock"
-          }
-        },
-        {
-          "id": "inc-9c9ff326f997a731",
+          "id": "inc-4bb64ca65905bcf0",
           "runId": "demo-change-api-run-guarded",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -1799,7 +1649,7 @@
           }
         },
         {
-          "id": "inc-701686657e0d373f",
+          "id": "inc-eb7d8edaa2329b3f",
           "runId": "demo-change-api-run-guarded",
           "kind": "belief_unlearned",
           "severity": "error",
@@ -1827,7 +1677,7 @@
           }
         },
         {
-          "id": "inc-a3325545e3c7d195",
+          "id": "inc-f5130dbc162b63d9",
           "runId": "demo-change-api-run-guarded",
           "kind": "unsafe_action_prevented",
           "severity": "warning",
@@ -1862,7 +1712,7 @@
           }
         },
         {
-          "id": "inc-ceace85c0b44929a",
+          "id": "inc-74c0ac43a06cf064",
           "runId": "demo-change-api-run-guarded",
           "kind": "unsafe_action_prevented",
           "severity": "warning",
@@ -1897,7 +1747,7 @@
           }
         },
         {
-          "id": "inc-75857ebfc3d12d5e",
+          "id": "inc-a90027184ad2401d",
           "runId": "demo-change-api-run-guarded",
           "kind": "unsafe_action_prevented",
           "severity": "warning",
@@ -1932,7 +1782,7 @@
           }
         },
         {
-          "id": "inc-2857764fbb6ccb34",
+          "id": "inc-ad7669493f770de6",
           "runId": "demo-change-api-run-guarded",
           "kind": "guard_block",
           "severity": "warning",
@@ -1967,7 +1817,7 @@
           }
         },
         {
-          "id": "inc-223d864760dc1206",
+          "id": "inc-2f4690c30b1967f3",
           "runId": "demo-change-api-run-guarded",
           "kind": "unsafe_action_prevented",
           "severity": "warning",
@@ -2001,7 +1851,7 @@
           }
         },
         {
-          "id": "inc-4d72621951551b2c",
+          "id": "inc-9e0f2fb2fae98718",
           "runId": "demo-change-api-run-guarded",
           "kind": "guard_hold",
           "severity": "warning",
@@ -2036,7 +1886,7 @@
           }
         },
         {
-          "id": "inc-e579c9a66b1f163e",
+          "id": "inc-89478a58ce575a67",
           "runId": "demo-change-api-run-guarded",
           "kind": "guard_block",
           "severity": "warning",
@@ -2071,7 +1921,7 @@
           }
         },
         {
-          "id": "inc-114f31fbd82c361b",
+          "id": "inc-cd81dfa932b58741",
           "runId": "demo-change-api-run-guarded",
           "kind": "guard_block",
           "severity": "warning",
@@ -2106,7 +1956,7 @@
           }
         },
         {
-          "id": "inc-f788a302af5a1c88",
+          "id": "inc-e1e10fe8a64c0767",
           "runId": "demo-change-api-run-guarded",
           "kind": "guard_hold",
           "severity": "warning",
@@ -2151,7 +2001,7 @@
       ],
       "incidents": [
         {
-          "id": "inc-62438de0c0e0063d",
+          "id": "inc-6c8dfe73eda7ca6c",
           "runId": "demo-change-api-run-naive",
           "kind": "unsafe_action_executed",
           "severity": "error",
@@ -2180,7 +2030,7 @@
           }
         },
         {
-          "id": "inc-bf91a697fe94dfd7",
+          "id": "inc-f102b21982fa0b46",
           "runId": "demo-change-api-run-naive",
           "kind": "unsafe_action_executed",
           "severity": "error",
@@ -2209,7 +2059,7 @@
           }
         },
         {
-          "id": "inc-8b7a375bfcf72859",
+          "id": "inc-744427127fae2b8c",
           "runId": "demo-change-api-run-naive",
           "kind": "unsafe_action_executed",
           "severity": "error",
@@ -2238,7 +2088,7 @@
           }
         },
         {
-          "id": "inc-a17ffb734ba48288",
+          "id": "inc-d9265ea08addd468",
           "runId": "demo-change-api-run-naive",
           "kind": "unsafe_action_executed",
           "severity": "error",
@@ -2267,7 +2117,7 @@
           }
         },
         {
-          "id": "inc-4f74cc1415b2873f",
+          "id": "inc-042f4d72a126614f",
           "runId": "demo-change-api-run-naive",
           "kind": "unsafe_action_executed",
           "severity": "error",
@@ -2296,7 +2146,7 @@
           }
         },
         {
-          "id": "inc-f95bed3f8e8892e6",
+          "id": "inc-4a6e16ffbcd2bd2c",
           "runId": "demo-change-api-run-naive",
           "kind": "unsafe_action_executed",
           "severity": "error",
@@ -2325,7 +2175,7 @@
           }
         },
         {
-          "id": "inc-0dfadbd867c373dd",
+          "id": "inc-7f2667e1a03465ad",
           "runId": "demo-change-api-run-naive",
           "kind": "unsafe_action_executed",
           "severity": "error",
@@ -2354,7 +2204,7 @@
           }
         },
         {
-          "id": "inc-69a98a0913747c9c",
+          "id": "inc-2b5d57cf591c0f7b",
           "runId": "demo-change-api-run-naive",
           "kind": "unsafe_action_executed",
           "severity": "error",
@@ -2395,7 +2245,7 @@
       ],
       "incidents": [
         {
-          "id": "inc-6faf6ecb4a5d4310",
+          "id": "inc-ac60c6b166cb9e04",
           "runId": "demo-change-api-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -2430,7 +2280,7 @@
           }
         },
         {
-          "id": "inc-4cc996e40a3af321",
+          "id": "inc-38087bcca22771f5",
           "runId": "demo-change-api-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -2465,7 +2315,7 @@
           }
         },
         {
-          "id": "inc-d9b66e3150678bd9",
+          "id": "inc-9f790b732dcb0239",
           "runId": "demo-change-api-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -2500,7 +2350,7 @@
           }
         },
         {
-          "id": "inc-2bb5e057ccd8b6a2",
+          "id": "inc-afa11b9441b70f21",
           "runId": "demo-change-api-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -2535,7 +2385,7 @@
           }
         },
         {
-          "id": "inc-97823214e9688f53",
+          "id": "inc-9b77690dffe98fe2",
           "runId": "demo-change-api-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -2570,7 +2420,7 @@
           }
         },
         {
-          "id": "inc-a3ec7626289c4d4f",
+          "id": "inc-a88bffbcbf3a1450",
           "runId": "demo-change-api-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -2605,7 +2455,7 @@
           }
         },
         {
-          "id": "inc-f4a27c2e05a70a28",
+          "id": "inc-cc34c7877c79db42",
           "runId": "demo-change-api-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -2640,7 +2490,7 @@
           }
         },
         {
-          "id": "inc-067a21a8d2661531",
+          "id": "inc-46e5c8fdb0d3a4b1",
           "runId": "demo-change-api-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -2675,7 +2525,7 @@
           }
         },
         {
-          "id": "inc-1eb9c5bcf3acaa2d",
+          "id": "inc-d9d4e48bd82c2795",
           "runId": "demo-change-api-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -2710,7 +2560,7 @@
           }
         },
         {
-          "id": "inc-49b0615a304a6597",
+          "id": "inc-2286a4438304f360",
           "runId": "demo-change-api-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -2745,7 +2595,7 @@
           }
         },
         {
-          "id": "inc-13c8109d41aacae3",
+          "id": "inc-d9f549d0d511639b",
           "runId": "demo-change-api-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -2780,7 +2630,7 @@
           }
         },
         {
-          "id": "inc-f2c1d54292e52dc4",
+          "id": "inc-6db48bcb6ce324ac",
           "runId": "demo-change-api-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -2815,7 +2665,7 @@
           }
         },
         {
-          "id": "inc-64ab668d95a08c75",
+          "id": "inc-193c6aaaabb35710",
           "runId": "demo-change-api-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -2850,7 +2700,7 @@
           }
         },
         {
-          "id": "inc-afc3a4ff4c171fc5",
+          "id": "inc-de6371a56848b81a",
           "runId": "demo-change-api-notarize-dodo",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -2885,7 +2735,7 @@
           }
         },
         {
-          "id": "inc-fe7cc6f2273ea88d",
+          "id": "inc-184f79bac4a50994",
           "runId": "demo-change-api-notarize-dodo",
           "kind": "adversary_downgrade",
           "severity": "warning",
@@ -2917,7 +2767,7 @@
           }
         },
         {
-          "id": "inc-38158e6695907b71",
+          "id": "inc-ec575edc67a82f09",
           "runId": "demo-change-api-notarize-dodo",
           "kind": "adversary_downgrade",
           "severity": "warning",
@@ -2949,33 +2799,7 @@
           }
         },
         {
-          "id": "inc-5be67105acd703b2",
-          "runId": "demo-change-api-notarize-dodo",
-          "kind": "checker_anomaly",
-          "severity": "warning",
-          "at": "2026-10-10T10:01:01.407Z",
-          "tool": "dodo",
-          "summary": "The checker saw dodo.wallet.idempotency-key-no-duplicate disagree with the docs: expected {\"maxItems\":1}, observed {\"listKey\":\"items\",\"listLength\":3,\"status\":200}.",
-          "recordIds": [
-            "anom-3b041ef0c326",
-            "dodo.wallet.idempotency-key-no-duplicate"
-          ],
-          "claimId": "dodo.wallet.idempotency-key-no-duplicate",
-          "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
-          "exported": false,
-          "resolution": {
-            "status": "resolved",
-            "action": "guard_compiled",
-            "summary": "Guard grd-6b98c720d1cb (retry_policy on dodo.createWalletLedgerEntry) was compiled from the notarized belief belief-dodo.wallet.idempotency-key-no-duplicate.",
-            "at": "2026-10-10T08:46:20.400Z",
-            "recordIds": [
-              "grd-6b98c720d1cb",
-              "belief-dodo.wallet.idempotency-key-no-duplicate"
-            ]
-          }
-        },
-        {
-          "id": "inc-cd73ddad2e684d2c",
+          "id": "inc-13284430ca6e5061",
           "runId": "demo-change-api-notarize-dodo",
           "kind": "checker_anomaly",
           "severity": "warning",
@@ -3000,7 +2824,7 @@
           }
         },
         {
-          "id": "inc-ef73de9c3d712147",
+          "id": "inc-63a13b544333bf04",
           "runId": "demo-change-api-notarize-dodo",
           "kind": "checker_anomaly",
           "severity": "warning",
@@ -3024,6 +2848,32 @@
               "belief-dodo.wallet.credit-amount-minor-units"
             ]
           }
+        },
+        {
+          "id": "inc-c697cd7578f211f1",
+          "runId": "demo-change-api-notarize-dodo",
+          "kind": "checker_anomaly",
+          "severity": "warning",
+          "at": "2026-10-10T10:01:01.407Z",
+          "tool": "dodo",
+          "summary": "The checker saw dodo.wallet.idempotency-key-no-duplicate disagree with the docs: expected {\"maxItems\":1}, observed {\"listKey\":\"items\",\"listLength\":3,\"status\":200}.",
+          "recordIds": [
+            "anom-3b041ef0c326",
+            "dodo.wallet.idempotency-key-no-duplicate"
+          ],
+          "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+          "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
+          "exported": false,
+          "resolution": {
+            "status": "resolved",
+            "action": "guard_compiled",
+            "summary": "Guard grd-6b98c720d1cb (retry_policy on dodo.createWalletLedgerEntry) was compiled from the notarized belief belief-dodo.wallet.idempotency-key-no-duplicate.",
+            "at": "2026-10-10T08:46:20.400Z",
+            "recordIds": [
+              "grd-6b98c720d1cb",
+              "belief-dodo.wallet.idempotency-key-no-duplicate"
+            ]
+          }
         }
       ]
     },
@@ -3038,7 +2888,7 @@
       ],
       "incidents": [
         {
-          "id": "inc-794e6643e4451034",
+          "id": "inc-882f86e012b0cbfa",
           "runId": "demo-change-api-notarize-crustdata",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -3072,7 +2922,7 @@
           }
         },
         {
-          "id": "inc-fc69e7b26bf71c45",
+          "id": "inc-47ce68b9cad862ef",
           "runId": "demo-change-api-notarize-crustdata",
           "kind": "probe_contradiction",
           "severity": "warning",
@@ -3106,7 +2956,7 @@
           }
         },
         {
-          "id": "inc-393b9dc93f271221",
+          "id": "inc-abd9ba8053884640",
           "runId": "demo-change-api-notarize-crustdata",
           "kind": "checker_anomaly",
           "severity": "warning",
@@ -3132,5 +2982,6 @@
         }
       ]
     }
-  ]
+  ],
+  "contentHash": "51c840a8f2a12b942dc1710dbef159a99826f4b002bb20d2bf3550e4fc548e28"
 }

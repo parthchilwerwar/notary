@@ -61,6 +61,7 @@ import { RunStateStore } from "./run-state.js";
 import { createSentinel, sentinelModeFromEnv } from "./sentinel.js";
 import { liveDecisionEmitter, publishTimeline, recordRunTimeline } from "../timeline/write.js";
 import { incidentsLine, recordRunIncidents } from "../incidents/record.js";
+import { enterIncidentRun } from "../incidents/live.js";
 import type { Sentinel, SentinelMode } from "./sentinel.js";
 import { SimplePaymentPool, probeIoFromTools } from "../reflect/templates/index.js";
 import { probePoolFromManifest, sentinelProbeTools } from "../reflect/notarize.js";
@@ -293,6 +294,9 @@ export async function runQueue(opts: RunQueueOptions): Promise<RunQueueResult> {
     throw err;
   }
 
+  // Live incidents from here on belong to this run (after a yield, so the scope never leaks to the caller).
+  await Promise.resolve();
+  enterIncidentRun(runId);
   const runState = guardedRun && db ? new RunStateStore(db, { now }) : undefined;
   let sentinelSetup: SentinelSetup | undefined;
   try {

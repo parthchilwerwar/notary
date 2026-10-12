@@ -64,6 +64,7 @@ export {
   ESTIMATE_CHARS_PER_TOKEN,
   MAX_USD_ENV,
   UsdCapExceededError,
+  UsdPriceUnknownError,
   estimateInputTokens,
   isUsdCapExceeded,
   maxUsdFromEnv,

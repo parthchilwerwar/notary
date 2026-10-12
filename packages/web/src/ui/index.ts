@@ -14,7 +14,7 @@ export { PageHeader, PageHeaderContext, SkyBand, SkyBandContext, Page, PageBody 
 export { Stat, StatRow } from "./Stat";
 export { Seal, CertificateCard } from "./CertificateCard";
 export { EmptyState, NoRunsYet, Skeleton, PageSkeleton, Expander } from "./States";
-export { Note, FixtureNote, Facts, Pills, Select, TableFrame, type NoteTone } from "./Bits";
+export { Note, FixtureNote, ReplayBadge, Facts, Pills, Select, TableFrame, type NoteTone } from "./Bits";
 export { RecordLinks, Trace, Json, traceUrl } from "./Records";
 export { usePageMotion, slideIn } from "./motion";
 // The landing's own components, re-exported rather than forked.

@@ -16,6 +16,7 @@ import {
 import { ChatWindow } from "./ChatWindow";
 import { gsap, MOTION_OK, ScrollTrigger, useGSAP } from "./gsap";
 import { replayFor } from "./replay";
+import { fixturesInLocation } from "../../app/links";
 
 type State =
   | { status: "loading" }
@@ -27,9 +28,11 @@ const showcaseParagraphs = (turn: ChatTurn) => turn.paragraphs.slice(0, 6).map((
 
 export default function ChatShowcase({ source }: { source: DataSource }) {
   const [state, setState] = useState<State>({ status: "loading" });
+  // Re-read on every render; the landing also remounts when the view changes.
+  const fixtures = fixturesInLocation();
   useEffect(() => {
     let live = true;
-    loadChatTurn(replayFor(source)).then(
+    loadChatTurn(replayFor(source, fixtures), fixtures).then(
       (turn) =>
         live &&
         setState(
@@ -50,7 +53,7 @@ export default function ChatShowcase({ source }: { source: DataSource }) {
     return () => {
       live = false;
     };
-  }, [source]);
+  }, [source, fixtures]);
 
   if (state.status !== "ready")
     return (

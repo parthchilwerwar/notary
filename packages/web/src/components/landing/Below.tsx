@@ -1,8 +1,8 @@
 // Everything below the hero (lazy: the first paint only needs the nav and the hero). Every number
 // comes from hash-verified data through the data layer; see landing-data.ts.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { finishedEntries, type DataSource } from "../../data";
-import { NO_RUNS_YET, proofNumbers, proofPair, type PricingPlan } from "../../landing-data";
+import { finishedEntries, loadEvidence, type DataSource, type EvidenceEntry } from "../../data";
+import { builtWith, NO_RUNS_YET, proofNumbers, proofPair, type PricingPlan } from "../../landing-data";
 import { fixturesInLocation } from "../../app/links";
 import { GridFrame } from "../brand/GridFrame";
 import { BuiltWith } from "./BuiltWith";
@@ -17,8 +17,32 @@ import { ScrollTrigger } from "./gsap";
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-export default function Below({ source, ready, plans }: { source: DataSource; ready: boolean; plans: PricingPlan[] | null }) {
+export default function Below({
+  source,
+  ready,
+  plans,
+  cfoPlan,
+}: {
+  source: DataSource;
+  ready: boolean;
+  plans: PricingPlan[] | null;
+  /** public/economics.json carries an imported cfo.ai plan (null: not read yet). */
+  cfoPlan: boolean | null;
+}) {
   const [proof, setProof] = useState<ProofState>({ status: "loading" });
+  // Which integrations are confirmed: evidence/evidence.json (validated by the data layer). Until it
+  // is read nothing is claimed; withheld = nothing is claimed.
+  const [evidence, setEvidence] = useState<EvidenceEntry[] | null | "withheld">(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    loadEvidence(controller.signal).then(
+      (list) => !controller.signal.aborted && setEvidence(list),
+      () => !controller.signal.aborted && setEvidence("withheld"),
+    );
+    return () => controller.abort();
+  }, []);
+  const loaded = evidence !== null && evidence !== "withheld" && cfoPlan !== null;
+  const credits = loaded ? builtWith(evidence, { cfoPlan }) : { credits: [], chips: [] };
 
   // Lazy sections change the page height after load; keep every scroll trigger's position true.
   const root = useRef<HTMLDivElement>(null);
@@ -76,12 +100,12 @@ export default function Below({ source, ready, plans }: { source: DataSource; re
 
   return (
     <div ref={root}>
-      <BuiltWith />
+      <BuiltWith credits={evidence === "withheld" ? [] : loaded ? credits.credits : null} />
       <GridFrame className="l-frame-sections">
         <HowItWorks source={source} />
         <Features source={source} />
         <Proof state={proof} onNear={wantProof} />
-        <ChatSection source={source} />
+        <ChatSection source={source} chips={credits.chips} />
         {plans && <Pricing plans={plans} />}
       </GridFrame>
       <ClosingCta />

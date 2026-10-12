@@ -79,10 +79,11 @@ export const CFO_INPUTS_COLUMNS = [
   "run_id",
   "started_at",
   "month",
-  "kind",
+  "stage",
   "variant",
   "tool",
   "mode",
+  "new_spend",
   "status",
   "model_usd",
   "usd_executor",
@@ -102,18 +103,21 @@ const field = (v: string | number | null): string => {
 };
 
 export function cfoInputsCsv(file: Pick<EconomicsFile, "computed">): string {
-  const rows = (file.computed?.runs ?? []).map((r) =>
-    [r.runId, r.startedAt, r.startedAt.slice(0, 7), r.kind, r.variant, r.tool, r.mode, r.status, r.modelUsd, r.usdByRole.executor, r.usdByRole.reflector, r.usdByRole.adversary, r.tokens, r.credits, r.unsafeActions, r.holds, r.beliefsNotarized]
+  // Replays re-serve a recorded run: 0 new spend (never the live cost twice). Unknown-price USD stays empty.
+  const rows = (file.computed?.runs ?? []).map((r) => {
+    const replay = r.mode === "replay";
+    const usd = (v: number): number | null => (replay ? 0 : r.usdUnknown ? null : v);
+    return [r.runId, r.startedAt, r.startedAt.slice(0, 7), r.stage ?? r.kind, r.variant, r.tool, r.mode, replay ? "no" : "yes", r.status, usd(r.modelUsd), usd(r.usdByRole.executor), usd(r.usdByRole.reflector), usd(r.usdByRole.adversary), replay ? 0 : r.tokens, replay ? 0 : r.credits, r.unsafeActions, r.holds, r.beliefsNotarized]
       .map(field)
-      .join(","),
-  );
+      .join(",");
+  });
   return [CFO_INPUTS_COLUMNS.join(","), ...rows].join("\n") + "\n";
 }
 
 /** The round trip, as on docs/BUSINESS.md (copy, not data). */
 export const CFO_STEPS: readonly { title: string; body: string; command?: string }[] = [
   { title: "Sign up", body: "Create a cfo.ai workspace at cfo.ai/neathacks (then cancel the subscription in Settings → Billing, per the hackathon rules)." },
-  { title: "Export Notary's real costs", body: "One row per real run: model USD by role, tokens, Crustdata credits, unsafe and held actions, straight from the bundles. Download it here or find it at export/cfo-inputs.csv.", command: "pnpm notary economics" },
+  { title: "Export Notary's real costs", body: "One row per real run: model USD by role, tokens, Crustdata credits, unsafe and held actions, straight from the bundles. Replays are marked new_spend = no with 0 spend, so nothing is counted twice. Download it here or find it at export/cfo-inputs.csv.", command: "pnpm notary economics" },
   { title: "Upload it to cfo.ai", body: "Connections → Add → Integrations → Upload, choose cfo-inputs.csv (or attach it to an Ari message and pick “Data source”). Ask Ari to confirm the import finished." },
   { title: "Have Ari build the plan", body: "Ask Ari for pricing per monitored API contract, COGS per contract from the live rows, the cost of incidents prevented, a monthly revenue and COGS projection, cash and runway. The prompt is in docs/BUSINESS.md; the assumptions are yours." },
   { title: "Download the plan", body: "Ask Ari for the plan as a CSV in Notary's import format (prompt in docs/BUSINESS.md) and download the file card. Optionally share the Page and add its link as a meta share_url row." },

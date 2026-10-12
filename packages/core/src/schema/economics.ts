@@ -40,6 +40,13 @@ export const EconomicsRunSchema = z
     unsafeActions: z.number().nullable(),
     holds: z.number().nullable(),
     beliefsNotarized: z.number().nullable(),
+    /**
+     * What produced the bundle (export/collect.ts classify): recon sweeps are labeled apart from full
+     * notarize runs. Optional so files written before it still verify; always written now.
+     */
+    stage: z.enum(["run-naive", "run-guarded", "notarize-full", "notarize-recon", "notarize-compare-priors"]).optional(),
+    /** A model call in this run had no known price, so its model USD is unknown (recorded USD is a lower bound). */
+    usdUnknown: z.boolean().optional(),
   })
   .strict();
 
@@ -71,7 +78,10 @@ export const EconomicsPairSchema = z
 export const EconomicsToolSchema = z
   .object({
     tool: z.enum(["crustdata", "dodo"]),
+    /** Live FULL notarize runs (recon sweeps are counted in reconRuns). */
     runs: Count,
+    /** Live recon-only sweeps; their spend is part of modelUsd/credits (recon is notarization's first stage). */
+    reconRuns: Count.optional(),
     modelUsd: Usd,
     credits: z.number().nonnegative(),
     /** Distinct notarized beliefs in the tool's newest full notarize bundle; null when none exists. */
@@ -79,6 +89,8 @@ export const EconomicsToolSchema = z
     /** Certified claims from public/certificates/report.json; null when it is absent or stale. */
     certified: Count.nullable(),
     costPerCertificateUsd: Usd.nullable(),
+    /** Why costPerCertificateUsd is null; null when it is computed. */
+    costPerCertificateReason: z.string().nullable().optional(),
   })
   .strict();
 
@@ -93,6 +105,8 @@ export const EconomicsComputedSchema = z
         modelUsd: Usd,
         credits: z.number().nonnegative(),
         tokens: Count,
+        /** Live runs whose model USD is unknown (a model without a known price); modelUsd is then a lower bound. */
+        usdUnknownRuns: Count.optional(),
       })
       .strict(),
     usdByRole: EconomicsRoleUsdSchema,
@@ -143,13 +157,37 @@ export const CfoPlanFigureSchema = z
   })
   .strict();
 
+/** The two ways a plan reaches Notary: a CSV export (`--cfo-import`) or `notary cfo sync` over MCP. */
+export const CFO_PLAN_FORMATS = ["notary-cfo-plan-csv/1", "cfo.ai-mcp/1"] as const;
+
+/**
+ * Where an MCP sync read the plan (format "cfo.ai-mcp/1" only). Ids are cfo.ai's own; a value
+ * cfo.ai did not return unambiguously is null, never guessed. The raw MCP payload's sha256 is the
+ * source's `fileSha256` (the payload itself stays in the local, gitignored `file`).
+ */
+export const CfoMcpSourceSchema = z
+  .object({
+    server: z.url({ protocol: /^https$/ }),
+    /** The MCP tool the plan values came from. */
+    tool: z.literal("inspect_table_blocks"),
+    orgId: z.string().min(1),
+    orgName: z.string().nullable(),
+    /** The cfo.ai table blocks read, in order. */
+    tables: z.array(z.string().min(1)).min(1),
+    scenarioId: z.string().nullable(),
+    pageId: z.string().nullable(),
+    syncedAt: z.iso.datetime(),
+  })
+  .strict();
+
 export const CfoPlanSourceSchema = z
   .object({
     tool: z.literal("cfo.ai"),
-    /** The import format Notary read (docs/BUSINESS.md documents it). */
-    format: z.literal("notary-cfo-plan-csv/1"),
-    /** Base name of the imported file (the path is not recorded). */
+    /** The import format Notary read (docs/BUSINESS.md documents both). */
+    format: z.enum(CFO_PLAN_FORMATS),
+    /** Base name of the imported file, or of the local raw-payload file of an MCP sync (the path is not recorded). */
     file: z.string().min(1),
+    /** sha256 of the imported file's bytes, or of the raw MCP payload (canonical JSON). */
     fileSha256: Sha256HexSchema,
     importedAt: z.iso.datetime(),
     workspace: z.string().nullable(),
@@ -158,8 +196,11 @@ export const CfoPlanSourceSchema = z
     exportedAt: z.string().nullable(),
     /** A cfo.ai read-only share link to the Page the figures came from (https only). */
     shareUrl: z.url({ protocol: /^https$/ }).nullable(),
+    /** Present exactly when format is "cfo.ai-mcp/1" (absent on CSV imports, so older files hash the same). */
+    mcp: CfoMcpSourceSchema.optional(),
   })
-  .strict();
+  .strict()
+  .refine((s) => (s.format === "cfo.ai-mcp/1") === (s.mcp !== undefined), { message: "mcp is set exactly when format is cfo.ai-mcp/1" });
 
 export const CfoPlanSchema = z
   .object({
@@ -225,6 +266,7 @@ export type CfoPlanTier = z.infer<typeof CfoPlanTierSchema>;
 export type CfoPlanSeries = z.infer<typeof CfoPlanSeriesSchema>;
 export type CfoPlanFigure = z.infer<typeof CfoPlanFigureSchema>;
 export type CfoPlanSource = z.infer<typeof CfoPlanSourceSchema>;
+export type CfoMcpSource = z.infer<typeof CfoMcpSourceSchema>;
 export type CfoPlan = z.infer<typeof CfoPlanSchema>;
 export type EconomicsCombined = z.infer<typeof EconomicsCombinedSchema>;
 export type EconomicsBody = z.infer<typeof EconomicsBodySchema>;

@@ -6,6 +6,10 @@
  *   - Entire "live" only if `entire` is on PATH AND a checkpoint ref exists in git
  *     (refs/entire/checkpoints/*, or the legacy entire/checkpoints/* branch).
  *   - cfo.ai "live" only once a cfo.ai plan is imported (economics.json carries a non-null `plan`).
+ * The facts are also written to packages/core/config/evidence-facts.json (committed), so evidence.json
+ * can be checked on a fresh clone: some facts come from local-only state that `git clone` does not
+ * bring (gitignored runs/<runId>/spans.jsonl, refs/entire/checkpoints, what is on PATH). Those are
+ * LOCAL_FACT_KEYS; the rest are derived from committed files and re-derivable anywhere.
  * Schema rules: exactly the three sponsors, status "live" | "pending", and only links that exist
  * (https, no placeholders, never the private GitHub repo). test/publish.test.ts validates the file.
  */
@@ -15,11 +19,14 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { findOnPath } from "../beliefs/evidence.js";
-import { readDoctorRecord, type DoctorRecord } from "../trace/doctor.js";
+import { DoctorRecordSchema, readDoctorRecord, type DoctorRecord } from "../trace/doctor.js";
 import { resolveTraceLinkTemplate, traceLinkFor, type TemplateSource } from "../trace/links.js";
 import { collectBundles } from "./collect.js";
 
 export const EVIDENCE_PATH = fileURLToPath(new URL("../../../web/public/evidence/evidence.json", import.meta.url));
+/** The facts evidence.json was generated from (written by `notary export --evidence`, committed). */
+export const EVIDENCE_FACTS_PATH = fileURLToPath(new URL("../../config/evidence-facts.json", import.meta.url));
+const WEB_BUNDLES_INDEX = fileURLToPath(new URL("../../../web/public/bundles/index.json", import.meta.url));
 
 export const SPONSOR_NAMES = ["neatlogs", "Entire", "cfo.ai"] as const;
 
@@ -69,6 +76,8 @@ export const ENTIRE_DOCS_LINK = { label: "Entire docs: entire graph command refe
 
 /** Everything the sponsor statuses are derived from. */
 export interface EvidenceFacts {
+  /** Published real bundles (public/bundles/index.json) whose traceLinks name at least one trace; undefined = not counted. */
+  publishedTraceLinks?: number | undefined;
   /** Last successful `notary doctor` (config/neatlogs-doctor.json), if any. */
   doctor?: DoctorRecord | undefined;
   /** Trace link template, if one is configured. */
@@ -81,6 +90,50 @@ export interface EvidenceFacts {
   economicsJson: boolean;
   /** packages/web/public/economics.json carries an imported cfo.ai plan (`plan` not null). */
   cfoPlanImported?: boolean;
+}
+
+/** Facts that come from local-only state a fresh `git clone` does not have (see the file header). */
+export const LOCAL_FACT_KEYS = ["exportedRunTraces", "neatlogsCliOnPath", "entire"] as const;
+
+export const EvidenceFactsSchema = z
+  .object({
+    publishedTraceLinks: z.number().int().nonnegative().optional(),
+    doctor: DoctorRecordSchema.optional(),
+    traceTemplate: z.object({ template: z.string().optional(), source: z.enum(["env", "config", "none"]), problem: z.string().optional(), derivedAt: z.string().optional() }).strict(),
+    exportedRunTraces: z.number().int().nonnegative(),
+    neatlogsCliOnPath: z.boolean(),
+    entire: z.object({ onPath: z.boolean(), checkpointRefs: z.array(z.string()) }).strict(),
+    businessPlan: z.boolean(),
+    economicsJson: z.boolean(),
+    cfoPlanImported: z.boolean().optional(),
+  })
+  .strict();
+
+const EvidenceFactsFileSchema = z.object({ schema: z.literal("notary-evidence-facts/1"), facts: EvidenceFactsSchema }).strict();
+
+/** The committed facts snapshot (undefined when it does not exist). */
+export function readEvidenceFacts(path: string = EVIDENCE_FACTS_PATH): EvidenceFacts | undefined {
+  if (!existsSync(path)) return undefined;
+  return EvidenceFactsFileSchema.parse(JSON.parse(readFileSync(path, "utf8"))).facts as EvidenceFacts;
+}
+
+/** Published real bundles whose traceLinks name at least one trace (public/bundles/index.json). */
+export function publishedTraceLinkCount(indexPath: string = WEB_BUNDLES_INDEX): number | undefined {
+  if (!existsSync(indexPath)) return undefined;
+  const dir = dirname(indexPath);
+  let n = 0;
+  try {
+    for (const e of JSON.parse(readFileSync(indexPath, "utf8")) as { runId?: unknown; sample?: unknown }[]) {
+      if (e.sample !== false || typeof e.runId !== "string" || !/^[A-Za-z0-9._-]+$/.test(e.runId)) continue;
+      const file = join(dir, `${e.runId}.json`);
+      if (!existsSync(file)) continue;
+      const links = (JSON.parse(readFileSync(file, "utf8")) as { traceLinks?: unknown }).traceLinks;
+      if (links && typeof links === "object" && Object.keys(links).length > 0) n += 1;
+    }
+  } catch {
+    return undefined;
+  }
+  return n;
 }
 
 /** True when the published economics.json holds an imported cfo.ai plan. */
@@ -149,12 +202,14 @@ export function exportedRunTraceIds(runsDir: string = CORE_RUNS_DIR): Set<string
 }
 
 export function gatherEvidenceFacts(
-  opts: { env?: NodeJS.ProcessEnv; repoRoot?: string; runsDir?: string; doctorRecordPath?: string; configPath?: string } = {},
+  opts: { env?: NodeJS.ProcessEnv; repoRoot?: string; runsDir?: string; doctorRecordPath?: string; configPath?: string; bundlesIndexPath?: string } = {},
 ): EvidenceFacts {
   const env = opts.env ?? process.env;
   const root = opts.repoRoot ?? REPO_ROOT;
   const entireOnPath = findOnPath("entire", env) !== undefined;
+  const traceLinks = publishedTraceLinkCount(opts.bundlesIndexPath ?? join(root, "packages", "web", "public", "bundles", "index.json"));
   return {
+    ...(traceLinks !== undefined ? { publishedTraceLinks: traceLinks } : {}),
     doctor: readDoctorRecord(opts.doctorRecordPath),
     traceTemplate: resolveTraceLinkTemplate({ env, ...(opts.configPath ? { configPath: opts.configPath } : {}) }),
     exportedRunTraces: exportedRunTraceIds(opts.runsDir ?? CORE_RUNS_DIR).size,
@@ -173,7 +228,7 @@ function day(iso: string): string {
 
 function neatlogsEntry(f: EvidenceFacts): SponsorEvidence {
   const purpose =
-    "The neatlogs TypeScript SDK (1.1.26) wraps every queue item, recon step, probe and model call in a span via withSpan; probe spans carry the prediction committed before the call, and Bedrock calls are captured with the SDK's wrapBedrock. Every span is also written to runs/<runId>/spans.jsonl, which the evidence checks read.";
+    "The neatlogs TypeScript SDK (1.1.26) wraps every queue item, recon step, probe and model call in a span via withSpan (AGENT, TOOL, GUARDRAIL and EVALUATOR spans; DECISIONS #204); probe spans carry the prediction committed before the call. Model calls go through LiteLLM and are captured with the SDK's wrapOpenAI (wrapBedrock when the provider is Bedrock). Every span is also written to runs/<runId>/spans.jsonl, which the evidence checks read. `pnpm notary doctor` reads the recorded doctor trace back from neatlogs (GET <ingest>/api/traces/v3/<traceId> with the project key).";
   const links: SponsorEvidence["links"] = [{ ...NEATLOGS_SDK_LINK }];
   const d = f.doctor;
   if (!d) {
@@ -183,7 +238,7 @@ function neatlogsEntry(f: EvidenceFacts): SponsorEvidence {
       status: "pending",
       links,
       notes:
-        "No recorded `notary doctor` success (packages/core/config/neatlogs-doctor.json is missing), so no span is known to have reached neatlogs. Run `pnpm notary doctor` with NEATLOGS_API_KEY set. Bundle traceLinks point to local spans.jsonl receipts.",
+        "No recorded `notary doctor` success (packages/core/config/neatlogs-doctor.json is missing), so no span is known to have reached neatlogs. Run `pnpm notary doctor` with NEATLOGS_API_KEY set. No published bundle links a trace (traceLinks are empty).",
     };
   }
   const traceUrl = traceLinkFor(d.traceId, f.traceTemplate.template);
@@ -195,19 +250,16 @@ function neatlogsEntry(f: EvidenceFacts): SponsorEvidence {
       ? "That smoke span is the only one exported so far: no notarize or run spans have reached neatlogs, because those commands have not run live."
       : `Beyond that smoke span, ${f.exportedRunTraces} notarize/run trace(s) are marked exported in local spans.jsonl files.`,
   ];
-  const readBack = f.neatlogsCliOnPath ? "neatlogs-cli is installed but its query usage is unverified" : "neatlogs-cli is not installed";
+  const readBack = `Read-back uses the traces API, not the CLI (neatlogs-cli is ${f.neatlogsCliOnPath ? "installed" : "not installed"}): \`pnpm notary doctor\` fetches the recorded doctor trace with the project key and prints its span counts; that result is printed, not recorded in a file, so it is not shown here (DECISIONS #204 records one real read-back).`;
+  const links_ = f.publishedTraceLinks === undefined ? "" : f.publishedTraceLinks === 0 ? " No published bundle links a trace (their traceLinks are empty)." : ` ${f.publishedTraceLinks} published bundle(s) link a trace.`;
   if (traceUrl) {
     const from =
       f.traceTemplate.source === "env"
         ? "NEATLOGS_TRACE_URL_TEMPLATE"
         : `packages/core/config/neatlogs.json (derived from a real trace URL${f.traceTemplate.derivedAt ? ` on ${day(f.traceTemplate.derivedAt)}` : ""})`;
-    parts.push(
-      `The trace has not been read back programmatically, since ${readBack}. The trace link comes from the template in ${from}; bundle traceLinks use it for exported traces and keep local spans.jsonl receipts otherwise.`,
-    );
+    parts.push(`${readBack} The trace link comes from the template in ${from}.${links_}`);
   } else {
-    parts.push(
-      `The trace has not been read back, since ${readBack} and the neatlogs trace URL format is unknown, so there is no trace link. Bundle traceLinks point to local spans.jsonl receipts.`,
-    );
+    parts.push(`${readBack} The neatlogs trace URL format is unknown, so there is no trace link.${links_}`);
   }
   return { name: "neatlogs", purpose, status: "live", links, notes: parts.join(" ") };
 }
@@ -281,14 +333,23 @@ export function buildEvidence(facts: EvidenceFacts = gatherEvidenceFacts()): Spo
   return EvidenceSchema.parse([neatlogsEntry(facts), entireEntry(facts), cfoEntry(facts)]);
 }
 
-/** `notary export --evidence`: regenerate evidence.json from facts on disk. */
-export function writeEvidence(opts: { path?: string; facts?: EvidenceFacts } = {}): { path: string; evidence: SponsorEvidence[]; lines: string[] } {
+/** `notary export --evidence`: regenerate evidence.json from facts on disk, and record those facts. */
+export function writeEvidence(opts: { path?: string; facts?: EvidenceFacts; factsPath?: string | null } = {}): { path: string; evidence: SponsorEvidence[]; lines: string[] } {
   const path = opts.path ?? EVIDENCE_PATH;
-  const evidence = buildEvidence(opts.facts ?? gatherEvidenceFacts());
+  const facts = opts.facts ?? gatherEvidenceFacts();
+  const evidence = buildEvidence(facts);
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, `${JSON.stringify(evidence, null, 2)}\n`, "utf8");
+  // Default: the committed snapshot for the published file; next to `path` for any other output.
+  const factsPath = opts.factsPath !== undefined ? opts.factsPath : opts.path === undefined ? EVIDENCE_FACTS_PATH : join(dirname(path), "evidence-facts.json");
+  if (factsPath) {
+    const file = EvidenceFactsFileSchema.parse({ schema: "notary-evidence-facts/1", facts: JSON.parse(JSON.stringify(facts)) });
+    mkdirSync(dirname(factsPath), { recursive: true });
+    writeFileSync(factsPath, `${JSON.stringify(file, null, 2)}\n`, "utf8");
+  }
   const lines = [
     `evidence: ${path}`,
+    ...(factsPath ? [`facts: ${factsPath}`] : []),
     ...evidence.map((e) => `  ${e.name}: ${e.status} (${e.links.length} link${e.links.length === 1 ? "" : "s"})`),
   ];
   return { path, evidence, lines };

@@ -2148,3 +2148,124 @@
 .l-below-pending {
   min-height: 100vh;
 }
+
+/* ---------------------------------------------------------------- built with: evidence-gated */
+/* Until evidence.json is read, the row keeps its height (no shift when the names land). */
+.l-built[aria-busy="true"] .l-built-list {
+  min-height: 1.4em;
+}
+/* An integration evidence.json lists as pending: the name, then what it waits for, smaller. */
+.l-built-pending {
+  font-size: 0.68em;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+/* ---------------------------------------------------------------- fixture view */
+/* The fixture disclosure (?fixtures=1 only): pinned where it stays visible while scrolling. */
+.l-view-note {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 60;
+  box-shadow: var(--shadow-soft);
+}
+
+/* "See it on the labelled evaluation suite" under an empty state (default view only). */
+.l-suite-link {
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--text-strong-muted);
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.l-suite-link:hover {
+  color: var(--text);
+}
+.h-missing p {
+  margin: 0;
+}
+.l-mini-missing .l-suite-link,
+.h-missing .l-suite-link {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------------------------------------------------------------- nav: phone menu (< 960px) */
+.l-nav-end {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.l-nav-menu-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid currentColor;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.l-nav-menu-btn:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+.l-nav-menu-icon {
+  display: grid;
+  gap: 4px;
+  width: 16px;
+}
+.l-nav-menu-icon span {
+  display: block;
+  height: 1.5px;
+  border-radius: 1px;
+  background: currentColor;
+}
+.l-nav-menu {
+  position: absolute;
+  top: calc(100% - 4px);
+  right: var(--l-edge, 16px);
+  left: var(--l-edge, 16px);
+  padding: 8px;
+  border: 1px solid var(--hairline-color);
+  border-radius: var(--r-card);
+  background: var(--card);
+  box-shadow: var(--shadow-float);
+  color: var(--text);
+}
+.l-nav-menu[hidden] {
+  display: none;
+}
+.l-nav-menu ul {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.l-nav-menu a {
+  display: block;
+  padding: 12px 12px;
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 500;
+  text-decoration: none;
+}
+.l-nav-menu a:hover,
+.l-nav-menu a:focus-visible {
+  background: var(--surface-subtle);
+}
+.l-nav-menu a:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: -2px;
+}
+@media (min-width: 960px) {
+  .l-nav-menu-btn,
+  .l-nav-menu {
+    display: none;
+  }
+}

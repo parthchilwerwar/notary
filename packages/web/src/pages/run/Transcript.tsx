@@ -391,6 +391,14 @@ export function transcriptGroups(
   });
 }
 
+/** True when a key press belongs to a text field (input, textarea, select, contenteditable). */
+export function isTypingTarget(target: EventTarget | null): boolean {
+  if (!target || typeof (target as Element).closest !== "function") return false;
+  const el = target as HTMLElement;
+  if (el.isContentEditable) return true;
+  return !!el.closest("input, textarea, select, [contenteditable=''], [contenteditable='true']");
+}
+
 /** "08:46:38.139" — the recorded timestamp's UTC clock time, to the millisecond. */
 export function clockTime(iso: string): string {
   const t = Date.parse(iso);
@@ -600,6 +608,23 @@ export function TranscriptTimeline({
       if (navRef.current?.contains(document.activeElement)) el?.focus({ preventScroll: true });
     });
   };
+  // j / k move between events from anywhere on the page (not only after focusing a row), unless
+  // the reader is typing or a dialog is open. Arrow keys stay on the rail (they scroll the page).
+  const stepRef = useRef(step);
+  stepRef.current = step;
+  useEffect(() => {
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key !== "j" && e.key !== "k") return;
+      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.repeat) return;
+      if (isTypingTarget(e.target) || document.querySelector("dialog[open]")) return;
+      // The rail handles its own keys (onNavKey).
+      if (navRef.current?.contains(e.target as Node)) return;
+      e.preventDefault();
+      stepRef.current(e.key === "j" ? 1 : -1);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
   const onNavKey = (e: KeyboardEvent<HTMLElement>) => {
     const key = e.key;
     const delta =

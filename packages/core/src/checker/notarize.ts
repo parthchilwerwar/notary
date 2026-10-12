@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import { canonicalJson, finalizeBundle, writeBundle } from "../bundle/index.js";
 import { recordRunTimeline } from "../timeline/write.js";
 import { incidentsLine, recordRunIncidents } from "../incidents/record.js";
+import { withIncidentRun } from "../incidents/live.js";
 import type { UnhashedBundle } from "../bundle/index.js";
 import { consolidateMetrics, withMetricDisclosures } from "../eval/metrics.js";
 import { INPUTS_VERSION, saveInputs } from "../replay/inputs.js";
@@ -107,16 +108,19 @@ export async function reconOnly(opts: ReconOnlyOptions): Promise<ReconOnlyResult
 
   let recon: ReconResult;
   try {
-    recon = await runRecon({
-      tool: opts.tool,
-      mode,
-      cassetteName,
-      ...(opts.cassetteDir === undefined ? {} : { cassetteDir: opts.cassetteDir }),
-      ...(opts.entries === undefined ? {} : { entries: opts.entries }),
-      ...(opts.ledger === undefined ? {} : { ledger: opts.ledger }),
-      ...(opts.env === undefined ? {} : { env: opts.env }),
-      ...(opts.sleep === undefined ? {} : { sleep: opts.sleep }),
-    });
+    // Live incidents (recon anomalies) are attributed to this run.
+    recon = await withIncidentRun(liveRunId ?? opts.runId, () =>
+      runRecon({
+        tool: opts.tool,
+        mode,
+        cassetteName,
+        ...(opts.cassetteDir === undefined ? {} : { cassetteDir: opts.cassetteDir }),
+        ...(opts.entries === undefined ? {} : { entries: opts.entries }),
+        ...(opts.ledger === undefined ? {} : { ledger: opts.ledger }),
+        ...(opts.env === undefined ? {} : { env: opts.env }),
+        ...(opts.sleep === undefined ? {} : { sleep: opts.sleep }),
+      }),
+    );
   } catch (err) {
     if (isBlocked(err) || err instanceof TestModeLockError) {
       const msg = err.message.startsWith("BLOCKED:") ? err.message : `BLOCKED: ${err.message}`;

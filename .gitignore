@@ -21,3 +21,12 @@ Thumbs.db
 .vscode/
 .idea/
 .vitest/
+
+# cfo.ai MCP connection (notary cfo connect/sync): OAuth tokens, chosen workspace, raw payloads
+packages/core/config/cfo-oauth.json
+packages/core/config/cfo.json
+packages/core/config/cfo-last-sync.json
+packages/core/config/*.tmp
+
+# AWS deploy settings (copied from deploy/aws/config.env.example; account ids, ARNs)
+deploy/aws/config.env

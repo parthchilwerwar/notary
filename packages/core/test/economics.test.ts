@@ -81,6 +81,17 @@ const belief: Belief = {
   updatedAt: "2026-10-11T09:00:00.000Z",
 };
 
+/** The notarize bundle's fields, reused for its replay / unpriced variants. */
+function notarizeOver(): Over {
+  return {
+    kind: "notarize",
+    variant: "notarize",
+    tool: "dodo",
+    beliefs: { before: [], after: [belief] },
+    usageByRole: { executor: ZERO, reflector: { inputTokens: 1, outputTokens: 1, usd: 1, calls: 1 }, adversary: { inputTokens: 1, outputTokens: 1, usd: 1, calls: 1 } },
+  };
+}
+
 function world() {
   const naive = testBundle("test-naive", {
     variant: "naive",
@@ -165,7 +176,7 @@ describe("computeEconomics", () => {
     expect(computedReason).toBeNull();
     const c = computed!;
     expect(c.runs.map((r) => r.runId)).toEqual(["notarize-dodo-test", "test-naive", "test-guarded", "test-guarded-replay"]);
-    expect(c.totals).toEqual({ runs: 4, liveRuns: 3, replayRuns: 1, modelUsd: 3, credits: 30, tokens: 100 + 50 + 10 + 5 + 1 + 1 + 1 + 1 + 1 + 1 });
+    expect(c.totals).toEqual({ runs: 4, liveRuns: 3, replayRuns: 1, modelUsd: 3, credits: 30, tokens: 100 + 50 + 10 + 5 + 1 + 1 + 1 + 1 + 1 + 1, usdUnknownRuns: 0 });
     expect(c.usdByRole).toEqual({ executor: 0.75, reflector: 1.25, adversary: 1 });
     expect(c.creditsByEndpoint).toEqual({ "crustdata.enrichCompany": 30 });
     expect(c.costPerRun.usd).toBe(1);
@@ -173,7 +184,10 @@ describe("computeEconomics", () => {
     expect(c.pairs).toEqual([{ seed: 7, naiveRunId: "test-naive", guardedRunId: "test-guarded", naiveUnsafe: 3, guardedUnsafe: 0, prevented: 3, held: 4 }]);
     expect(c.unsafeActionsPrevented.value).toBe(3);
     expect(c.heldActions.value).toBe(4);
-    expect(c.tools).toEqual([{ tool: "dodo", runs: 1, modelUsd: 2, credits: 0, notarizedBeliefs: 1, certified: null, costPerCertificateUsd: null }]);
+    expect(c.tools).toEqual([
+      { tool: "dodo", runs: 1, reconRuns: 0, modelUsd: 2, credits: 0, notarizedBeliefs: 1, certified: null, costPerCertificateUsd: null, costPerCertificateReason: expect.stringMatching(/export --certificates/) },
+    ]);
+    expect(c.runs.map((r) => r.stage)).toEqual(["notarize-full", "run-naive", "run-guarded", "run-guarded"]);
     expect(c.costPerNotarizedBelief.usd).toBe(2);
     expect(c.costPerCertificate.usd).toBeNull();
     expect(c.costPerCertificate.reason).toMatch(/export --certificates/);
@@ -208,6 +222,40 @@ describe("computeEconomics", () => {
     const stale = computeEconomics({ bundles: [notarize], certificates: report([]) }).computed!;
     expect(stale.costPerCertificate.usd).toBeNull();
     expect(stale.costPerCertificate.reason).toMatch(/predates notarize-dodo-test/);
+
+    // A newer REPLAY of the notarize run is not a certificate source: the report is not stale.
+    const notarizeReplay = testBundle("notarize-dodo-test-replay", { ...notarizeOver(), mode: "replay", replayOf: notarize.runId, startedAt: "2026-10-11T13:00:00.000Z" });
+    const withReplay = computeEconomics({ bundles: [notarize, notarizeReplay], certificates: report([src]) }).computed!;
+    expect(withReplay.costPerCertificate.usd).toBe(1);
+    expect(withReplay.tools[0]!.costPerCertificateUsd).toBe(1);
+
+    // A tool whose certificates exist but which has no LIVE full notarize run: null with a reason, never $0.
+    const onlyReplay = computeEconomics({ bundles: [notarizeReplay], certificates: report([]) }).computed!;
+    expect(onlyReplay.tools[0]).toMatchObject({ tool: "dodo", runs: 0, costPerCertificateUsd: null, costPerCertificateReason: expect.stringMatching(/No live full notarize run of dodo/) });
+  });
+
+  it("recon sweeps are labeled apart: their spend is notarize spend, but they are not notarize runs", () => {
+    const { notarize } = world();
+    const recon = testBundle("recon-dodo-test", { kind: "notarize", variant: "notarize", tool: "dodo", startedAt: "2026-10-11T09:30:00.000Z", credits: { byEndpoint: {}, total: 0, budget: 100 } });
+    const c = computeEconomics({ bundles: [notarize, recon], certificates: null }).computed!;
+    expect(c.runs.map((r) => [r.runId, r.stage])).toEqual([
+      ["notarize-dodo-test", "notarize-full"],
+      ["recon-dodo-test", "notarize-recon"],
+    ]);
+    expect(c.tools[0]).toMatchObject({ runs: 1, reconRuns: 1, modelUsd: 2 });
+  });
+
+  it("a run with a model of unknown price makes every USD ratio it feeds unknown (null + reason), never $0", () => {
+    const { notarize, guarded } = world();
+    const unpriced = testBundle("notarize-dodo-unpriced", { ...notarizeOver(), startedAt: "2026-10-11T09:10:00.000Z", metrics: { usd_unknown_calls: 2 } });
+    const c = computeEconomics({ bundles: [notarize, unpriced, guarded], certificates: null }).computed!;
+    expect(c.totals.usdUnknownRuns).toBe(1);
+    expect(c.runs.find((r) => r.runId === "notarize-dodo-unpriced")!.usdUnknown).toBe(true);
+    for (const r of [c.costPerRun, c.costPerNotarizedBelief]) {
+      expect(r.usd).toBeNull();
+      expect(r.reason).toMatch(/no known price/);
+    }
+    expect(c.costPerRun.credits).not.toBeNull(); // credits are counted, not priced
   });
 
   it("zero real bundles: computed is null with a reason, never zeros", () => {
@@ -296,11 +344,11 @@ describe("writeEconomics", () => {
     expect(md).toContain(file.contentHash);
     // The inputs sheet for cfo.ai: one row per real bundle, values from the bundles.
     const inputs = readFileSync(p.cfoInputsCsv, "utf8").trim().split("\n");
-    expect(inputs[0]).toBe("run_id,started_at,month,kind,variant,tool,mode,status,model_usd,usd_executor,usd_reflector,usd_adversary,tokens,crustdata_credits,unsafe_actions,held_actions,notarized_beliefs");
+    expect(inputs[0]).toBe("run_id,started_at,month,stage,variant,tool,mode,new_spend,status,model_usd,usd_executor,usd_reflector,usd_adversary,tokens,crustdata_credits,unsafe_actions,held_actions,notarized_beliefs");
     expect(inputs.slice(1)).toEqual([
-      "notarize-dodo-test,2026-10-11T09:00:00.000Z,2026-10,notarize,notarize,dodo,live,completed,2,0,1,1,4,0,,,1",
-      "test-naive,2026-10-11T10:00:00.000Z,2026-10,run,naive,,live,completed,0.25,0.25,0,0,150,20,3,0,",
-      "test-guarded,2026-10-11T11:00:00.000Z,2026-10,run,guarded,,live,completed,0.75,0.5,0.25,0,17,10,0,4,",
+      "notarize-dodo-test,2026-10-11T09:00:00.000Z,2026-10,notarize-full,notarize,dodo,live,yes,completed,2,0,1,1,4,0,,,1",
+      "test-naive,2026-10-11T10:00:00.000Z,2026-10,run-naive,naive,,live,yes,completed,0.25,0.25,0,0,150,20,3,0,",
+      "test-guarded,2026-10-11T11:00:00.000Z,2026-10,run-guarded,guarded,,live,yes,completed,0.75,0.5,0.25,0,17,10,0,4,",
     ]);
 
     // Re-running without --cfo-import keeps the verified plan and produces the identical file.

@@ -12,7 +12,10 @@ export type Intent =
   | { kind: "run_diff" }
   | { kind: "adversary" }
   | { kind: "approvals"; approvalId?: string; requestId?: string }
-  | { kind: "runs"; runId?: string }
+  /** `latest`: "the last run" = the newest LIVE run of the world (a replay is never "the last run"). */
+  | { kind: "runs"; runId?: string; latest?: boolean }
+  /** Spend questions, answered from public/economics.json (hash verified) only. */
+  | { kind: "cost"; runId?: string; latest?: boolean; pricing?: boolean }
   | { kind: "health" }
   | { kind: "lookup"; tool: LookupTool; subject: string }
   | { kind: "doc"; url?: string }
@@ -36,6 +39,14 @@ export type Route = {
 
 const MAX_INTENTS = 3;
 const PRONOUN = /\b(it|its|that|this|that one|this one|those|them|they|the same)\b/;
+/** "the last run", "the latest run", "the most recent run", "the newest run". */
+export const LATEST_RUN = /\b(last|latest|newest|most recent)\s+(live\s+)?run\b/;
+/**
+ * Spend questions: cost, spend, credits, unit economics, pricing. Not "how much" or "USD" alone:
+ * those usually ask about a refund's amount (a decision), not what Notary spent.
+ */
+export const COST_WORDS =
+  /\bcosts?\b|\bcosting\b|\bspend(ing)?\b|\bspent\b|\bexpens(e|es|ive)\b|\bcredits?\b|\bunit economics\b|\bpric(e|es|ing)\b|\bbilled\b/;
 const LOOKUP_VERB = /\b(look\s*up|lookup|enrich|find|fetch|search|get)\b/;
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -117,8 +128,20 @@ export function routeQuestion(question: string, ctx: RouteContext): Route {
     add({ kind: "why_held", requestId, runId }, requestId ? `request ${requestId}` : "held decisions");
   if (certId || claimId || /\bcertif|\bclaims?\b|\bknow about\b|\bknown about\b|\bwhat do (we|you) know\b|\bwhat does notary know\b/.test(q) || (tool && !intents.some((i) => i.kind === "lookup")))
     add({ kind: "certificate", certId, claimId, tool }, certId ? `certificate ${certId}` : claimId ? `claim ${claimId}` : tool ? `${tool} certificates` : "certificates");
-  if (runId && !intents.some((i) => i.kind === "why_held" || i.kind === "run_diff")) add({ kind: "runs", runId }, `run ${runId}`);
-  if (!intents.length && /\bruns?\b|\blast run\b|\blatest run\b|\bwhat happened\b/.test(q)) add({ kind: "runs" }, "the recorded runs");
+  const latest = LATEST_RUN.test(q);
+  if (COST_WORDS.test(q))
+    add(
+      {
+        kind: "cost",
+        ...(runId ? { runId } : {}),
+        ...(!runId && latest ? { latest: true } : {}),
+        ...(/\bpric(e|es|ing)\b|\bplans?\b|\btiers?\b/.test(q) ? { pricing: true } : {}),
+      },
+      runId ? `the spend of run ${runId}` : latest ? "the spend of the last live run" : "spend (unit economics)",
+    );
+  if (runId && !intents.some((i) => i.kind === "why_held" || i.kind === "run_diff" || i.kind === "cost")) add({ kind: "runs", runId }, `run ${runId}`);
+  if (!intents.length && (latest || /\bruns?\b|\bwhat happened\b/.test(q)))
+    add(latest ? { kind: "runs", latest: true } : { kind: "runs" }, latest ? "the last live run" : "the recorded runs");
   // A lookup always comes with what the records say about that tool.
   const lookup = intents.find((i): i is Extract<Intent, { kind: "lookup" }> => i.kind === "lookup");
   if (lookup && !intents.some((i) => i.kind === "certificate"))

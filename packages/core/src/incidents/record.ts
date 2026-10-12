@@ -16,6 +16,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFile
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { leakedSecretNames, verifyBundle } from "../bundle/index.js";
+import { canonicalJson, sha256Hex } from "../bundle/hash.js";
 import { ApprovalsFileSchema } from "../schema/approval.js";
 import type { ApprovalRecord } from "../schema/approval.js";
 import type { RunBundle } from "../schema/index.js";
@@ -134,11 +135,12 @@ export async function recordRunIncidents(bundle: RunBundle, runDir: string, opts
         "notary.incidents.kinds": [...new Set(file.incidents.map((i) => i.kind))].sort().join(","),
       },
       () => {
-        const already = reportedIncidentIds();
+        const already = reportedIncidentIds(bundle.runId);
         for (const i of file.incidents) {
           if (!already.has(i.id)) {
             reportIncident({
               id: i.id,
+              runId: bundle.runId,
               kind: i.kind,
               subject: i.recordIds[0] ?? i.id,
               severity: i.severity,
@@ -201,7 +203,9 @@ export async function publishIncidents(bundle: RunBundle, incidentsDir: string, 
 export async function writeIncidentsIndex(incidentsDir: string, files: readonly IncidentsFile[], sample: boolean, startedAt: (runId: string) => string = () => ""): Promise<string> {
   for (const f of files) if (f.sample !== sample) throw new Error(`refusing to mix sample and real incidents in one index (${f.runId})`);
   const runs = [...files].sort((a, b) => startedAt(b.runId).localeCompare(startedAt(a.runId)) || a.runId.localeCompare(b.runId));
-  const index: IncidentsIndex = IncidentsIndexSchema.parse({ sample, runs });
+  const body = IncidentsIndexSchema.omit({ contentHash: true }).parse({ sample, runs });
+  // Verifiable in the browser: sha256 of canonicalJson(the file without contentHash).
+  const index: IncidentsIndex = IncidentsIndexSchema.parse({ ...body, contentHash: sha256Hex(canonicalJson(body)) });
   const text = `${JSON.stringify(index, null, 2)}
 `;
   assertNoSecrets(text, "incidents index");

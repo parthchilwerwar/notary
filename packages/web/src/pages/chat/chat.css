@@ -1152,7 +1152,12 @@ button.chat-cite:hover,
 }
 
 .chat-page .chat-composer textarea:focus-visible {
-  outline: none; /* the composer's border + halo is the focus indicator */
+  outline: none; /* the composer's ring (below) is the focus indicator */
+}
+/* A visible focus ring on the whole composer (the soft halo alone is too faint to read as focus). */
+.chat-composer:has(textarea:focus-visible) {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
 }
 
 .chat-composer textarea {

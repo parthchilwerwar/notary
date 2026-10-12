@@ -17,11 +17,12 @@
 //   POST /api/ask         Ask Notary (src/api/ask.ts): cited answers from the loaded records
 //                         (NOTARY_ASK_RPM per session, 429 + Retry-After; spans in runs/_ask/spans.jsonl)
 //   GET|POST /api/approvals, POST /api/approvals/:id/approve|reject  approval desk (src/api/approvals.ts)
+//   GET /api/cfo/status, POST /api/cfo/sync  the cfo.ai MCP connection (src/api/cfo.ts; local only)
 //   POST|GET /api/chat, GET|DELETE /api/chat/:id, POST /api/chat/:id/messages (SSE)  Notary Chat
 //                         (src/api/chat.ts; read-only tool agent, NOTARY_ASK_RPM per session, spans in
 //                         runs/_chat/spans.jsonl, conversations in runs/chat.sqlite)
 //
-// POST /api/runs, ask, chat and approvals need the per-session token (Authorization: Bearer) AND a loopback
+// POST /api/runs, ask, chat, approvals and cfo need the per-session token (Authorization: Bearer) AND a loopback
 // socket, Host and Origin (src/api/session.ts). Everything else is read-only and unauthenticated as
 // before. CORS is limited to loopback dashboard dev origins. No handler returns canned data: every
 // response is read from run files, the environment, or a real integration check.
@@ -55,9 +56,11 @@ import type { HealthOptions } from "./health.js";
 import { mountRuns } from "./runs.js";
 import type { RunTracker, RunsOptions } from "./runs.js";
 import type { ApprovalsOptions } from "./approvals.js";
+import { mountCfo } from "./cfo.js";
+import type { CfoApiOptions } from "./cfo.js";
 import { ASK_SPANS_DIR, mountAsk } from "./ask.js";
 import type { AskOptions } from "./ask.js";
-import { createSession } from "./session.js";
+import { createSession, isLoopbackHost } from "./session.js";
 import type { ApiSession, CreatedSession } from "./session.js";
 
 export const DEFAULT_WEB_BUNDLES_DIR = fileURLToPath(new URL("../../../web/public/bundles/", import.meta.url));
@@ -88,6 +91,8 @@ export interface ApiOptions {
   chat?: Omit<ChatOptions, "session" | "runsDir" | "bundleDirs">;
   /** GET/POST /api/approvals options (test seams: env, tools, store, manifest). */
   approvals?: Omit<ApprovalsOptions, "runsDir" | "bus">;
+  /** GET /api/cfo/status, POST /api/cfo/sync options (test seams: cfo state paths, MCP URL, fetch, economics paths). */
+  cfo?: CfoApiOptions;
   /** GET /api/health options (test seams: env, probes, clock). */
   health?: HealthOptions;
   /** POST/GET /api/runs options (test seams: env, runners, precheck). */
@@ -212,6 +217,17 @@ export function createApp(opts: ApiOptions = {}): Hono {
   const keepAliveMs = opts.keepAliveMs ?? DEFAULT_KEEP_ALIVE_MS;
   const app = new Hono();
 
+  // DNS-rebinding defence for the LOCAL server: every route (reads, /api/health, static files)
+  // requires a loopback Host header. A missing header (in-process requests) falls back to the URL's
+  // host. The hosted deployment sits behind a load balancer with its own host name and is exempt.
+  if (!opts.hosted) {
+    app.use("*", async (c, next) => {
+      const host = c.req.header("Host") ?? new URL(c.req.url).host;
+      if (!isLoopbackHost(host)) return c.json({ error: "forbidden: Host must be localhost, 127.0.0.1 or [::1]" }, 403);
+      await next();
+    });
+  }
+
   app.use(
     "/api/*",
     cors({
@@ -333,6 +349,7 @@ export function createApp(opts: ApiOptions = {}): Hono {
     app.post("/api/runs", (c) => c.json({ error: "the hosted Notary site is read-only: runs are started from the CLI or the agents task" }, 405));
     app.all("/api/approvals", (c) => c.json({ error: "approvals are not available on the hosted read-only site; use a local notary serve" }, 404));
     app.all("/api/approvals/*", (c) => c.json({ error: "approvals are not available on the hosted read-only site; use a local notary serve" }, 404));
+    app.all("/api/cfo/*", (c) => c.json({ error: "the cfo.ai connection is not available on the hosted read-only site; use a local notary serve" }, 404));
   }
 
   // Runs (POST is token + localhost); reads are open like the bundle endpoints.
@@ -382,6 +399,8 @@ export function createApp(opts: ApiOptions = {}): Hono {
       runsDir: opts.runsDir === undefined ? DEFAULT_RUNS_DIR : opts.runsDir,
       bus,
     });
+    // cfo.ai over MCP: local only (token + localhost), never on the hosted API.
+    mountCfo(app, { ...opts.cfo, session });
   }
 
   // Everything else is read-only: any other write is refused explicitly.

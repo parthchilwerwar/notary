@@ -7,7 +7,7 @@ import { DataSourceProvider } from "./data";
 // The kit's states (after Landing, so kit.css keeps its place after landing.css in the cascade).
 // The 404 link uses the kit Button's classes directly: the component would add Radix Slot and
 // tailwind-merge to the landing's first chunk.
-import { EmptyState, PageSkeleton } from "./ui/States";
+import { PageSkeleton } from "./ui/States";
 import "./ui/kit.css";
 
 // The dashboard is its own chunk, so the landing (`/`) never downloads it (Lighthouse, R4).
@@ -63,16 +63,18 @@ createRoot(document.getElementById("root")!).render(
             path="*"
             element={
               <main className="app-loading">
-                <EmptyState
-                  title="Page not found"
-                  action={
+                {/* EmptyState's markup with an h1: this is the page's only heading. */}
+                <div className="ui-empty" data-tone="empty">
+                  <div className="ui-empty-head">
+                    <h1 className="ui-title ui-title-card">Page not found</h1>
+                  </div>
+                  <div className="ui-empty-text">No page lives at this address.</div>
+                  <div className="ui-empty-action">
                     <Link className="btn ui-btn-primary ui-btn-md" to="/">
                       Return to Notary
                     </Link>
-                  }
-                >
-                  No page lives at this address.
-                </EmptyState>
+                  </div>
+                </div>
               </main>
             }
           />

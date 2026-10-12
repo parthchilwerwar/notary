@@ -342,7 +342,7 @@ describe("SSE contract and the agent loop", () => {
     expect(ev.map((e) => e.type)).toEqual(["note", "step_started", "step_finished", "note", "error"]);
     const err = ev.at(-1)!;
     if (err.type !== "error") throw new Error("unreachable");
-    expect(err.message).toMatch(/invalid 2 rounds in a row/);
+    expect(err.message).toMatch(/invalid or repeated 2 rounds in a row/);
     expect(err.fix).toBeTruthy();
     expect(bad.calls[2]!.messages.at(-1)!.content).toContain('no tool named "refund_everything"');
     expect(app.store.messages(id)[1]!.events).toEqual(ev);
@@ -355,6 +355,39 @@ describe("SSE contract and the agent loop", () => {
     const ev = events((await send(app, session, id, "runs?")).frames);
     expect(ev.filter((e) => e.type === "step_started")).toHaveLength(1);
     expect(llm.calls[2]!.messages.at(-1)!.content).toContain("already ran list_runs");
+    expect(ev.at(-1)!.type).toBe("done");
+  });
+
+  it("a model that repeats the same call forever ends the turn: repeat-only rounds count as invalid (audit: 60 calls, 1 step)", async () => {
+    // Every reply is the same call; without the fix repeats reset the invalid counter and the loop never ends.
+    const llm = scriptedLlm(Array.from({ length: 60 }, () => act("list_runs")));
+    const { app, session } = makeApp(opts(llm));
+    const id = await newConversation(app, session);
+    const ev = events((await send(app, session, id, "runs?")).frames);
+    expect(ev.filter((e) => e.type === "step_started")).toHaveLength(1);
+    expect(llm.calls.length).toBe(3);
+    const err = ev.at(-1)!;
+    if (err.type !== "error") throw new Error(`expected an error event, got ${err.type}`);
+    expect(err.message).toMatch(/invalid or repeated 2 rounds in a row/);
+  });
+
+  it("model calls per message are hard-capped at maxSteps + 2, the last one forced to answer (new step / repeat alternating)", async () => {
+    let n = 0;
+    // Alternates a new call with a repeat of it; answers only when tools are forbidden.
+    const reply = (req: { toolChoice?: unknown }) => {
+      if (req.toolChoice === "none") return answer("Capped [1].", [{ n: 1, type: "api_response", id: "s1" }]);
+      const i = Math.floor(n / 2);
+      n += 1;
+      return act("get_run_events", { runId: real.runId, filter: `w${i}` });
+    };
+    const llm = scriptedLlm(Array.from({ length: 40 }, () => reply));
+    const { app, session } = makeApp(opts(llm));
+    const id = await newConversation(app, session);
+    const ev = events((await send(app, session, id, "dig")).frames);
+    expect(llm.calls).toHaveLength(10);
+    expect(llm.calls.at(-1)!.toolChoice).toBe("none");
+    expect(llm.calls.slice(0, 9).every((c) => c.toolChoice === "auto")).toBe(true);
+    expect(ev.filter((e) => e.type === "step_started").length).toBeLessThan(8);
     expect(ev.at(-1)!.type).toBe("done");
   });
 

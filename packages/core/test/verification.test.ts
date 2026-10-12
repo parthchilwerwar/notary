@@ -516,3 +516,16 @@ describe("after an adversary downgrade, only NEW confirmed independent evidence 
     expect(probe("pn", 8, "confirmed").status).toBe("candidate");
   });
 });
+
+describe("verification disclosure states the real probe count (data audit B)", () => {
+  it("0 probes on the verification claims is said as 0, never 'were probed'", async () => {
+    const { verificationDisclosure } = await import("../src/reflect/notarize.js");
+    const claims = ["c.a", "c.b", "c.c"];
+    const none = verificationDisclosure(claims, [{ claimId: "other" }]);
+    expect(none).toContain("3 required claim(s)");
+    expect(none).toContain("no verification probe ran on them in this run (0 probes)");
+    expect(none).not.toMatch(/were probed/);
+    const some = verificationDisclosure(claims, [{ claimId: "c.a" }, { claimId: "c.a" }, { claimId: "c.b" }, { claimId: "x" }]);
+    expect(some).toContain("3 probe(s) ran on 2 of them");
+  });
+});

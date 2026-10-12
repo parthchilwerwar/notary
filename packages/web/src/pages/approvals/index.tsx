@@ -4,11 +4,11 @@
 // Replay: read-only. Held decisions of every recorded run (DataSource.approvals(), the same list the
 // sidebar counts), grouped by cohort, plus the selected run's held items; no actions at all.
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ApprovalRecord, ApprovalsList } from "../../../../core/src/schema";
+import type { ApprovalRecord, ApprovalsList, RunBundle } from "../../../../core/src/schema";
 import { Link } from "react-router";
 import { Button, EmptyState, Note, Page, PageBody, PageHeader, Section, Skeleton, Stat, StatRow, usePageMotion } from "../../ui";
 import { useData } from "../../app/catalog";
-import { LocalApiError, number, useSessionToken } from "../../data";
+import { LocalApiError, number, useHostedBuild, useSessionToken } from "../../data";
 import { withRun } from "../../app/links";
 import { useOptionalShellStatus } from "../../components/shell/status";
 import { RecordedHolds } from "./RecordedHolds";
@@ -33,9 +33,12 @@ type ListState =
   | { status: "error"; error: string };
 
 export function ApprovalsPage() {
-  const { source, bundles, dataSource, bundle } = useData();
+  const { source, bundles, dataSource, bundle, running = [], selectedRunId } = useData();
+  const hosted = useHostedBuild();
   const shellStatus = useOptionalShellStatus();
-  const selected = bundle!;
+  // A live run that is still running has no bundle yet (the gate lets it through): no history for it.
+  const selected: RunBundle | undefined = bundle;
+  const visible = useMemo(() => new Set([...bundles.map((b) => b.runId), ...running.map((r) => r.runId)]), [bundles, running]);
   const mode = deskMode(source);
   const [token, setToken] = useSessionToken();
   const [list, setList] = useState<ListState>({ status: "idle" });
@@ -75,8 +78,8 @@ export function ApprovalsPage() {
 
   const data = list.status === "ready" ? list.data : undefined;
   const desk = useMemo(
-    () => buildDesk({ mode, list: data, bundles, selected }),
-    [mode, data, bundles, selected],
+    () => buildDesk({ mode, list: data, bundles, selected, visible }),
+    [mode, data, bundles, selected, visible],
   );
   const latestRow = latest
     ? desk.decided.find((r) => r.record.id === latest.id) ?? {
@@ -88,18 +91,21 @@ export function ApprovalsPage() {
           ?.decisions.find((d) => d.id === latest.decisionId),
       }
     : undefined;
-  const heldInSelected = heldDecisions(selected).length;
+  const heldInSelected = selected ? heldDecisions(selected).length : 0;
+  const runName = selected?.runId ?? selectedRunId ?? "the selected run";
   // Every history row of one run usually carries the same note: say it once above the rows.
   const sharedNote =
     desk.history.length > 1 && desk.history.every((r) => r.note === desk.history[0]!.note) ? desk.history[0]!.note : undefined;
 
-  const root = usePageMotion([selected.runId, list.status, desk.pending.length]);
+  const root = usePageMotion([runName, list.status, desk.pending.length]);
   const summary =
     mode === "local"
       ? data
         ? `${number(desk.pending.length)} waiting for review · Dodo test mode ${data.testMode ? "on" : "off"}`
         : "Paste the session token to see what is waiting"
-      : `${number(heldInSelected)} held in ${selected.runId} · read-only history`;
+      : selected
+        ? `${number(heldInSelected)} held in ${selected.runId} · read-only history`
+        : `${runName} is still running · read-only history`;
 
   return (
     <Page ref={root}>
@@ -108,7 +114,7 @@ export function ApprovalsPage() {
         summary={summary}
         action={
           <Button asChild>
-            <Link to={withRun("/app/run", selected.runId)}>Open the run</Link>
+            <Link to={withRun("/app/run", runName === "the selected run" ? undefined : runName)}>Open the run</Link>
           </Button>
         }
       />
@@ -117,15 +123,26 @@ export function ApprovalsPage() {
           <StatRow label="Approvals">
             <Stat label="Waiting for review" value={desk.pending.length} />
             <Stat label="Decided by a human" value={desk.decided.length} />
-            <Stat label={`Held in ${selected.runId}`} value={heldInSelected} />
+            <Stat label={`Held in ${runName}`} value={selected ? heldInSelected : null} />
           </StatRow>
         )}
 
         {mode === "hosted" ? (
           <>
             <Note className="desk-note">
-              Read-only history. Approving or rejecting a held action happens only against a local <code>notary serve</code>{" "}
-              in Dodo test mode. Start the server to approve live.
+              {hosted ? (
+                <>
+                  Read-only history. This hosted build always replays and never connects to a local server: approving or
+                  rejecting a held action happens only against a local <code>notary serve</code> in Dodo test mode. To decide
+                  held actions, clone the repository, run <code>pnpm notary serve</code>, then{" "}
+                  <code>pnpm --filter @notary/web dev</code> and open the local page.
+                </>
+              ) : (
+                <>
+                  Read-only history. Approving or rejecting a held action happens only against a local{" "}
+                  <code>notary serve</code> in Dodo test mode. Start the server to approve live.
+                </>
+              )}
             </Note>
             <RecordedHolds />
           </>
@@ -195,6 +212,8 @@ export function ApprovalsPage() {
                     The local server lists held write actions only from verified, live, guarded runs under{" "}
                     <code>runs/</code>. None are held right now
                     {data.decided.length ? ", and every listed item has been decided" : ""}.
+                    {desk.droppedHidden > 0 &&
+                      ` ${number(desk.droppedHidden)} ${desk.droppedHidden === 1 ? "item belongs" : "items belong"} to runs this view does not show.`}
                     {desk.droppedSample > 0 &&
                       ` ${number(desk.droppedSample)} ${desk.droppedSample === 1 ? "item" : "items"} from recorded, non-live runs ${desk.droppedSample === 1 ? "was" : "were"} not offered.`}
                   </EmptyState>
@@ -216,6 +235,7 @@ export function ApprovalsPage() {
           </section>
         )}
 
+        {selected ? (
         <Section
           title={`Held in ${selected.runId}`}
           description={
@@ -247,6 +267,13 @@ export function ApprovalsPage() {
             </EmptyState>
           )}
         </Section>
+        ) : (
+          <Section title={`Held in ${runName}`}>
+            <EmptyState title="This run is still running">
+              Its held actions are listed once it finishes and its bundle is written and verified.
+            </EmptyState>
+          </Section>
+        )}
       </PageBody>
 
       {dialog && (

@@ -32,7 +32,11 @@ function rel(root: string, p: string): string {
   return relative(root, p).split("\\").join("/");
 }
 
-/** Every `*.json` (not index.json) one level below `runsDir`, sorted. */
+/**
+ * The bundle of each run directory one level below `runsDir`: only `<dir>/<dir>.json`, sorted. Files a
+ * run directory holds next to its bundle (incidents.json, approvals.json, index.json, cassettes, ...)
+ * are never read as bundles.
+ */
 function candidateFiles(runsDir: string): string[] {
   if (!existsSync(runsDir)) return [];
   const out: string[] = [];
@@ -43,7 +47,8 @@ function candidateFiles(runsDir: string): string[] {
     } catch {
       continue;
     }
-    for (const f of readdirSync(full).sort()) if (f.endsWith(".json") && f !== "index.json") out.push(join(full, f));
+    const bundle = join(full, `${dir}.json`);
+    if (existsSync(bundle)) out.push(bundle);
   }
   return out;
 }

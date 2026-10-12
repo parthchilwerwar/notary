@@ -1,9 +1,11 @@
 // /app/business: what Notary costs to run and the business modeled on it in cfo.ai. Two sources,
 // always labeled and never mixed in one chart: "Computed from runs" (real bundles, sample:false,
 // via `pnpm notary economics`) and "Modeled in cfo.ai" (the plan imported with --cfo-import,
-// exactly as exported). Everything comes from public/economics.json, validated and hash-checked
-// in this browser. No fixture data is ever shown here, so the fixture header note is suppressed.
-import { useContext, useEffect, useState, type ReactNode } from "react";
+// exactly as exported, or read over cfo.ai's MCP server by `notary cfo sync`). Everything comes from
+// public/economics.json, validated and hash-checked in this browser; the cfo.ai connection panel
+// (CfoPanel.tsx) reads the local server's status only in live mode. No fixture data is ever shown
+// here, so the fixture header note is suppressed.
+import { useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { ArrowSquareOut, Calculator, ChartLineUp, DownloadSimple, Terminal } from "@phosphor-icons/react";
 import type { CfoPlan, EconomicsComputed, EconomicsFile, EconomicsRatio } from "../../../../core/src/schema";
 import {
@@ -23,6 +25,8 @@ import {
   usePageMotion,
 } from "../../ui";
 import { CFO_IMPORT_COMMAND, ECONOMICS_COMMAND, ECONOMICS_FILE, loadEconomics, type EconomicsState } from "../../data/economics";
+import { useDataSource } from "../../data";
+import { CfoPanel } from "./CfoPanel";
 import { BarList, ColumnChart, DataTable, Legend, LineChart } from "./charts";
 import {
   CFO_STEPS,
@@ -49,13 +53,13 @@ export const CFO_URL = "https://cfo.ai";
 type Load = { status: "loading" } | EconomicsState | { status: "error"; error: string };
 
 /** The page body for a loaded state (exported for tests: renders from data alone). */
-export function BusinessView({ state }: { state: Load }) {
+export function BusinessView({ state, cfo = null, onSynced }: { state: Load; cfo?: { apiBase: string } | null; onSynced?: () => void }) {
   const file = state.status === "ready" ? state.file : undefined;
   const summary = !file
     ? "Unit economics from real runs, and the business plan modeled in cfo.ai"
     : [
         file.computed ? `${file.computed.totals.liveRuns} live real run${file.computed.totals.liveRuns === 1 ? "" : "s"} costed` : "No real runs costed yet",
-        file.plan ? `plan modeled in cfo.ai, imported ${dateOnly(file.plan.source.importedAt)}` : "cfo.ai plan not imported yet",
+        file.plan ? `plan modeled in cfo.ai, ${file.plan.source.mcp ? "synced" : "imported"} ${dateOnly(file.plan.source.importedAt)}` : "cfo.ai plan not imported yet",
       ].join(" · ");
   return (
     <>
@@ -88,7 +92,7 @@ export function BusinessView({ state }: { state: Load }) {
             </p>
           </EmptyState>
         ) : (
-          <Ready file={state.file} />
+          <Ready file={state.file} cfo={cfo} {...(onSynced ? { onSynced } : {})} />
         )}
       </PageBody>
     </>
@@ -97,7 +101,12 @@ export function BusinessView({ state }: { state: Load }) {
 
 export function BusinessPage() {
   const [state, setState] = useState<Load>({ status: "loading" });
+  const [reload, setReload] = useState(0);
   const header = useContext(PageHeaderContext);
+  const { mode, hosted, apiBase } = useDataSource();
+  // The cfo.ai panel talks to a local `notary serve` only; the hosted build is read-only.
+  const cfo = mode === "live" && !hosted ? { apiBase } : null;
+  const onSynced = useCallback(() => setReload((k) => k + 1), []);
   useEffect(() => {
     const controller = new AbortController();
     loadEconomics(controller.signal).then(
@@ -105,14 +114,14 @@ export function BusinessPage() {
       (e: Error) => !controller.signal.aborted && setState({ status: "error", error: e.message }),
     );
     return () => controller.abort();
-  }, []);
+  }, [reload]);
   const root = usePageMotion([state.status]);
   if (state.status === "loading") return <PageSkeleton label="Verifying the published economics…" stats={4} />;
   return (
     // Real data only: the shell's fixture note (about the selected run) does not apply here.
     <PageHeaderContext.Provider value={{ ...header, note: undefined }}>
       <Page ref={root} className="business">
-        <BusinessView state={state} />
+        <BusinessView state={state} cfo={cfo} onSynced={onSynced} />
       </Page>
     </PageHeaderContext.Provider>
   );
@@ -121,6 +130,15 @@ export function BusinessPage() {
 // ------------------------------------------------------------------------------------ pieces
 
 const dateOnly = (iso: string) => iso.slice(0, 10);
+
+/** classify() stages, in words (recon sweeps are not full notarize runs). */
+const STAGE_LABEL: Record<string, string> = {
+  "run-naive": "queue run, naive",
+  "run-guarded": "queue run, guarded",
+  "notarize-full": "notarize",
+  "notarize-recon": "recon sweep",
+  "notarize-compare-priors": "compare priors",
+};
 
 /** The first sentence of a reason, without command detail (the full reason is in its section). */
 function shortReason(reason: string | null | undefined): string | undefined {
@@ -173,7 +191,7 @@ function ratioStat(label: string, r: EconomicsRatio | undefined, reasonIfNoData:
   );
 }
 
-function Ready({ file }: { file: EconomicsFile }) {
+function Ready({ file, cfo, onSynced }: { file: EconomicsFile; cfo: { apiBase: string } | null; onSynced?: () => void }) {
   const c = file.computed;
   const noRuns = file.computedReason ?? "";
   return (
@@ -185,7 +203,7 @@ function Ready({ file }: { file: EconomicsFile }) {
           <a href={CFO_URL} target="_blank" rel="noreferrer">
             cfo.ai
           </a>
-          , shown exactly as exported. The two are never mixed in one chart.
+          , shown exactly as exported or as read over its MCP server. The two are never mixed in one chart.
         </p>
       </div>
       <StatRow label="Unit economics from real runs">
@@ -204,6 +222,7 @@ function Ready({ file }: { file: EconomicsFile }) {
           </EmptyState>
         </Section>
       )}
+      <CfoPanel file={file} live={cfo} {...(onSynced ? { onSynced } : {})} />
       <Plan file={file} />
       <RoundTrip file={file} />
       <Sources file={file} />
@@ -246,8 +265,22 @@ function Computed({ c }: { c: EconomicsComputed }) {
         )}
         <DataTable
           caption="Every real run"
-          head={["#", "Run", "Mode", "Model USD", "Tokens", "Credits", "Unsafe", "Held"]}
-          rows={c.runs.map((r, i) => [String(i + 1), <code key="r">{r.runId}</code>, r.mode, money(r.modelUsd), count(r.tokens), count(r.credits), r.unsafeActions ?? "—", r.holds ?? "—"])}
+          head={["#", "Run", "Stage", "Mode", "Model USD", "Tokens", "Credits", "Unsafe", "Held"]}
+          rows={c.runs.map((r, i) => {
+            // A replay re-serves a recorded run: no new spend (its recorded cost belongs to the live run).
+            const replay = r.mode === "replay";
+            return [
+              String(i + 1),
+              <code key="r">{r.runId}</code>,
+              STAGE_LABEL[r.stage ?? ""] ?? r.kind,
+              replay ? "replay (re-served)" : r.mode,
+              replay ? "no new spend" : r.usdUnknown ? `unknown (≥ ${money(r.modelUsd)})` : money(r.modelUsd),
+              replay ? "—" : count(r.tokens),
+              replay ? "—" : count(r.credits),
+              r.unsafeActions ?? "—",
+              r.holds ?? "—",
+            ];
+          })}
         />
       </Section>
 
@@ -276,22 +309,27 @@ function Computed({ c }: { c: EconomicsComputed }) {
             <thead>
               <tr>
                 <th scope="col">Tool</th>
-                <th scope="col">Live notarize runs</th>
+                <th scope="col">Live notarize runs (+ recon)</th>
                 <th scope="col">Model USD</th>
                 <th scope="col">Credits</th>
                 <th scope="col">Notarized beliefs</th>
                 <th scope="col">Certified</th>
+                <th scope="col">Cost per certificate</th>
               </tr>
             </thead>
             <tbody>
               {c.tools.map((t) => (
                 <tr key={t.tool}>
                   <th scope="row">{t.tool === "dodo" ? "Dodo Payments" : "Crustdata"}</th>
-                  <td>{t.runs}</td>
+                  <td>
+                    {t.runs}
+                    {t.reconRuns ? ` + ${t.reconRuns} recon` : ""}
+                  </td>
                   <td>{money(t.modelUsd)}</td>
                   <td>{count(t.credits)}</td>
                   <td>{t.notarizedBeliefs ?? "—"}</td>
                   <td>{t.certified ?? "—"}</td>
+                  <td>{t.costPerCertificateUsd !== null ? money(t.costPerCertificateUsd) : shortReason(t.costPerCertificateReason) ?? "—"}</td>
                 </tr>
               ))}
             </tbody>
@@ -398,16 +436,16 @@ function Plan({ file }: { file: EconomicsFile }) {
   const maxTier = Math.max(0, ...plan.tiers.map((t) => t.price));
   return (
     <>
-      <Section id="plan" label={<SourceTag kind="cfo" />} title="The business plan" description="As exported from cfo.ai: nothing here is recomputed, rounded or filled in.">
+      <Section id="plan" label={<SourceTag kind="cfo" />} title="The business plan" description={`${s.mcp ? "As read from cfo.ai over its MCP server" : "As exported from cfo.ai"}: nothing here is recomputed, rounded or filled in.`}>
         <Attribution plan={plan} />
         <Facts
           columns={3}
           items={[
             { key: "ws", label: "Workspace", value: s.workspace ?? "Not stated in the export" },
             { key: "page", label: "Page · scenario", value: [s.page, s.scenario].filter(Boolean).join(" · ") || "Not stated in the export" },
-            { key: "imp", label: "Imported", value: `${s.importedAt.replace("T", " ").slice(0, 16)} UTC${s.exportedAt ? ` (exported ${s.exportedAt})` : ""}` },
-            { key: "file", label: "File", value: <code>{s.file}</code> },
-            { key: "sha", label: "sha256", value: <code className="biz-hash">{s.fileSha256}</code>, wide: true },
+            { key: "imp", label: s.mcp ? "Synced" : "Imported", value: `${s.importedAt.replace("T", " ").slice(0, 16)} UTC${s.exportedAt ? ` (exported ${s.exportedAt})` : ""}` },
+            { key: "file", label: s.mcp ? "Raw MCP payload (local)" : "File", value: <code>{s.file}</code> },
+            { key: "sha", label: s.mcp ? "Payload sha256" : "sha256", value: <code className="biz-hash">{s.fileSha256}</code>, wide: true },
           ]}
         />
         {headline.length > 0 && (

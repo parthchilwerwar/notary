@@ -28,7 +28,7 @@ describe("guards coverage on the real repo (tsc backend)", () => {
   let report: CoverageReport;
   beforeAll(() => {
     report = runCoverage({ backend: "tsc" });
-  }, 120_000);
+  }, 300_000); // a full TypeScript checker walk over src + scripts: ~170 s on a loaded machine
 
   it("finds 0 unguarded call sites and exits 0", () => {
     const unguarded = [...report.sites, ...report.createToolsCalls].filter((s) => s.status === "UNGUARDED");

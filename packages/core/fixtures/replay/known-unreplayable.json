@@ -1,0 +1,12 @@
+{
+  "schema": "notary-known-unreplayable/1",
+  "note": "Recorded live runs that cannot replay, each with the reason and the decision that records it. `notary replay` still attempts every one: it reports SKIPPED only when the replay fails with the expected error below; any other failure is a FAIL, and a run that reproduces is reported OK (remove it from this list then). Nothing else is ever skipped.",
+  "runs": [
+    {
+      "runId": "notarize-dodo-20261012T012315Z",
+      "reason": "the run applied a Dodo wallet credit (dodo.createWalletLedgerEntry) whose exchange its cassette lacks: the response body read failed after the write reached the API",
+      "expectedError": "CASSETTE MISS: dodo.createWalletLedgerEntry",
+      "decision": "docs/DECISIONS.md #200"
+    }
+  ]
+}

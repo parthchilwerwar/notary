@@ -5,7 +5,7 @@
 import type { ChatCitation, ChatEvent, ChatToolName } from "../../../../core/src/schema";
 import { entryOfBundle, memoryChatStore, ReplayChat, type ReplaySource } from "../../data";
 import { answerParagraphs, chatQuestions, showable } from "../../landing-data";
-import { replayPair } from "./replay";
+import { memoByView, replayPair } from "./replay";
 
 export type TurnStep = {
   id: string;
@@ -44,7 +44,6 @@ export function foldChat(events: readonly ChatEvent[]): Pick<ChatTurn, "steps" |
   return { steps, disclosure, paragraphs, citations };
 }
 
-const turns = new WeakMap<ReplaySource, Promise<ChatTurn | null>>();
 
 /**
  * Keep only what the landing may show: steps whose title and output pass `showable`, the answer
@@ -68,30 +67,25 @@ export function presentable(turn: ChatTurn): ChatTurn {
  * landing-data `chatQuestions`) whose presentable part has at least two steps and an answer.
  * null when none qualifies or the engine errors.
  */
-export function loadChatTurn(replay: ReplaySource): Promise<ChatTurn | null> {
-  let p = turns.get(replay);
-  if (!p) {
-    p = (async () => {
-      const { preview: guarded } = await replayPair(replay);
-      if (!guarded) return null;
-      const world = await replay.certificates(entryOfBundle(guarded));
-      const chat = new ReplayChat(replay, { store: memoryChatStore(), pace: "instant" });
-      chat.setContext({ runId: guarded.runId });
-      for (const question of chatQuestions(guarded, world.tools.map((t) => t.tool))) {
-        const conversation = await chat.createConversation();
-        const events: ChatEvent[] = [];
-        await chat.sendMessage(conversation.id, question, (e) => events.push(e));
-        if (events.some((e) => e.type === "error")) continue;
-        const turn = presentable({ question, runId: guarded.runId, sample: guarded.sample, ...foldChat(events) });
-        if (turn.steps.length >= 2 && turn.paragraphs.length >= 1) return turn;
-      }
-      return null;
-    })();
-    p.catch(() => turns.delete(replay));
-    turns.set(replay, p);
-  }
-  return p;
-}
+export const loadChatTurn: (replay: ReplaySource, fixtures?: boolean) => Promise<ChatTurn | null> = memoByView(
+  async (replay: ReplaySource, fixtures: boolean): Promise<ChatTurn | null> => {
+    const { preview: guarded } = await replayPair(replay, fixtures);
+    if (!guarded) return null;
+    const world = await replay.certificates(entryOfBundle(guarded));
+    // Pinned to the showcase run and to this view: only that cohort's bundles are fetched.
+    const chat = new ReplayChat(replay, { store: memoryChatStore(), pace: "instant", fixtures: () => fixtures });
+    chat.setContext({ runId: guarded.runId });
+    for (const question of chatQuestions(guarded, world.tools.map((t) => t.tool))) {
+      const conversation = await chat.createConversation();
+      const events: ChatEvent[] = [];
+      await chat.sendMessage(conversation.id, question, (e) => events.push(e));
+      if (events.some((e) => e.type === "error")) continue;
+      const turn = presentable({ question, runId: guarded.runId, sample: guarded.sample, ...foldChat(events) });
+      if (turn.steps.length >= 2 && turn.paragraphs.length >= 1) return turn;
+    }
+    return null;
+  },
+);
 
 // ------------------------------------------------------------------------------- answer text
 

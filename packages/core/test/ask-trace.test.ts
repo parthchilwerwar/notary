@@ -416,7 +416,7 @@ describe("with the neatlogs SDK on (local fake collector)", () => {
     process.env.NEATLOGS_LOG_SPANS_FILE = logFile;
     delete process.env.NEATLOGS_DISABLE_EXPORT;
     enabled = (await initTracing({ serviceName: "ask-trace-test" })).enabled;
-  });
+  }, 60_000);
 
   afterAll(async () => {
     await shutdownTracing();

@@ -181,18 +181,25 @@ export interface WriteEconomicsOptions {
   cfoInputsCsv?: string | null;
   /** Path to a cfo.ai export in notary-cfo-plan-csv/1. */
   cfoImport?: string;
+  /** A plan already read and mapped (`notary cfo sync` over cfo.ai's MCP server). Exclusive with cfoImport. */
+  plan?: CfoPlan;
   now?: () => Date;
 }
 
 export function writeEconomics(opts: WriteEconomicsOptions = {}): { file: EconomicsFile; lines: string[] } {
-  const paths = { ...ECONOMICS_PATHS, ...Object.fromEntries(Object.entries(opts).filter(([, v]) => v !== undefined)) } as typeof ECONOMICS_PATHS & { businessMd: string | null; cfoInputsCsv: string | null };
+  const { plan: _plan, ...pathOpts } = opts;
+  const paths = { ...ECONOMICS_PATHS, ...Object.fromEntries(Object.entries(pathOpts).filter(([, v]) => v !== undefined)) } as typeof ECONOMICS_PATHS & { businessMd: string | null; cfoInputsCsv: string | null };
   const lines: string[] = [];
   const gathered = gatherRealBundles(paths.runsDir, paths.webBundlesDir);
   const certs = readCertificates(paths.certificatesReport);
 
   let plan: CfoPlan | null = null;
   let planReason: string | null = null;
-  if (opts.cfoImport) {
+  if (opts.plan && opts.cfoImport) throw new Error("writeEconomics: pass either cfoImport or plan, not both");
+  if (opts.plan) {
+    plan = opts.plan;
+    lines.push(`cfo.ai plan synced over MCP (payload sha256 ${plan.source.fileSha256.slice(0, 12)}): ${plan.tiers.length} tiers, ${plan.series.length} series, ${plan.figures.length} figures`);
+  } else if (opts.cfoImport) {
     plan = importCfoPlanFile(opts.cfoImport, (opts.now ?? (() => new Date()))().toISOString());
     lines.push(`cfo.ai plan imported from ${basename(opts.cfoImport)} (sha256 ${plan.source.fileSha256.slice(0, 12)}): ${plan.tiers.length} tiers, ${plan.series.length} series, ${plan.figures.length} figures`);
   } else if (existsSync(paths.economicsJson)) {
@@ -205,7 +212,7 @@ export function writeEconomics(opts: WriteEconomicsOptions = {}): { file: Econom
     const prior = verifyEconomics(raw);
     if (prior.ok) {
       plan = prior.file.plan;
-      if (plan) lines.push(`kept the cfo.ai plan imported ${plan.source.importedAt} from ${plan.source.file}`);
+      if (plan) lines.push(`kept the cfo.ai plan ${plan.source.format === "cfo.ai-mcp/1" ? "synced over MCP" : "imported"} ${plan.source.importedAt} from ${plan.source.file}`);
     } else {
       planReason = `The previous economics.json did not verify (${prior.error}), so its plan was dropped. Re-import: pnpm notary economics --cfo-import <file>`;
       lines.push(planReason);
@@ -223,7 +230,7 @@ export function writeEconomics(opts: WriteEconomicsOptions = {}): { file: Econom
       ? `  computed from ${file.computed.totals.runs} real bundles (${file.computed.totals.liveRuns} live, ${file.computed.totals.replayRuns} replay); ${gathered.skipped.length} files skipped`
       : `  computed: null — ${file.computedReason}`,
   );
-  lines.push(file.plan ? `  plan: cfo.ai, imported ${file.plan.source.importedAt}` : `  plan: null — ${file.planReason}`);
+  lines.push(file.plan ? `  plan: cfo.ai, ${file.plan.source.format === "cfo.ai-mcp/1" ? "synced" : "imported"} ${file.plan.source.importedAt}` : `  plan: null — ${file.planReason}`);
   if (paths.businessMd) {
     mkdirSync(dirname(paths.businessMd), { recursive: true });
     writeFileSync(paths.businessMd, renderBusinessMd(file));

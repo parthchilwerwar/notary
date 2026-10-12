@@ -37,10 +37,10 @@ interface VitestJson {
   testResults?: unknown[];
 }
 
-/** `pnpm test` runs vitest in @notary/core (the web package has no tests yet); run that suite with the JSON reporter. */
+/** The core vitest suite, run with the JSON reporter (@notary/web runs its own suite via `pnpm test`). */
 export function runTestsCheck(): CheckResult {
   const command = "pnpm test";
-  const ranAs = "vitest run --reporter=json in packages/core (@notary/web has no tests yet)";
+  const ranAs = "vitest run --reporter=json in packages/core (the @notary/web suite runs separately in `pnpm test`)";
   const dir = mkdtempSync(join(tmpdir(), "notary-export-vitest-"));
   const out = join(dir, "vitest.json");
   try {

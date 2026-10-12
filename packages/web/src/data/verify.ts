@@ -72,7 +72,40 @@ export function verifyTimelineFile(raw: unknown, bundle: RunBundle): TimelineFil
     if (e.runId !== bundle.runId || (i > 0 && e.seq <= file.events[i - 1]!.seq))
       throw new Error(`The timeline for ${bundle.runId} is out of order. Data withheld.`);
   });
+  const problem = timelineContentProblem(file, bundle);
+  if (problem) throw new Error(`The timeline for ${bundle.runId} disagrees with its verified bundle: ${problem}. Data withheld.`);
   return file;
+}
+
+/**
+ * The timeline's contents against the verified bundle (the hash tie alone proves which bundle it
+ * claims, not that its events match it): every probe a timeline event names is a probe of the
+ * bundle and the counts agree, every decision likewise, and every issued certificate names a belief
+ * the bundle holds. Returns what disagrees, or undefined.
+ */
+export function timelineContentProblem(file: Pick<TimelineFile, "events">, bundle: RunBundle): string | undefined {
+  const ids = (type: string) => new Set(file.events.filter((e) => e.type === type).map((e) => e.recordIds[0]).filter((x): x is string => !!x));
+  const probes = new Set(bundle.probes.map((p) => p.id));
+  const committed = ids("probe.committed");
+  const verdicts = ids("probe.verdict");
+  const strayProbe = [...committed, ...verdicts].find((id) => !probes.has(id));
+  if (strayProbe) return `probe ${strayProbe} is not in the bundle`;
+  if (committed.size !== probes.size)
+    return `${committed.size} probes committed in the timeline, ${probes.size} in the bundle`;
+  const judged = bundle.probes.filter((p) => p.verdict).length;
+  if (verdicts.size !== judged) return `${verdicts.size} probe verdicts in the timeline, ${judged} in the bundle`;
+  const decisions = new Set(bundle.decisions.map((d) => d.id));
+  const decided = ids("decision");
+  const strayDecision = [...decided].find((id) => !decisions.has(id));
+  if (strayDecision) return `decision ${strayDecision} is not in the bundle`;
+  if (decided.size !== decisions.size) return `${decided.size} decisions in the timeline, ${decisions.size} in the bundle`;
+  const beliefs = new Set([...bundle.beliefs.before, ...bundle.beliefs.after].map((b) => b.id));
+  for (const e of file.events) {
+    if (e.type !== "certificate.issued") continue;
+    const belief = e.recordIds.find((id) => id.startsWith("belief-"));
+    if (belief && !beliefs.has(belief)) return `certificate ${e.recordIds[0] ?? "?"} names belief ${belief}, which the bundle does not hold`;
+  }
+  return undefined;
 }
 
 // ---------------------------------------------------------------------------- certificates

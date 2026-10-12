@@ -39,6 +39,7 @@ import { finalizeBundle, verifyBundle, writeBundle } from "../bundle/index.js";
 import type { UnhashedBundle } from "../bundle/index.js";
 import { recordRunTimeline } from "../timeline/write.js";
 import { incidentsLine, recordRunIncidents } from "../incidents/record.js";
+import { enterIncidentRun, withIncidentRun } from "../incidents/live.js";
 import { consolidateMetrics, withMetricDisclosures } from "../eval/metrics.js";
 import { cassetteNames, pinIfPresent } from "../replay/pins.js";
 import { INPUTS_VERSION, saveInputs, snapshotStore } from "../replay/inputs.js";
@@ -323,6 +324,18 @@ export function preflight(opts: Pick<NotarizeOptions, "tool" | "replay" | "llm">
   return { llm };
 }
 
+/** The verification-probe disclosure, with the number of probes that actually ran on those claims. */
+export function verificationDisclosure(claims: readonly string[], probes: readonly Pick<Probe, "claimId">[]): string {
+  const set = new Set(claims);
+  const ran = probes.filter((p) => set.has(p.claimId));
+  const probed = new Set(ran.map((p) => p.claimId)).size;
+  const rivals = "a deterministic rival pair {honored, suspected class from src/contracts/priors-map.ts} built by code, not proposed by a model";
+  const head = `Verification probes: ${claims.length} required claim(s) with no anomaly this run (${claims.join(", ")})`;
+  return ran.length === 0
+    ? `${head} had ${rivals}, but no verification probe ran on them in this run (0 probes).`
+    : `${head}: ${ran.length} probe(s) ran on ${probed} of them against ${rivals}; same commit-then-run loop, caps and budget.`;
+}
+
 function countVerdicts(probes: readonly Probe[]): Record<string, number> {
   const out: Record<string, number> = { confirmed: 0, refuted: 0, inconclusive: 0, uninformative: 0, invalid: 0 };
   for (const p of probes) if (p.verdict) out[p.verdict] = (out[p.verdict] ?? 0) + 1;
@@ -394,16 +407,20 @@ export async function notarize(opts: NotarizeOptions): Promise<NotarizeResult> {
     let recon: ReconResult;
     let loop: ProbeLoopResult;
     try {
-      recon = await runRecon({
-        tool: opts.tool,
-        mode,
-        cassetteName: reconCassette,
-        cassetteDir,
-        ledger,
-        env,
-        ...(opts.sleep ? { sleep: opts.sleep } : {}),
-      });
+      // Live incidents (recon anomalies, probe and model incidents) are attributed to this run.
+      recon = await withIncidentRun(liveRunId ?? opts.runId, () =>
+        runRecon({
+          tool: opts.tool,
+          mode,
+          cassetteName: reconCassette,
+          cassetteDir,
+          ledger,
+          env,
+          ...(opts.sleep ? { sleep: opts.sleep } : {}),
+        }),
+      );
       const runId = opts.runId ?? liveRunId ?? `notarize-${opts.tool}-replay-${recon.cassetteHash.slice(0, 12)}`;
+      enterIncidentRun(runId);
       // P8 replay identity: probe ids, request tags and store rows use the RECORDED run's id, so a
       // replay sends byte-identical requests; the bundle itself is written under `runId`.
       const identity = opts.identityRunId ?? runId;
@@ -681,11 +698,7 @@ async function writeNotarizeBundle(a: {
   }
   if (a.identity !== runId) disclosure.push(`Probe ids and request tags use the recorded run id ${a.identity}.`);
   if (tool === "dodo") disclosure.push("Dodo Payments test mode only; refund and change-plan probes use seeded probe-only payments and subscriptions the seeded queue does not reference.");
-  if (loop.verification.claims.length) {
-    disclosure.push(
-      `Verification probes: ${loop.verification.claims.length} required claim(s) with no anomaly this run (${loop.verification.claims.join(", ")}) were probed against a deterministic rival pair {honored, suspected class from src/contracts/priors-map.ts} built by code, not proposed by a model; same commit-then-run loop, caps and budget.`,
-    );
-  }
+  if (loop.verification.claims.length) disclosure.push(verificationDisclosure(loop.verification.claims, loop.probes));
   if (a.priors) {
     disclosure.push(
       `Transfer priors from ${a.priors.from} notarize bundle ${a.priors.sourceRunId}: each new belief started from Beta(1 + s(1 - r), 1 + s*r), r = the ${a.priors.from} base rate of its claim's suspected defect class, s = ${a.priors.strength} pseudo-counts (Beta(1, 1) when ${a.priors.from} settled nothing relevant).`,
@@ -741,6 +754,9 @@ async function writeNotarizeBundle(a: {
       "adversary.narrow": beliefs.reviews.narrow,
       "adversary.downgrade": beliefs.reviews.downgrade,
       "adversary.failed": beliefs.reviews.failed,
+      // Model calls whose price was unknown (usd recorded as 0, which is not their cost); only when > 0,
+      // so bundles without unknown prices keep their metric keys (replay compares keys exactly).
+      ...(a.llm.meter?.unknownCalls() ? { usd_unknown_calls: a.llm.meter.unknownCalls() } : {}),
       probes_to_candidate_mean: ptc.mean,
       ...Object.fromEntries(Object.entries(ptc.perClaim).map(([id, n]) => [`probes_to_candidate_${id}`, n])),
       ...(a.priors

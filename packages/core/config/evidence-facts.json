@@ -1,0 +1,27 @@
+{
+  "schema": "notary-evidence-facts/1",
+  "facts": {
+    "publishedTraceLinks": 0,
+    "doctor": {
+      "traceId": "c4cc92921c1c495ebf24b8cf6fc0b599",
+      "spanId": "fa01f88a77c2c721",
+      "flushedAt": "2026-10-12T02:23:34.319Z",
+      "source": "notary doctor"
+    },
+    "traceTemplate": {
+      "source": "none"
+    },
+    "exportedRunTraces": 2,
+    "neatlogsCliOnPath": false,
+    "entire": {
+      "onPath": true,
+      "checkpointRefs": [
+        "refs/entire/checkpoints/S7/01M4Q2JS4B3N3B42W0X9MGNSS7",
+        "refs/entire/checkpoints/V1/01M4Q2CJDTHF76EE7QK11TEEV1"
+      ]
+    },
+    "businessPlan": true,
+    "economicsJson": true,
+    "cfoPlanImported": false
+  }
+}

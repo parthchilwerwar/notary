@@ -1,6 +1,7 @@
 // Report: pure helpers (no React). Comparisons only within one world; costs only as recorded.
 import type { RunBundle } from "../../../../core/src/schema";
-import { scenarioKey } from "../../app/links";
+import { liveFirst, scenarioKey } from "../../app/links";
+import { worldKeyOf } from "../../data/world";
 
 // ---------------------------------------------------------------------------- run comparison
 
@@ -177,6 +178,27 @@ export function byCohort(bundles: readonly RunBundle[]): { cohort: Cohort; sampl
   return (["real", "fixture", "synthetic"] as const)
     .map((cohort) => ({ cohort, sample: cohort !== "real", runs: bundles.filter((b) => cohortOf(b) === cohort).sort(newestFirst) }))
     .filter((g) => g.runs.length > 0);
+}
+
+export type WorldTable = { key: string; cohort: Cohort; label: string; sample: boolean; runs: RunBundle[] };
+
+/**
+ * The cost tables: one per data world (real runs; each fixture scenario on its own; the synthetic
+ * sample), so no table mixes worlds. Within a table, live recordings come first, then replays.
+ */
+export function byWorld(bundles: readonly RunBundle[]): WorldTable[] {
+  return byCohort(bundles).flatMap((g): WorldTable[] => {
+    if (g.cohort !== "fixture")
+      return [{ key: g.cohort, cohort: g.cohort, label: g.cohort === "real" ? "Recorded runs" : "Synthetic sample", sample: g.sample, runs: liveFirst(g.runs) }];
+    const keys = [...new Set(g.runs.map((b) => worldKeyOf(b)))];
+    return keys.map((key) => ({
+      key,
+      cohort: g.cohort,
+      label: `Fixture scenario ${key.replace(/^fixture:/, "")}`,
+      sample: true,
+      runs: liveFirst(g.runs.filter((b) => worldKeyOf(b) === key)),
+    }));
+  });
 }
 
 // ---------------------------------------------------------------------------- traces

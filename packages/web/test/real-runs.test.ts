@@ -77,7 +77,16 @@ describe("which runs the dashboard shows", () => {
     const published = await sampleRuns();
     const running: RunEntry = { runId: "live-1", state: "running", kind: "run", startedAt: "2026-10-12T00:00:00.000Z" };
     const visible = visibleRuns([...published, asReal(published[0]!, "real-1"), running], true);
-    expect(visible.length).toBe(published.length);
+    // The fixture scenarios only: the dashboard's synthetic sample (sample-42, kind "sample") is its
+    // own data world and is never listed next to the scenarios.
+    const synthetic = published.filter((r) => r.state === "finished" && (r.kind === "sample" || r.variant === "sample"));
+    expect(synthetic.map((r) => r.runId)).toContain("sample-42");
+    expect(visible.map((r) => r.runId).sort()).toEqual(
+      published.filter((r) => !synthetic.includes(r)).map((r) => r.runId).sort(),
+    );
+    expect(visible.length).toBe(published.length - synthetic.length);
+    expect(visible.length).toBeGreaterThan(0);
+    expect(visible.map((r) => r.runId)).not.toContain("sample-42");
     expect(visible.every((r) => r.state === "finished" && r.sample)).toBe(true);
     const entries = finishedEntries(visible);
     expect(groupRuns(entries, "static").map((g) => g.kind)).toEqual(["fixture"]);

@@ -8,12 +8,54 @@ import type { Certificate, Decision, FixtureIndex, RequestType, Revocation, RunB
 import { label, scenarioKey, type CertificateWorld } from "./data";
 import { GITHUB_URL } from "./lib/site";
 import { verifyEconomicsFile } from "./data/economics";
+import type { EvidenceEntry } from "./data/published";
+import { isReplayRun, isSyntheticSample } from "./app/links";
 
 /** The repository, linked from the nav and the footer (one site-wide constant, AUDIT H-44). */
 export { GITHUB_URL };
 
-/** Credits line ("Built with") and the chat showcase's chips. Text only; no status is claimed. */
+/**
+ * Candidate names for the credits line ("Built with") and the chat showcase's chips, in order.
+ * Which of them are shown, and how, is decided by `builtWith` from evidence/evidence.json: never
+ * from this list alone.
+ */
 export const BUILT_WITH = ["neatlogs", "Entire", "cfo.ai", "Crustdata", "Dodo Payments", "AWS Bedrock"] as const;
+
+/** What a pending integration waits for, by name (evidence.json status "pending"); else "pending". */
+export const PENDING_NOTE: Readonly<Record<string, string>> = { "cfo.ai": "pending plan import" };
+
+export type Credit = { name: string; /** Set when evidence.json says the integration is not live yet. */ pending?: string };
+
+/**
+ * The credits and the chat chips, from evidence/evidence.json (validated by the data layer):
+ *   - a name evidence.json lists is an integration: active only when its status is "live"; a
+ *     "pending" one is a credit labelled with what it waits for (PENDING_NOTE) and never a chip
+ *   - a name evidence.json does not list is a plain credit (a library or service it does not track)
+ *   - cfo.ai is also pending while public/economics.json has no imported plan (`cfoPlan` false)
+ *   - evidence not loaded (still loading, or withheld): nothing can be confirmed, so nothing is shown
+ */
+export function builtWith(
+  evidence: readonly Pick<EvidenceEntry, "name" | "status">[] | null,
+  opts: { cfoPlan?: boolean | null } = {},
+): { credits: Credit[]; chips: string[] } {
+  if (!evidence) return { credits: [], chips: [] };
+  const statusOf = (name: string) => evidence.find((e) => e.name.toLowerCase() === name.toLowerCase())?.status;
+  const credits = BUILT_WITH.map((name): Credit => {
+    const status = statusOf(name);
+    const pending = status === "pending" || (name === "cfo.ai" && opts.cfoPlan === false);
+    return pending ? { name, pending: PENDING_NOTE[name] ?? "pending" } : { name };
+  });
+  return { credits, chips: credits.filter((c) => !c.pending).map((c) => c.name) };
+}
+
+/**
+ * Whether public/economics.json carries an imported cfo.ai plan, from the hash-verified file (a
+ * missing or failed file counts as no plan).
+ */
+export function cfoPlanImported(raw: unknown): boolean {
+  const state = verifyEconomicsFile(raw);
+  return state.status === "ready" && state.file.plan !== null;
+}
 
 /** The Run page for one run (the dashboard reads `?run=`). */
 export const runHref = (runId: string) => `/app/run?run=${encodeURIComponent(runId)}`;
@@ -119,6 +161,8 @@ type PairEntry = {
   variant: string;
   sample: boolean;
   startedAt: string;
+  /** "replay" = re-serves a recorded run: never the landing's showcase or one side of a pair. */
+  mode?: string;
 };
 
 export type LandingView = {
@@ -135,7 +179,7 @@ export type LandingView = {
 export function landingResults<T extends PairEntry>(all: readonly T[], view: LandingView = {}) {
   const fixtures = !!view.fixtures;
   const cohort = all
-    .filter((b) => b.sample === fixtures && b.kind === "run")
+    .filter((b) => b.sample === fixtures && b.kind === "run" && !isReplayRun(b))
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
   const guarded = cohort.find((b) => b.variant === "guarded");
   const naive = guarded
@@ -157,7 +201,7 @@ export function fixturePair<T extends PairEntry>(all: readonly T[]) {
  */
 export function proofPair<T extends PairEntry>(all: readonly T[], view: LandingView = {}) {
   const pair = landingResults(all, view);
-  const visible = all.filter((b) => b.sample === !!view.fixtures).length;
+  const visible = all.filter((b) => b.sample === !!view.fixtures && !isSyntheticSample(b as { kind?: string; variant?: string })).length;
   return { ...pair, visible };
 }
 
@@ -429,11 +473,11 @@ export function predictView(bundle: RunBundle): PredictView | undefined {
   return view;
 }
 
-/** Commit time as HH:MM:SS in the viewer's time zone. */
+/** Commit time as "HH:MM:SS UTC" (UTC, labelled, like the Run transcript and the app's dates). */
 export const clockTime = (iso: string) =>
-  new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).format(
+  `${new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23", timeZone: "UTC" }).format(
     new Date(iso),
-  );
+  )} UTC`;
 
 export type ChallengeView = {
   claimId: string;
@@ -533,6 +577,7 @@ export function worldNotarizeRuns<T extends PairEntry>(all: readonly T[], guarde
   return all.filter(
     (b) =>
       b.kind === "notarize" &&
+      !isReplayRun(b) &&
       b.sample === guarded.sample &&
       (!guarded.sample || scenarioKey(b.runId) === scenarioKey(guarded.runId)),
   );

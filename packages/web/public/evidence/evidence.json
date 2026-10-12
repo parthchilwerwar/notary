@@ -1,7 +1,7 @@
 [
   {
     "name": "neatlogs",
-    "purpose": "The neatlogs TypeScript SDK (1.1.26) wraps every queue item, recon step, probe and model call in a span via withSpan; probe spans carry the prediction committed before the call, and Bedrock calls are captured with the SDK's wrapBedrock. Every span is also written to runs/<runId>/spans.jsonl, which the evidence checks read.",
+    "purpose": "The neatlogs TypeScript SDK (1.1.26) wraps every queue item, recon step, probe and model call in a span via withSpan (AGENT, TOOL, GUARDRAIL and EVALUATOR spans; DECISIONS #204); probe spans carry the prediction committed before the call. Model calls go through LiteLLM and are captured with the SDK's wrapOpenAI (wrapBedrock when the provider is Bedrock). Every span is also written to runs/<runId>/spans.jsonl, which the evidence checks read. `pnpm notary doctor` reads the recorded doctor trace back from neatlogs (GET <ingest>/api/traces/v3/<traceId> with the project key).",
     "status": "live",
     "links": [
       {
@@ -9,7 +9,7 @@
         "url": "https://github.com/neatlogs/neatlogs-typescript"
       }
     ],
-    "notes": "Status \"live\" covers SDK export only: on Oct 12, with NEATLOGS_API_KEY set, `pnpm notary doctor` flushed one real span and the SDK reported the flush as successful (trace c4cc92921c1c495ebf24b8cf6fc0b599, span fa01f88a77c2c721). Beyond that smoke span, 2 notarize/run trace(s) are marked exported in local spans.jsonl files. The trace has not been read back, since neatlogs-cli is not installed and the neatlogs trace URL format is unknown, so there is no trace link. Bundle traceLinks point to local spans.jsonl receipts."
+    "notes": "Status \"live\" covers SDK export only: on Oct 12, with NEATLOGS_API_KEY set, `pnpm notary doctor` flushed one real span and the SDK reported the flush as successful (trace c4cc92921c1c495ebf24b8cf6fc0b599, span fa01f88a77c2c721). Beyond that smoke span, 2 notarize/run trace(s) are marked exported in local spans.jsonl files. Read-back uses the traces API, not the CLI (neatlogs-cli is not installed): `pnpm notary doctor` fetches the recorded doctor trace with the project key and prints its span counts; that result is printed, not recorded in a file, so it is not shown here (DECISIONS #204 records one real read-back). The neatlogs trace URL format is unknown, so there is no trace link. No published bundle links a trace (their traceLinks are empty)."
   },
   {
     "name": "Entire",

@@ -603,7 +603,7 @@ export async function runFixtureDemo(opts: FixtureDemoOptions = {}): Promise<Fix
     const demoCollect = collectBundles(outDir);
     checks.push({
       ok: demoCollect.bundles.length === 0 && demoCollect.excluded.length === bundles.length,
-      text: `collectBundles(${rel(outDir, outDir)}): ${demoCollect.bundles.length} result bundle(s), ${demoCollect.excluded.length} excluded as SAMPLE (${bundles.length} demo bundles), ${demoCollect.skipped.length} non-bundle file(s) skipped (cassettes, seed manifest)`,
+      text: `collectBundles(${rel(outDir, outDir)}): ${demoCollect.bundles.length} result bundle(s), ${demoCollect.excluded.length} excluded as SAMPLE (${bundles.length} demo bundles), ${demoCollect.skipped.length} non-bundle file(s) skipped`,
     });
     const realCollect = collectBundles(RUNS_DIR);
     const leaked = realCollect.bundles.filter((x) => x.bundle.runId.startsWith("demo-") || x.bundle.sample);

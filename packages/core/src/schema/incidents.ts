@@ -128,9 +128,12 @@ export const IncidentsFileSchema = z.object({
 });
 
 // packages/web/public/incidents[/fixture]/index.json: every published run's incidents, newest first.
+// contentHash = sha256(canonicalJson(the file without contentHash)), as for bundles (src/bundle/hash.ts),
+// so the browser can verify the published file; optional only so older files still parse.
 export const IncidentsIndexSchema = z.object({
   sample: z.boolean(),
   runs: z.array(IncidentsFileSchema),
+  contentHash: z.string().regex(/^[0-9a-f]{64}$/).optional(),
 });
 
 export type IncidentKind = z.infer<typeof IncidentKindSchema>;

@@ -24,8 +24,23 @@ import { realTimers, type Timers } from "./stream";
 import { byNewest } from "./verify";
 import { answerWorld, worldIndex, worldKeyOf, worldLabel, type WorldKey } from "./world";
 import type { ChatSource, DataSource, RunEntry } from "./types";
+import { heldApprovals } from "./replay";
+// economics.ts imports ./index (which exports this engine): loaded on first spend question, so
+// the module graph has no import cycle at evaluation time.
+import type { EconomicsState } from "./economics";
+import { usd } from "./format";
+import { defaultRunId, fixturesInLocation, isReplayRun, isSyntheticSample, liveFirst, replayBadge, REPLAY_SPEND_TEXT, visibleRuns } from "../app/links";
 
-export type ReplayChatData = Pick<DataSource, "listRuns" | "getRun" | "getTimeline" | "certificates" | "approvals" | "explain">;
+/**
+ * What the engine reads. `approvals` is kept for callers that pass a whole DataSource; the engine
+ * derives held actions from the conversation's own world (heldApprovals), so a turn never fetches
+ * another world's bundles.
+ */
+export type ReplayChatData = Pick<DataSource, "listRuns" | "getRun" | "getTimeline" | "certificates" | "explain"> &
+  Partial<Pick<DataSource, "approvals">>;
+
+/** Where the spend figures are shown in the dashboard (cost answers point there). */
+export const BUSINESS_PAGE = "/app/business";
 
 export type ReplayChatOptions = {
   store?: ChatStore;
@@ -38,6 +53,18 @@ export type ReplayChatOptions = {
   clock?: () => Date;
   /** Id generator (default crypto.randomUUID). */
   newId?: () => string;
+  /**
+   * The development-only fixture view (`?fixtures=1`), re-read on every turn. Decides which runs
+   * an unpinned conversation may read (and fetch): real runs only, or fixture scenario runs only,
+   * never the synthetic sample. Default: the flag of the page the browser is on.
+   */
+  fixtures?: () => boolean;
+  /**
+   * Raw public/economics.json (undefined when not published), for spend questions. The engine
+   * validates and hash-checks it (verifyEconomicsFile) before reading a number. Without it, spend
+   * questions say where the figures are published instead.
+   */
+  economics?: (signal?: AbortSignal) => Promise<unknown | undefined>;
 };
 
 /** Fix shown in an unavailable step, per live-only tool. */
@@ -186,7 +213,9 @@ class Turn {
       ...(outcome.data !== undefined ? { data: outcome.data } : {}),
       ...(outcome.fix ? { fix: outcome.fix } : {}),
     });
-    for (const c of outcome.citables ?? []) {
+    for (const raw of outcome.citables ?? []) {
+      // An api_response citation names the step whose output it is ("<stepId>").
+      const c = raw.type === "api_response" ? { ...raw, id } : raw;
       const key = `${c.type}:${c.id}`;
       if (!this.citables.has(key)) this.citables.set(key, { ...c, stepId: id });
     }
@@ -250,7 +279,17 @@ class Turn {
 
 // ------------------------------------------------------------------------------------ helpers
 
-const runCitable = (b: RunBundle): Citable => ({ type: "run", id: b.runId, label: b.runId, terms: [b.runId] });
+/** A run's citation; a replay's label says what it is ("… · Replay of <original>"). */
+const runCitable = (b: RunBundle): Citable => {
+  const badge = replayBadge(b);
+  return { type: "run", id: b.runId, label: badge ? `${b.runId} · ${badge}` : b.runId, terms: [b.runId] };
+};
+
+/** "`id`" for live runs, "`id` (Replay of <original>)" for replays. */
+const runName = (b: RunBundle) => {
+  const badge = replayBadge(b);
+  return badge ? `\`${b.runId}\` (${badge})` : `\`${b.runId}\``;
+};
 
 const eventCitable = (e: TimelineEvent): Citable => ({
   type: "run_event",
@@ -314,6 +353,8 @@ export class ReplayChat implements ChatSource {
   private readonly now: () => number;
   private readonly clock: () => Date;
   private readonly newId: () => string;
+  private readonly fixtures: () => boolean;
+  private readonly economics: ReplayChatOptions["economics"];
   private runId: string | undefined;
 
   constructor(
@@ -326,6 +367,8 @@ export class ReplayChat implements ChatSource {
     this.now = opts.now ?? (() => (globalThis.performance ?? Date).now());
     this.clock = opts.clock ?? (() => new Date());
     this.newId = opts.newId ?? (() => globalThis.crypto.randomUUID());
+    this.fixtures = opts.fixtures ?? fixturesInLocation;
+    this.economics = opts.economics;
   }
 
   /** The run selected in the dashboard; a new conversation answers from its world only. */
@@ -437,12 +480,24 @@ export class ReplayChat implements ChatSource {
 
   private async loadWorld(runId: string | undefined, signal?: AbortSignal): Promise<World | undefined> {
     const entries = (await this.data.listRuns(signal)).filter((r): r is Extract<RunEntry, { state: "finished" }> => r.state === "finished");
-    if (!entries.length) return undefined;
-    const bundles = (await Promise.all(entries.map((e) => this.data.getRun(e.runId, signal)))).sort(byNewest);
-    const selected =
-      bundles.find((b) => b.runId === runId) ?? bundles.find((b) => !b.sample) ?? bundles[0]!;
+    // Only the cohort this turn may read is fetched: the pinned run's (real runs; fixture scenario
+    // runs; or the synthetic sample alone), else the view's (real runs by default, fixture scenario
+    // runs under ?fixtures=1). Never another cohort's bundles, never a fallback to one.
+    const pinned = runId ? entries.find((e) => e.runId === runId) : undefined;
+    const cohort = pinned
+      ? isSyntheticSample(pinned)
+        ? [pinned]
+        : entries.filter((e) => e.sample === pinned.sample && !isSyntheticSample(e))
+      : visibleRuns(entries, this.fixtures());
+    if (!cohort.length) return undefined;
+    const bundles = (await Promise.all(cohort.map((e) => this.data.getRun(e.runId, signal)))).sort(byNewest);
+    // Unpinned: the dashboard's own default (guarded queue run, else the newest live run that
+    // recorded work); a replay is never the default.
+    const fallbackId = defaultRunId(bundles);
+    const selected = bundles.find((b) => b.runId === runId) ?? bundles.find((b) => b.runId === fallbackId) ?? bundles[0]!;
     const key = worldKeyOf(selected);
-    const runs = bundles.filter((b) => worldKeyOf(b) === key);
+    // Live recordings first (newest first), then replays: "the last run" is never a replay.
+    const runs = liveFirst(bundles.filter((b) => worldKeyOf(b) === key));
     let certificates: Certificate[] = [];
     let noCertificates: NoCertificate[] = [];
     try {
@@ -543,7 +598,9 @@ export class ReplayChat implements ChatSource {
       case "approvals":
         return this.approvals(turn, world, intent.approvalId, intent.requestId);
       case "runs":
-        return this.runs(turn, world, intent.runId);
+        return this.runs(turn, world, intent.runId, intent.latest);
+      case "cost":
+        return this.cost(turn, world, intent);
       case "followup":
         return Promise.resolve(undefined);
     }
@@ -589,7 +646,17 @@ export class ReplayChat implements ChatSource {
       data: {
         kind: "runs",
         world: world.key,
-        runs: world.runs.map((b) => ({ runId: b.runId, kind: b.kind, variant: b.variant, status: b.status, startedAt: b.startedAt, sample: b.sample })),
+        // Live recordings first, then replays, each replay labelled with the run it re-serves.
+        runs: world.runs.map((b) => ({
+          runId: b.runId,
+          kind: b.kind,
+          variant: b.variant,
+          mode: b.mode,
+          ...(isReplayRun(b) ? { label: replayBadge(b) } : {}),
+          status: b.status,
+          startedAt: b.startedAt,
+          sample: b.sample,
+        })),
       },
       citables: world.runs.map(runCitable),
     }));
@@ -672,8 +739,8 @@ export class ReplayChat implements ChatSource {
     // The held action, as the approval desk lists it (read-only in replay).
     let approval: PendingApproval | undefined;
     await turn.step("get_approval", `Opening the held action ${requestId}`, `${run.runId} ${requestId}`, async () => {
-      const list = await this.data.approvals();
-      approval = list.pending.find((a) => a.runId === run!.runId && a.decisionId === decision.id);
+      // The held action as the desk lists it, from this run only (no other world is fetched).
+      approval = heldApprovals([run!]).find((a) => a.decisionId === decision.id);
       return approval
         ? { status: "ok", output: `Held: ${approval.action} — read-only in replay`, data: { kind: "approval", readOnly: true, ...approvalData(approval) }, citables: [approvalCitable(approval)] }
         : { status: "error", output: `No held action is listed for ${requestId} in ${run!.runId}` };
@@ -793,7 +860,8 @@ export class ReplayChat implements ChatSource {
 
   private async adversary(turn: Turn, world: World) {
     await this.listRuns(turn, world);
-    // "The last run" = the newest run of this world that recorded adversary verdicts.
+    // "The last run" = the newest LIVE run of this world that recorded adversary verdicts (world.runs
+    // lists live recordings first, so a replay is only read when no live run recorded any).
     let chosen: { run: RunBundle; verdicts: TimelineEvent[] } | undefined;
     for (const run of world.runs) {
       const events = await this.timeline(run.runId);
@@ -817,7 +885,7 @@ export class ReplayChat implements ChatSource {
       return acc;
     }, {});
     const blocks = [
-      `In \`${chosen.run.runId}\` the adversary reviewed ${all.length} belief${all.length === 1 ? "" : "s"}: ${Object.entries(tally).map(([v, n]) => `${v} ×${n}`).join(", ")}${models.length ? ` (model ${models.join(", ")}, as recorded)` : " (model not recorded)"}. ${turn.cite(`run:${chosen.run.runId}`)}`,
+      `In ${runName(chosen.run)} the adversary reviewed ${all.length} belief${all.length === 1 ? "" : "s"}: ${Object.entries(tally).map(([v, n]) => `${v} ×${n}`).join(", ")}${models.length ? ` (model ${models.join(", ")}, as recorded)` : " (model not recorded)"}. ${turn.cite(`run:${chosen.run.runId}`)}`,
     ];
     if (!rejected.length) blocks.push("It upheld every belief it reviewed: nothing was rejected.");
     else
@@ -834,8 +902,8 @@ export class ReplayChat implements ChatSource {
     const runs = new Set(world.runs.map((r) => r.runId));
     let items: PendingApproval[] = [];
     await turn.step("list_approvals", "Listing held actions", world.key, async () => {
-      const list = await this.data.approvals();
-      items = list.pending.filter((a) => runs.has(a.runId));
+      // Held decisions of this world's runs only (no other world is fetched).
+      items = heldApprovals(world.runs.filter((r) => runs.has(r.runId)));
       const shown = items.slice(0, MAX_ROWS);
       return {
         status: "ok",
@@ -866,20 +934,159 @@ export class ReplayChat implements ChatSource {
     ].join("\n\n");
   }
 
-  private async runs(turn: Turn, world: World, runId?: string) {
+  private async runs(turn: Turn, world: World, runId?: string, latest?: boolean) {
     await this.listRuns(turn, world);
-    const run = world.runs.find((r) => r.runId === runId) ?? world.selected;
+    // "The last run": the newest live recording (world.runs lists live runs first); a replay
+    // re-serves an older run's cassettes and is never "the last run".
+    const newestLive = world.runs.find((r) => !isReplayRun(r));
+    const run = world.runs.find((r) => r.runId === runId) ?? (latest ? newestLive : undefined) ?? world.selected;
+    if (latest && !newestLive) await turn.note(`No live run is recorded in ${world.label}; only replays.`);
     const { rows } = await this.runEvents(turn, run, "the run's outcome", (e) => e.type === "run.finished" || e.type === "certificate.revoked" || e.type === "certificate.issued");
     const finished = rows?.find((e) => e.type === "run.finished");
     const held = run.decisions.filter((d) => d.status === "held").length;
+    const describe = (r: RunBundle) => {
+      const badge = replayBadge(r, world.runs);
+      return `\`${r.runId}\` (${r.kind}, ${r.variant}${badge ? `, ${badge}` : ""}) ${turn.cite(`run:${r.runId}`)}`;
+    };
+    const live = world.runs.filter((r) => !isReplayRun(r));
+    const replays = world.runs.filter((r) => isReplayRun(r));
     const lines = [
-      `${world.runs.length} run${world.runs.length === 1 ? " is" : "s are"} recorded in ${world.label}: ${world.runs.map((r) => `\`${r.runId}\` (${r.kind}, ${r.variant}) ${turn.cite(`run:${r.runId}`)}`).join(", ")}.`,
+      `${world.runs.length} run${world.runs.length === 1 ? " is" : "s are"} recorded in ${world.label}: ${[...live, ...replays].map(describe).join(", ")}.`,
     ];
+    if (replays.length)
+      lines.push(`${replays.length === 1 ? "The replay is" : "Replays are"} listed after the live runs: ${REPLAY_SPEND_TEXT}.`);
+    const badge = replayBadge(run, world.runs);
+    const name = badge ? `\`${run.runId}\` (${badge})` : `\`${run.runId}\``;
+    const lead = latest && run === newestLive ? `The last live run is ${name}` : name;
     lines.push(
       finished
-        ? `\`${run.runId}\`: ${finished.summary} ${turn.cite(`run_event:${finished.runId}#${finished.seq}`)}`
-        : `\`${run.runId}\` ended ${run.status}${run.decisions.length ? ` with ${held} of ${run.decisions.length} decisions held` : ""}. ${turn.cite(`run:${run.runId}`)}`,
+        ? `${lead}: ${finished.summary} ${turn.cite(`run_event:${finished.runId}#${finished.seq}`)}`
+        : `${lead} ended ${run.status}${run.decisions.length ? ` with ${held} of ${run.decisions.length} decisions held` : ""}. ${turn.cite(`run:${run.runId}`)}`,
     );
     return lines.join("\n\n");
+  }
+
+  // ------------------------------------------------------------------------------- spend
+
+  /**
+   * Spend questions, from public/economics.json only (validated and hash-checked here, the same
+   * rule as the Business page). Every figure is read from the file; nothing is summed or estimated
+   * by the engine. A replay's spend is "re-served from the recording", never a new cost. Without a
+   * verified file the answer says where the figures are published instead.
+   */
+  private async cost(turn: Turn, world: World, intent: Extract<Intent, { kind: "cost" }>) {
+    const { ECONOMICS_COMMAND, ECONOMICS_FILE, verifyEconomicsFile } = await import("./economics");
+    const page = `the Business page (${BUSINESS_PAGE})`;
+    const where = `${page}, from \`${ECONOMICS_FILE}\``;
+    const target = intent.runId
+      ? world.runs.find((r) => r.runId === intent.runId)
+      : intent.latest
+        ? world.runs.find((r) => !isReplayRun(r))
+        : undefined;
+    let state: EconomicsState | undefined;
+    const outcome = await turn.step(
+      "get_run",
+      target ? `Reading the spend of ${target.runId}` : "Reading the unit economics",
+      ECONOMICS_FILE,
+      async (): Promise<StepOutcome> => {
+        if (world.key !== "real")
+          return { status: "unavailable", output: "Spend is computed from real runs only", fix: `Open ${BUSINESS_PAGE} without ?fixtures=1` };
+        if (!this.economics)
+          return { status: "unavailable", output: `${ECONOMICS_FILE} is not readable here`, fix: `See ${BUSINESS_PAGE}` };
+        state = verifyEconomicsFile(await this.economics());
+        if (state.status === "missing")
+          return { status: "unavailable", output: `${ECONOMICS_FILE} is not published`, fix: `Write it with \`${ECONOMICS_COMMAND}\`` };
+        if (state.status === "invalid") return { status: "error", output: state.error };
+        const computed = state.file.computed;
+        const fileCitable: Citable = { type: "api_response", id: "", label: `${ECONOMICS_FILE} (hash verified)`, terms: [] };
+        if (!computed) return { status: "ok", output: state.file.computedReason ?? "No figures computed", citables: [fileCitable] };
+        const listed = new Set(computed.runs.map((r) => r.runId));
+        return {
+          status: "ok",
+          output: `${computed.totals.liveRuns} live and ${computed.totals.replayRuns} replay runs; hash verified`,
+          data: {
+            kind: "economics",
+            file: ECONOMICS_FILE,
+            runs: computed.runs.map((r) => ({
+              runId: r.runId,
+              mode: r.mode,
+              modelUsd: r.mode === "replay" ? null : r.modelUsd,
+              credits: r.mode === "replay" ? null : r.credits,
+              tokens: r.mode === "replay" ? null : r.tokens,
+              ...(r.mode === "replay" ? { spend: REPLAY_SPEND_TEXT } : {}),
+            })),
+          },
+          citables: [fileCitable, ...world.runs.filter((r) => listed.has(r.runId)).map(runCitable)],
+        };
+      },
+    );
+    const file = turn.cite(`api_response:${this.lastStepId(turn)}`);
+    if (world.key !== "real")
+      return `Spend is computed from real runs only: ${world.label} simulate their APIs and record no spend. The real figures are on ${where}.`;
+    if (!state || state.status === "missing")
+      return `No spend figures are published: \`${ECONOMICS_FILE}\` is missing. \`${ECONOMICS_COMMAND}\` writes it from the real run bundles, and ${page} shows it.`;
+    if (state.status === "invalid")
+      return `\`${ECONOMICS_FILE}\` failed its check, so its figures are withheld (${outcome.output}). See ${page} for the details.`;
+    const econ = state.file;
+    const blocks: string[] = [];
+    if (!econ.computed) {
+      blocks.push(`No spend is computed yet: ${econ.computedReason ?? "the file lists no figures"} ${file}`.trim());
+    } else {
+      const c = econ.computed;
+      const row = (id: string) => c.runs.find((r) => r.runId === id);
+      const unknown = (r: { usdUnknown?: boolean }) => (r.usdUnknown ? " (a lower bound: a model call had no known price)" : "");
+      if (target) {
+        const own = row(target.runId);
+        if (isReplayRun(target) || own?.mode === "replay") {
+          const original = target.replayOf ? row(target.replayOf) : undefined;
+          blocks.push(`${runName(target)}: ${REPLAY_SPEND_TEXT}. ${turn.cite(`run:${target.runId}`)} ${file}`.trim());
+          if (original && original.mode === "live")
+            blocks.push(
+              `The original run \`${original.runId}\` recorded ${usd(original.modelUsd)} of model spend${unknown(original)}, ${original.credits} credits and ${original.tokens} tokens. ${turn.cite(`run:${original.runId}`)} ${file}`.trim(),
+            );
+        } else if (own) {
+          const roles = own.usdByRole;
+          blocks.push(
+            `${intent.latest ? "The last live run, " : ""}${runName(target)}${intent.latest ? "," : ""} spent ${usd(own.modelUsd)} on model calls${unknown(own)} (executor ${usd(roles.executor)}, reflector ${usd(roles.reflector)}, adversary ${usd(roles.adversary)}), ${own.credits} credits and ${own.tokens} tokens. ${turn.cite(`run:${target.runId}`)} ${file}`.trim(),
+          );
+        } else {
+          blocks.push(`${runName(target)} is not listed in \`${ECONOMICS_FILE}\` (it lists ${c.runs.length} real run${c.runs.length === 1 ? "" : "s"}); re-run \`${ECONOMICS_COMMAND}\` to include it. ${file}`.trim());
+        }
+      } else {
+        const t = c.totals;
+        blocks.push(
+          `Across ${t.liveRuns} live real run${t.liveRuns === 1 ? "" : "s"}: ${usd(t.modelUsd)} of model spend${t.usdUnknownRuns ? ` (a lower bound: ${t.usdUnknownRuns} run${t.usdUnknownRuns === 1 ? "" : "s"} used a model without a known price)` : ""}, ${t.credits} credits and ${t.tokens} tokens. ${file}`,
+        );
+        const r = c.costPerRun;
+        blocks.push(
+          r.usd !== null || r.credits !== null
+            ? `Cost per run: ${r.usd !== null ? usd(r.usd) : "USD not computed"}${r.credits !== null ? ` and ${r.credits} credits` : ""}. ${r.basis} ${file}`
+            : `Cost per run is not computed: ${r.reason ?? r.basis} ${file}`,
+        );
+        if (c.tools.length)
+          blocks.push(
+            c.tools
+              .map(
+                (x) =>
+                  `- ${x.tool}: ${x.runs} full notarize run${x.runs === 1 ? "" : "s"}${x.reconRuns ? ` and ${x.reconRuns} recon sweep${x.reconRuns === 1 ? "" : "s"}` : ""}, ${usd(x.modelUsd)} of model spend, ${x.credits} credits${x.costPerCertificateUsd !== null ? `, ${usd(x.costPerCertificateUsd)} per certificate` : ""} ${file}`,
+              )
+              .join("\n"),
+          );
+        if (t.replayRuns > 0) blocks.push(`${t.replayRuns} replay${t.replayRuns === 1 ? "" : "s"}: ${REPLAY_SPEND_TEXT}.`);
+      }
+    }
+    if (intent.pricing)
+      blocks.push(
+        econ.plan
+          ? `Pricing comes from the imported cfo.ai plan (${econ.plan.tiers.length} tier${econ.plan.tiers.length === 1 ? "" : "s"}), shown on ${BUSINESS_PAGE}. ${file}`.trim()
+          : `No cfo.ai plan is imported, so there is no pricing to quote${econ.planReason ? `: ${econ.planReason}` : "."} ${file}`.trim(),
+      );
+    blocks.push(`Details: ${where}.`);
+    return blocks.join("\n\n");
+  }
+
+  /** The id of the turn's newest step (the cost step cites its own output). */
+  private lastStepId(turn: Turn): string {
+    return `s${turn.stepCount}`;
   }
 }

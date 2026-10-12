@@ -1,12 +1,16 @@
 // Shell-wide live status, read through the data layer:
 //  - the local server's health, re-checked every 30 s and when the tab regains focus (live mode
 //    only). The selection-time check alone could keep saying "Live" after `notary serve` stopped.
-//  - the number of approvals waiting, from DataSource.approvals() (live: needs the session token;
-//    replay: held decisions of the recorded runs). Undefined while unknown, never a placeholder 0.
+//  - the number of approvals waiting (live: GET /api/approvals, needs the session token; replay: held
+//    decisions of the visible recorded runs). Only the selected run's data world is counted (real
+//    runs, or one fixture scenario), so the badge never sums worlds, and a real item never counts
+//    under ?fixtures=1. Undefined while unknown, never a placeholder 0.
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { HealthResponse } from "../../../../core/src/schema";
 import { useDataSource, useSessionToken } from "../../data";
 import { useOptionalData } from "../../app/catalog";
+import { heldApprovals } from "../../data/replay";
+import { worldRuns } from "../../pages/approvals/model";
 
 export const RECHECK_MS = 30_000;
 
@@ -51,8 +55,14 @@ export function ShellStatusProvider({ children }: { children: ReactNode }) {
   const [approvalsKey, setApprovalsKey] = useState(0);
   const data = useOptionalData();
   const scoped = !!data;
-  const visibleKey = data ? data.bundles.map((b) => b.runId).join("|") : "";
+  // The selected run's world among the visible bundles (plus live runs still running, which are real).
+  const world = useMemo(() => (data ? worldRuns(data.bundles, data.bundle) : []), [data?.bundles, data?.bundle]);
+  const worldReal = !data?.bundle?.sample && !data?.fixtures;
+  const visibleKey = data
+    ? [...world.map((b) => b.runId), ...(worldReal ? data.running.map((r) => r.runId) : [])].join("|")
+    : "";
   const visibleIds = useMemo(() => new Set(visibleKey ? visibleKey.split("|") : []), [visibleKey]);
+  const catalogReady = !!data && !data.loading && !data.error;
 
   useEffect(() => {
     if (!ready) return;
@@ -101,21 +111,30 @@ export function ShellStatusProvider({ children }: { children: ReactNode }) {
       setApprovals({ state: "unknown", reason: "Paste the session token on the Approvals page to see waiting items." });
       return;
     }
+    // Replay inside the dashboard: the held decisions of the visible world's verified bundles. No
+    // fetch, so the default view never downloads fixture or sample bundles to count them.
+    if (mode !== "live" && scoped) {
+      if (!catalogReady) {
+        setApprovals({ state: "unknown", reason: "Loading…" });
+        return;
+      }
+      setApprovals({ state: "ready", pending: heldApprovals(world).length, readOnly: true });
+      return;
+    }
     const controller = new AbortController();
     source
       .approvals(controller.signal)
       .then((list) => {
-        // Replay lists the held decisions of every published run; count only the visible ones (real
-        // runs, or fixture runs under ?fixtures=1), so a fixture number never shows unlabeled.
-        const pending =
-          mode === "live" || !scoped ? list.pending.length : list.pending.filter((p) => visibleIds.has(p.runId)).length;
+        // Live: only items of runs this view shows (never a real item under the fixture banner).
+        const pending = scoped ? list.pending.filter((p) => visibleIds.has(p.runId)).length : list.pending.length;
         if (!controller.signal.aborted) setApprovals({ state: "ready", pending, readOnly: mode !== "live" });
       })
       .catch((e: Error) => {
         if (!controller.signal.aborted) setApprovals({ state: "unknown", reason: e.message });
       });
     return () => controller.abort();
-  }, [source, mode, ready, token, approvalsKey, visibleIds, scoped]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [source, mode, ready, token, approvalsKey, visibleIds, scoped, catalogReady, world]);
 
   // Live mode: waiting items change as runs hold actions; refresh with the health re-check.
   useEffect(() => {

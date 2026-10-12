@@ -9,12 +9,12 @@
     "Replay of notarize-dodo-20261012T014032Z from its pinned cassettes (tool traffic, model answers, store snapshot); no network calls, no keys.",
     "Probe ids and request tags use the recorded run id notarize-dodo-20261012T014032Z.",
     "Dodo Payments test mode only; refund and change-plan probes use seeded probe-only payments and subscriptions the seeded queue does not reference.",
-    "Verification probes: 5 required claim(s) with no anomaly this run (dodo.payment.refunds-lists-issued-refund, dodo.refund.amount-minor-units, dodo.refund.full-retry-no-duplicate, dodo.refunds.amount-integer, dodo.subscription.change-plan-pending-409) were probed against a deterministic rival pair {honored, suspected class from src/contracts/priors-map.ts} built by code, not proposed by a model; same commit-then-run loop, caps and budget.",
+    "Verification probes: 5 required claim(s) with no anomaly this run (dodo.payment.refunds-lists-issued-refund, dodo.refund.amount-minor-units, dodo.refund.full-retry-no-duplicate, dodo.refunds.amount-integer, dodo.subscription.change-plan-pending-409) had a deterministic rival pair {honored, suspected class from src/contracts/priors-map.ts} built by code, not proposed by a model, but no verification probe ran on them in this run (0 probes).",
     "Transfer priors from crustdata notarize bundle notarize-crustdata-20261012T011404Z: each new belief started from Beta(1 + s(1 - r), 1 + s*r), r = the crustdata base rate of its claim's suspected defect class, s = 2 pseudo-counts (Beta(1, 1) when crustdata settled nothing relevant).",
     "belief_precision is measured against the deterministic checker on the SAME recording (not an independent ground truth); see docs/AUDIT.md A-14"
   ],
-  "startedAt": "2026-10-12T01:42:48.857Z",
-  "finishedAt": "2026-10-12T01:42:48.932Z",
+  "startedAt": "2026-10-12T07:02:33.639Z",
+  "finishedAt": "2026-10-12T07:02:33.757Z",
   "status": "completed",
   "seed": 0,
   "tool": "dodo",
@@ -1168,5 +1168,5 @@
     "notarize-dodo-20261012T014032Z-llm@e78eb7c4098518bd6f09c3cd8bb953ca0bd91133dcc782bce44e9088eef99641",
     "notarize-dodo-20261012T014032Z-inputs@9cb372a329ac14c6e552b09952f8992a2ec3b3a96f76b920ba312db293efc20f"
   ],
-  "contentHash": "16807c03dc52f343a6d89d7df3c7e29e767b8c81da5fe903095d2aaf049104a1"
+  "contentHash": "7ae50a60297d191cda5982c95fc341a8cc8d8ff0f61594a2a9f0565915e47261"
 }

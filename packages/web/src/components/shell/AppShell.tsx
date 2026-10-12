@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router";
 import { Toaster } from "sonner";
-import { Button, EmptyState, FixtureNote, NoRunsYet, Page, PageBody, PageHeader, PageHeaderContext, PageSkeleton, StatusPill } from "../../ui";
+import { Button, EmptyState, FixtureNote, NoRunsYet, Page, PageBody, PageHeader, PageHeaderContext, PageSkeleton, ReplayBadge, StatusPill } from "../../ui";
 import { CommandPalette } from "./CommandPalette";
 import { MobileBar, Sidebar } from "./Sidebar";
 import { ShellStatusProvider } from "./status";
 import { useData } from "../../app/catalog";
 import { LiveToasts } from "../../app/live-toasts";
-import { keepView, NO_RUNS_COMMANDS, withRun } from "../../app/links";
+import { keepView, NO_RUNS_COMMANDS, replayBadge, withRun } from "../../app/links";
 import { matchAppRoute, routeById, type AppRoute } from "../../routes";
 import { dateTime as date } from "../../lib/time";
 import "./shell.css";
@@ -61,6 +61,7 @@ export function RunReceipt() {
       <span>
         {bundle.runId} · {bundle.kind} / {bundle.variant}
       </span>
+      {replayBadge(bundle) && <ReplayBadge>{replayBadge(bundle)}</ReplayBadge>}
       <StatusPill value={bundle.status} />
       <span>{date(bundle.startedAt)}</span>
     </div>

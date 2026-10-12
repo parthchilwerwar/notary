@@ -6,7 +6,7 @@
  * reported where they happen, in src/guards/guarded.ts.
  */
 import type { Decision, QueueRequest } from "../schema/index.js";
-import { incidentId, reportIncident, reportResolution } from "./live.js";
+import { currentIncidentRun, incidentId, reportIncident, reportResolution } from "./live.js";
 
 export function reportDecisionIncidents(d: Decision, req?: Pick<QueueRequest, "amount" | "currency">): void {
   try {
@@ -19,7 +19,7 @@ export function reportDecisionIncidents(d: Decision, req?: Pick<QueueRequest, "a
       summary: `The Guard held ${d.action} for ${d.requestId} (${amount}): ${d.missingBeliefs.length} required belief(s) not notarized (${d.missingBeliefs.join(", ")}).`,
       attrs: { "notary.decisionId": d.id, "notary.requestId": d.requestId, "notary.guard.action": d.action, "notary.guard.missingBeliefs": d.missingBeliefs.join(","), "notary.agent_id": "guard" },
     });
-    reportResolution(id || incidentId("guard_hold", d.id), {
+    reportResolution(id || incidentId("guard_hold", d.id, currentIncidentRun()), {
       status: "awaiting_human",
       action: "held_for_person",
       summary: `Held with an evidence pack (${d.evidencePack?.relatedProbeIds.length ?? 0} related probe(s)) for a person in Approvals.`,

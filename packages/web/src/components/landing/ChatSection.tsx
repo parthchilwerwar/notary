@@ -1,6 +1,5 @@
 import { lazy, Suspense, useRef } from "react";
 import type { DataSource } from "../../data";
-import { BUILT_WITH } from "../../landing-data";
 import { GridSection } from "../brand/GridFrame";
 import { drawStrokes, revealTitle } from "./motion";
 import { gsap, MOTION_OK, useGSAP } from "./gsap";
@@ -21,11 +20,20 @@ function connector(side: "l" | "r", i: number) {
   return `M ${STAGE.right + 8} ${y1} C ${STAGE.right + 36} ${y1}, ${STAGE.w - 248} ${y0}, ${STAGE.w - 212} ${y0}`;
 }
 
-export function ChatSection({ source }: { source: DataSource }) {
+/**
+ * `chips`: the integrations evidence/evidence.json confirms (landing-data `builtWith`), at most
+ * three per side; a pending one (cfo.ai before a plan is imported) is never a chip. Wires are drawn
+ * only to chips that exist.
+ */
+export function ChatSection({ source, chips }: { source: DataSource; chips: readonly string[] }) {
   const root = useRef<HTMLElement>(null);
   const near = useNear(root);
-  const left = BUILT_WITH.slice(0, 3);
-  const right = BUILT_WITH.slice(3, 6);
+  const left = chips.slice(0, 3);
+  const right = chips.slice(3, 6);
+  const sides = [
+    ["l", left],
+    ["r", right],
+  ] as const;
 
   useGSAP(
     () => {
@@ -54,16 +62,16 @@ export function ChatSection({ source }: { source: DataSource }) {
         <div className="l-chat-stage">
           <svg className="l-chat-wires" viewBox={`0 0 ${STAGE.w} ${STAGE.h}`} aria-hidden="true" focusable="false">
             <defs>
-              {(["l", "r"] as const).flatMap((side) =>
-                CHIP_Y.map((_, i) => (
+              {sides.flatMap(([side, names]) =>
+                names.map((_, i) => (
                   <mask key={`${side}${i}`} id={`chat-wire-${side}${i}`} maskUnits="userSpaceOnUse">
                     <path className="l-draw" d={connector(side, i)} fill="none" stroke="#fff" strokeWidth="6" />
                   </mask>
                 )),
               )}
             </defs>
-            {(["l", "r"] as const).flatMap((side) =>
-              CHIP_Y.map((_, i) => (
+            {sides.flatMap(([side, names]) =>
+              names.map((_, i) => (
                 <g key={`${side}${i}`}>
                   <path className="l-wire" d={connector(side, i)} mask={`url(#chat-wire-${side}${i})`} />
                   <circle className="l-wire-node" cx={side === "l" ? STAGE.left - 8 : STAGE.right + 8} cy={WINDOW_Y[i]} r="3.5" />

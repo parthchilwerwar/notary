@@ -88,6 +88,19 @@ describe("GET /api/bundles", () => {
     expect([...started].sort((a, b) => a - b)).toEqual(started);
   });
 
+  it("rejects a non-loopback Host header on every route of the local server (DNS rebinding; e2e audit)", async () => {
+    for (const path of ["/api/health", "/api/bundles", "/api/runs", "/api/bundles/sample-42", "/", "/anything"]) {
+      for (const host of ["evil.example", "evil.example:8787", "localhost.evil.example", "127.0.0.1.nip.io"]) {
+        const res = await app().request(path, { headers: { Host: host } });
+        expect(res.status, `${host} ${path}`).toBe(403);
+        expect(await res.text()).not.toContain(host);
+      }
+    }
+    for (const host of ["127.0.0.1:8787", "localhost:5173", "[::1]:8787", "localhost"]) {
+      expect((await app().request("/api/bundles", { headers: { Host: host } })).status, host).toBe(200);
+    }
+  });
+
   it("allows loopback dashboard origins and no others", async () => {
     const ok = await app().request("/api/bundles", { headers: { Origin: "http://localhost:5173" } });
     expect(ok.headers.get("Access-Control-Allow-Origin")).toBe("http://localhost:5173");

@@ -288,3 +288,13 @@ td.report-unsafe {
   gap: 4px 8px;
   min-width: 0;
 }
+
+/* Replays: labelled, and their spend cell says the recording was re-served (no new spend). */
+.report-run-mode {
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.report-replay-spend {
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}

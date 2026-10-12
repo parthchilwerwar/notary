@@ -1120,3 +1120,26 @@ code.ui-trace {
     min-height: 40px;
   }
 }
+
+/* A replay's label ("Replay of <run>"): a quiet pill, never colored like a status. */
+.ui-replay {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 1px 8px;
+  border: 1px solid var(--hairline-color);
+  border-radius: var(--r-pill);
+  background: var(--surface-subtle);
+  color: var(--text-strong-muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  vertical-align: middle;
+}
+.ui-replay-icon {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}

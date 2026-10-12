@@ -13,7 +13,10 @@
 //      and no step. Text the model writes next to its tool calls becomes a `note` event (≤ 20 words).
 //   2. A reply without tool calls is the answer. At most `maxSteps` (8) tool steps per question; when
 //      the cap is reached the next call uses tool_choice "none" with a nudge to answer now.
-//      Two consecutive rounds with only invalid calls end the turn with an `error` event.
+//      Two consecutive rounds that ran no new step (only invalid or repeated calls) end the turn
+//      with an `error` event. Model calls per message are hard-capped at maxSteps + 2
+//      (`maxModelCalls`): the last allowed call always uses tool_choice "none" with the nudge, so a
+//      model that keeps calling tools can never loop past the cap.
 //   3. The answer is markdown with [n] markers and a trailing `CITATIONS: [...]` line, which is
 //      stripped from the text and validated by code against this turn's step outputs only
 //      (citations.ts: every cited id must be a record id a tool returned this turn) -> one
@@ -60,8 +63,12 @@ export const NOTE_MAX_WORDS = CHAT_NOTE_MAX_WORDS;
 export const HISTORY_MESSAGE_CHARS = 6000;
 /** Output cap per model call (a call may turn out to be the answer). */
 export const CALL_MAX_TOKENS = 1500;
-/** Rounds in a row whose tool calls were all invalid before the turn gives up. */
+/** Rounds in a row that ran no new step (every call invalid or a repeat) before the turn gives up. */
 export const MAX_INVALID_ROUNDS = 2;
+/** Hard cap on model calls for one message: maxSteps tool rounds, one spare, one forced answer. */
+export function maxModelCalls(maxSteps: number): number {
+  return maxSteps + 2;
+}
 export const STOPPED_MESSAGE = "Stopped — this answer is incomplete.";
 /** Span attribute: the agent's id (src/schema/agents.ts), next to the display name in notary.agent. */
 export const AGENT_ID_SPAN_ATTR = "notary.agent_id";
@@ -367,9 +374,11 @@ async function loop(input: TurnInput, deps: AgentDeps): Promise<TurnResult> {
     let answer: string | null = null;
     let invalidRounds = 0;
     let capped = false;
+    const callCap = maxModelCalls(maxSteps);
     while (answer === null) {
       const toolSteps = steps.length - (money.moneyMoving ? 1 : 0);
-      if (!capped && toolSteps >= maxSteps) {
+      // The step cap, or the last model call this message may make: either way this call must answer.
+      if (!capped && (toolSteps >= maxSteps || usage.calls >= callCap - 1)) {
         capped = true;
         convo.push({ role: "user", content: chatStepCapNudge(maxSteps) });
       }
@@ -383,25 +392,28 @@ async function loop(input: TurnInput, deps: AgentDeps): Promise<TurnResult> {
       // Ids must be unique per call for the provider to pair results; fill any the provider left empty.
       const calls = reply.toolCalls.map((c, i) => ({ ...c, id: c.id || `call_${usage.calls}_${i}` }));
       convo.push({ role: "assistant", content: reply.text, toolCalls: calls });
-      let validThisRound = 0;
+      // Only a call that actually runs a new step counts as progress; repeats and refusals do not.
+      let ranThisRound = 0;
       for (const call of calls) {
         let out: string;
         const checked = checkToolCall(call);
         if (!checked.ok) out = `Not run: ${checked.reason}. Fix the call or answer from what you have.`;
         else {
-          validThisRound += 1;
           const key = `${checked.def.name}:${JSON.stringify(checked.args)}`;
           const dup = steps.find((s) => s.key === key);
           if (dup) out = `Not run again: you already ran ${checked.def.name} with these arguments in step ${dup.id}; its result is above.`;
           else if (steps.length - (money.moneyMoving ? 1 : 0) >= maxSteps) out = `Not run: the limit of ${maxSteps} tool calls for this question is reached.`;
-          else out = await runStep(checked.def, checked.args);
+          else {
+            out = await runStep(checked.def, checked.args);
+            ranThisRound += 1;
+          }
         }
         // Every tool call gets exactly one tool result (providers require the pairing).
         convo.push({ role: "tool", toolCallId: call.id, name: call.name, content: out });
       }
-      invalidRounds = validThisRound === 0 ? invalidRounds + 1 : 0;
+      invalidRounds = ranThisRound === 0 ? invalidRounds + 1 : 0;
       if (invalidRounds >= MAX_INVALID_ROUNDS) {
-        throw new TurnError(`${AGENTS.chat.name}'s tool calls were invalid ${MAX_INVALID_ROUNDS} rounds in a row.`, `Ask again or rephrase the question; if it keeps happening, check ${CHAT_MODEL} with \`pnpm notary doctor --llm\``);
+        throw new TurnError(`${AGENTS.chat.name}'s tool calls were invalid or repeated ${MAX_INVALID_ROUNDS} rounds in a row (no new step ran).`, `Ask again or rephrase the question; if it keeps happening, check ${CHAT_MODEL} with \`pnpm notary doctor --llm\``);
       }
     }
 

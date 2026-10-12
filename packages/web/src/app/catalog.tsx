@@ -170,7 +170,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const ready = catalog.status === "ready" ? catalog : undefined;
   const bundles = useMemo(() => ready?.bundles ?? [], [ready]);
   const entries = useMemo(() => ready?.entries ?? [], [ready]);
-  const fallbackId = useMemo(() => defaultRunId(entries), [entries]);
+  // Bundles carry probe/decision counts, so the default prefers a live run that recorded work.
+  const fallbackId = useMemo(() => defaultRunId(bundles.length ? bundles : entries), [bundles, entries]);
   const bundle = requested
     ? bundles.find((b) => b.runId === requested)
     : bundles.find((b) => b.runId === fallbackId);

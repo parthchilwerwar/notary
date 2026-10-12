@@ -12,12 +12,19 @@
  *   adversary_downgrade       belief.adversary.verdict ∈ {downgrade, narrow}           beliefId|reviewedAt
  *   guard_hold                decision.status = held with missing beliefs              decision.id
  *   guard_block               a fired block guard / guard refusal on a decision        decision.id|guardId
- *   unsafe_action_prevented   a fired transform guard, or a precheck that stopped a write   decision.id|guardId
+ *   unsafe_action_prevented   a fired transform guard, or a precheck the decision records as the refusal   decision.id|guardId
+ *   tool_error (decision)     a precheck passed but the write did not complete (outcome unknown)   decision.id|guardId
  *   unsafe_action_executed    grader: decision.grade.unsafe non-empty                  decision.id
  *   budget_stop               bundle.status = stopped_budget, or a USD-cap error span  runId / spanId
  *   rate_limited              notary.llm span with llm.attempts > 1; tool span with status 429   spanId
  *   model_error               notary.llm span with status error                        spanId
  *   tool_error                notary.tool.call span with status error or HTTP 5xx      spanId
+ *
+ * Attribution: an incident belongs to the run in which its event happened. A replay output
+ * (mode "replay" with replayOf) re-serves a recorded run and derives no incidents of its own; probe,
+ * belief-event and adversary-review facts count only when their timestamp falls inside the run's
+ * window [startedAt, finishedAt] (beliefs.after also carries beliefs reviewed by EARLIER runs, which
+ * are those runs' incidents). Ids are incidentId(kind, subject, runId).
  *
  * Resolutions come from the same records: guards compiled/retired, belief status, approvals,
  * the retry outcome, the parent span's status. Nothing is inferred beyond what the records show;
@@ -97,6 +104,16 @@ export function deriveIncidents(input: DeriveIncidentsInput): Incident[] {
   const timeline = input.timeline ?? [];
   const approvals = input.approvals ?? [];
   const runStart = isoOr(b.startedAt, new Date(0).toISOString());
+  // A replay re-serves the recorded run's events; the incidents are the original run's.
+  if (b.mode === "replay" && b.replayOf) return [];
+  const windowStart = Date.parse(b.startedAt);
+  const windowEnd = b.finishedAt ? Date.parse(b.finishedAt) : Number.POSITIVE_INFINITY;
+  /** True when `at` falls inside this run's window (the event happened in this run). */
+  const inRun = (at: string | undefined): boolean => {
+    if (!at) return false;
+    const t = Date.parse(at);
+    return Number.isFinite(t) && (!Number.isFinite(windowStart) || t >= windowStart) && t <= windowEnd;
+  };
 
   const exportedTraces = new Set(spans.filter((s) => s.exported === true).map((s) => s.traceId.toLowerCase()));
   const spanById = new Map(spans.map((s) => [s.spanId, s]));
@@ -161,6 +178,7 @@ export function deriveIncidents(input: DeriveIncidentsInput): Incident[] {
   // probe_contradiction
   for (const p of b.probes) {
     if (p.verdict !== "confirmed" || !p.winningHypothesisId) continue;
+    if (!inRun(p.ranAt ?? p.committedAt)) continue;
     const cls = hypClass.get(p.winningHypothesisId) ?? predictedClass(p);
     if (!cls || cls === "honored") continue;
     drafts.push({
@@ -183,7 +201,7 @@ export function deriveIncidents(input: DeriveIncidentsInput): Incident[] {
 
   // belief_unlearned
   for (const e of b.beliefEvents) {
-    if (e.to !== "unlearned") continue;
+    if (e.to !== "unlearned" || !inRun(e.at)) continue;
     const probe = e.probeId ? b.probes.find((p) => p.id === e.probeId) : undefined;
     const retired = b.guards.find((g) => g.beliefId === e.beliefId && !g.active && g.retiredAt);
     const recert = b.beliefEvents.find((x) => x.beliefId === e.beliefId && x.to === "notarized" && Date.parse(x.at) > Date.parse(e.at));
@@ -211,6 +229,8 @@ export function deriveIncidents(input: DeriveIncidentsInput): Incident[] {
   for (const belief of b.beliefs.after) {
     const rev = belief.adversary;
     if (!rev || (rev.verdict !== "downgrade" && rev.verdict !== "narrow")) continue;
+    // Reviewed by an earlier run (the belief came from the store): that run's incident, not this one's.
+    if (!inRun(rev.reviewedAt ?? belief.updatedAt)) continue;
     const span = spans.find((s) => (s.name === "notary.adversary" || s.name === "notary.agent.adversary") && s.attrs["notary.beliefId"] === belief.id);
     const resolution: IncidentResolution =
       belief.status === "notarized"
@@ -290,15 +310,40 @@ export function deriveIncidents(input: DeriveIncidentsInput): Incident[] {
     for (const gid of d.guardsApplied) {
       const g = guardById.get(gid);
       if (!g) continue;
-      const refused = d.status !== "executed" && (g.kind === "block" || (d.error ?? "").includes(g.id));
+      // A refusal is attributed to this guard only when the decision records it (a block guard always
+      // throws). A guard listed in guardsApplied merely ran: a precheck is listed even when it passed.
+      const refused = d.status !== "executed" && (g.kind === "block" || guardRefused(d.error, g.id) || guardRefused(d.evidencePack?.reason, g.id));
       let kind: IncidentKind | null = null;
+      let severity: "warning" | "error" = "warning";
       let summary = "";
       let resolution: IncidentResolution | null = null;
       if (g.kind === "transform") {
         kind = "unsafe_action_prevented";
         summary = `Guard ${g.id} rewrote ${g.operation} for ${d.requestId} (${g.class}): ${short(g.rule.param ?? "the amount", 40)} scaled by ${short(g.rule.scale ?? "?", 20)} before the call left the process.`;
         resolution = { status: "resolved", action: "action_rewritten", summary: `The call went out in the unit the API really uses; decision ${d.status}.`, at, recordIds: [g.id, g.beliefId] };
-      } else if (g.kind === "precheck" && d.status !== "executed") {
+      } else if (g.kind === "precheck" && d.status !== "executed" && !refused) {
+        // The precheck passed and the write still did not complete (timeout, 5xx, crash, rejection):
+        // nothing says the precheck stopped it, and an unknown write may have moved money.
+        const err = d.error ?? "";
+        const failedClearly = /^write failed: /.test(err);
+        kind = "tool_error";
+        severity = "error";
+        summary = failedClearly
+          ? `Guard ${g.id}'s precheck passed for ${d.action} on ${d.requestId}, but the write failed (${short(err.replace(/^write failed: /, ""), 160)}).`
+          : `Guard ${g.id}'s precheck passed for ${d.action} on ${d.requestId}, but the write did not complete${err ? ` (${short(err, 160)})` : ""}: the outcome is unknown and money may have moved.`;
+        const appr = approvals.find((a) => a.decisionId === d.id);
+        resolution = appr
+          ? {
+              status: "resolved",
+              action: appr.decision === "approved" ? "approved" : "rejected",
+              summary: appr.decision === "approved" ? `A person approved it (human override); the action ${appr.status}.` : `A person rejected it${appr.reason ? `: ${short(appr.reason, 120)}` : ""}.`,
+              at: isoOr(appr.decidedAt, runStart),
+              recordIds: [appr.id],
+            }
+          : d.status === "held"
+            ? { status: "awaiting_human", action: "held_for_person", summary: `${failedClearly ? "The write failed" : "Outcome unknown"}; decision held for a person to check the provider's state before anything is retried.`, at, recordIds: [d.id] }
+            : { status: "open", action: "none", summary: `${failedClearly ? "The write failed" : "Outcome unknown"}; decision ${d.status}.`, recordIds: [d.id] };
+      } else if (g.kind === "precheck" && refused) {
         kind = "unsafe_action_prevented";
         summary = `Guard ${g.id} (${g.class}) stopped ${d.action} for ${d.requestId}: its precheck found the write unsafe (e.g. an existing refund).`;
         resolution = { status: "resolved", action: "action_refused", summary: `No money moved; decision ${d.status}.`, at, recordIds: [g.id, g.beliefId] };
@@ -311,7 +356,7 @@ export function deriveIncidents(input: DeriveIncidentsInput): Incident[] {
       drafts.push({
         subject: `${d.id}|${g.id}`,
         kind,
-        severity: "warning",
+        severity,
         at,
         agent: "guard",
         tool: g.operation.startsWith("crustdata.") ? "crustdata" : "dodo",
@@ -469,7 +514,7 @@ export function deriveIncidents(input: DeriveIncidentsInput): Incident[] {
   const seen = new Set<string>();
   const out: Incident[] = [];
   for (const d of drafts) {
-    const id = incidentId(d.kind, d.subject);
+    const id = incidentId(d.kind, d.subject, b.runId);
     if (seen.has(id)) continue;
     seen.add(id);
     const traceId = d.traceId && TRACE_RE.test(d.traceId.toLowerCase()) ? d.traceId.toLowerCase() : undefined;
@@ -497,6 +542,13 @@ function predictedClass(p: Probe): string | undefined {
   const pred = p.winningHypothesisId ? p.prediction[p.winningHypothesisId] : undefined;
   if (pred && typeof pred === "object" && "class" in pred && typeof (pred as { class: unknown }).class === "string") return (pred as { class: string }).class;
   return undefined;
+}
+
+/** True when a recorded reason says guard `id` refused the call ("guard <id> blocked …" / "guard <id> refused …"). */
+export function guardRefused(reason: string | undefined, id: string): boolean {
+  if (!reason) return false;
+  const esc = id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^\\w-])guard ${esc} (blocked|refused) `).test(reason);
 }
 
 function num(v: unknown): number | undefined {

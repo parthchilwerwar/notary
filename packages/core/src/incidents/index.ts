@@ -1,6 +1,6 @@
 export { deriveIncidents } from "./derive.js";
 export type { DeriveIncidentsInput } from "./derive.js";
-export { incidentId, logLevelFor, reportIncident, reportResolution, reportedIncidentIds, resetReportedIncidents } from "./live.js";
+export { currentIncidentRun, enterIncidentRun, incidentId, logLevelFor, withIncidentRun, reportIncident, reportResolution, reportedIncidentIds, resetReportedIncidents } from "./live.js";
 export type { LiveIncident } from "./live.js";
 export {
   INCIDENTS_FILE,

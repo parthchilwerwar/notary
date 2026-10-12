@@ -2,7 +2,9 @@
 
 Oct 10, 2026. A hostile review of the repo at `12b376e` plus the fixes listed below, run before judges see it. Every claim here comes from reading the code or running a command; the commands are listed in [Commands run](#commands-run). A follow-up pass on top of `77f5ce5` worked through the remaining open findings that don't need keys. Its fixes are marked "commit pending".
 
-**Bottom line.** No API keys were ever available, so there is **no real evidence**: no cassettes, no live bundles, no notarized beliefs, no headline numbers. This audit therefore checks the *code paths* that would produce evidence. It found 6 places where a belief or result could move without the evidence the rules require. All 6 are now fixed with tests. The follow-up pass fixed 3 more (A-10 static allow-list, A-19, A-22). What can't be defended without live runs, or needs an owner decision, stays open with the reason given.
+**Status, Oct 12, 2026.** Real evidence now exists: 4 live bundles and 3 replays (`packages/web/public/bundles/`), 5 real certificates, all "matches docs", with 21 of 26 claims unproven (`packages/web/public/certificates/report.json`), every adversary verdict a narrow (`claude-opus-4.6`), 0 unguarded call sites on the `entire` and `tsc` backends, and every replayable run matching its live run exactly. Still unproven: everything that needs a queue run (unsafe actions, cost per queue run, automation rate, noise floor), blocked on the Dodo seed (12 hosted test-card checkouts). Belief precision (1, n = 1 Crustdata and n = 4 Dodo) is still self-referential (A-14). One live run, `notarize-dodo-20261012T012315Z`, can't replay (DECISIONS #200). The findings below are kept as written on Oct 10; see [`EVALUATION.md`](EVALUATION.md) for current values and [`PLAN.md`](../PLAN.md) Session 12 for what is still BLOCKED.
+
+**Bottom line (Oct 10, historical).** No API keys were ever available, so there is **no real evidence**: no cassettes, no live bundles, no notarized beliefs, no headline numbers. This audit therefore checks the *code paths* that would produce evidence. It found 6 places where a belief or result could move without the evidence the rules require. All 6 are now fixed with tests. The follow-up pass fixed 3 more (A-10 static allow-list, A-19, A-22). What can't be defended without live runs, or needs an owner decision, stays open with the reason given.
 
 ## Evidence integrity: real bundles
 
@@ -61,7 +63,9 @@ Severity: Critical = could disqualify the submission; High = a belief, number or
 
 ## Unverified because no API keys
 
-Every row of the PRD success-metrics table is currently unproven:
+**Status update, Oct 12.** Since the live runs: belief precision is measured (1, false beliefs 0, still self-referential per A-14); unguarded call sites are 0 on the entire-graph backend too (33 sites, 26 guarded, 7 raw-by-design); reproducibility is an exact match for the 3 replayable live runs; FR-4 (prediction committed before the call, on the probe span) and FR-7 (adversary verdicts from a real model) ran live; FR-17 ran via Entire. Unsafe money actions, cost per queue run, probes with vs without priors, automation rate and FR-16 on a real drift fixture remain unproven. The table below is the Oct 10 snapshot.
+
+As of Oct 10, every row of the PRD success-metrics table was unproven:
 
 | PRD metric | Target | Status | What it needs |
 | --- | --- | --- | --- |

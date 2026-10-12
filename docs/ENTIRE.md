@@ -55,7 +55,7 @@ Step 3 is what was run in this repo. It wrote:
 
 **`commit_linking: "always"`.** Entire's default is `prompt`: when a commit follows agent work, the prepare-commit-msg hook asks `[Y/n/a]` on the terminal. The adversary's verdict commit is made by Node with no terminal, so the hook waited forever (observed live). With `always`, every commit made while Entire tracks a session is linked without asking.
 
-**Pushing.** With `checkpoint_push_remote: origin`, the pre-push hook pushes the checkpoint refs along with `git push`. Checkpoints contain session transcripts. Entire redacts secrets before anything leaves the machine ([security](https://docs.entire.io/security)), and the GitHub repo is private. Run `entire configure --skip-push-sessions` to keep checkpoints local.
+**Pushing.** With `checkpoint_push_remote: origin`, the pre-push hook pushes the checkpoint refs along with `git push`. Checkpoints contain session transcripts. Entire redacts secrets before anything leaves the machine ([security](https://docs.entire.io/security)). The GitHub repo is private today, so the pushed checkpoint refs are visible only to collaborators; once the repo is made public, anyone who can clone it can fetch them. Run `entire configure --skip-push-sessions` to keep checkpoints local.
 
 ## How checkpoints map to agent sessions
 
@@ -81,7 +81,18 @@ On 2026-10-12, in a scratch clone of this repo with Entire enabled, `reviewBelie
 1. The `--allowedTools` rules are relative to the working directory. Given an 8.3 short path (`C:\Users\PARTHC~1\…`), Claude Code denied the inbox Read and refused to invent a verdict. `reviewWithSession` now resolves the repo root with `realpath.native` first.
 2. The `commit_linking: prompt` hang described above.
 
-The clone and its checkpoint are scratch data and are not in this repo. On `main`, the first checkpoints come from the first commit made under a tracked session, or from the first `pnpm notary notarize --tool <name> --adversary session` run.
+The clone and its checkpoint are scratch data and are not in this repo.
+
+### Checkpoints on `main`
+
+Entire was enabled on Oct 12, late in the build, so only the last two of the repo's ~83 commits are checkpointed; the earlier history has none.
+
+| Checkpoint | Commit | Subject |
+| --- | --- | --- |
+| `01M4Q2CJDTHF76EE7QK11TEEV1` | `409fd51` | Session 12: real runs, real agents, all sponsors wired |
+| `01M4Q2JS4B3N3B42W0X9MGNSS7` | `0f2406f` | Evidence after the first Entire checkpoint; cfo.ai live only with an imported plan |
+
+Both refs are under `refs/entire/checkpoints/` and pushed to `origin` (`git ls-remote origin 'refs/entire/*'`). [`packages/web/public/evidence/entire.json`](../packages/web/public/evidence/entire.json) was generated at `409fd51`, so it lists the first one; re-run `pnpm notary export --entire` after the next commit to list both. No `--adversary session` review has run on `main` yet.
 
 ## Guard coverage with `entire graph`
 
@@ -125,7 +136,7 @@ Cost: every `entire graph` query re-indexes a dirty working tree, about 50 s idl
 
 1. Terminal: `entire status`. It shows Entire enabled for Claude Code on `main`.
 2. Terminal: `git log -3 --format='%h %s%n%(trailers:key=Entire-Checkpoint)'`. The commits carry `Entire-Checkpoint` trailers.
-3. Terminal: `entire checkpoint explain <id>` on an `adversary: …` commit. It shows the reviewer's session, its prompt and the verdict file it touched. Say: "Every review is checkpointed."
+3. Terminal: `entire checkpoint explain 01M4Q2CJDTHF76EE7QK11TEEV1`. It shows the Claude Code session behind commit `409fd51`, the model and the files it touched. Say: "Every commit since Entire was enabled is tied to the agent session that wrote it." (There is no `adversary: …` commit on `main` yet; don't show one.)
 4. Terminal: `pnpm notary guards coverage --backend entire`. Show `unguarded_call_sites = 0` and the `entire graph edges` line. Say: "entire-graph proves no money call skips a guard." Pre-run it before recording, because it takes about a minute.
 5. Browser: `/app/report` → **Receipts → Review checkpoints**. It shows the checkpoint rows (id, time, session, commit, files touched) and the coverage figure from `entire.json`.
 

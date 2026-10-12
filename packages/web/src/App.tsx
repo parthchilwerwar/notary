@@ -1,7 +1,7 @@
 // Dashboard under /app/*: one data provider, one shell, routes from src/routes.tsx.
 import { Link, Navigate, Route, Routes, useLocation, useParams } from "react-router";
 import { AppShell } from "./components/shell";
-import { Button, EmptyState } from "./ui";
+import { Button, Page, PageHeader } from "./ui";
 import { DataProvider } from "./app/catalog";
 import { redirectTarget, redirects, relativePath, routes, type Redirect } from "./routes";
 
@@ -11,18 +11,20 @@ function RedirectTo({ redirect }: { redirect: Redirect }) {
   return <Navigate to={redirectTarget(redirect, params, search)} replace />;
 }
 
+/** A page header like every dashboard page, so the 404 has the page's one h1. */
 function NotFound() {
   return (
-    <EmptyState
-      title="Page not found"
-      action={
-        <Button asChild>
-          <Link to="/app/run">Open the run</Link>
-        </Button>
-      }
-    >
-      No dashboard page lives at this address.
-    </EmptyState>
+    <Page>
+      <PageHeader
+        title="Page not found"
+        summary="No dashboard page lives at this address."
+        action={
+          <Button asChild>
+            <Link to="/app/run">Open the run</Link>
+          </Button>
+        }
+      />
+    </Page>
   );
 }
 

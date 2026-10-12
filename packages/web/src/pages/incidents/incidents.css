@@ -272,3 +272,17 @@
     gap: 2px;
   }
 }
+
+/* Per-world counts (fixture scenarios are never summed) and the counting note. */
+.inc-world {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.inc-world-title {
+  margin: 0;
+}
+.inc-count-note {
+  max-width: 72ch;
+  overflow-wrap: anywhere;
+}

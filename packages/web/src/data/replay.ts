@@ -74,6 +74,29 @@ class LazyReplayChat implements ChatSource {
   }
 }
 
+/**
+ * Held decisions of these bundles as the read-only approval desk lists them (testMode false, no
+ * `amount`: the held amount is computed by `notary serve`, never guessed here). Shared by
+ * ReplaySource.approvals (every published run) and the replay chat engine (one world's runs only,
+ * so a chat turn never fetches another world's bundles).
+ */
+export function heldApprovals(bundles: readonly RunBundle[]): PendingApproval[] {
+  return bundles.flatMap((b) =>
+    b.decisions
+      .filter((d) => d.status === "held")
+      .map((d) => ({
+        id: approvalId(b.runId, d.id),
+        runId: b.runId,
+        decisionId: d.id,
+        requestId: d.requestId,
+        action: d.action,
+        // Same rule the server uses for a pending item's reason.
+        reason: d.error ?? d.evidencePack?.reason ?? "held",
+        missingBeliefs: d.missingBeliefs,
+      })),
+  );
+}
+
 export class ReplaySource implements DataSource {
   readonly mode = "replay" as const;
   readonly published: PublishedFiles;
@@ -84,7 +107,8 @@ export class ReplaySource implements DataSource {
   constructor(opts: { published?: PublishedFiles; timers?: Timers; chat?: ReplayChatOptions } = {}) {
     this.published = opts.published ?? new PublishedFiles();
     this.timers = opts.timers ?? realTimers;
-    this.chat = new LazyReplayChat(this, { timers: this.timers, ...opts.chat });
+    // economics.json through these same published files (the engine verifies its hash before use).
+    this.chat = new LazyReplayChat(this, { timers: this.timers, economics: (signal) => this.published.economics(signal), ...opts.chat });
   }
 
   async health(): Promise<null> {
@@ -122,20 +146,7 @@ export class ReplaySource implements DataSource {
   async approvals(signal?: AbortSignal): Promise<ApprovalsList> {
     const runs = await this.listRuns(signal);
     const bundles = await Promise.all(runs.map((r) => this.getRun(r.runId, signal)));
-    const pending: PendingApproval[] = bundles.flatMap((b) =>
-      b.decisions
-        .filter((d) => d.status === "held")
-        .map((d) => ({
-          id: approvalId(b.runId, d.id),
-          runId: b.runId,
-          decisionId: d.id,
-          requestId: d.requestId,
-          action: d.action,
-          // Same rule the server uses for a pending item's reason.
-          reason: d.error ?? d.evidencePack?.reason ?? "held",
-          missingBeliefs: d.missingBeliefs,
-        })),
-    );
+    const pending = heldApprovals(bundles);
     return { testMode: false, pending, decided: [] };
   }
 

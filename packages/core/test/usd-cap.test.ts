@@ -8,6 +8,7 @@ import {
   LlmClient,
   ModelConfigError,
   UsdCapExceededError,
+  UsdPriceUnknownError,
   isUsdCapExceeded,
   maxUsdFromEnv,
   priceCall,
@@ -144,6 +145,42 @@ describe("NOTARY_MAX_USD", () => {
     await llm.complete(req); // 0.008 < 0.01 → allowed, ends at 0.012
     await expect(llm.complete(req)).rejects.toBeInstanceOf(UsdCapExceededError);
     expect(calls).toHaveLength(3);
+  });
+
+  it("unknown price, no proxy-reported cost: the cap refuses the next call (BLOCKED, naming NOTARY_PRICE_<ROLE>_IN/OUT) instead of counting $0 forever (audit #5)", async () => {
+    const { t, calls } = chat(); // no x-litellm-response-cost header, no override, not in the table
+    const llm = new LlmClient({ env: { ...LITE, NOTARY_MAX_USD: "0.01" }, chatTransport: t });
+    const req = { role: "reflector" as const, messages: [{ role: "user" as const, content: "x" }] };
+    const first = await llm.complete(req);
+    expect(first).toMatchObject({ usd: 0, priceSource: "unknown" });
+    expect(llm.meter.unknownCalls()).toBe(1);
+    const err = (await llm.complete(req).catch((e) => e)) as Error;
+    expect(err).toBeInstanceOf(UsdPriceUnknownError);
+    expect(isUsdCapExceeded(err)).toBe(true); // callers stop cleanly, as at the cap
+    expect(err.message).toMatch(/^BLOCKED: NOTARY_MAX_USD=0\.01 is set but .*cost is unknown.*NOTARY_PRICE_REFLECTOR_IN and NOTARY_PRICE_REFLECTOR_OUT/);
+    expect(calls).toHaveLength(1);
+    // Without a cap nothing is refused, but the unknown calls are still counted (never silently $0).
+    const free = new LlmClient({ env: LITE, chatTransport: chat().t });
+    await free.complete(req);
+    await free.complete(req);
+    expect(free.meter.unknownCalls()).toBe(2);
+  });
+
+  it("Bedrock with a cap and a model it cannot price: refused before any I/O (audit #5)", async () => {
+    const calls: unknown[] = [];
+    const transport = async (input: unknown) => {
+      calls.push(input);
+      return { output: { message: { role: "assistant", content: [{ text: "x" }] } }, usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 }, stopReason: "end_turn", metrics: { latencyMs: 1 }, $metadata: {} };
+    };
+    const env = { AWS_REGION: "us-east-1", NOTARY_MODEL_EXECUTOR: "test-unpriced-model", NOTARY_MODEL_REFLECTOR: SONNET, NOTARY_MODEL_ADVERSARY: "anthropic.claude-opus-4-1-20250805-v1:0", NOTARY_MAX_USD: "1" };
+    const llm = new LlmClient({ env, transport: transport as never });
+    const err = (await llm.complete({ role: "executor", messages: [{ role: "user", content: "x" }] }).catch((e) => e)) as Error;
+    expect(err).toBeInstanceOf(UsdPriceUnknownError);
+    expect(err.message).toMatch(/^BLOCKED: .*"test-unpriced-model" is unknown.*NOTARY_PRICE_EXECUTOR_IN and NOTARY_PRICE_EXECUTOR_OUT/);
+    expect(calls).toHaveLength(0);
+    // A table-priced role still runs under the same cap.
+    await llm.complete({ role: "reflector", messages: [{ role: "user", content: "x" }] });
+    expect(calls).toHaveLength(1);
   });
 
   it("a replayed cap error (plain Error with the recorded name) is still recognised", () => {

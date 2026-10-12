@@ -8,97 +8,7 @@
   ],
   "incidents": [
     {
-      "id": "inc-5040030ea5c2c477",
-      "runId": "demo-run-guarded",
-      "kind": "adversary_downgrade",
-      "severity": "warning",
-      "at": "2026-10-10T08:46:34.575Z",
-      "agent": "adversary",
-      "tool": "dodo",
-      "summary": "The Adversary downgraded belief-dodo.payments.page-size-max-100 instead of upholding it (model fixture.adversary-double).",
-      "recordIds": [
-        "belief-dodo.payments.page-size-max-100",
-        "dodo.payments.page-size-max-100"
-      ],
-      "claimId": "dodo.payments.page-size-max-100",
-      "beliefId": "belief-dodo.payments.page-size-max-100",
-      "exported": false,
-      "resolution": {
-        "status": "resolved",
-        "action": "belief_abstained",
-        "summary": "The objection kept belief-dodo.payments.page-size-max-100 out of certification (status abstained); no guard relies on it and money actions that need it are held.",
-        "at": "2026-10-10T08:46:34.796Z",
-        "recordIds": [
-          "belief-dodo.payments.page-size-max-100"
-        ]
-      },
-      "data": {
-        "verdict": "downgrade",
-        "backend": "bedrock"
-      }
-    },
-    {
-      "id": "inc-03ce280646d9a591",
-      "runId": "demo-run-guarded",
-      "kind": "adversary_downgrade",
-      "severity": "warning",
-      "at": "2026-10-10T08:46:34.646Z",
-      "agent": "adversary",
-      "tool": "dodo",
-      "summary": "The Adversary narrowed belief-dodo.wallet.credit-amount-minor-units instead of upholding it (model fixture.adversary-double).",
-      "recordIds": [
-        "belief-dodo.wallet.credit-amount-minor-units",
-        "dodo.wallet.credit-amount-minor-units"
-      ],
-      "claimId": "dodo.wallet.credit-amount-minor-units",
-      "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
-      "exported": false,
-      "resolution": {
-        "status": "resolved",
-        "action": "certified",
-        "summary": "Certified only within the narrowed scope (USD only: dodo.createWalletLedgerEntry was probed with USD amounts; other curre…); guards refuse calls outside it.",
-        "at": "2026-10-10T08:46:34.648Z",
-        "recordIds": [
-          "belief-dodo.wallet.credit-amount-minor-units"
-        ]
-      },
-      "data": {
-        "verdict": "narrow",
-        "backend": "bedrock"
-      }
-    },
-    {
-      "id": "inc-257b717b9eadd439",
-      "runId": "demo-run-guarded",
-      "kind": "adversary_downgrade",
-      "severity": "warning",
-      "at": "2026-10-10T08:46:34.657Z",
-      "agent": "adversary",
-      "tool": "dodo",
-      "summary": "The Adversary narrowed belief-dodo.wallet.idempotency-key-no-duplicate instead of upholding it (model fixture.adversary-double).",
-      "recordIds": [
-        "belief-dodo.wallet.idempotency-key-no-duplicate",
-        "dodo.wallet.idempotency-key-no-duplicate"
-      ],
-      "claimId": "dodo.wallet.idempotency-key-no-duplicate",
-      "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
-      "exported": false,
-      "resolution": {
-        "status": "resolved",
-        "action": "certified",
-        "summary": "Certified only within the narrowed scope (USD only: dodo.createWalletLedgerEntry was probed with USD amounts; other curre…); guards refuse calls outside it.",
-        "at": "2026-10-10T08:46:34.659Z",
-        "recordIds": [
-          "belief-dodo.wallet.idempotency-key-no-duplicate"
-        ]
-      },
-      "data": {
-        "verdict": "narrow",
-        "backend": "bedrock"
-      }
-    },
-    {
-      "id": "inc-998c740a1d5fc9d1",
+      "id": "inc-f48ee676a837ec4e",
       "runId": "demo-run-guarded",
       "kind": "guard_hold",
       "severity": "warning",
@@ -132,7 +42,7 @@
       }
     },
     {
-      "id": "inc-14161f74c0198fe7",
+      "id": "inc-48a71ac2d1e8313c",
       "runId": "demo-run-guarded",
       "kind": "guard_hold",
       "severity": "warning",
@@ -166,7 +76,7 @@
       }
     },
     {
-      "id": "inc-a59ddc3f9cc38ea4",
+      "id": "inc-c82aaede38482a98",
       "runId": "demo-run-guarded",
       "kind": "guard_hold",
       "severity": "warning",
@@ -201,7 +111,7 @@
       }
     },
     {
-      "id": "inc-d6818ed4d1c92436",
+      "id": "inc-d4aeaad3744287cf",
       "runId": "demo-run-guarded",
       "kind": "guard_hold",
       "severity": "warning",
@@ -235,7 +145,7 @@
       }
     },
     {
-      "id": "inc-1a263ae887dccf9d",
+      "id": "inc-fae23c882ae2a4ee",
       "runId": "demo-run-guarded",
       "kind": "guard_hold",
       "severity": "warning",
@@ -269,7 +179,7 @@
       }
     },
     {
-      "id": "inc-ecd38c57d6cf8252",
+      "id": "inc-1a2d6570b5059561",
       "runId": "demo-run-guarded",
       "kind": "guard_hold",
       "severity": "warning",
@@ -303,7 +213,7 @@
       }
     },
     {
-      "id": "inc-c66b35a57913e66b",
+      "id": "inc-003c3bdfc9957c2e",
       "runId": "demo-run-guarded",
       "kind": "guard_block",
       "severity": "warning",
@@ -338,7 +248,7 @@
       }
     },
     {
-      "id": "inc-7a3cebd2eb97b338",
+      "id": "inc-c07cb74f390c5766",
       "runId": "demo-run-guarded",
       "kind": "guard_hold",
       "severity": "warning",
@@ -373,7 +283,7 @@
       }
     },
     {
-      "id": "inc-08f4f13a0ee86682",
+      "id": "inc-b5bdd090a4f5337c",
       "runId": "demo-run-guarded",
       "kind": "guard_hold",
       "severity": "warning",
@@ -408,7 +318,7 @@
       }
     },
     {
-      "id": "inc-f80d045850fd6184",
+      "id": "inc-36f3cd8027803bed",
       "runId": "demo-run-guarded",
       "kind": "guard_block",
       "severity": "warning",
@@ -443,7 +353,7 @@
       }
     },
     {
-      "id": "inc-5060d466232ea7d7",
+      "id": "inc-281ef3750f9d0099",
       "runId": "demo-run-guarded",
       "kind": "guard_block",
       "severity": "warning",
@@ -478,7 +388,7 @@
       }
     },
     {
-      "id": "inc-dee3af9f37f3083d",
+      "id": "inc-bdcd9c765f001fe6",
       "runId": "demo-run-guarded",
       "kind": "guard_hold",
       "severity": "warning",

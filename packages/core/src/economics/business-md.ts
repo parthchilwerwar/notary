@@ -9,15 +9,23 @@ import { CFO_PLAN_HEADER } from "./cfo-import.js";
 /** The round trip, step by step (also shown on the Business page). */
 export const CFO_STEPS: readonly string[] = [
   "Sign up at https://cfo.ai/neathacks (then cancel the subscription in Settings → Billing, per the hackathon rules).",
-  "Run `pnpm notary economics`. It writes `export/cfo-inputs.csv`: one row per real run with model USD by role, tokens, Crustdata credits, unsafe actions and held actions, straight from the bundles.",
+  "Run `pnpm notary economics`. It writes `export/cfo-inputs.csv`: one row per real run with model USD by role, tokens, Crustdata credits, unsafe actions and held actions, straight from the bundles. Replay rows (`new_spend` = no) re-serve a recorded run and carry 0 spend, so the sheet never counts a live run twice; `stage` tells recon sweeps (`notarize-recon`) from full notarize runs; a model with no known price leaves `model_usd` empty (unknown, not 0).",
   "In cfo.ai, open Connections → Add → Integrations → Upload and choose `export/cfo-inputs.csv` (or attach it to an Ari message and pick \"Data source\"). Ask Ari to confirm the import finished.",
   "Ask Ari to build the plan from that data source (prompt below): pricing per monitored API contract, COGS per contract, cost of incidents prevented, a monthly revenue and COGS projection, cash and runway. Review and adjust the assumptions on the Page.",
   `Ask Ari for the plan as a downloadable CSV in Notary's import format (prompt below; header \`${CFO_PLAN_HEADER.join(",")}\`). Download the file card. Optionally Share the Page (Share → Create link) and put the link in a \`meta,share_url\` row.`,
   "Run `pnpm notary economics --cfo-import <downloaded.csv>`. The plan lands in `packages/web/public/economics.json` (hash-pinned, with the file's sha256 and the import time), on the dashboard's Business page and in this file.",
 ];
 
+/** The direct route: `notary cfo connect` / `sync` over cfo.ai's MCP server (src/cfo/). */
+export const CFO_MCP_STEPS: readonly string[] = [
+  "Run `pnpm notary cfo connect`. It discovers cfo.ai's OAuth server from `https://api.cfo.ai/mcp`, registers Notary as a native client, and opens your browser on cfo.ai's sign-in page; you sign in there (Notary never sees your password). Tokens stay in the gitignored `packages/core/config/cfo-oauth.json`. With several workspaces, pick one (or pass `--org <id>`).",
+  "In cfo.ai, keep the plan in a table block named \"Notary Plan\" (or pass `--table` to `sync`, repeatable). Each row name carries its unit in parentheses: dated rows such as `Revenue (USD)`, `COGS (USD)` and `Cash (USD)` become series; timeless rows such as `Runway months (months)` and `Cost per incident (USD)` become figures; `Tier <Name> price (USD/contract/month)` rows become pricing tiers. Rows without a unit, rows split by a Dimension, and cells that are not plain numbers are rejected, never guessed.",
+  "Run `pnpm notary cfo sync` (or press \"Sync from cfo.ai\" on the Business tab while `pnpm notary serve` runs). It reads the tables with `inspect_table_blocks` (Main scenario unless `--scenario`), records the workspace and scenario ids, the sync time and the sha256 of the raw MCP payload, and regenerates economics.json and this file. The raw payload stays local in the gitignored `packages/core/config/cfo-last-sync.json`. A response shape Notary does not recognize is rejected with the keys it found, and nothing is written.",
+  "Notary's per-run costs still go into cfo.ai as the `export/cfo-inputs.csv` upload: cfo.ai's MCP server documents no write of literal data rows (`notary cfo push` explains and exits BLOCKED).",
+];
+
 export const ARI_MODEL_PROMPT = [
-  "Use the uploaded data source cfo-inputs.csv (one row per Notary run; model_usd, tokens and crustdata_credits are real costs, mode=live rows are billable work, replay rows cost nothing).",
+  "Use the uploaded data source cfo-inputs.csv (one row per Notary run; model_usd, tokens and crustdata_credits are real costs; new_spend=yes rows are billable work; new_spend=no rows are replays with 0 spend; an empty model_usd is an unknown price, not 0).",
   "Build a business plan for Notary, a certification layer that monitors API contracts for AI agents, on a Page named \"Notary plan\":",
   "1. Three pricing tiers, priced per monitored API contract per month.",
   "2. COGS per monitored contract per month from the live rows (model_usd plus crustdata_credits at our Crustdata credit price).",
@@ -62,7 +70,11 @@ export function renderBusinessMd(f: EconomicsFile): string {
     out.push(`Not imported: ${f.planReason}`);
   } else {
     const s = f.plan.source;
-    out.push(`Imported ${s.importedAt} from \`${s.file}\` (sha256 \`${s.fileSha256}\`, format \`${s.format}\`).`);
+    if (s.mcp)
+      out.push(
+        `Synced ${s.importedAt} from cfo.ai over MCP (\`${s.mcp.server}\`, tool \`${s.mcp.tool}\`, table${s.mcp.tables.length === 1 ? "" : "s"} ${s.mcp.tables.map((t) => `"${t}"`).join(", ")}; workspace id \`${s.mcp.orgId}\`${s.mcp.scenarioId ? `, scenario id \`${s.mcp.scenarioId}\`` : ""}${s.mcp.pageId ? `, page id \`${s.mcp.pageId}\`` : ""}). Raw MCP payload sha256 \`${s.fileSha256}\` (canonical JSON of the local \`${s.file}\`), format \`${s.format}\`.`,
+      );
+    else out.push(`Imported ${s.importedAt} from \`${s.file}\` (sha256 \`${s.fileSha256}\`, format \`${s.format}\`).`);
     const where = [s.workspace && `workspace "${s.workspace}"`, s.page && `page "${s.page}"`, s.scenario && `scenario "${s.scenario}"`, s.exportedAt && `exported ${s.exportedAt}`].filter(Boolean);
     if (where.length) out.push(`cfo.ai ${where.join(", ")}.`);
     if (s.shareUrl) out.push(`Read-only cfo.ai page: ${s.shareUrl}`);
@@ -101,7 +113,7 @@ export function renderBusinessMd(f: EconomicsFile): string {
   if (!c) {
     out.push(`Not computed: ${f.computedReason}`);
   } else {
-    out.push(`${c.totals.runs} real bundles (${c.totals.liveRuns} live, ${c.totals.replayRuns} replay). Live spend: ${usd(c.totals.modelUsd)} model USD, ${c.totals.credits} Crustdata credits, ${c.totals.tokens} tokens. Crustdata credits have no USD price, so they are reported next to model USD, never converted.`);
+    out.push(`${c.totals.runs} real bundles (${c.totals.liveRuns} live, ${c.totals.replayRuns} replay). Live spend: ${c.totals.usdUnknownRuns ? `at least ${usd(c.totals.modelUsd)} model USD (${c.totals.usdUnknownRuns} live run${c.totals.usdUnknownRuns === 1 ? "" : "s"} used a model with no known price)` : `${usd(c.totals.modelUsd)} model USD`}, ${c.totals.credits} Crustdata credits, ${c.totals.tokens} tokens. Crustdata credits have no USD price, so they are reported next to model USD, never converted.`);
     out.push("");
     out.push("| Figure | Value | How it is computed |");
     out.push("| --- | --- | --- |");
@@ -142,6 +154,10 @@ export function renderBusinessMd(f: EconomicsFile): string {
   out.push("```text");
   out.push(ARI_EXPORT_PROMPT);
   out.push("```");
+  out.push("");
+  out.push("Or read the plan straight from cfo.ai over its MCP server, with no file to download:");
+  out.push("");
+  CFO_MCP_STEPS.forEach((step, i) => out.push(`${i + 1}. ${step}`));
   out.push("");
   out.push(`Sources: ${f.sources.bundles.length} real bundles used, ${f.sources.skipped.length} files skipped (fixtures, samples, drift fixtures, failed checks)${f.sources.certificatesReport ? `, certificates report sha256 \`${f.sources.certificatesReport.sha256}\`` : ", no real certificates report"}.`);
   out.push("");

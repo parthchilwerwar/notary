@@ -246,7 +246,9 @@ function bundleFiles(runsDir: string): string[] {
       continue;
     }
     if (!isDir) continue;
-    for (const f of readdirSync(full).sort()) if (f.endsWith(".json") && f !== "index.json") out.push(join(full, f));
+    // Only the run's own bundle (runs/<runId>/<runId>.json), never incidents.json / approvals.json / index.json.
+    const bundle = join(full, `${dir}.json`);
+    if (existsSync(bundle)) out.push(bundle);
   }
   return out;
 }

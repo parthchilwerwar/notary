@@ -5,7 +5,7 @@
 // then full-width sections. All data comes through useDataSource(); all
 // logic lives in ./model.ts.
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import type { ApprovalsList, PendingApproval, RunBundle, TimelineEvent } from "../../../../core/src/schema";
 import {
   Button,
@@ -15,6 +15,7 @@ import {
   PageBody,
   PageHeader,
   PageSkeleton,
+  ReplayBadge,
   Section,
   Select,
   Stat,
@@ -29,6 +30,7 @@ import {
   TOKEN_REQUIRED,
   toCertificateView,
   useDataSource,
+  useHealth,
   useIntegration,
   useSessionToken,
   number,
@@ -36,7 +38,18 @@ import {
   type RunEntry,
 } from "../../data";
 import { ConfirmDialog, type DialogKind } from "../approvals/ConfirmDialog";
-import { fixturesRequested, recordPath, visibleRuns, withRun } from "../../app/links";
+import {
+  REPLAY_SPEND_TEXT,
+  fixturesRequested,
+  isReplayRun,
+  recordPath,
+  replayBadge,
+  replayOfRun,
+  visibleRuns,
+  withRun,
+} from "../../app/links";
+import { useOptionalData } from "../../app/catalog";
+import { StartRunDialog, startRunFacts } from "./StartRunDialog";
 import { CheckIcon as Check } from "@phosphor-icons/react/dist/csr/Check";
 import { ExclamationMarkIcon as ExclamationMark } from "@phosphor-icons/react/dist/csr/ExclamationMark";
 import {
@@ -50,7 +63,8 @@ import {
   indexBundle,
   isFinished,
   mergeEvents,
-  parseSpeed,
+  replaySpeed,
+  runDefaultState,
   pickRun,
   rowDetails,
   runControls,
@@ -71,7 +85,10 @@ const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 type BundleState = { runId: string; bundle?: RunBundle; running?: boolean; error?: string };
 
 export function RunPage() {
-  const { source, mode, ready } = useDataSource();
+  const { source, mode, ready, hosted } = useDataSource();
+  // The verified bundles the dashboard already holds (for replay labels: a replay's original run).
+  const catalog = useOptionalData();
+  const catalogBundles = catalog?.bundles ?? [];
   const [params, setParams] = useSearchParams();
   const [token, setToken] = useSessionToken();
   // Real runs only; fixture runs only in the development view (?fixtures=1). Never both.
@@ -94,11 +111,18 @@ export function RunPage() {
     return () => ctrl.abort();
   }, [ready, source, runsNonce, fixtures]);
 
-  const entry = runs ? pickRun(runs, params.get("run")) : undefined;
+  // No ?run=: the dashboard's default (a guarded queue run, else the newest live run that recorded
+  // probes or decisions, from the verified bundles). Wait for it rather than starting a different
+  // run's stream and then switching (no flicker); an explicit ?run= is never overridden.
+  const runDefault = runDefaultState(params.get("run"), catalog);
+  const entry = runs && !runDefault.waiting ? pickRun(runs, runDefault.requested) : undefined;
   const runId = entry?.runId;
   const requestedMissing = !!runs && !!params.get("run") && entry?.runId !== params.get("run");
-  const speed = parseSpeed(params.get("speed"));
-  const controls = runControls(mode, entry);
+  // A deep link to a probe or decision (or an event) replays instantly, so its row and the run's
+  // counts are there at once; an explicit ?speed= still wins.
+  const deepTarget = params.get("probe") ?? params.get("decision") ?? params.get("event");
+  const speed: Speed = replaySpeed(params);
+  const controls = runControls(mode, entry, hosted);
 
   const setParam = useCallback(
     (key: string, value: string | null) =>
@@ -229,7 +253,9 @@ export function RunPage() {
 
   /* ---- rows ---- */
   const rows = useMemo(() => buildRows(events, { bundle, index, world: worldView }), [events, bundle, index, worldView]);
-  const progress = useMemo(() => stageProgress(events, unsafeDecisionIds(bundle)), [events, bundle]);
+  // Rows read from the bundle (the opening "Read docs" row) count at their stage like any event row.
+  const derivedStages = useMemo(() => rows.filter((r) => r.seq === null).map((r) => r.stage), [rows]);
+  const progress = useMemo(() => stageProgress(events, unsafeDecisionIds(bundle), derivedStages), [events, bundle, derivedStages]);
   const budget = useMemo(() => budgetView(events, finished ? bundle?.usageByRole : undefined), [events, finished, bundle]);
   const touched = useMemo(() => certificatesTouched(events, worldView), [events, worldView]);
   const streaming = !!runId && !ended && !streamError;
@@ -254,6 +280,14 @@ export function RunPage() {
   const held = decisions.filter((e) => e.data?.status === "held").length;
   const probes = events.filter((e) => e.type === "probe.verdict").length;
   const issued = events.filter((e) => e.type === "certificate.issued").length;
+  const replay = isReplayRun(entry);
+  const replayLabel = entry ? replayBadge(entry, bundle ? [bundle] : catalogBundles) : undefined;
+  const replayOf = entry ? replayOfRun(entry, bundle ? [bundle] : catalogBundles) : undefined;
+  // Counts are not recorded (rather than 0) when the bundle was withheld or no timeline arrived.
+  const bundleWithheld = bundleState?.runId === runId && !!bundleState?.error;
+  const unrecorded = bundleWithheld || (!!streamError && events.length === 0);
+  const derived = rows.length - rows.filter((r) => r.seq !== null).length;
+  const rowCount = `${number(rows.length)} ${rows.length === 1 ? "event" : "events"}${derived ? ` (${number(derived)} read from the bundle)` : ""}`;
   const statusText = streaming
     ? controls.speed.visible
       ? `replaying at ${speedLabel(speed)}`
@@ -264,12 +298,12 @@ export function RunPage() {
         : "stream ended"
       : "";
   const summary = runId
-    ? `${runId} · ${number(events.length)} ${events.length === 1 ? "event" : "events"}${statusText ? ` · ${statusText}` : ""}`
+    ? `${runId}${replayLabel ? ` · ${replayLabel}` : ""} · ${rowCount}${statusText ? ` · ${statusText}` : ""}`
     : runs && !runs.length
       ? "No runs are published yet"
       : "Choose a run";
 
-  const transcriptStatus = `${number(events.length)} ${events.length === 1 ? "event" : "events"}${statusText ? ` · ${statusText}` : ""}${
+  const transcriptStatus = `${rowCount}${statusText ? ` · ${statusText}` : ""}${
     bundleState?.running ? " · the bundle is written when the run finishes" : ""
   }`;
 
@@ -300,7 +334,7 @@ export function RunPage() {
                   <optgroup label={mode === "live" ? "Live runs" : "Recorded runs"}>
                     {groups.real.map((r) => (
                       <option key={r.runId} value={r.runId}>
-                        {runLabel(r)}
+                        {runLabel(r, catalogBundles)}
                       </option>
                     ))}
                   </optgroup>
@@ -309,7 +343,7 @@ export function RunPage() {
                   <optgroup label="Fixture runs">
                     {groups.fixture.map((r) => (
                       <option key={r.runId} value={r.runId}>
-                        {runLabel(r)}
+                        {runLabel(r, catalogBundles)}
                       </option>
                     ))}
                   </optgroup>
@@ -359,25 +393,68 @@ export function RunPage() {
           </EmptyState>
         )}
 
+        {replay && (
+          <p className="run-replay-note">
+            <ReplayBadge>{replayLabel}</ReplayBadge>{" "}
+            {replayOf ? (
+              <>
+                This run re-served the recording of{" "}
+                <Link to={withRun(recordPath.run(replayOf), replayOf)}>
+                  <code>{replayOf}</code>
+                </Link>
+                : no new tool calls and no new spend. The original run holds the real cost.
+              </>
+            ) : (
+              "This run re-served a recording: no new tool calls and no new spend."
+            )}
+          </p>
+        )}
+
         <StatRow label="This run">
           {notarize ? (
             <>
-              <Stat label="Probes run" value={probes} display={number(probes)} />
-              <Stat label="Certificates issued" value={issued} display={number(issued)} />
+              <Stat label="Probes run" value={unrecorded ? null : probes} display={unrecorded ? undefined : number(probes)} />
+              <Stat label="Certificates issued" value={unrecorded ? null : issued} display={unrecorded ? undefined : number(issued)} />
             </>
           ) : (
             <>
-              <Stat label="Actions processed" value={decisions.length} display={number(decisions.length)} />
-              <Stat label="Held for a person" value={held} display={number(held)} />
+              <Stat label="Actions processed" value={unrecorded ? null : decisions.length} display={unrecorded ? undefined : number(decisions.length)} />
+              <Stat label="Held for a person" value={unrecorded ? null : held} display={unrecorded ? undefined : number(held)} />
             </>
           )}
-          <Stat
-            label="Credits spent"
-            value={budget ? budget.credits.used : null}
-            display={budget ? number(budget.credits.used) : undefined}
-            of={budget ? (budget.credits.cap !== null ? `of ${number(budget.credits.cap)}` : "no cap recorded") : undefined}
-            note={budget ? `Model spend ${budget.usd.text} · ${budget.usd.capText}` : finished ? "No budget snapshot recorded" : "Arrives with the run's budget event"}
-          />
+          {replay ? (
+            <Stat
+              label="Spend"
+              value={0}
+              display="No new spend"
+              note={
+                replayOf ? (
+                  <>
+                    {REPLAY_SPEND_TEXT} · original{" "}
+                    <Link to={withRun(recordPath.run(replayOf), replayOf)}>{replayOf}</Link>
+                  </>
+                ) : (
+                  REPLAY_SPEND_TEXT
+                )
+              }
+            />
+          ) : (
+            <Stat
+              label="Credits spent"
+              value={!unrecorded && budget ? budget.credits.used : null}
+              display={!unrecorded && budget ? number(budget.credits.used) : undefined}
+              of={budget ? (budget.credits.cap !== null ? `of ${number(budget.credits.cap)}` : "no cap recorded") : undefined}
+              note={
+                unrecorded
+                  ? "Not shown: the run's records were not verified here"
+                  : budget
+                    ? `Model spend ${budget.usd.text} · ${budget.usd.capText}`
+                    : finished
+                      ? "No budget snapshot recorded"
+                      : "Arrives with the run's budget event"
+              }
+            />
+          )}
         </StatRow>
 
         <Section
@@ -389,20 +466,28 @@ export function RunPage() {
             controls.speed.visible ? (
               <SpeedControl
                 speed={speed}
-                onSpeed={(s) => setParam("speed", s === 1 ? null : String(s))}
+                // With a deep link the default is instant, so 1× must be written out to stick.
+                onSpeed={(s) => setParam("speed", s === 1 && !deepTarget ? null : String(s))}
                 onRestart={() => setReplayNonce((n) => n + 1)}
               />
             ) : undefined
           }
         >
           <div className="run-transcript" data-reveal>
-            {streamError && (
-              <p className="run-error run-stream-error" role="alert">
-                {streamError.includes("No timeline") || streamError.includes(TimelineMissingError.name)
-                  ? `No timeline is published for ${runId}. Export it with pnpm notary export.`
-                  : streamError}
-              </p>
-            )}
+            {streamError &&
+              (streamError.includes("Data withheld") ? (
+                // The same visible error as a withheld bundle: the timeline failed a check in this browser.
+                <EmptyState tone="error" title="Timeline withheld">
+                  <p>This run's timeline failed its integrity check against the verified bundle, so its events are not shown.</p>
+                  <p className="run-muted">{streamError}</p>
+                </EmptyState>
+              ) : (
+                <p className="run-error run-stream-error" role="alert">
+                  {streamError.includes("No timeline") || streamError.includes(TimelineMissingError.name)
+                    ? `No timeline is published for ${runId}. Export it with pnpm notary export.`
+                    : streamError}
+                </p>
+              ))}
             <TranscriptTimeline
               key={runId ?? "none"}
               rows={rows}
@@ -420,6 +505,7 @@ export function RunPage() {
               renderCard={(row) => {
                 const card = heldCard(row, {
                   mode,
+                  hosted,
                   sample: !!entry && entry.state === "finished" && entry.sample,
                   bundle,
                   world: worldView,
@@ -527,17 +613,22 @@ function StartRun({
   setToken: (t: string | null) => void;
 }) {
   const { source } = useDataSource();
+  const health = useHealth();
   const [choice, setChoice] = useState(START_CHOICES[0]!.value);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  // A run spends real money: it starts only from the confirmation dialog, never on one click.
+  const [confirming, setConfirming] = useState(false);
   const tokenId = useId();
+  const chosen = START_CHOICES.find((x) => x.value === choice);
   const start = async () => {
-    const c = START_CHOICES.find((x) => x.value === choice);
+    const c = chosen;
     if (!c) return;
     setBusy(true);
     setError(undefined);
     try {
       const res = await source.startRun(c.req);
+      setConfirming(false);
       onStarted(res.runId);
     } catch (e) {
       // The server's own text, verbatim (e.g. every BLOCKED line of a 503).
@@ -559,8 +650,15 @@ function StartRun({
             </option>
           ))}
         </Select>
-        <Button onClick={start} disabled={busy}>
-          {busy ? "Starting…" : "Start Run"}
+        <Button
+          onClick={() => {
+            setError(undefined);
+            setConfirming(true);
+          }}
+          disabled={busy}
+          aria-haspopup="dialog"
+        >
+          {busy ? "Starting…" : "Start Run…"}
         </Button>
       </div>
       {!token && (
@@ -591,10 +689,19 @@ function StartRun({
         <IntegrationLine name="crustdata" label="Crustdata" />
         <IntegrationLine name="dodo" label="Dodo" />
       </ul>
-      {error && (
+      {error && !confirming && (
         <p className="run-error run-start-error" role="alert">
           {error}
         </p>
+      )}
+      {confirming && chosen && (
+        <StartRunDialog
+          facts={startRunFacts(chosen.label, health)}
+          busy={busy}
+          error={error}
+          onConfirm={() => void start()}
+          onClose={() => setConfirming(false)}
+        />
       )}
     </div>
   );

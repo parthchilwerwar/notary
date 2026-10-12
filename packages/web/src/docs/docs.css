@@ -306,6 +306,16 @@
     padding-top: 48px;
   }
 }
+/* TOC jumps focus the section (tabIndex -1). No ring around the whole section: keyboard users see
+   the ring on its heading instead. */
+.docs-section:focus {
+  outline: none;
+}
+.docs-section:focus-visible > h2 {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
 .docs-section-group {
   margin-bottom: 8px;
 }

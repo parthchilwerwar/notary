@@ -1,5 +1,6 @@
-// The sidebar: "Notary" in Instrument Serif, search, the selected-run switcher, the four pages
-// (Run, Certificates, Approvals with its count, Chat) on Rare UI's Hook Sidebar (an accent rail that
+// The sidebar: "Notary" in Instrument Serif, search, the selected-run switcher, the six pages
+// (Run, Certificates, Approvals with its count, Business, Incidents, Chat — routes.tsx navRoutes())
+// on Rare UI's Hook Sidebar (an accent rail that
 // hooks into the current page), and Report at the bottom. No mode item and
 // no theme switch (the dashboard is light only). Phones (< 768px): a top bar with the wordmark and
 // a Menu button that opens the same sidebar as a drawer (focus moves in and stays inside, Escape or

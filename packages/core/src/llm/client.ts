@@ -29,6 +29,13 @@
  * > Bedrock table > unknown (usd 0, price source "unknown", warning on the meter and once on stderr).
  * USD cap (src/llm/budget.ts): with NOTARY_MAX_USD set, every call first checks the run's spend plus
  * a high estimate of this call and throws UsdCapExceededError (before any I/O) when it would exceed.
+ * With the cap set, a call whose price cannot be known (no override, no table price, Bedrock) and any
+ * call after one whose cost came back unknown are refused with UsdPriceUnknownError (BLOCKED,
+ * naming NOTARY_PRICE_<ROLE>_IN/OUT). Unknown-price calls are counted per role (UsageMeter
+ * unknownCalls; the bundle metric `usd_unknown_calls`), since usageByRole's usd stays a number (frozen).
+ *
+ * Bedrock client: maxAttempts 1 and a request timeout (BEDROCK_REQUEST_TIMEOUT_MS), so every retry
+ * goes through our limiter and USD-cap check instead of the SDK's own retry loop.
  *
  * Rate limit (src/llm/limiter.ts): every call to a real provider queues in the process-wide limiter
  * (NOTARY_LLM_RPM, NOTARY_LLM_CONCURRENCY); a 429 backs off per Retry-After and retries (max 3),
@@ -56,14 +63,14 @@ import type { Role, UsageByRole } from "../schema/index.js";
 import { MissingCredentialError } from "../tools/errors.js";
 import { traceBedrockClient, traceLog, withSpan } from "../trace/index.js";
 import type { SpanIds } from "../trace/index.js";
-import { incidentId, reportIncident, reportResolution } from "../incidents/live.js";
+import { currentIncidentRun, incidentId, reportIncident, reportResolution } from "../incidents/live.js";
 import type { AgentId } from "../schema/agents.js";
 import { AGENT_SPAN_ATTR, agentName } from "./agents.js";
 import { LLM_MAX_429_RETRIES, LLM_MAX_BACKOFF_MS, LlmRateLimitedError, defaultBackOffMs, llmLimiter, rateLimitInfo } from "./limiter.js";
 import type { LlmLimiter, LlmSlot } from "./limiter.js";
 import { costUsd, priceCall, reportedCostUsd, resolvePrice } from "./pricing.js";
 import type { PriceSource } from "./pricing.js";
-import { UsdCapExceededError, estimateInputTokens, maxUsdFromEnv } from "./budget.js";
+import { UsdCapExceededError, UsdPriceUnknownError, estimateInputTokens, maxUsdFromEnv } from "./budget.js";
 import { ROLES, requireRoleModel, resolveModels } from "./roles.js";
 import type { ModelRole, ModelRoster } from "./roles.js";
 import { AWS_REGION_ENV, LITELLM_API_KEY_ENV, LITELLM_BASE_URL_ENV, llmInvalid, llmMissing, llmProvider, normalizeLiteLlmBaseUrl } from "./config.js";
@@ -235,10 +242,13 @@ export class UsageMeter {
   };
   /** Notary Chat's usage: counted by totalUsd() (NOTARY_MAX_USD), never part of snapshot(). */
   private readonly chat = { inputTokens: 0, outputTokens: 0, usd: 0, calls: 0 };
+  /** Calls whose price was unknown (their usd is recorded as 0, which is not their cost), per role. */
+  private readonly unknown: Record<ModelRole, number> = { executor: 0, reflector: 0, adversary: 0, chat: 0 };
   /** Pricing problems (unknown model, bad override). De-duplicated. */
   readonly warnings: string[] = [];
 
-  add(role: ModelRole, u: { inputTokens: number; outputTokens: number; usd: number }): void {
+  add(role: ModelRole, u: { inputTokens: number; outputTokens: number; usd: number; unknownPrice?: boolean }): void {
+    if (u.unknownPrice) this.unknown[role] += 1;
     const r = role === "chat" ? this.chat : this.usage[role];
     r.inputTokens += u.inputTokens;
     r.outputTokens += u.outputTokens;
@@ -250,6 +260,16 @@ export class UsageMeter {
     if (this.warnings.includes(message)) return;
     this.warnings.push(message);
     warnOnce(message);
+  }
+
+  /** Unknown-price calls of the three bundle roles (Notary Chat excluded, like snapshot()). */
+  unknownCalls(): number {
+    return this.unknown.executor + this.unknown.reflector + this.unknown.adversary;
+  }
+
+  /** The roles (Notary Chat included) with at least one unknown-price call. */
+  unknownRoles(): ModelRole[] {
+    return (Object.keys(this.unknown) as ModelRole[]).filter((r) => this.unknown[r] > 0);
   }
 
   /** USD recorded so far across all roles (the run's model spend). */
@@ -270,6 +290,12 @@ export class UsageMeter {
   }
 }
 
+/** Per-request timeout for Bedrock Converse calls (ms). */
+export const BEDROCK_REQUEST_TIMEOUT_MS = 120_000;
+
+/** Options the Bedrock Runtime client is built with (exported for the test that pins them). */
+export const BEDROCK_CLIENT_OPTIONS = { maxAttempts: 1, requestTimeoutMs: BEDROCK_REQUEST_TIMEOUT_MS } as const;
+
 /** Default transport: the real Bedrock Runtime client, created lazily on the first call. */
 export function bedrockTransport(region: string): ConverseTransport {
   let client: { send: (cmd: unknown, opts?: { abortSignal?: AbortSignal }) => Promise<unknown> } | null = null;
@@ -278,7 +304,10 @@ export function bedrockTransport(region: string): ConverseTransport {
     if (!client || !ConverseCommandCtor) {
       const sdk = await import("@aws-sdk/client-bedrock-runtime");
       // wrapBedrock (when tracing is on) emits the LLM span with messages, completion and usage.
-      client = traceBedrockClient(new sdk.BedrockRuntimeClient({ region })) as unknown as typeof client;
+      // maxAttempts 1: retries are ours (limiter + USD-cap check per attempt), never the SDK's hidden ones.
+      // requestHandler as an options object: the SDK builds its default Node handler with these timeouts.
+      const requestHandler = { connectionTimeout: 10_000, requestTimeout: BEDROCK_REQUEST_TIMEOUT_MS };
+      client = traceBedrockClient(new sdk.BedrockRuntimeClient({ region, maxAttempts: BEDROCK_CLIENT_OPTIONS.maxAttempts, requestHandler })) as unknown as typeof client;
       ConverseCommandCtor = sdk.ConverseCommand;
     }
     const cmd = new ConverseCommandCtor!(input);
@@ -472,6 +501,16 @@ export class LlmClient implements LlmLike {
     if (this.maxUsd === null) return;
     const spent = this.meter.totalUsd();
     const known = resolvePrice(role, modelId, this.env);
+    // An earlier call's cost is unknown: the recorded spend is not the real spend.
+    const unknownRoles = this.meter.unknownRoles();
+    if (unknownRoles.length) {
+      const r = unknownRoles[0]!;
+      throw new UsdPriceUnknownError(r, this.maxUsd, spent, `an earlier ${r} model call's cost is unknown (no price override, no table price, no cost reported by the provider)`);
+    }
+    // No price up front and a provider that reports no per-response cost: this call's cost would be unknown.
+    if (!known.price && this.provider !== "litellm") {
+      throw new UsdPriceUnknownError(role, this.maxUsd, spent, `the price of model "${modelId}" is unknown (no NOTARY_PRICE_${role.toUpperCase()}_IN/OUT override, no table price, and ${this.provider} reports no per-response cost)`);
+    }
     const chars =
       (req.system?.length ?? 0) +
       req.messages.reduce((n, m) => n + m.content.length + (m.role === "assistant" ? (m.toolCalls ?? []).reduce((k, t) => k + t.arguments.length + t.name.length, 0) : 0), 0) +
@@ -603,7 +642,7 @@ export class LlmClient implements LlmLike {
         }
         const { inputTokens, outputTokens, text, stopReason, toolCalls } = out;
         if (attempt > 1 && spanIds) {
-          reportResolution(incidentId("rate_limited", spanIds.spanId), { status: "resolved", action: "retried", summary: `Succeeded on attempt ${attempt} after a ${waitedMs} ms wait in the limiter.`, recordIds: [spanIds.spanId] });
+          reportResolution(incidentId("rate_limited", spanIds.spanId, currentIncidentRun()), { status: "resolved", action: "retried", summary: `Succeeded on attempt ${attempt} after a ${waitedMs} ms wait in the limiter.`, recordIds: [spanIds.spanId] });
         }
         if (req.onText && streamed) {
           const tail = streamClean!.end();
@@ -614,7 +653,7 @@ export class LlmClient implements LlmLike {
         const priced = priceCall(req.role, modelId, { inputTokens, outputTokens }, this.env, out.reportedUsd);
         if (priced.warning) this.meter.warn(priced.warning);
         const usd = priced.usd;
-        this.meter.add(req.role, { inputTokens, outputTokens, usd });
+        this.meter.add(req.role, { inputTokens, outputTokens, usd, unknownPrice: priced.source === "unknown" });
 
         if (setAttr) {
           setAttr("llm.input_tokens", inputTokens);

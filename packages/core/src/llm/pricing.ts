@@ -6,9 +6,11 @@
  *      must be set and be non-negative numbers) — they apply to any model id, LiteLLM names included,
  *   2. the cost the LiteLLM proxy reports for that response (`x-litellm-response-cost` header, USD),
  *   3. the table below (Bedrock model ids only),
- *   4. otherwise the price is unknown: usd = 0, price source "unknown", and a warning naming the
- *      env vars is recorded on the meter and printed once per process. Notary never guesses a
- *      price; set the env override for any model not listed.
+ *   4. otherwise the price is unknown: usd = 0 (NOT the call's cost), price source "unknown", and a
+ *      warning naming the env vars is recorded on the meter and printed once per process. The meter
+ *      counts such calls (bundle metric `usd_unknown_calls`), and with NOTARY_MAX_USD set the client
+ *      refuses calls it cannot price (src/llm/client.ts checkUsdCap). Notary never guesses a price;
+ *      set the env override for any model not listed.
  *
  * Sources (checked 2026-10-10):
  *   - AWS Bedrock pricing: https://aws.amazon.com/bedrock/pricing/  (authoritative for Bedrock)

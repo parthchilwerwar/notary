@@ -11,7 +11,20 @@ import { createApp } from "../src/api/server.js";
 import { FIXTURE_BUNDLES_SUBDIR, buildSampleBundle, finalizeBundle, verifyBundle, writeBundle } from "../src/bundle/index.js";
 import { FIXTURE_DISCLOSURE } from "../src/demo/index.js";
 import { fixturePublishRefusal, publishFixtureBundles } from "../src/demo/publish.js";
-import { EVIDENCE_PATH, EvidenceSchema, PLACEHOLDER_URL, PRIVATE_REPO_URL, SPONSOR_NAMES, buildEvidence, exportedRunTraceIds, gatherEvidenceFacts, loadEvidence } from "../src/export/evidence.js";
+import {
+  EVIDENCE_PATH,
+  EvidenceSchema,
+  LOCAL_FACT_KEYS,
+  PLACEHOLDER_URL,
+  PRIVATE_REPO_URL,
+  SPONSOR_NAMES,
+  buildEvidence,
+  entireCheckpointRefs,
+  exportedRunTraceIds,
+  gatherEvidenceFacts,
+  loadEvidence,
+  readEvidenceFacts,
+} from "../src/export/evidence.js";
 import { resolveTraceLinkTemplate, traceLinkFor } from "../src/trace/links.js";
 import { runExport } from "../src/export/index.js";
 import { BundleIndexSchema } from "../src/schema/bundle.js";
@@ -217,8 +230,37 @@ describe("packages/web/public/evidence/evidence.json", () => {
     expect(EvidenceSchema.safeParse(JSON.parse(readFileSync(EVIDENCE_PATH, "utf8"))).success).toBe(true);
   });
 
-  it("is exactly what `notary export --evidence` generates from facts on disk", () => {
-    expect(evidence).toEqual(buildEvidence(gatherEvidenceFacts()));
+  // Fresh-clone determinism (audit #9): evidence.json is checked against the committed facts snapshot
+  // (packages/core/config/evidence-facts.json, written by `notary export --evidence`), and the facts
+  // derivable from committed files are re-derived here; facts that need local-only state are checked
+  // only where that state exists.
+  const snapshot = readEvidenceFacts();
+  const committedFacts = gatherEvidenceFacts({ env: {} });
+
+  it("is exactly what `notary export --evidence` generates from its committed facts snapshot", () => {
+    expect(snapshot, "packages/core/config/evidence-facts.json is missing: run `pnpm notary export --evidence`").toBeDefined();
+    expect(evidence).toEqual(buildEvidence(snapshot!));
+  });
+
+  it("the snapshot's committed-file facts match the files (doctor record, trace template, published bundles, business docs)", () => {
+    const local = new Set<string>(LOCAL_FACT_KEYS);
+    for (const [k, v] of Object.entries(committedFacts)) {
+      if (local.has(k)) continue;
+      // A template from NEATLOGS_TRACE_URL_TEMPLATE is environment, not a committed file.
+      if (k === "traceTemplate" && snapshot!.traceTemplate.source === "env") continue;
+      expect((snapshot as unknown as Record<string, unknown>)[k], k).toEqual(v);
+    }
+  });
+
+  const hasRunSpans = existsSync(fileURLToPath(new URL("../runs/", import.meta.url)));
+  it.skipIf(!hasRunSpans)("local-only: exported run traces match runs/*/spans.jsonl (skipped on a fresh clone: runs/ is gitignored)", () => {
+    expect(snapshot!.exportedRunTraces).toBe(gatherEvidenceFacts().exportedRunTraces);
+  });
+
+  const liveEntire = gatherEvidenceFacts().entire;
+  const hasCheckpoints = liveEntire.onPath && entireCheckpointRefs().length > 0;
+  it.skipIf(!hasCheckpoints)("local-only: the Entire status matches the checkpoint refs here (skipped without the Entire CLI or refs/entire/checkpoints, which git clone does not fetch)", () => {
+    expect(buildEvidence({ ...snapshot!, entire: liveEntire }).find((e) => e.name === "Entire")).toEqual(by("Entire"));
   });
 
   it("exported run traces count only finished real runs (a run in progress or a sample run never moves the facts)", () => {
@@ -268,12 +310,14 @@ describe("packages/web/public/evidence/evidence.json", () => {
   });
 
   it("status rules follow the facts: neatlogs live from the recorded doctor success; Entire and cfo.ai only with their facts", () => {
-    const facts = gatherEvidenceFacts();
+    const facts = snapshot!;
     // The last recorded `notary doctor` success (seeded from DECISIONS #93, overwritten by later real runs).
     expect(facts.doctor?.traceId).toMatch(/^[0-9a-f]{32}$/);
     expect(by("neatlogs").status).toBe("live");
     expect(by("neatlogs").notes).toContain(facts.doctor!.traceId);
     expect(by("neatlogs").notes).toMatch(/neatlogs-cli is (not installed|installed)/);
+    expect(by("neatlogs").notes).not.toMatch(/traceLinks point to local spans\.jsonl/);
+    expect(by("neatlogs").purpose).toMatch(/wrapOpenAI/);
     expect(by("Entire").status).toBe(facts.entire.onPath && facts.entire.checkpointRefs.length > 0 ? "live" : "pending");
     expect(by("Entire").links.map((l) => l.url)).toEqual(["https://docs.entire.io/cli-reference/graph"]);
     expect(by("cfo.ai").status).toBe(facts.businessPlan && facts.cfoPlanImported ? "live" : "pending");

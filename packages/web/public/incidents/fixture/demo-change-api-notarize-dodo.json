@@ -9,7 +9,7 @@
   ],
   "incidents": [
     {
-      "id": "inc-6faf6ecb4a5d4310",
+      "id": "inc-ac60c6b166cb9e04",
       "runId": "demo-change-api-notarize-dodo",
       "kind": "probe_contradiction",
       "severity": "warning",
@@ -44,7 +44,7 @@
       }
     },
     {
-      "id": "inc-4cc996e40a3af321",
+      "id": "inc-38087bcca22771f5",
       "runId": "demo-change-api-notarize-dodo",
       "kind": "probe_contradiction",
       "severity": "warning",
@@ -79,7 +79,7 @@
       }
     },
     {
-      "id": "inc-d9b66e3150678bd9",
+      "id": "inc-9f790b732dcb0239",
       "runId": "demo-change-api-notarize-dodo",
       "kind": "probe_contradiction",
       "severity": "warning",
@@ -114,7 +114,7 @@
       }
     },
     {
-      "id": "inc-2bb5e057ccd8b6a2",
+      "id": "inc-afa11b9441b70f21",
       "runId": "demo-change-api-notarize-dodo",
       "kind": "probe_contradiction",
       "severity": "warning",
@@ -149,7 +149,7 @@
       }
     },
     {
-      "id": "inc-97823214e9688f53",
+      "id": "inc-9b77690dffe98fe2",
       "runId": "demo-change-api-notarize-dodo",
       "kind": "probe_contradiction",
       "severity": "warning",
@@ -184,7 +184,7 @@
       }
     },
     {
-      "id": "inc-a3ec7626289c4d4f",
+      "id": "inc-a88bffbcbf3a1450",
       "runId": "demo-change-api-notarize-dodo",
       "kind": "probe_contradiction",
       "severity": "warning",
@@ -219,7 +219,7 @@
       }
     },
     {
-      "id": "inc-f4a27c2e05a70a28",
+      "id": "inc-cc34c7877c79db42",
       "runId": "demo-change-api-notarize-dodo",
       "kind": "probe_contradiction",
       "severity": "warning",
@@ -254,7 +254,7 @@
       }
     },
     {
-      "id": "inc-067a21a8d2661531",
+      "id": "inc-46e5c8fdb0d3a4b1",
       "runId": "demo-change-api-notarize-dodo",
       "kind": "probe_contradiction",
       "severity": "warning",
@@ -289,7 +289,7 @@
       }
     },
     {
-      "id": "inc-1eb9c5bcf3acaa2d",
+      "id": "inc-d9d4e48bd82c2795",
       "runId": "demo-change-api-notarize-dodo",
       "kind": "probe_contradiction",
       "severity": "warning",
@@ -324,7 +324,7 @@
       }
     },
     {
-      "id": "inc-49b0615a304a6597",
+      "id": "inc-2286a4438304f360",
       "runId": "demo-change-api-notarize-dodo",
       "kind": "probe_contradiction",
       "severity": "warning",
@@ -359,7 +359,7 @@
       }
     },
     {
-      "id": "inc-13c8109d41aacae3",
+      "id": "inc-d9f549d0d511639b",
       "runId": "demo-change-api-notarize-dodo",
       "kind": "probe_contradiction",
       "severity": "warning",
@@ -394,7 +394,7 @@
       }
     },
     {
-      "id": "inc-f2c1d54292e52dc4",
+      "id": "inc-6db48bcb6ce324ac",
       "runId": "demo-change-api-notarize-dodo",
       "kind": "probe_contradiction",
       "severity": "warning",
@@ -429,7 +429,7 @@
       }
     },
     {
-      "id": "inc-64ab668d95a08c75",
+      "id": "inc-193c6aaaabb35710",
       "runId": "demo-change-api-notarize-dodo",
       "kind": "probe_contradiction",
       "severity": "warning",
@@ -464,7 +464,7 @@
       }
     },
     {
-      "id": "inc-afc3a4ff4c171fc5",
+      "id": "inc-de6371a56848b81a",
       "runId": "demo-change-api-notarize-dodo",
       "kind": "probe_contradiction",
       "severity": "warning",
@@ -499,7 +499,7 @@
       }
     },
     {
-      "id": "inc-fe7cc6f2273ea88d",
+      "id": "inc-184f79bac4a50994",
       "runId": "demo-change-api-notarize-dodo",
       "kind": "adversary_downgrade",
       "severity": "warning",
@@ -531,7 +531,7 @@
       }
     },
     {
-      "id": "inc-38158e6695907b71",
+      "id": "inc-ec575edc67a82f09",
       "runId": "demo-change-api-notarize-dodo",
       "kind": "adversary_downgrade",
       "severity": "warning",
@@ -563,33 +563,7 @@
       }
     },
     {
-      "id": "inc-5be67105acd703b2",
-      "runId": "demo-change-api-notarize-dodo",
-      "kind": "checker_anomaly",
-      "severity": "warning",
-      "at": "2026-10-10T10:01:01.407Z",
-      "tool": "dodo",
-      "summary": "The checker saw dodo.wallet.idempotency-key-no-duplicate disagree with the docs: expected {\"maxItems\":1}, observed {\"listKey\":\"items\",\"listLength\":3,\"status\":200}.",
-      "recordIds": [
-        "anom-3b041ef0c326",
-        "dodo.wallet.idempotency-key-no-duplicate"
-      ],
-      "claimId": "dodo.wallet.idempotency-key-no-duplicate",
-      "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
-      "exported": false,
-      "resolution": {
-        "status": "resolved",
-        "action": "guard_compiled",
-        "summary": "Guard grd-6b98c720d1cb (retry_policy on dodo.createWalletLedgerEntry) was compiled from the notarized belief belief-dodo.wallet.idempotency-key-no-duplicate.",
-        "at": "2026-10-10T08:46:20.400Z",
-        "recordIds": [
-          "grd-6b98c720d1cb",
-          "belief-dodo.wallet.idempotency-key-no-duplicate"
-        ]
-      }
-    },
-    {
-      "id": "inc-cd73ddad2e684d2c",
+      "id": "inc-13284430ca6e5061",
       "runId": "demo-change-api-notarize-dodo",
       "kind": "checker_anomaly",
       "severity": "warning",
@@ -614,7 +588,7 @@
       }
     },
     {
-      "id": "inc-ef73de9c3d712147",
+      "id": "inc-63a13b544333bf04",
       "runId": "demo-change-api-notarize-dodo",
       "kind": "checker_anomaly",
       "severity": "warning",
@@ -636,6 +610,32 @@
         "recordIds": [
           "grd-3e9c0bf4b81e",
           "belief-dodo.wallet.credit-amount-minor-units"
+        ]
+      }
+    },
+    {
+      "id": "inc-c697cd7578f211f1",
+      "runId": "demo-change-api-notarize-dodo",
+      "kind": "checker_anomaly",
+      "severity": "warning",
+      "at": "2026-10-10T10:01:01.407Z",
+      "tool": "dodo",
+      "summary": "The checker saw dodo.wallet.idempotency-key-no-duplicate disagree with the docs: expected {\"maxItems\":1}, observed {\"listKey\":\"items\",\"listLength\":3,\"status\":200}.",
+      "recordIds": [
+        "anom-3b041ef0c326",
+        "dodo.wallet.idempotency-key-no-duplicate"
+      ],
+      "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+      "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
+      "exported": false,
+      "resolution": {
+        "status": "resolved",
+        "action": "guard_compiled",
+        "summary": "Guard grd-6b98c720d1cb (retry_policy on dodo.createWalletLedgerEntry) was compiled from the notarized belief belief-dodo.wallet.idempotency-key-no-duplicate.",
+        "at": "2026-10-10T08:46:20.400Z",
+        "recordIds": [
+          "grd-6b98c720d1cb",
+          "belief-dodo.wallet.idempotency-key-no-duplicate"
         ]
       }
     }

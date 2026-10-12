@@ -36,7 +36,7 @@ export const routes: AppRoute[] = [
   { id: "certificates", path: "/app/certificates", title: "Certificates", description: "API behavior certified within a scope, and revocable.", nav: true, element: <CertificatesPage /> },
   { id: "certificate", path: "/app/certificates/:certificateId", title: "Certificate", description: "One certificate and the evidence behind it.", parent: "certificates", record: "certificate", element: <CertificateDetailPage /> },
   { id: "approvals", path: "/app/approvals", title: "Approvals", description: "Held money actions waiting for a human.", nav: true, badge: "approvals", element: <ApprovalsPage /> },
-  { id: "business", path: "/app/business", title: "Business", description: "Unit economics from real runs and the business plan modeled in cfo.ai.", nav: true, ungated: true, element: <BusinessPage /> },
+  { id: "business", path: "/app/business", title: "Business", description: "Unit economics from real runs; the cfo.ai business plan appears once a plan is imported.", nav: true, ungated: true, element: <BusinessPage /> },
   { id: "incidents", path: "/app/incidents", title: "Incidents", description: "What went wrong while the agents worked, and how it was resolved.", nav: true, ungated: true, element: <IncidentsPage /> },
   { id: "chat", path: "/app/chat", title: "Chat", description: "Ask Notary about runs, certificates and the APIs it checks; answers cite records.", nav: true, ungated: true, element: <ChatPage /> },
   { id: "report", path: "/app/report", title: "Report", description: "Run comparison, cost per run, connections and receipts.", ungated: true, element: <ReportPage /> },

@@ -1,94 +1,68 @@
-# Component credits
+# Credits
 
-All files below were selected by browsing the UIAble collection on
-[21st.dev](https://preview.21st.dev/@uiable/library/uiable), inspected, and installed
-with the **shadcn CLI 4.21.4** using their public registry URLs. Installation ran in
-`packages/web/registry-stage` to preserve the existing dashboard primitives.
-The registry files remain there as ignored local review material. The adapted
-components are committed under `src/components/landing`.
-
-Each selected item belongs to [CodedThemes/UIAble](https://github.com/codedthemes/uiable).
-The publisher's [MIT license](https://github.com/codedthemes/uiable/blob/master/LICENSE)
-was checked for each item against its source paths. Copyright (c) 2026 CodedThemes.
-The full required notice is preserved in [LICENSE-uiable.txt](LICENSE-uiable.txt).
-Source paths, registry dependencies and registry URLs are recorded in
-[registry-sources.json](registry-sources.json).
-
-| Section          | Installed component / source URL                                                                                                           | Adapted file      | License |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------- | ------- |
-| Hero             | [Hero 3](https://uiable.com/r/block-hero-3.json)                                                                                           | Hero.tsx          | MIT     |
-| Problem bento    | [Financial Bento Grid](https://uiable.com/r/block-bento-5.json), [21st.dev listing](https://mcp.21st.dev/@uiable/components/block-bento-5) | ProblemBento.tsx  | MIT     |
-| Numbered process | [Process 1](https://uiable.com/r/block-process-1.json)                                                                                     | ProcessSteps.tsx  | MIT     |
-| Results strip    | [Statistics 1](https://uiable.com/r/block-statistics-1.json)                                                                               | ResultsStrip.tsx  | MIT     |
-| CTA              | [CTA 1](https://uiable.com/r/block-cta-1.json)                                                                                             | FinalCTA.tsx      | MIT     |
-| Footer           | [Footer 2](https://uiable.com/r/block-footer-2.json)                                                                                       | LandingFooter.tsx | MIT     |
-
-These are substantial adaptations, not unchanged drop-ins. Responsive section
-composition, card groupings, process connectors, statistic columns, CTA and footer
-organization informed the final components. Sample business figures, unrelated
-images, sponsor marks, contact forms, carousel/counting animations and decorative
-icons were removed. Notary's Geist type, warm neutral tokens, blue accent, rounded
-cards, shadcn Button/Card and real bundle/evidence data replace the defaults.
-No borrowed image assets are shipped. No unverified live claims are added.
-
-The only new runtime dependency retained is `react-router` **8.4.0**, pinned
-exactly. The development runner `tsx` **4.23.15** is also pinned exactly and lets the visual checks reuse the shared TypeScript hash function. Registry-only dependencies are confined to the ignored installation
-staging directory and are not shipped. Existing dependency ranges are unchanged.
-
-Installation command (from packages/web):
-
-```powershell
-npm exec --yes --package=shadcn@4.21.4 -- shadcn add https://uiable.com/r/block-hero-3.json https://uiable.com/r/block-bento-5.json https://uiable.com/r/block-process-1.json https://uiable.com/r/block-statistics-1.json https://uiable.com/r/block-cta-1.json https://uiable.com/r/block-footer-2.json --cwd registry-stage --yes
-```
-
-The numbered process markers are structural step positions requested by the user,
-not product statistics. The supplied hero anecdote includes its requested HTTP
-status. All measured result values come from verified bundles, and tool copy and
-status come from public/evidence/evidence.json. Fixture results include both the
-persistent AGENTS.md disclosure and the requested planted-quirks label.
-
-## U6 — Dither Kit
-
-Graphs and the blue card wash use actual [Dither Kit](https://www.tripwire.sh/dither-kit)
-source, installed with shadcn CLI 4.21.4 from these publisher registry URLs:
-
-- https://www.tripwire.sh/r/core.json
-- https://www.tripwire.sh/r/bar-chart.json
-- https://www.tripwire.sh/r/area-chart.json
-- https://www.tripwire.sh/r/gradient.json
-
-Publisher: Boring Software, Inc. / ripgrim. License: **MIT**, declared in the
-publisher's [registry-core package metadata](https://github.com/Boring-Software-Inc/dither-kit/blob/main/packages/registry-core/package.json)
-and [published core package](https://www.npmjs.com/package/@dither-kit/core).
-The registry's original source and comments are retained under
-`src/components/dither-kit`. These source files were adapted to Notary: blue
-palette, explicit observed axis ticks, step sampling for recorded line trends,
-no decorative stars, and data receipts with unknown values preserved. Canvas
-fills are decorative; measured values remain available as text and accessible
-chart descriptions. Gradients use a static blue wash over a dark blue surface.
-The Dither Kit docs credit Evil Charts as the original visual inspiration.
-
-New dependencies are exact: motion 14.1.0, d3-scale 4.0.2, d3-shape 3.2.0,
-@types/d3-scale 4.0.9 and @types/d3-shape 3.2.0. Recharts was removed after the
-chart replacement. Select controls retain native keyboard/touch behavior and use
-the existing Phosphor icon library; no additional icon dependency was added.
+Third-party code and assets shipped by `packages/web`. Versions are the pins in
+`packages/web/package.json`; licenses are the `license` field of each installed package.
 
 ## Hook Sidebar (Rare UI)
 
-The guide's table of contents (`/docs`) and the dashboard's left navigation use Rare UI's
-[Hook Sidebar](https://www.rareui.com/components/hooksidebar), ported from its source.
+The guide's table of contents (`/docs`), the dashboard's left navigation and the Run page's
+transcript event rail use Rare UI's [Hook Sidebar](https://www.rareui.com/components/hooksidebar),
+ported from its source.
 
-| Component    | Source URL                                                                                                                            | Adapted file                         | License                                              |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | ---------------------------------------------------- |
-| Hook Sidebar | [rare-ui/components/ui/hook-sidebar.tsx](https://github.com/swamimalode07/rare-ui/blob/main/components/ui/hook-sidebar.tsx) | src/components/ui/hook-sidebar.tsx   | MIT + Commons Clause License Condition v1.0 + Attribution |
-| Hook Sidebar (Run transcript event rail) | [rareui.com/components/hooksidebar](https://www.rareui.com/components/hooksidebar) | used unmodified by src/pages/run/Transcript.tsx (one rail per stage; visible "Event rail: Hook Sidebar by Rare UI" credit linking rareui.com under the transcript) | MIT + Commons Clause License Condition v1.0 + Attribution |
+| Component    | Source URL                                                                                                                  | Adapted file                       | License                                                   |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------- |
+| Hook Sidebar | [rare-ui/components/ui/hook-sidebar.tsx](https://github.com/swamimalode07/rare-ui/blob/main/components/ui/hook-sidebar.tsx) | src/components/ui/hook-sidebar.tsx | MIT + Commons Clause License Condition v1.0 + Attribution |
+
+Where it is used: `src/docs/DocsPage.tsx` (one group per guide section, plus the phone
+"Contents" copy), `src/components/shell/Sidebar.tsx` (the six pages and the Report link) and
+`src/pages/run/Transcript.tsx` (one rail per stage).
 
 Copyright (c) 2026 Swami Malode. The copyright and permission notice are kept in the header of the
-adapted file, and the required visible credit ("Sidebar component by Rare UI", linking to
-[rareui.com](https://rareui.com)) is shown at the bottom of the `/docs` sidebar and content
-column. The Commons Clause forbids selling or redistributing the component itself; Notary only
-ships it as part of the app. Adaptations: react-router instead of `next/link`/`usePathname`,
-in-page `#id` items driven by the page's controlled `value`/`onChange`, an `as="div"` group mode,
-item badges, and Notary token colors (muted inactive rows, ink active rows, accent rail). The
-motion springs and reduced-motion handling are unchanged. New dependency: `motion` **13.4.6**,
-pinned exactly.
+adapted file. The required visible credit links [rareui.com](https://rareui.com): "Sidebar
+component by Rare UI" at the bottom of the `/docs` sidebar and content column, and "Event rail:
+Hook Sidebar by Rare UI" under the Run transcript. The Commons Clause forbids selling or
+redistributing the component itself; Notary only ships it as part of the app. Adaptations:
+react-router instead of `next/link`/`usePathname`, in-page `#id` items driven by the page's
+controlled `value`/`onChange`, an `as="div"` group mode, item badges, `useId()`-based label ids (so
+several sidebars on one page never share an id), and Notary token colors (muted inactive rows, ink
+active rows, accent rail). The motion springs and reduced-motion handling are unchanged. It needs
+`motion` **13.4.6**, pinned exactly.
+
+## Reasoning Steps
+
+`src/components/ui/reasoning-steps.tsx` is an original Notary component. Its public API mirrors
+Kobra's "Reasoning Steps", whose source is paid and was never read or copied (DECISIONS #196). It is
+built on `motion`.
+
+## Runtime libraries
+
+| Package                                                     | Version  | License                                                                    | Used for                                                    |
+| ----------------------------------------------------------- | -------- | -------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| [react](https://react.dev), react-dom                       | ^19.3.0  | MIT                                                                        | UI                                                          |
+| [react-router](https://reactrouter.com)                     | 8.4.0    | MIT                                                                        | Routing                                                     |
+| [gsap](https://gsap.com)                                    | 3.15.0   | GSAP Standard "no charge" license (https://gsap.com/standard-license)      | Landing motion (SplitText hero, scroll reveals)             |
+| [@gsap/react](https://gsap.com/resources/React)             | 2.1.2    | GSAP Standard license (https://gsap.com/standard-license)                  | `useGSAP` cleanup                                           |
+| [motion](https://motion.dev)                                | 13.4.6   | MIT                                                                        | Hook Sidebar rail springs, Reasoning Steps                  |
+| [@phosphor-icons/react](https://phosphoricons.com)          | ^2.1.10  | MIT                                                                        | Icons                                                       |
+| [cmdk](https://cmdk.paco.me)                                | 1.1.1    | MIT                                                                        | Command palette                                             |
+| [sonner](https://sonner.emilkowal.ski)                      | 2.0.8    | MIT                                                                        | Toasts                                                      |
+| [@radix-ui/react-slot](https://www.radix-ui.com)            | ^1.4.0   | MIT                                                                        | `asChild` on Button                                         |
+| [clsx](https://github.com/lukeed/clsx), [tailwind-merge](https://github.com/dcastil/tailwind-merge) | ^2.1.1, ^3.7.0 | MIT                                       | Class names (`cn`)                                          |
+| [zod](https://zod.dev)                                      | ^4.6.5   | MIT                                                                        | Bundle schema validation (shared with `packages/core`)      |
+| [@fontsource/instrument-serif](https://fontsource.org/fonts/instrument-serif) | 5.3.0 | OFL-1.1                                                      | Display type                                                |
+| [@fontsource-variable/instrument-sans](https://fontsource.org/fonts/instrument-sans) | 5.3.0 | OFL-1.1                                               | Body type                                                   |
+
+Development only: `tsx` **4.23.15** (pinned exactly) lets the visual checks reuse the shared
+TypeScript hash function; `@playwright/test` drives the visual check and screenshot scripts with the
+system Chrome.
+
+The dither charts on the landing (`src/components/brand/dither.ts`, `DitherCanvas.tsx`) are an
+original Bayer-matrix renderer, not third-party code.
+
+## Removed
+
+Earlier iterations credited six [UIAble](https://github.com/codedthemes/uiable) landing blocks
+(MIT, CodedThemes) and [Dither Kit](https://www.tripwire.sh/dither-kit) chart source (MIT) together
+with `d3-scale`, `d3-shape` and `recharts`. The landing was rewritten from scratch in R4 and that
+code and those dependencies were removed then, so none of it ships today. `docs/LICENSE-uiable.txt`
+and `docs/registry-sources.json` are kept only as the historical record of that installation.

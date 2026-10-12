@@ -29,27 +29,17 @@ import { ChatWindow } from "./ChatWindow";
 import { gsap, MOTION_OK, ScrollTrigger, useGSAP } from "./gsap";
 import { AgentBadge } from "../../ui/AgentBadge";
 import "../../ui/kit.css";
-import { replayFor, replayPair } from "./replay";
+import { memoByView, replayFor, replayPair } from "./replay";
+import { SuiteLink } from "./SuiteLink";
 import { fixturesInLocation } from "../../app/links";
 
 // ------------------------------------------------------------------------------- loaders
-
-function memo<T>(fn: (r: ReplaySource) => Promise<T>) {
-  const cache = new WeakMap<ReplaySource, Promise<T>>();
-  return (r: ReplaySource) => {
-    let p = cache.get(r);
-    if (!p) {
-      p = fn(r);
-      p.catch(() => cache.delete(r));
-      cache.set(r, p);
-    }
-    return p;
-  };
-}
+// Memoized per (source, view): the fixture flag is re-read on every call (see replay.ts).
+const memo = memoByView;
 
 type CertData = { certificate: Certificate; runId: string; sample: boolean } | null;
-const loadCertificate = memo<CertData>(async (replay) => {
-  const { preview: guarded } = await replayPair(replay);
+const loadCertificate = memo<CertData>(async (replay, fixtures) => {
+  const { preview: guarded } = await replayPair(replay, fixtures);
   if (!guarded) return null;
   const world = await replay.certificates(entryOfBundle(guarded));
   const certificate = featuredCertificate(world);
@@ -57,8 +47,8 @@ const loadCertificate = memo<CertData>(async (replay) => {
 });
 
 type HeldData = { row: RunRow; card: HeldCard; bundle: RunBundle } | null;
-const loadHeld = memo<HeldData>(async (replay) => {
-  const { guarded } = await replayPair(replay);
+const loadHeld = memo<HeldData>(async (replay, fixtures) => {
+  const { guarded } = await replayPair(replay, fixtures);
   const decision = guarded && firstHeldRefund(guarded);
   if (!guarded || !decision) return null;
   const events = await replay.getTimeline(guarded.runId);
@@ -69,10 +59,11 @@ const loadHeld = memo<HeldData>(async (replay) => {
 });
 
 type RevData = { revocation: Revocation; certificate?: Certificate; scenario: string } | null;
-const loadRevocation = memo<RevData>(async (replay) => {
-  if (!fixturesInLocation()) {
+const loadRevocation = memo<RevData>(async (replay, fixtures) => {
+  // The fixture certificate index is fetched only in the fixture view.
+  if (!fixtures) {
     // Real runs: a revocation from the guarded run's own certificate world, or nothing.
-    const { preview } = await replayPair(replay);
+    const { preview } = await replayPair(replay, fixtures);
     if (!preview) return null;
     const found = featuredRevocation(await replay.certificates(entryOfBundle(preview)));
     return found ? { ...found, scenario: "" } : null;
@@ -87,27 +78,31 @@ const loadRevocation = memo<RevData>(async (replay) => {
   return found ? { ...found, scenario: pick.scenario } : null;
 });
 
-function useLoad<T>(load: (r: ReplaySource) => Promise<T>, source: DataSource) {
+function useLoad<T>(load: (r: ReplaySource, fixtures: boolean) => Promise<T>, source: DataSource) {
+  // Re-read on every render; the landing also remounts when the view changes.
+  const fixtures = fixturesInLocation();
   const [state, setState] = useState<{ status: "loading" } | { status: "ready"; value: T } | { status: "error"; message: string }>({
     status: "loading",
   });
   useEffect(() => {
     let live = true;
-    load(replayFor(source)).then(
+    load(replayFor(source, fixtures), fixtures).then(
       (value) => live && setState({ status: "ready", value }),
       (e: unknown) => live && setState({ status: "error", message: e instanceof Error ? e.message : String(e) }),
     );
     return () => {
       live = false;
     };
-  }, [load, source]);
+  }, [load, source, fixtures]);
   return state;
 }
 
-function Missing({ text }: { text: string }) {
+/** An honest empty card; with `suite`, the real view links to the same card on the evaluation suite. */
+function Missing({ text, suite = false }: { text: string; suite?: boolean }) {
   return (
     <div className="l-mini l-mini-missing">
       <p>{text}</p>
+      {suite && <SuiteLink />}
     </div>
   );
 }
@@ -147,7 +142,7 @@ function CertificateMini({ source }: { source: DataSource }) {
   const s = useLoad(loadCertificate, source);
   if (s.status === "loading") return <div className="l-mini l-mini-pending" aria-hidden="true" />;
   if (s.status === "error") return <Missing text={`Certificates withheld: ${s.message}`} />;
-  if (!s.value) return <Missing text="No active certificate is published yet." />;
+  if (!s.value) return <Missing text="No active certificate is published yet." suite />;
   const { certificate: c } = s.value;
   return (
     <div className="l-mini l-mini-cert">
@@ -188,7 +183,7 @@ function HeldMini({ source }: { source: DataSource }) {
   const s = useLoad(loadHeld, source);
   if (s.status === "loading") return <div className="l-mini l-mini-pending" aria-hidden="true" />;
   if (s.status === "error") return <Missing text={`Run withheld: ${s.message}`} />;
-  if (!s.value) return <Missing text="No held refund is published yet." />;
+  if (!s.value) return <Missing text="No held refund is published yet." suite />;
   const { row, card } = s.value;
   return (
     <div className="l-mini l-mini-held">
@@ -224,7 +219,7 @@ function ChatMini({ source }: { source: DataSource }) {
   const k = useStepper(root, steps + 1, 0.55, !!turn);
   if (s.status === "loading") return <div className="l-mini l-mini-pending" aria-hidden="true" />;
   if (s.status === "error") return <Missing text={`Chat unavailable: ${s.message}`} />;
-  if (!turn) return <Missing text="No chat answer is published yet." />;
+  if (!turn) return <Missing text="No chat answer is published yet." suite />;
   const shownSteps = turn.steps.slice(0, steps);
   const paragraph = turn.paragraphs[0] ? [clipText(turn.paragraphs[0], 170)] : [];
   return (
@@ -276,7 +271,7 @@ function RevocationMini({ source }: { source: DataSource }) {
 
   if (s.status === "loading") return <div className="l-mini l-mini-pending" aria-hidden="true" />;
   if (s.status === "error") return <Missing text={`Certificates withheld: ${s.message}`} />;
-  if (!s.value) return <Missing text="No certificate has been revoked yet." />;
+  if (!s.value) return <Missing text="No certificate has been revoked yet." suite />;
   const { revocation: r, certificate: c, scenario } = s.value;
   return (
     <div ref={root} className="l-mini l-mini-rev">

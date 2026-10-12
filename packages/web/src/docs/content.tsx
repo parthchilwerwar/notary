@@ -111,6 +111,30 @@ export const COMMANDS: CommandDoc[] = [
     flags: ["--cfo-import <file>", "--runs-dir <dir>", "--out <file>"],
     needs: "No keys.",
   },
+  {
+    name: "cfo connect",
+    summary: "Sign in to cfo.ai in your own browser (OAuth with PKCE, loopback redirect) and choose the workspace Notary reads. cfo.ai has no API key; its MCP server is the way in.",
+    flags: ["--org <id>", "--discover-only"],
+    needs: "A cfo.ai account. Tokens stay in the gitignored packages/core/config/cfo-oauth.json and are never printed.",
+  },
+  {
+    name: "cfo status",
+    summary: "Whether cfo.ai is connected, which workspace, when the access token expires and how the last sync went. Never shows a token.",
+    flags: ["--json"],
+    needs: "No keys.",
+  },
+  {
+    name: "cfo sync",
+    summary: "Read the plan from cfo.ai over MCP (inspect_table_blocks), map it strictly (rows without a unit or with non-numeric cells are rejected), then regenerate the Business tab data and docs/BUSINESS.md like economics.",
+    flags: ["--table <name> (repeatable, default Notary Plan)", "--scenario <name> (default Main)"],
+    needs: "A cfo.ai connection (cfo connect).",
+  },
+  {
+    name: "cfo push",
+    summary: "Explains why Notary's per-run costs are not written into cfo.ai over MCP (no documented data-row write) and points at the CSV upload. Exits 3.",
+    flags: [],
+    needs: "No keys.",
+  },
 ];
 
 /** `--name` of a flag string ("--tool <crustdata|dodo> (required)" -> "--tool"). */

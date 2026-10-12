@@ -12,7 +12,13 @@
  *   - cost per notarized belief = all live notarize spend / distinct notarized beliefs in each
  *     tool's newest full notarize bundle (beliefs persist across runs, so they are not summed)
  *   - cost per certificate = the same spend / certified claims in public/certificates/report.json,
- *     only when every bundle that report counted is among the real bundles here (else stale)
+ *     only when every bundle that report counted is among the real bundles here and it counted each
+ *     tool's newest LIVE full notarize bundle (replays are never certificate sources); per tool, null
+ *     with a reason when the tool has no live full notarize run
+ *   - recon sweeps (classify "notarize-recon") are labeled apart: their spend is notarize spend (the
+ *     first stage), but they are not counted as notarize runs
+ *   - a run whose bundle says a model had no known price (metric `usd_unknown_calls` > 0) has an
+ *     unknown model USD: every USD ratio it feeds is null with that reason, never a $0 stand-in
  */
 import { classify } from "../export/collect.js";
 import type { CertificateReport } from "../schema/certificate.js";
@@ -42,6 +48,10 @@ const metric = (b: RunBundle, key: string): number | null => {
   return typeof v === "number" && Number.isFinite(v) ? v : null;
 };
 
+/** The bundle metric that marks model calls without a known price (their USD was recorded as 0). */
+export const USD_UNKNOWN_METRIC = "usd_unknown_calls";
+export const usdUnknown = (b: RunBundle): boolean => (metric(b, USD_UNKNOWN_METRIC) ?? 0) > 0;
+
 function notarizedIds(b: RunBundle): string[] {
   return [...new Set(b.beliefs.after.filter((x) => x.status === "notarized").map((x) => x.id))].sort();
 }
@@ -68,11 +78,18 @@ export function economicsRun(b: RunBundle): EconomicsRun {
     unsafeActions: b.kind === "run" ? metric(b, "unsafe_actions_total") : null,
     holds: b.kind === "run" ? metric(b, "holds") : null,
     beliefsNotarized: b.kind === "notarize" ? notarizedIds(b).length : null,
+    stage: classify(b),
+    usdUnknown: usdUnknown(b),
   };
 }
 
-function ratio(usdTotal: number, creditsTotal: number, denominator: number | null, basis: string, reasonIfNone: string): EconomicsRatio {
+const unknownReason = (n: number) =>
+  `${n} live run${n === 1 ? "" : "s"} used a model with no known price, so the model USD is unknown (the recorded figure is only a lower bound). Set the model's price and re-run.`;
+
+function ratio(usdTotal: number, creditsTotal: number, denominator: number | null, basis: string, reasonIfNone: string, unknownRuns = 0): EconomicsRatio {
   if (denominator === null || denominator === 0) return { usd: null, credits: null, basis, reason: reasonIfNone };
+  // Credits stay known when USD is not: the tool counts them, nothing prices them.
+  if (unknownRuns > 0) return { usd: null, credits: round(creditsTotal / denominator), basis, reason: unknownReason(unknownRuns) };
   return { usd: round(usdTotal / denominator), credits: round(creditsTotal / denominator), basis, reason: null };
 }
 
@@ -108,6 +125,7 @@ export function computeEconomics(input: ComputeInput): { computed: EconomicsComp
     modelUsd: sum(live.map((r) => r.modelUsd)),
     credits: sum(live.map((r) => r.credits)),
     tokens: live.reduce((n, r) => n + r.tokens, 0),
+    usdUnknownRuns: live.filter((r) => r.usdUnknown).length,
   };
 
   const costPerRun = ratio(
@@ -116,6 +134,7 @@ export function computeEconomics(input: ComputeInput): { computed: EconomicsComp
     live.length,
     "Model USD (executor + reflector + adversary) and Crustdata credits summed over live real bundles, divided by the number of live bundles. Replays are excluded: they spend nothing new.",
     "No live real bundle yet: replays spend nothing, so there is no cost per run to show.",
+    totals.usdUnknownRuns,
   );
 
   // --- notarize spend per tool and what it bought
@@ -127,10 +146,11 @@ export function computeEconomics(input: ComputeInput): { computed: EconomicsComp
     const have = new Set(bundles.map((b) => `${b.runId}@${b.contentHash}`));
     const counted = new Set(input.certificates.sourceBundles.map((s) => `${s.runId}@${s.contentHash}`));
     const missing = input.certificates.sourceBundles.filter((s) => !have.has(`${s.runId}@${s.contentHash}`));
-    // The newest full notarize bundle of each tool is what certificates are issued from; a report
-    // that did not count it predates it.
+    // The newest LIVE full notarize bundle of each tool is what certificates are issued from; a
+    // report that did not count it predates it. Replays re-serve a recorded run and are never
+    // certificate sources, so a newer replay does not make the report stale.
     const newer = TOOLS.flatMap((tool) => {
-      const newest = bundles.filter((b) => b.kind === "notarize" && b.tool === tool && classify(b) === "notarize-full").at(-1);
+      const newest = bundles.filter((b) => b.kind === "notarize" && b.mode === "live" && b.tool === tool && classify(b) === "notarize-full").at(-1);
       return newest && !counted.has(`${newest.runId}@${newest.contentHash}`) ? [newest.runId] : [];
     });
     if (missing.length)
@@ -140,36 +160,54 @@ export function computeEconomics(input: ComputeInput): { computed: EconomicsComp
     else for (const t of input.certificates.tools) certByTool.set(t.tool, t.counts.certified);
   }
 
+  // Notarize spend: live full notarize runs plus live recon sweeps (compare-priors arms are replays).
+  const notarizeSpend = (b: RunBundle) => b.kind === "notarize" && b.mode === "live" && (classify(b) === "notarize-full" || classify(b) === "notarize-recon");
   const tools: EconomicsTool[] = TOOLS.flatMap((tool) => {
-    const own = liveBundles.filter((b) => b.kind === "notarize" && b.tool === tool);
+    const own = bundles.filter((b) => notarizeSpend(b) && b.tool === tool);
+    const fullLive = own.filter((b) => classify(b) === "notarize-full");
     const fulls = bundles.filter((b) => b.kind === "notarize" && b.tool === tool && classify(b) === "notarize-full");
     const newest = fulls[fulls.length - 1];
     const certified = certReason === null ? certByTool.get(tool) ?? 0 : null;
     if (!own.length && !newest && !certified) return [];
     const modelUsd = sum(own.map((b) => economicsRun(b).modelUsd));
+    const unknown = own.filter(usdUnknown).length;
+    const costPerCertificateReason =
+      certified === null
+        ? certReason
+        : !fullLive.length
+          ? `No live full notarize run of ${tool}: its certificates come from recorded or replayed work, so there is no spend to divide by them.`
+          : certified === 0
+            ? "No certificate is issued yet (certified = 0)."
+            : unknown
+              ? unknownReason(unknown)
+              : null;
     return [
       {
         tool,
-        runs: own.length,
+        runs: fullLive.length,
+        reconRuns: own.length - fullLive.length,
         modelUsd,
         credits: sum(own.map((b) => b.credits.total)),
         notarizedBeliefs: newest ? notarizedIds(newest).length : null,
         certified,
-        costPerCertificateUsd: certified ? round(modelUsd / certified) : null,
+        costPerCertificateUsd: costPerCertificateReason === null && certified ? round(modelUsd / certified) : null,
+        costPerCertificateReason,
       },
     ];
   });
   const notarizeUsd = sum(tools.map((t) => t.modelUsd));
   const notarizeCredits = sum(tools.map((t) => t.credits));
   const notarizeRuns = tools.reduce((n, t) => n + t.runs, 0);
+  const notarizeUnknown = bundles.filter((b) => notarizeSpend(b) && usdUnknown(b)).length;
   const beliefs = tools.some((t) => t.notarizedBeliefs !== null) ? tools.reduce((n, t) => n + (t.notarizedBeliefs ?? 0), 0) : null;
 
   const costPerNotarizedBelief = ratio(
     notarizeUsd,
     notarizeCredits,
     notarizeRuns ? beliefs : null,
-    "Model USD and credits of every live notarize bundle, divided by the distinct notarized beliefs in each tool's newest full notarize bundle (beliefs persist across runs, so they are counted once).",
+    "Model USD and credits of every live notarize bundle (full runs and recon sweeps), divided by the distinct notarized beliefs in each tool's newest full notarize bundle (beliefs persist across runs, so they are counted once).",
     !notarizeRuns ? "No live notarize bundle yet." : beliefs === null ? "No full notarize bundle yet, so no belief has been notarized." : "No belief is notarized yet.",
+    notarizeUnknown,
   );
 
   const certified = certReason === null ? [...certByTool.values()].reduce((a, b) => a + b, 0) : null;
@@ -177,8 +215,9 @@ export function computeEconomics(input: ComputeInput): { computed: EconomicsComp
     notarizeUsd,
     notarizeCredits,
     notarizeRuns ? certified : null,
-    "The same live notarize spend, divided by the certified claims in public/certificates/report.json (only when that report counted exactly bundles found here).",
+    "The same live notarize spend, divided by the certified claims in public/certificates/report.json (only when that report counted exactly bundles found here, including each tool's newest live full notarize run).",
     certReason ?? (!notarizeRuns ? "No live notarize bundle yet." : "No certificate is issued yet (certified = 0)."),
+    notarizeUnknown,
   );
 
   // --- naive vs guarded: prevented and held, per world (seed), newest live pair

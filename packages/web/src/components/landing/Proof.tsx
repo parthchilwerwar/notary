@@ -7,6 +7,7 @@ import { BrowserFrame } from "./BrowserFrame";
 import { fadeUp, revealTitle } from "./motion";
 import { gsap, MOTION_OK, useGSAP } from "./gsap";
 import { useNear } from "./useNear";
+import { SuiteLink } from "./SuiteLink";
 
 export type ProofState =
   | { status: "loading" }
@@ -124,6 +125,7 @@ export function Proof({ state, onNear }: { state: ProofState; onNear?: () => voi
                 ))}
               </ol>
             )}
+            <SuiteLink />
           </div>
         )}
         {state.status === "ready" && <ProofBody state={state} />}

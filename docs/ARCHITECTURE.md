@@ -2,7 +2,7 @@
 
 This document describes the code in `packages/core` at the end of P8. It is derived from [`TDD.md`](TDD.md) and corrected to match the code. Where the two differ, the [last section](#where-the-tdd-and-the-code-differ) lists each difference with its [`DECISIONS.md`](DECISIONS.md) entry.
 
-**Status:** no live run has been recorded (no API keys). Everything below is implemented and unit-tested against doubles and test-only cassettes. Live paths stop with `BLOCKED: …` (exit 3) before any network call. See [`EVALUATION.md`](EVALUATION.md).
+**Status (Oct 12, 2026):** the notarization loop has run live on Crustdata and Dodo test mode: 4 live bundles and 3 exact replays, 5 certificates (see [`EVALUATION.md`](EVALUATION.md)). The queue loop (`notary run`) has not run live yet: it is BLOCKED on the Dodo seed (12 hosted test-card checkouts) and is exercised only by unit tests and the evaluation suite on simulated APIs. Live paths with a missing variable stop with `BLOCKED: …` (exit 3) before any network call.
 
 ## At a glance
 
@@ -33,7 +33,7 @@ flowchart TB
   B7 --> R["replay/<br/>keyless re-run, exact metric compare"]
   B7 --> X["export/<br/>EVALUATION.md, TOOLS.md, guards.json"]
   B7 --> S["api/ notary serve<br/>read-only Hono + SSE"]
-  S --> D["packages/web dashboard, Codex"]
+  S --> D["packages/web dashboard"]
   L["trace/: neatlogs SDK spans + runs/runId/spans.jsonl"] -.-> N
   L -.-> Q
 ```
@@ -171,14 +171,14 @@ Only **notarized** beliefs on the **violated** side compile. A notarized honored
 
 Guard ids are deterministic. Each firing is appended to the Decision's `guardsApplied`, and the guard's own reads go to `effects`. The registry is consulted on every call, so a guard retired mid-run stops applying immediately.
 
-**Coverage** (`notary guards coverage`, FR-17). Every public raw-client method must be in the ops table and reachable only through `wrap(op, …)` inside `createTools`. Every `createTools()` call must pass a real wrap, unless it is in `RAW_BY_DESIGN`: recon, probing, seeding, and the naive baseline's identity wrap ([#62](DECISIONS.md)). Each entry names the enclosing function and the exact number of sites it covers, so another raw call in the same file is still UNGUARDED (AUDIT-10). Backends: `entire` (`entire graph neighbors`, unverified, [#61](DECISIONS.md)) and `tsc` (a TypeScript-checker walk over `src` + `scripts`). `auto` picks `entire` only when it is on PATH. Current result: [`EVALUATION.md`](EVALUATION.md#checks-that-dont-need-api-keys).
+**Coverage** (`notary guards coverage`, FR-17). Every public raw-client method must be in the ops table and reachable only through `wrap(op, …)` inside `createTools`. Every `createTools()` call must pass a real wrap, unless it is in `RAW_BY_DESIGN`: recon, probing, seeding, and the naive baseline's identity wrap ([#62](DECISIONS.md)). Each entry names the enclosing function and the exact number of sites it covers, so another raw call in the same file is still UNGUARDED (AUDIT-10). Backends: `entire` (one bulk `entire graph edges --worktree` pass, `neighbors` only for exact lines; verified with Entire CLI 0.11.4, [#61](DECISIONS.md), [#207](DECISIONS.md)) and `tsc` (a TypeScript-checker walk over `src` + `scripts`). `auto` picks `entire` only when it is on PATH. Current result: [`EVALUATION.md`](EVALUATION.md#checks-that-dont-need-api-keys).
 
 ## Adversary backends
 
 Both backends use the same fixed reviewer prompt ([`adversary/prompt.ts`](../packages/core/src/adversary/prompt.ts)) and receive the same evidence packet: belief, claim, and raw probe records (template, params, control, predictions with defect classes, observed, verdict, trace ids). Hypothesis statements and reflector prose are excluded and asserted absent ([#49](DECISIONS.md)). Replies are zod-validated, and any failure leaves the belief a candidate.
 
 - **`bedrock`** (default): one `complete` call with role `adversary` (`NOTARY_MODEL_ADVERSARY`, which must differ from the reflector, including across `us.`/`global.` prefixes, [#37](DECISIONS.md)).
-- **`session`**: writes `adversary/inbox/<beliefId>.json` and runs headless `claude -p … --output-format json --tools Read,Write --permission-mode dontAsk --strict-mcp-config --disable-slash-commands`, which may read only the inbox file and write only `adversary/verdicts/<beliefId>.json`, with `.env` reads disallowed. The inbox and verdict files are committed as `adversary: <verdict> <beliefId>` so Entire can checkpoint the review. It hasn't run live ([#50](DECISIONS.md)).
+- **`session`**: writes `adversary/inbox/<beliefId>.json` and runs headless `claude -p … --output-format json --tools Read,Write --permission-mode dontAsk --strict-mcp-config --disable-slash-commands`, which may read only the inbox file and write only `adversary/verdicts/<beliefId>.json`, with `.env` reads disallowed. The inbox and verdict files are committed as `adversary: <verdict> <beliefId>` so Entire can checkpoint the review. It ran once on a real belief in a scratch clone (checkpointed); not yet on `main` ([#50](DECISIONS.md), [`ENTIRE.md`](ENTIRE.md)).
 
 ## Local API and dashboard contract
 
@@ -188,7 +188,7 @@ Both backends use the same fixed reviewer prompt ([`adversary/prompt.ts`](../pac
 - `GET /api/bundles/:id` re-verifies the bundle on every read. A hash mismatch returns 200 with `X-Notary-Hash-Mismatch: 1` and an `error` field.
 - `GET /api/stream` is SSE (`decision`, `probe.committed`, `probe.verdict`, `belief.changed`, `run.finished`) with `Last-Event-ID` replay from a bounded ring buffer.
 
-The dashboard (`packages/web`, built by Codex) depends only on `src/schema/bundle.ts` and `public/bundles/`. Today it holds the synthetic `sample-42.json` and a placeholder README.
+The dashboard (`packages/web`; Codex built the first shell, Claude Code the rest) imports only from `packages/core/src/schema` and `packages/core/src/bundle/hash.ts`, reads the published files in `public/` (bundles, timelines, certificates, incidents, economics, evidence), and recomputes every bundle hash in the browser. With `notary serve` running locally it also uses the live endpoints; the hosted build is read-only. The endpoint list above is the P6 core; `serve` now also exposes health, runs, certificates, chat/ask and approvals (`pnpm notary serve` prints them).
 
 ## Where the TDD and the code differ
 
@@ -212,7 +212,7 @@ The dashboard (`packages/web`, built by Codex) depends only on `src/schema/bundl
 | Test-mode lock refuses a live key | No documented key prefix: `NOTARY_MODE=test` + exact test base URL | [#15](DECISIONS.md) |
 | Seed script creates payments | 11 hosted test-card checkouts by a human, the rest via `confirm:true` checkouts | [#28](DECISIONS.md) |
 | Executor model handles the queue | Policy is plain code. The executor role is configured but not called | [#33](DECISIONS.md) |
-| Coverage via entire-graph | `entire` backend implemented but unverified; `tsc` fallback used | [#56](DECISIONS.md), [#61](DECISIONS.md), [#62](DECISIONS.md) |
-| Drift fixture exists | None until a real cassette is recorded; mechanism tested on a temp cassette | [#60](DECISIONS.md) |
+| Coverage via entire-graph | `entire` backend runs one bulk `entire graph edges --worktree` pass (Entire CLI 0.11.4 + entire-graph v0.4.0); same 33 sites and 0 unguarded as the `tsc` backend | [#56](DECISIONS.md), [#61](DECISIONS.md), [#62](DECISIONS.md), [#207](DECISIONS.md) |
+| Drift fixture exists | None yet: real cassettes exist since Oct 12, but no drift fixture has been made from one; mechanism tested on a temp cassette | [#60](DECISIONS.md) |
 | CLI: run, notarize, replay, export, guards coverage, serve | Also `eval noise-floor`, `doctor`, `notarize --recon-only/--replay/--adversary/--compare-priors/--priors-bundle`, `run --resume/--run/--replay`, `replay --drift`, `export --sample/...` | [#59](DECISIONS.md), [#66](DECISIONS.md) |
 | Trace links to neatlogs | `traceLinks` hold local `spans.jsonl` receipts (run bundles) or are empty (notarize bundles) | not yet in DECISIONS |

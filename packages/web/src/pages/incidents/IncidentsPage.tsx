@@ -2,7 +2,7 @@
 // (newest first, as published), each tied to its neatlogs span and to how it was resolved. All of it
 // comes from the published incidents file (see src/data/incidents.ts); counts are computed in
 // ./model.ts. One cohort at a time: real runs, or fixture runs under ?fixtures=1 with the disclosure.
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import type { Incident, IncidentKind } from "../../../../core/src/schema";
 import { ListMagnifyingGlassIcon as ListMagnifyingGlass } from "@phosphor-icons/react/dist/csr/ListMagnifyingGlass";
@@ -40,6 +40,7 @@ import {
 } from "../../ui";
 import { INCIDENTS_FILE, loadIncidents, type IncidentsLoad } from "../../data/incidents";
 import { fixturesRequested, FIXTURES_PARAM } from "../../app/links";
+import { useOptionalData } from "../../app/catalog";
 import { dateTime } from "../../lib/time";
 import {
   ACTION_LABEL,
@@ -51,6 +52,7 @@ import {
   STATUS_LABEL,
   buildView,
   isFiltered,
+  kindLabel,
   matches,
   parseFilter,
   relatedLinks,
@@ -58,8 +60,10 @@ import {
   shortId,
   traceCell,
   type IncidentFilter,
+  type IncidentStats,
   type IncidentsView,
   type RunView,
+  type ViewContext,
 } from "./model";
 import "./incidents.css";
 
@@ -90,6 +94,10 @@ export type IncidentsPageState =
 
 export function IncidentsPage() {
   const [params] = useSearchParams();
+  // The bundles the data layer hash-verified in this browser: the only basis for "Matches the
+  // published bundle" (the bundle index alone is not verified here).
+  const data = useOptionalData();
+  const ctx = useMemo<ViewContext>(() => (data && !data.loading && !data.error ? { bundles: data.bundles } : {}), [data?.loading, data?.error, data?.bundles]);
   const [state, setState] = useState<IncidentsPageState>({ status: "loading" });
   useEffect(() => {
     const ac = new AbortController();
@@ -101,13 +109,13 @@ export function IncidentsPage() {
       });
     return () => ac.abort();
   }, []);
-  return <IncidentsContent state={state} params={params} />;
+  return <IncidentsContent state={state} params={params} ctx={ctx} />;
 }
 
 /** The page for a given load state and query string (pure; render tests use it directly). */
-export function IncidentsContent({ state, params }: { state: IncidentsPageState; params: URLSearchParams }) {
+export function IncidentsContent({ state, params, ctx }: { state: IncidentsPageState; params: URLSearchParams; ctx?: ViewContext }) {
   const fixtures = fixturesRequested(params);
-  const view = state.status === "ready" ? buildView(state.load, fixtures) : undefined;
+  const view = state.status === "ready" ? buildView(state.load, fixtures, ctx) : undefined;
   const root = usePageMotion([state.status, view?.cohort]);
   if (state.status === "loading") return <PageSkeleton label="Loading incidents…" stats={4} />;
   return (
@@ -155,6 +163,17 @@ function Ready({ view, params }: { view: IncidentsView; params: URLSearchParams 
   const filter = parseFilter(params);
   const fixtureBanner = cohort === "fixture" ? <FixtureNote className="inc-fixture" /> : null;
 
+  if (view.withheld)
+    return (
+      <>
+        {fixtureBanner}
+        <EmptyState tone="error" title="Incidents withheld">
+          <p>The published incidents index failed its integrity check in this browser, so none of its incidents are shown.</p>
+          <p className="inc-detail">{view.withheld}</p>
+        </EmptyState>
+      </>
+    );
+
   if (!runs.length)
     return (
       <>
@@ -183,16 +202,34 @@ function Ready({ view, params }: { view: IncidentsView; params: URLSearchParams 
   return (
     <>
       {fixtureBanner}
-      <StatRow label={cohort === "fixture" ? "Fixture incident counts" : "Incident counts"}>
-        <Stat
-          label="Incidents"
-          value={stats.total}
-          note={`${stats.errors} ${stats.errors === 1 ? "error" : "errors"} · ${stats.warnings} ${stats.warnings === 1 ? "warning" : "warnings"}`}
-        />
-        <Stat label="Resolved" value={stats.resolved} of={`of ${stats.total}`} />
-        <Stat label="Awaiting a human" value={stats.awaitingHuman} />
-        <Stat label="Open" value={stats.open} />
-      </StatRow>
+      {view.groups.length <= 1 ? (
+        <Counts stats={stats} label={cohort === "fixture" ? `Fixture incident counts${view.groups[0] ? ` · ${view.groups[0].label}` : ""}` : "Incident counts"} />
+      ) : (
+        // Fixture scenarios are separate worlds: one row of counts per scenario, never a sum.
+        view.groups.map((g) => (
+          <div key={g.key} className="inc-world">
+            <h3 className="ui-title ui-title-card inc-world-title">{g.label}</h3>
+            <Counts stats={g.stats} label={`Incident counts · ${g.label}`} />
+          </div>
+        ))
+      )}
+      <p className="inc-quiet inc-count-note">
+        An incident listed under more than one run (same id) counts once.
+        {view.replays.length > 0 && (
+          <>
+            {" "}
+            {view.replays.length} {view.replays.length === 1 ? "replay is" : "replays are"} not listed (
+            {view.replays.map((r, i) => (
+              <span key={r.runId}>
+                {i > 0 && ", "}
+                <code>{r.runId}</code>
+                {r.replayOf ? <> — Replay of <code>{r.replayOf}</code></> : " — Replay"}
+              </span>
+            ))}
+            ): a replay re-serves its original run's recording, so its incidents are the original run's.
+          </>
+        )}
+      </p>
 
       <Section
         aria-label="Incidents by run"
@@ -254,13 +291,34 @@ function Ready({ view, params }: { view: IncidentsView; params: URLSearchParams 
   );
 }
 
+function Counts({ stats, label }: { stats: IncidentStats; label: string }) {
+  return (
+    <StatRow label={label}>
+      <Stat
+        label="Incidents"
+        value={stats.total}
+        note={`${stats.errors} ${stats.errors === 1 ? "error" : "errors"} · ${stats.warnings} ${stats.warnings === 1 ? "warning" : "warnings"}`}
+      />
+      <Stat label="Resolved" value={stats.resolved} of={`of ${stats.total}`} />
+      <Stat label="Awaiting a human" value={stats.awaitingHuman} />
+      <Stat label="Open" value={stats.open} />
+    </StatRow>
+  );
+}
+
 function RunCheckLine({ run }: { run: RunView }) {
   const c = run.check;
   switch (c.state) {
     case "verified":
       return (
         <StatusPill tone="safe" className="inc-check">
-          <span title={`contentHash ${c.entry.contentHash}`}>Matches the published bundle</span>
+          <span title={`contentHash ${c.bundleHash}, recomputed in this browser`}>Matches the published bundle</span>
+        </StatusPill>
+      );
+    case "listed":
+      return (
+        <StatusPill tone="neutral" className="inc-check">
+          <span title={`contentHash ${c.entry.contentHash} (bundle index; the bundle itself is not loaded here)`}>Listed in the bundle index</span>
         </StatusPill>
       );
     case "unpublished":
@@ -362,7 +420,7 @@ function IncidentRow({ incident: i, linkable }: { incident: Incident; linkable: 
       </span>
       <div className="inc-body">
         <p className="inc-top">
-          <span className="inc-kind">{KIND_LABEL[i.kind]}</span>
+          <span className="inc-kind">{kindLabel(i)}</span>
           <StatusPill tone={i.severity === "error" ? "unsafe" : "neutral"}>{SEVERITY_LABEL[i.severity]}</StatusPill>
           <time className="inc-time" dateTime={i.at}>
             {dateTime(i.at)}
@@ -452,7 +510,7 @@ function IncidentRow({ incident: i, linkable }: { incident: Incident; linkable: 
 
 function TraceView({ incident }: { incident: Incident }) {
   const cell = traceCell(incident);
-  if (cell.kind === "none") return <span className="inc-trace inc-quiet">No trace (tracing was off)</span>;
+  if (cell.kind === "none") return <span className="inc-trace inc-quiet">No trace id recorded</span>;
   if (cell.kind === "link")
     return (
       <span className="inc-trace">

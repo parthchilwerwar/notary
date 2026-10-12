@@ -110,6 +110,8 @@ export * from "./agents.js";
 
 // Unit economics + the imported cfo.ai plan (packages/web/public/economics.json).
 export * from "./economics.js";
+// The local cfo.ai MCP connection (notary cfo status; GET /api/cfo/status, POST /api/cfo/sync).
+export * from "./cfo.js";
 
 // Incidents per run, tied to neatlogs spans (runs/<runId>/incidents.json, public/bundles/incidents.json).
 export * from "./incidents.js";

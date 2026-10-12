@@ -14,7 +14,7 @@ import { runNoiseFloor } from "../src/eval/noise-floor.js";
 import type { CompleteRequest, CompleteResult, LlmLike } from "../src/llm/client.js";
 import { runQueue } from "../src/queue/run.js";
 import { notarize } from "../src/reflect/notarize.js";
-import { BLOCKED_NOTHING_RECORDED, runReplay } from "../src/replay/index.js";
+import { BLOCKED_NOTHING_RECORDED, KNOWN_UNREPLAYABLE_FILE, loadKnownUnreplayable, runReplay } from "../src/replay/index.js";
 import { normalizeVolatile } from "../src/replay/llm-cassette.js";
 import { compareRecords } from "../src/replay/records.js";
 import { parseRef, pinRef } from "../src/replay/pins.js";
@@ -316,6 +316,76 @@ describe("recon-only bundles replay too", () => {
     expect(replay.anomalies.map((a) => a.id)).toEqual(original.anomalies.map((a) => a.id));
     expect(replay.metrics).toEqual(original.metrics);
   }, 60_000);
+});
+
+describe("replay sweep over published bundles (audit #3: timelines, replay copies, known unreplayable)", () => {
+  it("reads web bundles from index.json (never *.timeline.json); replay-output copies that differ only in wall-clock fields are not a CONFLICT; idempotent", async () => {
+    const d = dirsFor();
+    const web = tempDir("notary-replay-web-");
+    const { reconOnly } = await import("../src/checker/notarize.js");
+    const live = await reconOnly({ tool: "dodo", env: LIVE_ENV, runsDir: d.runs, cassetteDir: d.cassettes, sleep: async () => {}, unguardedCallSites: async () => 0 });
+    expect(live.exitCode, live.lines.join("\n")).toBe(0);
+    const original = readBundle(live.bundlePath!);
+    vi.stubGlobal("fetch", refuseFetch);
+    const first = await runReplay({ runsDir: d.runs, webBundlesDir: null, cassetteDir: d.cassettes, unguardedCallSites: async () => 0 });
+    expect(first.exitCode, first.lines.join("\n")).toBe(0);
+    const replayed = first.replays[0]!.replay!;
+    // "Published" copies: the original, an earlier replay output (other wall-clock times -> other hash), timelines next to them.
+    writeRaw(join(web, `${original.runId}.json`), original);
+    const earlier = finalizeBundle({ ...replayed, startedAt: "2026-10-01T00:00:00.000Z", finishedAt: "2026-10-01T00:00:01.000Z" });
+    expect(earlier.contentHash).not.toBe(replayed.contentHash);
+    writeRaw(join(web, `${replayed.runId}.json`), earlier);
+    writeRaw(join(web, `${original.runId}.timeline.json`), { runId: original.runId, events: [] });
+    writeRaw(join(web, `${replayed.runId}.timeline.json`), { runId: replayed.runId, events: [] });
+    writeRaw(join(web, "index.json"), [{ runId: original.runId }, { runId: replayed.runId }]);
+    for (let i = 0; i < 2; i++) {
+      const res = await runReplay({ runsDir: d.runs, webBundlesDir: web, cassetteDir: d.cassettes, unguardedCallSites: async () => 0 });
+      const text = res.lines.join("\n");
+      expect(res.exitCode, text).toBe(0);
+      expect(text).not.toMatch(/TAMPERED OR INVALID BUNDLE/);
+      expect(text).not.toMatch(/CONFLICT/);
+      expect(text).toMatch(/earlier replay output\(s\) have two copies that differ only in wall-clock fields/);
+    }
+    // A published replay copy whose records differ is still a CONFLICT.
+    writeRaw(join(web, `${replayed.runId}.json`), finalizeBundle({ ...earlier, anomalies: earlier.anomalies.slice(1) }));
+    const bad = await runReplay({ runsDir: d.runs, webBundlesDir: web, cassetteDir: d.cassettes, unguardedCallSites: async () => 0 });
+    expect(bad.exitCode).toBe(1);
+    expect(bad.lines.some((l) => l.startsWith(`CONFLICT: bundle ${replayed.runId}`))).toBe(true);
+  }, 120_000);
+
+  it("a run on the known-unreplayable list that fails with its listed error is SKIPPED (disclosed, exit 0); any other failure still fails", async () => {
+    const d = dirsFor();
+    const original = await liveRun("naive", d);
+    const cassette = loadCassette(original.runId, { dir: d.cassettes });
+    const dropped = cassette.exchanges.at(-1)!;
+    const exchanges = cassette.exchanges.slice(0, -1);
+    saveCassette({ ...cassette, exchanges, contentHash: computeContentHash(exchanges) }, d.cassettes);
+    writeRaw(
+      join(d.runs, original.runId, `${original.runId}.json`),
+      finalizeBundle({ ...original, cassettes: original.cassettes.map((c) => (parseRef(c).name === original.runId ? pinRef(original.runId, computeContentHash(exchanges)) : c)) }),
+    );
+    vi.stubGlobal("fetch", refuseFetch);
+    const base = { runsDir: d.runs, webBundlesDir: null, cassetteDir: d.cassettes, unguardedCallSites: async () => 0 };
+    const known = [{ runId: original.runId, reason: "test: its cassette lacks the last exchange", expectedError: `CASSETTE MISS: ${dropped.op}`, decision: "test decision" }];
+    const res = await runReplay({ ...base, knownUnreplayable: known });
+    expect(res.exitCode, res.lines.join("\n")).toBe(0);
+    expect(res.lines).toContain("  SKIPPED (known unreplayable: test: its cassette lacks the last exchange; test decision)");
+    expect(res.lines.at(-1)).toMatch(/^REPLAY OK: 0 bundle\(s\) reproduced exactly; 1 skipped as known unreplayable/);
+    // Asked for by name, a known-unreplayable run is never a pass.
+    expect((await runReplay({ ...base, bundle: original.runId, knownUnreplayable: known })).exitCode).toBe(1);
+    // A different failure than the listed one is a FAIL, not a skip; and an unlisted run is never skipped.
+    const other = await runReplay({ ...base, knownUnreplayable: [{ ...known[0]!, expectedError: "CASSETTE MISS: llm.reflector" }] });
+    expect(other.exitCode).toBe(1);
+    expect(other.lines.some((l) => l.startsWith("  FAIL: CASSETTE MISS"))).toBe(true);
+    expect((await runReplay({ ...base, knownUnreplayable: [] })).exitCode).toBe(1);
+  }, 120_000);
+
+  it("the committed list names only notarize-dodo-20261012T012315Z, with its reason and DECISIONS #200", () => {
+    const list = loadKnownUnreplayable(KNOWN_UNREPLAYABLE_FILE);
+    expect(list.map((k) => k.runId)).toEqual(["notarize-dodo-20261012T012315Z"]);
+    expect(list[0]!.decision).toMatch(/DECISIONS\.md #200/);
+    expect(list[0]!.expectedError).toMatch(/^CASSETTE MISS: dodo\.createWalletLedgerEntry/);
+  });
 });
 
 describe("notary replay fails loudly", () => {

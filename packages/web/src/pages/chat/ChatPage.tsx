@@ -8,7 +8,8 @@ import { createPortal } from "react-dom";
 import { useSearchParams } from "react-router";
 import type { ChatConversation, ChatEvent, ChatMessage } from "../../../../core/src/schema";
 import { AGENTS } from "../../../../core/src/schema";
-import { Button, EmptyState, Skeleton, SkyBand, usePageMotion } from "../../ui";
+import { Button, EmptyState, ReplayBadge, Skeleton, SkyBand, usePageMotion } from "../../ui";
+import { replayBadge } from "../../app/links";
 import { ArrowDown, ArrowUp, CaretDown, CaretRight, Plus, StopSquare, Trash } from "./icons";
 import { useData } from "../../app/catalog";
 import { LocalApiError, REPLAY_CHAT_BANNER, date, useDataSource, useSessionToken, worldKeyOf, worldLabel, type WorldKey } from "../../data";
@@ -60,7 +61,9 @@ const scrollMetrics = () => ({
 
 export function ChatPage() {
   const { source, mode, ready } = useDataSource();
-  const { selectedRunId, bundle, certificates } = useData();
+  const { selectedRunId, bundle, bundles, certificates } = useData();
+  // The selected run is a replay: say so wherever the chat names it ("Replay of <original>").
+  const selectedReplay = replayBadge(bundle, bundles);
   const chat = source.chat;
   const [params, setParams] = useSearchParams();
   const convId = params.get("c") ?? undefined;
@@ -398,6 +401,7 @@ export function ChatPage() {
         <p className="chat-banner" role="note">
           <span className="chat-banner-main">{REPLAY_CHAT_BANNER}</span>
           {world && <span className="chat-banner-world">Answers from {worldPhrase(world, !!bundle?.sample)}</span>}
+          {selectedReplay && <ReplayBadge className="chat-banner-replay">{selectedReplay}</ReplayBadge>}
         </p>
       )}
 

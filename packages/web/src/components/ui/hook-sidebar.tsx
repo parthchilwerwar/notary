@@ -38,9 +38,11 @@
  * - Items may carry a trailing `badge`, a per-item `onClick`, `active` and `className`.
  * - Colors map to Notary tokens: inactive rows use --text-muted (AA on white), active and hover
  *   rows --text; the hover rail is --text-faint (a non-text mark). Default rail color: --accent.
+ * - The group label's id comes from React's useId(), so several sidebars with the same label on
+ *   one page (the /docs sidebar and its phone "Contents" copy) never share a DOM id.
  * - Springs and reduced-motion handling are unchanged.
  */
-import { useEffect, useRef, useState, type ComponentProps, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ComponentProps, type MouseEvent, type ReactNode } from "react";
 import { Link, useLocation } from "react-router";
 import { motion, useReducedMotion } from "motion/react";
 import { cn } from "../../lib/utils";
@@ -188,7 +190,8 @@ export function HookSidebar({
     onChange?.(index);
   };
 
-  const labelId = label ? `hook-sidebar-${label.replace(/\W+/g, "-").toLowerCase()}` : undefined;
+  const generatedId = useId();
+  const labelId = label ? `hook-sidebar-${generatedId}-label` : undefined;
   const Root = as;
   const rootProps = as === "nav" ? { "aria-label": label } : label ? { role: "group", "aria-labelledby": labelId } : {};
 

@@ -7,7 +7,7 @@ import type {
   RunBundle,
 } from "../../../../core/src/schema";
 import type { CertificateView } from "../../data";
-import { label } from "../../data";
+import { label, number } from "../../data";
 
 /** The run (same cohort) that carries a probe record, for linking evidence to its run. */
 export function runWithProbe(bundles: readonly RunBundle[], probeId: string, sample: boolean): RunBundle | undefined {
@@ -26,6 +26,20 @@ export function filterWorld(world: CertificateView, tool: string | null) {
     noCertificates: keep(world.noCertificates),
     counts: tool ? world.report.tools.find((t) => t.tool === tool)?.counts : world.report.overall,
   };
+}
+
+/**
+ * The page header's summary. It counts the same rows as the stat row and the tables below: active
+ * and revoked certificates, and the claims listed without a certificate (never report.overall,
+ * which counts every claim the report knows of and can disagree with the rows shown).
+ */
+export function certificatesSummary(view: Pick<ReturnType<typeof filterWorld>, "certificates" | "noCertificates">): string {
+  const active = view.certificates.filter((c) => c.status !== "revoked").length;
+  const revoked = view.certificates.length - active;
+  const unproven = view.noCertificates.length;
+  return [`${number(active)} active`, `${number(revoked)} revoked`, `${number(unproven)} ${unproven === 1 ? "claim" : "claims"} without a certificate`].join(
+    " · ",
+  );
 }
 
 /** The recorded reason, without repeating the status word shown beside it. */

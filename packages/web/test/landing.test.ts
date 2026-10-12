@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import { RequestTypeSchema, type CertificateReport, type FixtureIndex, type ToolCertificates } from "../../core/src/schema";
-import { finishedEntries, PublishedFiles, ReplaySource, validateBundle, type CertificateWorld } from "../src/data";
+import { FIXTURE_BANNER, finishedEntries, PublishedFiles, ReplaySource, validateBundle, type CertificateWorld } from "../src/data";
 import {
   BANNED_RE,
   BUILT_WITH,
@@ -317,9 +317,11 @@ function visibleStrings(file: string): string[] {
 
 describe("landing: product-site copy (no demo-style words)", () => {
   const strings = LANDING_FILES.flatMap((f) => visibleStrings(f).map((s) => ({ f, s })));
-  const ALLOWED = ["Built for neatHack 2026", EVALUATION_URL];
+  // The fixture disclosure (shown only under ?fixtures=1) is the one required exception: exactly
+  // FIXTURE_BANNER, nothing else that contains its words.
+  const ALLOWED = ["Built for neatHack 2026", EVALUATION_URL, FIXTURE_BANNER];
 
-  it("has no banned word in any visible string (only the footer line and the evaluation link are allowed)", () => {
+  it("has no banned word in any visible string (only the footer line, the evaluation link and the fixture banner are allowed)", () => {
     const hits = strings.filter(({ s }) => BANNED_RE.test(s) && !ALLOWED.includes(s));
     expect(hits).toEqual([]);
   });

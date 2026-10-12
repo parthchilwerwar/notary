@@ -289,6 +289,18 @@ describe("loadPriorsSource", () => {
     const wrongTool = loadPriorsSource({ tool: "crustdata", runsDir: runs, bundlePath: join(runs, "notarize-dodo-new", "notarize-dodo-new.json") });
     expect(wrongTool.blocked).toMatch(/is not a notarize bundle for crustdata/);
   });
+
+  it("reads only runs/<runId>/<runId>.json: a bundle-shaped sidecar (incidents.json, approvals.json, a copy) is never a priors source (audit #7)", async () => {
+    const runs = tempDir("notary-priors-");
+    const own = testBundle("notarize-crustdata-own", "crustdata", "2026-10-10T08:00:00.000Z", SOURCE.slice(0, 1));
+    await writeBundle(own, join(runs, own.runId));
+    // A newer verified bundle saved under other names inside the same run dir must not be picked.
+    const newer = testBundle("notarize-crustdata-sidecar", "crustdata", "2026-10-10T09:00:00.000Z", SOURCE);
+    for (const name of ["incidents.json", "approvals.json", "copy.json"]) writeFileSync(join(runs, own.runId, name), JSON.stringify(newer));
+    const src = loadPriorsSource({ tool: "crustdata", runsDir: runs });
+    expect(src.bundle!.runId).toBe(own.runId);
+    expect(src.notes).toEqual([]);
+  });
 });
 
 describe("notarize --priors-from / --compare-priors gating", () => {

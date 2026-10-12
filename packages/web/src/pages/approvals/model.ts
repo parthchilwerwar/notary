@@ -15,6 +15,7 @@ import {
   type RunBundle,
 } from "../../../../core/src/schema";
 import type { CatalogOrigin as DataSource } from "../../data";
+import { worldKeyOf } from "../../data/world";
 
 /**
  * local  = live data source (a local `notary serve` answered /api/health): approvals can be decided.
@@ -184,7 +185,30 @@ export type Desk = {
   history: HistoryRow[];
   /** Pending items dropped because their run is fixture data (never approvable). */
   droppedSample: number;
+  /** Pending / decided items of runs this view does not show (e.g. real items under ?fixtures=1). */
+  droppedHidden: number;
 };
+
+/**
+ * The runs one count or table may cover: the selected run's data world only (real runs, or one
+ * fixture scenario), so worlds never mix in a count or a table. No selection: the newest bundle's world.
+ */
+export function worldRuns(bundles: readonly RunBundle[], selected?: Pick<RunBundle, "sample" | "kind" | "variant" | "disclosure">): RunBundle[] {
+  const anchor = selected ?? bundles[0];
+  if (!anchor) return [];
+  const key = worldKeyOf(anchor);
+  return bundles.filter((b) => worldKeyOf(b) === key);
+}
+
+/** Bundles grouped by data world, in first-seen order (one table per world). */
+export function byWorld(bundles: readonly RunBundle[]): { key: string; runs: RunBundle[] }[] {
+  const out = new Map<string, RunBundle[]>();
+  for (const b of bundles) {
+    const key = worldKeyOf(b);
+    out.set(key, [...(out.get(key) ?? []), b]);
+  }
+  return [...out].map(([key, runs]) => ({ key, runs }));
+}
 
 export const heldDecisions = (bundle: RunBundle) =>
   bundle.decisions.filter((d) => d.status === "held");
@@ -198,11 +222,17 @@ export function buildDesk({
   list,
   bundles,
   selected,
+  visible,
 }: {
   mode: DeskMode;
   list?: ApprovalsList;
   bundles: RunBundle[];
   selected?: RunBundle;
+  /**
+   * Run ids this view shows (visible bundles and running runs). When given, server items of other
+   * runs are left out, so a real, approvable money action never appears under the fixture banner.
+   */
+  visible?: ReadonlySet<string>;
 }): Desk {
   const byRun = new Map(bundles.map((b) => [b.runId, b]));
   const lookup = (runId: string, decisionId: string) => {
@@ -211,8 +241,15 @@ export function buildDesk({
   };
   const local = mode === "local" ? list : undefined;
   let droppedSample = 0;
+  let droppedHidden = 0;
+  const shown = (runId: string) => {
+    if (!visible || visible.has(runId)) return true;
+    droppedHidden += 1;
+    return false;
+  };
   const pending: PendingRow[] = [];
   for (const item of local?.pending ?? []) {
+    if (!shown(item.runId)) continue;
     const found = lookup(item.runId, item.decisionId);
     if (found.bundle?.sample) {
       droppedSample += 1;
@@ -221,6 +258,7 @@ export function buildDesk({
     pending.push({ key: itemKey(item.runId, item.decisionId), item, ...found });
   }
   const decided: DecidedRow[] = (local?.decided ?? [])
+    .filter((record) => shown(record.runId))
     .map((record) => ({
       key: itemKey(record.runId, record.decisionId),
       record,
@@ -238,7 +276,7 @@ export function buildDesk({
           note: historyNote(mode, selected),
         }))
     : [];
-  return { mode, pending, decided, history, droppedSample };
+  return { mode, pending, decided, history, droppedSample, droppedHidden };
 }
 
 function historyNote(mode: DeskMode, bundle: RunBundle): string {

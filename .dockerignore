@@ -4,6 +4,10 @@
 !.env.example
 **/*.pem
 **/*.key
+deploy/aws/config.env
+packages/core/config/cfo-oauth.json
+packages/core/config/cfo.json
+packages/core/config/cfo-last-sync.json
 
 # Dependencies and build output are rebuilt inside the image.
 **/node_modules

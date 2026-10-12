@@ -323,7 +323,7 @@ describe("executor: naive", () => {
 
   it("client-timeout-then-retry: times out only while the request is really in flight", async () => {
     const slow = world();
-    slow.refundDelayMs = 60;
+    slow.refundDelayMs = 1_000; // far above the 5 ms timeout, so a busy machine cannot flip the order
     const r1 = await run(slow, [req("t1", { note: "client-timeout-then-retry" })], { clientTimeoutMs: 5 });
     const writes = r1.decisions[0]!.effects.filter((e) => e.op === "dodo.createRefund");
     expect(writes.map((e) => e.status)).toEqual([null, 200]);

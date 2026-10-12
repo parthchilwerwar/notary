@@ -15,9 +15,13 @@ export const number = (value: number) =>
 export const percent = (value: number) =>
   new Intl.NumberFormat("en-US", { style: "percent", maximumFractionDigits: 1 }).format(value);
 
-// The viewer's own locale and time zone (AUDIT H-44: no hardcoded zone).
-export const date = (value: string) =>
-  new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+// UTC, labelled "UTC" on screen (the same convention as lib/time.ts and the Run transcript), so a
+// date never silently changes with the viewer's zone (AUDIT H-44: the zone is always stated).
+const utc = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" });
+export const date = (value: string) => {
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? value : `${utc.format(d)} UTC`;
+};
 
 export const usd = (value: number) =>
   new Intl.NumberFormat("en-US", {

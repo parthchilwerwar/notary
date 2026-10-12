@@ -329,7 +329,7 @@ async function decideLocked(req: ApprovalRequest, opts: ApprovalsOptions): Promi
         else {
           setAttr?.("notary.approval.status", rec.status);
           // The held action's guard_hold incident is resolved by this person (info log on this span).
-          reportResolution(incidentId("guard_hold", item.decision.id), {
+          reportResolution(incidentId("guard_hold", item.decision.id, item.bundle.runId), {
             status: "resolved",
             action: rec.decision,
             summary: rec.decision === "approved" ? `A person approved it (human override); the action ${rec.status}.` : "A person rejected it.",

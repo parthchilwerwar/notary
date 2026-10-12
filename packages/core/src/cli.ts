@@ -301,6 +301,63 @@ export function buildProgram(): Command {
       for (const line of result.lines) console.log(line);
     });
 
+  // cfo.ai has no REST API or key: its MCP server (browser OAuth) is the one programmatic door (src/cfo/).
+  const cfo = program
+    .command("cfo")
+    .description("cfo.ai over its MCP server (https://api.cfo.ai/mcp, browser OAuth): connect, status, sync the plan into the Business tab");
+  cfo
+    .command("connect")
+    .description("Sign in to cfo.ai in your browser (OAuth + PKCE, loopback redirect), then pick the workspace Notary reads; tokens stay in the gitignored packages/core/config/cfo-oauth.json")
+    .option("--org <id>", "workspace id (or exact name) from list_orgs; without it the only workspace is used, or you pick one")
+    .option("--discover-only", "stop after OAuth discovery: print the authorization server and endpoint host, register nothing, open no browser")
+    .action(async (opts: { org?: string; discoverOnly?: boolean }) => {
+      const { cfoConnect } = await import("./cfo/index.js");
+      await cfoConnect({ ...(opts.org ? { org: opts.org } : {}), ...(opts.discoverOnly ? { discoverOnly: true } : {}), log: (l) => console.log(l) });
+    });
+  cfo
+    .command("status")
+    .description("Whether cfo.ai is connected, which workspace, when the access token expires, the last sync (never a token)")
+    .option("--json", "machine-readable status (schema/cfo.ts CfoStatus)")
+    .action(async (opts: { json?: boolean }) => {
+      const { cfoStatus, formatStatus } = await import("./cfo/index.js");
+      const status = cfoStatus();
+      console.log(opts.json ? JSON.stringify(status, null, 2) : formatStatus(status).join("\n"));
+    });
+  cfo
+    .command("sync")
+    .description("Read the plan from cfo.ai (inspect_table_blocks), map it strictly into economics.json's plan, then regenerate economics.json, docs/BUSINESS.md and export/cfo-inputs.csv like `notary economics`")
+    .option("--table <name>", "cfo.ai table block to read (repeatable; saved for later syncs; default \"Notary Plan\")", (v: string, acc: string[]) => [...acc, v], [] as string[])
+    .option("--scenario <name>", "cfo.ai scenario to read (saved; default Main)")
+    .action(async (opts: { table: string[]; scenario?: string }) => {
+      const { cfoSync, CfoNotConnectedError, CfoMappingError } = await import("./cfo/index.js");
+      try {
+        await cfoSync({ tables: opts.table, ...(opts.scenario ? { scenario: opts.scenario } : {}), log: (l) => console.log(l) });
+      } catch (err) {
+        if (err instanceof CfoNotConnectedError) {
+          console.error(`BLOCKED: ${err.message}`);
+          process.exitCode = 3;
+        } else if (err instanceof CfoMappingError) {
+          console.error(`cfo.ai plan rejected, nothing written: ${err.message}`);
+          process.exitCode = 1;
+        } else throw err;
+      }
+    });
+  cfo
+    .command("push")
+    .description("Explain why Notary's per-run costs are not written into cfo.ai over MCP (no documented data-row write) and where the CSV upload is; exits 3 (BLOCKED)")
+    .action(async () => {
+      const { cfoPushLines } = await import("./cfo/index.js");
+      const { ECONOMICS_PATHS, verifyEconomics } = await import("./economics/index.js");
+      const { existsSync, readFileSync } = await import("node:fs");
+      let rows = 0;
+      if (existsSync(ECONOMICS_PATHS.economicsJson)) {
+        const v = verifyEconomics(JSON.parse(readFileSync(ECONOMICS_PATHS.economicsJson, "utf8")));
+        if (v.ok) rows = v.file.computed?.runs.length ?? 0;
+      }
+      for (const line of cfoPushLines(ECONOMICS_PATHS.cfoInputsCsv, rows)) console.error(line);
+      process.exitCode = 3;
+    });
+
   program
     .command("serve")
     .description("Local API + SSE for the dashboard's live mode (reads; starting runs, ask and approvals need the printed session token)")

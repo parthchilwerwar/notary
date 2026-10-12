@@ -15,6 +15,7 @@ import {
   PageBody,
   PageHeader,
   PageSkeleton,
+  ReplayBadge,
   Section,
   Stat,
   StatRow,
@@ -36,10 +37,10 @@ import {
 } from "../../data";
 import { actionsByType } from "../../landing-data";
 import { useData } from "../../app/catalog";
-import { NO_RUNS_COMMANDS, recordPath, withRun } from "../../app/links";
+import { NO_RUNS_COMMANDS, REPLAY_SPEND_TEXT, isReplayRun, recordPath, replayBadge, withRun } from "../../app/links";
 import { dateTime } from "../../lib/time";
 import {
-  byCohort,
+  byWorld,
   comparisonPairs,
   comparisonRows,
   pickPair,
@@ -221,7 +222,6 @@ function PairTable({ pair, rows }: { pair: ComparisonPair; rows: MetricRow[] }) 
 
 // ------------------------------------------------------------------------------ costs
 
-const COHORT_LABEL = { real: "Recorded runs", fixture: "Fixture runs", synthetic: "Synthetic sample" } as const;
 
 function UsdText({ cost }: { cost: ReturnType<typeof runCost> }) {
   if (cost.calls === 0 && cost.unknownRoles.length === 0) return <>{usd(0)}</>;
@@ -244,14 +244,15 @@ function RoleUsd({ role }: { role: RoleCost }) {
   return <>{usd(role.usd)}</>;
 }
 
-function Costs({ bundles, selected }: { bundles: RunBundle[]; selected?: RunBundle }) {
-  const cohorts = byCohort(bundles);
+/** The "Cost per run" section (exported for render tests). */
+export function Costs({ bundles, selected }: { bundles: RunBundle[]; selected?: RunBundle }) {
+  const cohorts = byWorld(bundles);
   return (
     <Section
       id="cost"
       aria-labelledby="cost-title"
       title={<span id="cost-title">Cost per run</span>}
-      description="API credits and model spend as each run recorded them. A model cost with no recorded price is unknown, not $0. Credits are never converted to dollars."
+      description="API credits and model spend as each run recorded them. A model cost with no recorded price is unknown, not $0. Credits are never converted to dollars. A replay re-serves its original run's recording, so it adds no spend."
     >
       {!cohorts.length && (
         <EmptyState title="No runs published">
@@ -259,20 +260,21 @@ function Costs({ bundles, selected }: { bundles: RunBundle[]; selected?: RunBund
         </EmptyState>
       )}
       {cohorts.map((g) => (
-        <div className="report-cohort" key={g.cohort}>
+        <div className="report-cohort" key={g.key}>
           <div className="report-cohort-head">
             <h3 className="report-cohort-title">
-              {COHORT_LABEL[g.cohort]} <span>{number(g.runs.length)}</span>
+              {g.label} <span>{number(g.runs.length)}</span>
             </h3>
             {g.cohort === "synthetic" && <p className="report-cohort-note">{g.runs[0]!.disclosure[0] ?? "Synthetic sample data"}</p>}
           </div>
           <TableFrame className="report-runs">
             <table>
-              <caption className="sr-only">{COHORT_LABEL[g.cohort]}: cost per run</caption>
+              <caption className="sr-only">{g.label}: cost per run</caption>
               <thead>
                 <tr>
                   <th scope="col">Run</th>
                   <th scope="col">Kind</th>
+                  <th scope="col">Mode</th>
                   <th scope="col" className="num">
                     Credits used
                   </th>
@@ -291,6 +293,7 @@ function Costs({ bundles, selected }: { bundles: RunBundle[]; selected?: RunBund
                 {g.runs.map((b) => {
                   const cost = runCost(b);
                   const current = b.runId === selected?.runId;
+                  const replay = isReplayRun(b);
                   return (
                     <tr key={b.runId} data-selected={current || undefined} aria-current={current ? "true" : undefined}>
                       <th scope="row">
@@ -302,12 +305,37 @@ function Costs({ bundles, selected }: { bundles: RunBundle[]; selected?: RunBund
                         {b.kind}
                         {b.variant !== b.kind && ` / ${b.variant}`}
                       </td>
-                      <td className="num">{number(cost.creditsUsed)}</td>
-                      <td className="num report-muted">{number(cost.creditsBudget)}</td>
-                      <td className="num">
-                        <UsdText cost={cost} />
+                      <td className="report-run-mode">
+                        {replay ? (
+                          <ReplayBadge>{replayBadge(b, bundles)}</ReplayBadge>
+                        ) : (
+                          "Live"
+                        )}
                       </td>
-                      <td className="num">{number(cost.calls)}</td>
+                      {replay ? (
+                        <td className="report-replay-spend" colSpan={4}>
+                          {REPLAY_SPEND_TEXT}
+                          {b.replayOf && (
+                            <>
+                              {" "}
+                              (spend is on{" "}
+                              <Link className="report-run-id" to={recordPath.run(b.replayOf)}>
+                                {b.replayOf}
+                              </Link>
+                              )
+                            </>
+                          )}
+                        </td>
+                      ) : (
+                        <>
+                          <td className="num">{number(cost.creditsUsed)}</td>
+                          <td className="num report-muted">{number(cost.creditsBudget)}</td>
+                          <td className="num">
+                            <UsdText cost={cost} />
+                          </td>
+                          <td className="num">{number(cost.calls)}</td>
+                        </>
+                      )}
                     </tr>
                   );
                 })}
@@ -318,9 +346,25 @@ function Costs({ bundles, selected }: { bundles: RunBundle[]; selected?: RunBund
       ))}
       {selected && (
         <div className="report-more">
-          <Expander summary={<>Show costs by role and endpoint for {selected.runId}</>}>
-            <SelectedCost bundle={selected} />
-          </Expander>
+          {isReplayRun(selected) ? (
+            <p className="report-note">
+              {selected.runId} is a replay
+              {selected.replayOf ? (
+                <>
+                  {" "}
+                  of{" "}
+                  <Link className="report-run-id" to={recordPath.run(selected.replayOf)}>
+                    {selected.replayOf}
+                  </Link>
+                </>
+              ) : null}
+              . {REPLAY_SPEND_TEXT}; the original run holds the real cost.
+            </p>
+          ) : (
+            <Expander summary={<>Show costs by role and endpoint for {selected.runId}</>}>
+              <SelectedCost bundle={selected} />
+            </Expander>
+          )}
           <Expander summary="Business plan">
             <CfoPlan />
           </Expander>
@@ -542,7 +586,7 @@ function Receipts({ selected }: { selected?: RunBundle }) {
           {!selected ? (
             <p className="report-note">No run is selected.</p>
           ) : !traces.length ? (
-            <p className="report-note">No trace ids recorded: tracing was off for {selected.runId}.</p>
+            <p className="report-note">No trace id recorded on {selected.runId}.</p>
           ) : (
             <>
               <p className="report-note">

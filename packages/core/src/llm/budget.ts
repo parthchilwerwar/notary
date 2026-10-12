@@ -14,6 +14,12 @@
  * already recorded — including the cost LiteLLM reports per response — and the call that crosses
  * it is the last one. The error is thrown before any network I/O, so it never costs anything.
  *
+ * Unknown price (audit #5): a call whose price is unknown would record $0 and so could never trip
+ * the cap. With NOTARY_MAX_USD set, the client therefore refuses (UsdPriceUnknownError, a BLOCKED
+ * message naming NOTARY_PRICE_<ROLE>_IN/OUT) a call whose price cannot be known — no env override,
+ * no table price, and a provider that reports no per-response cost (Bedrock) — and, for LiteLLM
+ * (which normally reports the cost), every call after one whose cost came back unknown.
+ *
  * Callers stop cleanly on it the way they stop on Crustdata's BudgetExceededError: the probe loop
  * and the adversary phase record it as the run's stopReason and the bundle ends `stopped_budget`;
  * Ask Notary returns its ok:false answer with the message as the reason. Replay re-throws the
@@ -69,9 +75,25 @@ export class UsdCapExceededError extends Error {
   }
 }
 
-/** True for a UsdCapExceededError, including one re-thrown from a replay cassette (matched by name). */
+/**
+ * NOTARY_MAX_USD is set but a model call's price is unknown, so the cap cannot be enforced. A cap
+ * stop (callers stop cleanly, as on UsdCapExceededError), with a BLOCKED message naming the fix.
+ */
+export class UsdPriceUnknownError extends UsdCapExceededError {
+  constructor(role: string, cap: number, spent: number, detail: string) {
+    super(role, cap, spent, 0);
+    const agent = (AGENTS as Readonly<Record<string, { name: string } | undefined>>)[role]?.name ?? role;
+    const R = role.toUpperCase();
+    this.message =
+      `BLOCKED: ${MAX_USD_ENV}=${cap} is set but ${detail}, so the USD cap cannot be enforced (an unknown price would be recorded as $0) — ` +
+      `set NOTARY_PRICE_${R}_IN and NOTARY_PRICE_${R}_OUT (USD per 1M tokens) for the ${agent} in .env, or unset ${MAX_USD_ENV}`;
+    this.name = "UsdPriceUnknownError";
+  }
+}
+
+/** True for a UsdCapExceededError (or UsdPriceUnknownError), including one re-thrown from a replay cassette (matched by name). */
 export function isUsdCapExceeded(err: unknown): err is Error {
-  return err instanceof UsdCapExceededError || (err instanceof Error && err.name === "UsdCapExceededError");
+  return err instanceof UsdCapExceededError || (err instanceof Error && (err.name === "UsdCapExceededError" || err.name === "UsdPriceUnknownError"));
 }
 
 /**

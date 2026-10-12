@@ -238,7 +238,7 @@ export class ReplayLlm implements LlmLike {
       throw err;
     }
     const res = hit.responseBody as CompleteResult;
-    this.meter?.add(req.role, { inputTokens: res.inputTokens, outputTokens: res.outputTokens, usd: res.usd });
+    this.meter?.add(req.role, { inputTokens: res.inputTokens, outputTokens: res.outputTokens, usd: res.usd, unknownPrice: res.priceSource === "unknown" });
     return res;
   }
 

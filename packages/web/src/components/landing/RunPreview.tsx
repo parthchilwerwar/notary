@@ -10,7 +10,7 @@ import { clipText, showable } from "../../landing-data";
 import { budgetView, buildRows, heldCard, stageProgress, unsafeDecisionIds } from "../../pages/run/model";
 import { TranscriptRow } from "../../pages/run/Transcript";
 import { gsap, MOTION_OK, useGSAP } from "./gsap";
-import { replayPair } from "./replay";
+import { previewData } from "./replay";
 
 const SIDEBAR = ["Run", "Certificates", "Approvals", "Chat"] as const;
 const MAX_ROWS = 9;
@@ -19,9 +19,8 @@ export default function RunPreview({ replay }: { replay: ReplaySource }) {
   const [data, setData] = useState<{ bundle: RunBundle; events: TimelineEvent[] } | null>(null);
   useEffect(() => {
     let live = true;
-    replayPair(replay)
-      .then(async ({ preview }) => (preview ? { bundle: preview, events: await replay.getTimeline(preview.runId) } : null))
-      .then((d) => live && setData(d), () => undefined);
+    // Usually already loaded: the hero starts this load together with this chunk.
+    previewData(replay).then((d) => live && setData(d), () => undefined);
     return () => {
       live = false;
     };
@@ -45,6 +44,7 @@ function Preview({ bundle, events }: { bundle: RunBundle; events: TimelineEvent[
     () => {
       const mm = gsap.matchMedia();
       mm.add(MOTION_OK, () => {
+        if (!rows.length) return; // nothing to stream in (GSAP warns on an empty target)
         gsap.from(".l-preview-row", { opacity: 0, y: 10, duration: 0.35, ease: "power2.out", stagger: 0.55, delay: 0.4 });
       });
     },

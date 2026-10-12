@@ -173,3 +173,12 @@ Claude Code owns `packages/core` and `packages/web` (Codex out of quota). Phases
 - [ ] BLOCKED (user): AWS credentials for `deploy/aws/deploy.sh`; a running Docker daemon to build the image.
 - [ ] Open: neatlogs UI trace URL (`notary trace-link --example <url>`); `NEATLOGS_SERVICE_TOKEN` for neatlogs-cli read-back.
 - [ ] After this commit: `pnpm notary export --evidence` and `pnpm notary export --entire` (the first Entire checkpoint flips Entire to live), then a follow-up commit.
+
+## Session 12b — hackathon audit and fixes (Oct 12)
+
+- [x] Four read-only audits (data truth, end to end, hackathon readiness, code/tests/security); findings fixed in core (#210–#214), web (#215, #216 and the dashboard fixes) and economics (#209).
+- [x] cfo.ai direct integration over MCP: `notary cfo connect/status/sync`, Business tab "Sync from cfo.ai" in live mode (#208). OAuth discovery verified against api.cfo.ai.
+- [x] README top rewritten with real results linked to generated files; hackathon.md, AUDIT, ARCHITECTURE, ENTIRE refreshed; `docs/DEMO_SCRIPT.md` (2:30, real features only); video script scene 5 corrected (fixture run is not a real queue run).
+- [ ] BLOCKED (user): `pnpm notary cfo connect` (browser sign-in), build the "Notary Plan" table in cfo.ai, `pnpm notary cfo sync`, then `pnpm notary export --evidence`.
+- [ ] BLOCKED (user): make the repo public (review the README start-time note first), deploy to Vercel, record the 2:30 video, Dodo seed (12 checkouts), building-in-public posts.
+- [ ] Open: `notarize-dodo-20261012T014032Z` disclosure text still says probes ran (fixed in code; needs a real re-run to republish).

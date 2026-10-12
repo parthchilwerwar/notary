@@ -372,7 +372,8 @@ export async function comparePriors(opts: ComparePriorsOptions): Promise<Compare
       guards: [],
       usageByRole: ma.meter?.snapshot() ?? { executor: ZERO, reflector: ZERO, adversary: ZERO },
       credits: { byEndpoint: arm.ledger.byEndpoint, total: arm.ledger.total, budget: arm.ledger.budget },
-      metrics: { ...compare.metrics, priors_strength: strength },
+      // usd_unknown_calls: model calls whose price was unknown (their usd is recorded as 0); only when > 0.
+      metrics: { ...compare.metrics, priors_strength: strength, ...(ma.meter?.unknownCalls() ? { usd_unknown_calls: ma.meter.unknownCalls() } : {}) },
       // Empty unless a neatlogs trace link template exists (src/trace/links.ts); then exported traces only.
       traceLinks: bundleTraceLinks({ traceIds: [...arm.probes.map((p) => p.traceId), ...recon.anomalies.map((x) => x.traceId)], runsDir, env }),
       cassettes: [pinIfPresent(`recon-${tool}`, cassetteDir), pinIfPresent(`probes-${tool}`, cassetteDir)],

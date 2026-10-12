@@ -448,14 +448,29 @@ describe("auto-scroll", () => {
 });
 
 describe("runs and controls", () => {
-  it("groups real and fixture runs apart and picks ?run= or the newest real run", () => {
-    const real: RunEntry = { runId: "live-1", state: "running", kind: "run", startedAt: "2026-10-11T00:00:00.000Z" };
+  it("groups real and fixture runs apart, live recordings before replays, and picks ?run= or the newest live run", () => {
+    // A run still running is the newest one and counts as live.
+    const real: RunEntry = { runId: "live-1", state: "running", kind: "run", startedAt: "2026-10-12T23:00:00.000Z" };
     const g = groupRuns([real, ...runs]);
-    expect(g.real.map((r) => r.runId)).toEqual(["live-1", ...runs.filter((r) => r.state === "finished" && !r.sample).map((r) => r.runId)]);
+    const newest = (a: RunEntry, b: RunEntry) => b.startedAt.localeCompare(a.startedAt);
+    const finishedReal = runs.filter((r) => r.state === "finished" && !r.sample);
+    const live = finishedReal.filter((r) => r.state === "finished" && r.mode !== "replay").sort(newest).map((r) => r.runId);
+    const replays = finishedReal.filter((r) => r.state === "finished" && r.mode === "replay").sort(newest).map((r) => r.runId);
+    // The published real runs include both live recordings and their replays.
+    expect(live.length).toBeGreaterThan(0);
+    expect(replays.length).toBeGreaterThan(0);
+    // Live recordings (newest first), then every replay (newest first): a replay never precedes a live run.
+    expect(g.real.map((r) => r.runId)).toEqual(["live-1", ...live, ...replays]);
+    expect(pickRun(finishedReal, null)!.runId).toBe(live[0]);
+    const picked = pickRun(finishedReal, null)!;
+    expect(picked.state === "finished" ? picked.mode : undefined).toBe("live");
     expect(g.fixture.every((r) => r.state === "finished" && r.sample)).toBe(true);
     expect(pickRun(runs, "demo-run-guarded")!.runId).toBe("demo-run-guarded");
     expect(pickRun([real, ...runs], null)!.runId).toBe("live-1");
-    expect(pickRun(fixtureRuns, "missing")!.runId).toBe(fixtureRuns[0]!.runId);
+    // An unknown ?run= falls back to the newest live fixture run (the synthetic sample-42 is a replay-mode bundle, so it comes after).
+    const liveFixtures = fixtureRuns.filter((r) => r.mode !== "replay").sort(newest);
+    expect(liveFixtures.length).toBeGreaterThan(0);
+    expect(pickRun(fixtureRuns, "missing")!.runId).toBe(liveFixtures[0]!.runId);
   });
 
   it("live-only controls are absent in replay", () => {

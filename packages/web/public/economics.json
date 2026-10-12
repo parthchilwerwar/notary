@@ -26,17 +26,17 @@
       },
       {
         "runId": "notarize-crustdata-20261012T011404Z-replay",
-        "contentHash": "afda1e69da0071c48a15b68867ffff6feba9c7a20191e88a30ebd1b4f226f52f",
+        "contentHash": "a8d5a23a3fa223be99e94bdda0574a5b972288173a6dce68ced9b4621e516a5a",
         "file": "core/runs/notarize-crustdata-20261012T011404Z-replay/notarize-crustdata-20261012T011404Z-replay.json"
       },
       {
         "runId": "recon-dodo-20261012T013640Z-replay",
-        "contentHash": "0d2ae865cfc2f565275ff66fdddf644fb49e15f81f68d800aebf0858a8f936aa",
+        "contentHash": "71252ec8d0180ad26275b0ed69ef4d60be3e646c6fbb1822b1c25671cf036c0e",
         "file": "core/runs/recon-dodo-20261012T013640Z-replay/recon-dodo-20261012T013640Z-replay.json"
       },
       {
         "runId": "notarize-dodo-20261012T014032Z-replay",
-        "contentHash": "16807c03dc52f343a6d89d7df3c7e29e767b8c81da5fe903095d2aaf049104a1",
+        "contentHash": "04eed5967f0ecc4fc8bdb888862d8f5fa8ea0526e42b6137a6d8d34d344d3de8",
         "file": "core/runs/notarize-dodo-20261012T014032Z-replay/notarize-dodo-20261012T014032Z-replay.json"
       }
     ],
@@ -78,7 +78,9 @@
         },
         "unsafeActions": null,
         "holds": null,
-        "beliefsNotarized": 1
+        "beliefsNotarized": 1,
+        "stage": "notarize-full",
+        "usdUnknown": false
       },
       {
         "runId": "notarize-dodo-20261012T012315Z",
@@ -101,7 +103,9 @@
         "creditsByEndpoint": {},
         "unsafeActions": null,
         "holds": null,
-        "beliefsNotarized": 4
+        "beliefsNotarized": 4,
+        "stage": "notarize-full",
+        "usdUnknown": false
       },
       {
         "runId": "recon-dodo-20261012T013640Z",
@@ -124,7 +128,9 @@
         "creditsByEndpoint": {},
         "unsafeActions": null,
         "holds": null,
-        "beliefsNotarized": 0
+        "beliefsNotarized": 0,
+        "stage": "notarize-recon",
+        "usdUnknown": false
       },
       {
         "runId": "notarize-dodo-20261012T014032Z",
@@ -147,17 +153,19 @@
         "creditsByEndpoint": {},
         "unsafeActions": null,
         "holds": null,
-        "beliefsNotarized": 4
+        "beliefsNotarized": 4,
+        "stage": "notarize-full",
+        "usdUnknown": false
       },
       {
         "runId": "notarize-crustdata-20261012T011404Z-replay",
-        "contentHash": "afda1e69da0071c48a15b68867ffff6feba9c7a20191e88a30ebd1b4f226f52f",
+        "contentHash": "a8d5a23a3fa223be99e94bdda0574a5b972288173a6dce68ced9b4621e516a5a",
         "kind": "notarize",
         "variant": "notarize",
         "mode": "replay",
         "tool": "crustdata",
         "seed": 0,
-        "startedAt": "2026-10-12T01:42:15.358Z",
+        "startedAt": "2026-10-12T04:38:36.602Z",
         "status": "completed",
         "modelUsd": 0.0394163,
         "usdByRole": {
@@ -174,17 +182,19 @@
         },
         "unsafeActions": null,
         "holds": null,
-        "beliefsNotarized": 1
+        "beliefsNotarized": 1,
+        "stage": "notarize-full",
+        "usdUnknown": false
       },
       {
         "runId": "recon-dodo-20261012T013640Z-replay",
-        "contentHash": "0d2ae865cfc2f565275ff66fdddf644fb49e15f81f68d800aebf0858a8f936aa",
+        "contentHash": "71252ec8d0180ad26275b0ed69ef4d60be3e646c6fbb1822b1c25671cf036c0e",
         "kind": "notarize",
         "variant": "notarize",
         "mode": "replay",
         "tool": "dodo",
         "seed": 0,
-        "startedAt": "2026-10-12T01:42:48.775Z",
+        "startedAt": "2026-10-12T04:39:04.561Z",
         "status": "completed",
         "modelUsd": 0,
         "usdByRole": {
@@ -197,17 +207,19 @@
         "creditsByEndpoint": {},
         "unsafeActions": null,
         "holds": null,
-        "beliefsNotarized": 0
+        "beliefsNotarized": 0,
+        "stage": "notarize-recon",
+        "usdUnknown": false
       },
       {
         "runId": "notarize-dodo-20261012T014032Z-replay",
-        "contentHash": "16807c03dc52f343a6d89d7df3c7e29e767b8c81da5fe903095d2aaf049104a1",
+        "contentHash": "04eed5967f0ecc4fc8bdb888862d8f5fa8ea0526e42b6137a6d8d34d344d3de8",
         "kind": "notarize",
         "variant": "notarize",
         "mode": "replay",
         "tool": "dodo",
         "seed": 0,
-        "startedAt": "2026-10-12T01:42:48.857Z",
+        "startedAt": "2026-10-12T04:39:04.722Z",
         "status": "completed",
         "modelUsd": 0,
         "usdByRole": {
@@ -220,7 +232,9 @@
         "creditsByEndpoint": {},
         "unsafeActions": null,
         "holds": null,
-        "beliefsNotarized": 4
+        "beliefsNotarized": 4,
+        "stage": "notarize-full",
+        "usdUnknown": false
       }
     ],
     "totals": {
@@ -229,7 +243,8 @@
       "replayRuns": 3,
       "modelUsd": 0.1263273,
       "credits": 62,
-      "tokens": 15897
+      "tokens": 15897,
+      "usdUnknownRuns": 0
     },
     "usdByRole": {
       "executor": 0,
@@ -250,33 +265,37 @@
     "costPerNotarizedBelief": {
       "usd": 0.02526546,
       "credits": 12.4,
-      "basis": "Model USD and credits of every live notarize bundle, divided by the distinct notarized beliefs in each tool's newest full notarize bundle (beliefs persist across runs, so they are counted once).",
+      "basis": "Model USD and credits of every live notarize bundle (full runs and recon sweeps), divided by the distinct notarized beliefs in each tool's newest full notarize bundle (beliefs persist across runs, so they are counted once).",
       "reason": null
     },
     "costPerCertificate": {
-      "usd": null,
-      "credits": null,
-      "basis": "The same live notarize spend, divided by the certified claims in public/certificates/report.json (only when that report counted exactly bundles found here).",
-      "reason": "The certificates report predates notarize-crustdata-20261012T011404Z-replay, notarize-dodo-20261012T014032Z-replay. Re-run `pnpm notary export --certificates`, then `pnpm notary economics`."
+      "usd": 0.02526546,
+      "credits": 12.4,
+      "basis": "The same live notarize spend, divided by the certified claims in public/certificates/report.json (only when that report counted exactly bundles found here, including each tool's newest live full notarize run).",
+      "reason": null
     },
     "tools": [
       {
         "tool": "crustdata",
         "runs": 1,
+        "reconRuns": 0,
         "modelUsd": 0.0394163,
         "credits": 62,
         "notarizedBeliefs": 1,
-        "certified": null,
-        "costPerCertificateUsd": null
+        "certified": 1,
+        "costPerCertificateUsd": 0.0394163,
+        "costPerCertificateReason": null
       },
       {
         "tool": "dodo",
-        "runs": 3,
+        "runs": 2,
+        "reconRuns": 1,
         "modelUsd": 0.086911,
         "credits": 0,
         "notarizedBeliefs": 4,
-        "certified": null,
-        "costPerCertificateUsd": null
+        "certified": 4,
+        "costPerCertificateUsd": 0.02172775,
+        "costPerCertificateReason": null
       }
     ],
     "pairs": [],
@@ -297,5 +316,5 @@
   "combined": {
     "incidentsPreventedValue": null
   },
-  "contentHash": "2b09ce7bd04c596ecbd61b8ca55746680b2dc1bad50ae28c14822692a6e593a8"
+  "contentHash": "eeb462443fe9dd929ba2bfa2f381e48b6b07974ba0f8a3f56cc54536aeaaac3a"
 }

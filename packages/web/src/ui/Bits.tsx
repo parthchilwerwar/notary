@@ -5,6 +5,7 @@ import { InfoIcon as Info } from "@phosphor-icons/react/dist/csr/Info";
 import { WarningIcon as Warning } from "@phosphor-icons/react/dist/csr/Warning";
 import { WarningCircleIcon as WarningCircle } from "@phosphor-icons/react/dist/csr/WarningCircle";
 import { FlaskIcon as Flask } from "@phosphor-icons/react/dist/csr/Flask";
+import { ArrowsClockwiseIcon as ArrowsClockwise } from "@phosphor-icons/react/dist/csr/ArrowsClockwise";
 import { FIXTURE_BANNER } from "../data/types";
 import { cn } from "../lib/utils";
 
@@ -33,6 +34,19 @@ export function Note({
       <Icon className="ui-note-icon" size={16} weight="regular" aria-hidden="true" />
       <div className="ui-note-text">{children}</div>
     </div>
+  );
+}
+
+/**
+ * A replay's label: "Replay of <original run>" (text from replayBadge in app/links.ts). A replay
+ * re-serves a recorded run's cassettes, so it is never presented as a new live run.
+ */
+export function ReplayBadge({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <span className={cn("ui-replay", className)}>
+      <ArrowsClockwise className="ui-replay-icon" size={12} weight="regular" aria-hidden="true" />
+      <span>{children}</span>
+    </span>
   );
 }
 

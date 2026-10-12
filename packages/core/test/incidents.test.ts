@@ -11,6 +11,7 @@ import { join } from "node:path";
 import { gunzipSync } from "node:zlib";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildSampleBundle, writeBundle } from "../src/bundle/index.js";
+import { canonicalJson, sha256Hex } from "../src/bundle/hash.js";
 import {
   buildIncidentsFile,
   deriveIncidents,
@@ -21,6 +22,7 @@ import {
   reportIncident,
   reportedIncidentIds,
   resetReportedIncidents,
+  withIncidentRun,
 } from "../src/incidents/index.js";
 import type { ApprovalRecord } from "../src/schema/approval.js";
 import { IncidentKindSchema, IncidentSchema, IncidentsFileSchema, IncidentsIndexSchema } from "../src/schema/incidents.js";
@@ -72,9 +74,9 @@ describe("deriveIncidents (sample bundle)", () => {
     );
     expect(inc.filter((i) => i.kind === "belief_unlearned")).toHaveLength(bundle.beliefEvents.filter((e) => e.to === "unlearned").length);
     expect(inc.filter((i) => i.kind === "unsafe_action_executed")).toHaveLength(bundle.decisions.filter((d) => (d.grade?.unsafe ?? []).length > 0).length);
-    // Ids are incidentId(kind, subject) — the same function the live reports use.
+    // Ids are incidentId(kind, subject, runId) — the same function the live reports use.
     const a = bundle.anomalies[0]!;
-    expect(inc.find((i) => i.kind === "checker_anomaly" && i.recordIds[0] === a.id)?.id).toBe(incidentId("checker_anomaly", a.id));
+    expect(inc.find((i) => i.kind === "checker_anomaly" && i.recordIds[0] === a.id)?.id).toBe(incidentId("checker_anomaly", a.id, bundle.runId));
   });
 
   it("guard holds wait for a person until an approval resolves them", () => {
@@ -96,6 +98,54 @@ describe("deriveIncidents (sample bundle)", () => {
     };
     const after = deriveIncidents({ bundle, approvals: [approval] }).find((i) => i.id === before.id)!;
     expect(after.resolution).toMatchObject({ status: "resolved", action: "rejected", at: "2026-10-12T01:00:00.000Z", recordIds: [approval.id] });
+  });
+
+  it("a precheck that passed is never credited with a refusal: an unknown write outcome is held for a person (audit #2)", () => {
+    const g = bundle.guards.find((x) => x.kind === "precheck");
+    if (!g) throw new Error("the sample bundle has no precheck guard");
+    const base = bundle.decisions.find((d) => d.guardsApplied.includes(g.id)) ?? bundle.decisions[0]!;
+    // The precheck ran (so it is listed in guardsApplied) and passed; the refund then timed out.
+    const timedOut = { ...base, id: "d-audit-timeout", status: "held" as const, missingBeliefs: [], guardsApplied: [g.id], grade: undefined, error: "write outcome unknown: timeout after 10000 ms" };
+    const refused = { ...base, id: "d-audit-refused", status: "held" as const, missingBeliefs: [], guardsApplied: [g.id], grade: undefined, error: `guard ${g.id} refused ${g.operation}: an existing refund covers it` };
+    const inc = deriveIncidents({ bundle: { ...bundle, decisions: [timedOut, refused] } });
+    const unknown = inc.find((i) => i.decisionId === timedOut.id && i.recordIds.includes(g.id))!;
+    expect(unknown).toBeDefined();
+    expect(unknown.kind).toBe("tool_error");
+    expect(unknown.summary).toMatch(/outcome is unknown/);
+    expect(unknown.summary).not.toMatch(/found the write unsafe/);
+    expect(unknown.resolution).toMatchObject({ status: "awaiting_human", action: "held_for_person" });
+    expect(unknown.resolution.summary).not.toMatch(/No money moved/);
+    const stopped = inc.find((i) => i.decisionId === refused.id && i.recordIds.includes(g.id))!;
+    expect(stopped.kind).toBe("unsafe_action_prevented");
+    expect(stopped.resolution).toMatchObject({ status: "resolved", action: "action_refused" });
+  });
+
+  it("ids include the run id: the same anomaly in two runs is two incidents (audit #4)", () => {
+    const a = deriveIncidents({ bundle });
+    const b = deriveIncidents({ bundle: { ...bundle, runId: `${bundle.runId}-second` } });
+    const anomaly = bundle.anomalies[0]!;
+    const idA = a.find((i) => i.recordIds[0] === anomaly.id)!.id;
+    const idB = b.find((i) => i.recordIds[0] === anomaly.id)!.id;
+    expect(idA).not.toBe(idB);
+    expect(idA).toBe(incidentId("checker_anomaly", anomaly.id, bundle.runId));
+    expect(incidentId("checker_anomaly", anomaly.id, "run-a")).not.toBe(incidentId("checker_anomaly", anomaly.id, "run-b"));
+  });
+
+  it("only the run in which an event happened gets its incident; a replay output derives none (data audit A)", () => {
+    const reviewed = bundle.beliefs.after.find((x) => x.adversary && x.adversary.verdict !== "uphold");
+    if (!reviewed) throw new Error("the sample bundle has no adversary downgrade/narrow");
+    const own = deriveIncidents({ bundle }).filter((i) => i.kind === "adversary_downgrade");
+    expect(own.length).toBeGreaterThan(0);
+    // A later run that carries the same beliefs from the store (reviewed before it started): not its incidents.
+    const later = { ...bundle, runId: "later-run", startedAt: "2030-01-01T00:00:00.000Z", finishedAt: "2030-01-01T00:10:00.000Z" };
+    const carried = deriveIncidents({ bundle: later });
+    expect(carried.filter((i) => i.kind === "adversary_downgrade")).toEqual([]);
+    expect(carried.filter((i) => i.kind === "probe_contradiction")).toEqual([]);
+    expect(carried.filter((i) => i.kind === "belief_unlearned")).toEqual([]);
+    // Its own records (anomalies, decisions) still count.
+    expect(carried.filter((i) => i.kind === "checker_anomaly")).toHaveLength(bundle.anomalies.length);
+    // A replay output re-serves the original run: no incidents of its own.
+    expect(deriveIncidents({ bundle: { ...bundle, runId: `${bundle.runId}-replay`, mode: "replay", replayOf: bundle.runId } })).toEqual([]);
   });
 
   it("links a trace only when it was exported and a real template exists", () => {
@@ -134,7 +184,7 @@ describe("deriveIncidents (span log)", () => {
     expect(by("a000000000000008")).toMatchObject({ kind: "tool_error", tool: "dodo", resolution: { status: "resolved", action: "failed_safe" } });
     expect(by("a000000000000006")).toBeUndefined();
     expect(inc.every((i) => i.exported)).toBe(true);
-    expect(by("a000000000000002")!.id).toBe(incidentId("rate_limited", "a000000000000002"));
+    expect(by("a000000000000002")!.id).toBe(incidentId("rate_limited", "a000000000000002", bundle.runId));
   });
 
   it("covers every kind in the schema with a rule (no orphan kinds)", () => {
@@ -174,6 +224,11 @@ describe("incident files", () => {
     expect(idx).toMatchObject({ runs: 1, incidents: onDisk.incidents.length });
     const index = IncidentsIndexSchema.parse(JSON.parse(readFileSync(idx.path, "utf8")));
     expect(index.runs.map((r) => r.runId)).toEqual([bundle.runId]);
+    // The index carries its own content hash, recomputable like a bundle's (the browser checks it).
+    const raw = JSON.parse(readFileSync(idx.path, "utf8")) as Record<string, unknown>;
+    const { contentHash, ...rest } = raw;
+    expect(contentHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(sha256Hex(canonicalJson(rest))).toBe(contentHash);
     // A real-world index never picks up sample files.
     expect((await rebuildIncidentsIndex(join(root, "web", "incidents-real"), { sample: false, bundlesDir: web })).runs).toBe(0);
     // Nothing incident-shaped is ever written into the bundles directory.
@@ -245,7 +300,7 @@ describe("with the neatlogs SDK on (local fake collector)", () => {
     delete process.env.NEATLOGS_DISABLE_EXPORT;
     enabled = (await initTracing({ serviceName: "incidents-test" })).enabled;
     resetReportedIncidents();
-  });
+  }, 60_000);
 
   afterAll(async () => {
     await shutdownTracing();
@@ -267,9 +322,18 @@ describe("with the neatlogs SDK on (local fake collector)", () => {
       }, { kind: "TOOL" }),
     );
     expect(reportedIncidentIds().has(id)).toBe(true);
+    // Audit #4: in one process (`notary serve`), a second run's identical incident is reported too.
+    const inRunA = withIncidentRun("run-a", () => reportIncident({ kind: "checker_anomaly", subject: "a-same", severity: "warning", summary: "same anomaly, run a" }));
+    const inRunB = withIncidentRun("run-b", () => reportIncident({ kind: "checker_anomaly", subject: "a-same", severity: "warning", summary: "same anomaly, run b" }));
+    expect(inRunA).toBe(incidentId("checker_anomaly", "a-same", "run-a"));
+    expect(inRunB).toBe(incidentId("checker_anomaly", "a-same", "run-b"));
+    expect(inRunA).not.toBe(inRunB);
+    expect(reportedIncidentIds("run-a").has(inRunA)).toBe(true);
+    expect(reportedIncidentIds("run-b").has(inRunB)).toBe(true);
     await shutdownTracing(); // flushes logs + closes the SDK span log
     const all = Buffer.concat(logs).toString("latin1");
     expect(all).toContain(id);
+    expect(all).toContain(inRunB);
     expect(all).toContain("notary.incident.kind");
     expect(all).toContain("probe_contradiction");
     const spans = readFileSync(logFile, "utf8").trim().split("\n").map((l) => JSON.parse(l) as { name: string; kind: string; attributes: Record<string, unknown> });

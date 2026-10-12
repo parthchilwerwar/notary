@@ -43,6 +43,7 @@ export {
   DataSourceProvider,
   useDataSource,
   useHealth,
+  useHostedBuild,
   useIntegration,
   type DataSourceValue,
 } from "./react";

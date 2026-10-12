@@ -248,6 +248,17 @@ describe("collectBundles", () => {
     expect(c.skipped).toEqual([{ file: "test-tampered/test-tampered.json", reason: expect.stringMatching(/content hash mismatch/) }]);
   });
 
+  it("reads only runs/<runId>/<runId>.json, never sidecars such as incidents.json or approvals.json (audit #7)", async () => {
+    const { runsDir, f } = await setup();
+    const dir = join(runsDir, f.notarize.runId);
+    writeFileSync(join(dir, "incidents.json"), JSON.stringify({ runId: f.notarize.runId, incidents: [] }));
+    writeFileSync(join(dir, "approvals.json"), JSON.stringify({ runId: f.notarize.runId, approvals: [] }));
+    writeFileSync(join(dir, "copy.json"), JSON.stringify(f.guarded)); // even a verified bundle under another name
+    const c = collectBundles(runsDir);
+    expect(c.bundles.map((b) => b.bundle.runId).sort()).toEqual([f.compare.runId, f.guarded.runId, f.naive.runId, f.notarize.runId].sort());
+    expect(c.skipped.map((s) => s.file)).toEqual(["test-tampered/test-tampered.json"]);
+  });
+
   it("a missing runs dir is simply empty", () => {
     expect(collectBundles(join(tempDir(), "nope"))).toEqual({ bundles: [], skipped: [], excluded: [] });
   });

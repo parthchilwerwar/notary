@@ -13,6 +13,16 @@
  * only when every bundle replayed and every metric and record matched; 1 on any miss, tamper, missing record or mismatch;
  * 3 (BLOCKED) when there is nothing recorded to replay.
  *
+ * Bundles come from each run directory's `<runId>.json` and from the web bundle directory's
+ * index.json (never its `*.timeline.json` files). The same runId in both places must have the same
+ * content hash (CONFLICT otherwise) - except earlier REPLAY outputs (mode "replay" with replayOf),
+ * which carry wall-clock fields (startedAt, commit times, trace ids) and so a different hash on every
+ * run: two copies of one replay output are compared on metrics and records, like a replay itself.
+ * Recorded runs listed in fixtures/replay/known-unreplayable.json (each with a reason and the
+ * DECISIONS entry) are still attempted; one that fails with its listed error is reported
+ * "SKIPPED (known unreplayable: ...)" and does not fail the sweep (an explicit --bundle of it exits 1).
+ * Any other failure fails; nothing else is skipped.
+ *
  * `--drift <fixture>` instead replays the notarize bundle whose probe cassette the drift fixture was
  * copied from (matched by content hash), then runs replayDrift on the resulting store and prints
  * each affected belief's trajectory (one step per DISTINCT design; replicates count once, A-16) and
@@ -21,6 +31,8 @@
  */
 import { existsSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { z } from "zod";
 import { verifyBundle } from "../bundle/index.js";
 import { replayDrift } from "../beliefs/drift.js";
 import { compareExact, formatComparison } from "../eval/metrics.js";
@@ -41,6 +53,30 @@ import { compareRecords, formatRecords } from "./records.js";
 import type { RecordRow } from "./records.js";
 import { PinMismatchError, loadPinned, parseRef } from "./pins.js";
 
+/** The committed list of recorded runs that cannot replay (reason + DECISIONS entry each). */
+export const KNOWN_UNREPLAYABLE_FILE = fileURLToPath(new URL("../../fixtures/replay/known-unreplayable.json", import.meta.url));
+
+const KnownUnreplayableSchema = z.object({
+  schema: z.literal("notary-known-unreplayable/1"),
+  note: z.string().optional(),
+  runs: z.array(
+    z.object({
+      runId: z.string().min(1),
+      reason: z.string().min(1),
+      /** The replay must fail with an error containing this text; any other outcome is reported as such. */
+      expectedError: z.string().min(1),
+      decision: z.string().min(1),
+    }),
+  ),
+});
+export type KnownUnreplayable = z.infer<typeof KnownUnreplayableSchema>["runs"][number];
+
+/** Read the known-unreplayable list (a missing file is an empty list; an invalid one throws). */
+export function loadKnownUnreplayable(file: string = KNOWN_UNREPLAYABLE_FILE): KnownUnreplayable[] {
+  if (!existsSync(file)) return [];
+  return KnownUnreplayableSchema.parse(JSON.parse(readFileSync(file, "utf8"))).runs;
+}
+
 export const BLOCKED_NOTHING_RECORDED =
   "BLOCKED: no recorded live runs to replay (fixtures/cassettes is empty) — record runs with API keys first";
 
@@ -58,6 +94,8 @@ export interface ReplayOptions {
   now?: () => Date;
   /** unguarded_call_sites for the replay bundles (the CLI runs the coverage check); default null. */
   unguardedCallSites?: () => Promise<number | null>;
+  /** Known-unreplayable runs (default: fixtures/replay/known-unreplayable.json). */
+  knownUnreplayable?: readonly KnownUnreplayable[];
 }
 
 export interface BundleReplay {
@@ -70,6 +108,8 @@ export interface BundleReplay {
   records?: RecordRow[];
   error?: string;
   replay?: RunBundle;
+  /** Set when the run is on the known-unreplayable list and failed with its listed error. */
+  skipped?: KnownUnreplayable;
 }
 
 export interface ReplayResult {
@@ -98,10 +138,31 @@ function bundleFilesIn(runsDir: string, webDir: string | null): string[] {
       if (existsSync(f)) out.push(f);
     }
   }
-  if (webDir && existsSync(webDir)) {
-    for (const f of readdirSync(webDir).sort()) if (f.endsWith(".json") && f !== "index.json") out.push(join(webDir, f));
-  }
+  if (webDir && existsSync(webDir)) out.push(...webBundleFiles(webDir));
   return out;
+}
+
+/**
+ * The web bundle directory's bundles: the files its index.json lists (like the server). Without an
+ * index, every `*.json` except index.json and the `*.timeline.json` timelines published next to them.
+ */
+function webBundleFiles(webDir: string): string[] {
+  const indexPath = join(webDir, "index.json");
+  if (!existsSync(indexPath)) {
+    return readdirSync(webDir)
+      .sort()
+      .filter((f) => f.endsWith(".json") && f !== "index.json" && !f.endsWith(".timeline.json"))
+      .map((f) => join(webDir, f));
+  }
+  let entries: unknown;
+  try {
+    entries = JSON.parse(readFileSync(indexPath, "utf8"));
+  } catch {
+    // An unreadable index is reported as an invalid bundle file below, not silently skipped.
+    return [indexPath];
+  }
+  if (!Array.isArray(entries)) return [indexPath];
+  return entries.map((e) => join(webDir, `${String((e as { runId?: unknown } | null)?.runId ?? "")}.json`));
 }
 
 /** Every bundle file, hash-verified on load (a tampered or invalid one comes back with `error`). */
@@ -109,6 +170,7 @@ export function discoverBundles(runsDir: string, webDir: string | null): Found[]
   return bundleFilesIn(runsDir, webDir).map((file): Found => {
     let raw: unknown;
     try {
+      if (!existsSync(file)) return { file, error: "listed in index.json but the file is missing" };
       raw = JSON.parse(readFileSync(file, "utf8"));
     } catch (err) {
       return { file, error: `unreadable: ${err instanceof Error ? err.message : String(err)}` };
@@ -117,6 +179,24 @@ export function discoverBundles(runsDir: string, webDir: string | null): Found[]
     if (!v.ok) return { file, error: v.error.split("\n")[0]! };
     return { file, bundle: v.bundle };
   });
+}
+
+const isReplayOutput = (b: RunBundle): boolean => b.mode === "replay" && typeof b.replayOf === "string" && b.replayOf.length > 0;
+
+/**
+ * Two hash-verified copies of one replay output (same runId, different content hash): the same
+ * replay when they replay the same original and every metric and record a replay must reproduce is
+ * identical - the difference is then only wall-clock fields (startedAt/finishedAt, commit times,
+ * trace ids) and the hash derived from them.
+ */
+export function sameReplayOutput(a: RunBundle, b: RunBundle): { same: boolean; detail?: string } {
+  if (!isReplayOutput(a) || !isReplayOutput(b)) return { same: false, detail: "not both replay outputs" };
+  if (a.replayOf !== b.replayOf) return { same: false, detail: `replayOf ${a.replayOf} vs ${b.replayOf}` };
+  const m = compareExact(a.metrics, b.metrics);
+  if (!m.allMatch) return { same: false, detail: `metric(s) differ: ${m.rows.filter((r) => !r.match).map((r) => r.key).join(", ")}` };
+  const r = compareRecords(a, b);
+  if (!r.allMatch) return { same: false, detail: r.rows.filter((x) => !x.match).map((x) => x.detail ?? x.section).join("; ") };
+  return { same: true };
 }
 
 const isRecordedLive = (b: RunBundle): boolean => !b.sample && b.mode === "live" && (b.kind === "run" || b.kind === "notarize");
@@ -295,16 +375,29 @@ export async function runReplay(opts: ReplayOptions = {}): Promise<ReplayResult>
   // Every loaded bundle's content hash is recomputed; a tampered one is a visible failure.
   for (const f of found) if (f.error) failures.push(`TAMPERED OR INVALID BUNDLE ${f.file}: ${f.error}`);
   const byId = new Map<string, Found & { bundle: RunBundle }>();
+  const replayCopies: string[] = [];
   for (const f of found) {
     if (!f.bundle) continue;
     const prev = byId.get(f.bundle.runId);
     if (prev && prev.bundle.contentHash !== f.bundle.contentHash) {
-      failures.push(`CONFLICT: bundle ${f.bundle.runId} differs between ${prev.file} and ${f.file}`);
+      const same = sameReplayOutput(prev.bundle, f.bundle);
+      if (same.same) replayCopies.push(f.bundle.runId);
+      else failures.push(`CONFLICT: bundle ${f.bundle.runId} differs between ${prev.file} and ${f.file}${isReplayOutput(f.bundle) && same.detail ? ` (${same.detail})` : ""}`);
       continue;
     }
     if (!prev) byId.set(f.bundle.runId, f as Found & { bundle: RunBundle });
   }
   lines.push(`verified ${byId.size} bundle(s) (content hash recomputed)${failures.length ? `; ${failures.length} failed verification` : ""}`);
+  if (replayCopies.length) {
+    lines.push(`${replayCopies.length} earlier replay output(s) have two copies that differ only in wall-clock fields (same metrics and records): ${replayCopies.join(", ")}`);
+  }
+  let known: readonly KnownUnreplayable[];
+  try {
+    known = opts.knownUnreplayable ?? loadKnownUnreplayable();
+  } catch (err) {
+    return { exitCode: 1, lines: [...lines, ...failures, `invalid ${KNOWN_UNREPLAYABLE_FILE}: ${err instanceof Error ? err.message : String(err)}`], replays: [] };
+  }
+  const knownById = new Map(known.map((k) => [k.runId, k]));
 
   if (opts.drift) return driftReplay(opts, [...byId.values()].map((f) => f.bundle), lines, failures);
 
@@ -329,13 +422,24 @@ export async function runReplay(opts: ReplayOptions = {}): Promise<ReplayResult>
   const replays: BundleReplay[] = [];
   targets.sort((a, b) => (a.startedAt < b.startedAt ? -1 : a.startedAt > b.startedAt ? 1 : a.runId < b.runId ? -1 : 1));
   for (const b of targets) {
-    const r = await replayBundle(b, opts);
-    replays.push(r);
+    const r: BundleReplay = await replayBundle(b, opts);
+    const k = knownById.get(b.runId);
     lines.push("", `replay ${b.runId} (${b.kind}${b.kind === "run" ? ` --${b.variant}` : ` ${b.tool ?? ""}`})${r.replayRunId ? ` -> ${r.replayRunId}` : ""}`);
-    if (r.error) {
-      lines.push(`  FAIL: ${r.error}`);
+    if (k && r.error?.includes(k.expectedError)) {
+      // Attempted, and failed exactly as recorded: disclosed, neither a pass nor a failure.
+      r.skipped = k;
+      replays.push(r);
+      lines.push(`  SKIPPED (known unreplayable: ${k.reason}; ${k.decision})`);
+      lines.push(`  observed: ${r.error.length > 240 ? `${r.error.slice(0, 239)}…` : r.error}`);
       continue;
     }
+    replays.push(r);
+    if (r.error) {
+      lines.push(`  FAIL: ${r.error}`);
+      if (k) lines.push(`  (listed as known unreplayable, but this is not the listed failure "${k.expectedError}")`);
+      continue;
+    }
+    if (k && r.ok) lines.push(`  NOTE: listed as known unreplayable (${k.decision}) but it reproduced; remove it from ${KNOWN_UNREPLAYABLE_FILE}`);
     lines.push(...formatComparison(r.rows ?? []));
     lines.push(...formatRecords(r.records ?? []));
     const bad = (r.rows ?? []).filter((x) => !x.match).length;
@@ -347,9 +451,22 @@ export async function runReplay(opts: ReplayOptions = {}): Promise<ReplayResult>
     }
     if (r.replayBundlePath) lines.push(`  replay bundle: ${r.replayBundlePath}`);
   }
-  const allOk = failures.length === 0 && replays.every((r) => r.ok);
-  lines.push("", ...failures, allOk ? `REPLAY OK: ${replays.length} bundle(s) reproduced exactly` : `REPLAY FAILED: ${replays.filter((r) => !r.ok).length}/${replays.length} bundle(s) did not reproduce${failures.length ? `, ${failures.length} verification failure(s)` : ""}`);
-  return { exitCode: allOk ? 0 : 1, lines, replays };
+  const skipped = replays.filter((r) => r.skipped);
+  const attempted = replays.filter((r) => !r.skipped);
+  const allOk = failures.length === 0 && attempted.every((r) => r.ok);
+  const skippedNote = skipped.length
+    ? `; ${skipped.length} skipped as known unreplayable (${skipped.map((r) => r.runId).join(", ")}; see fixtures/replay/known-unreplayable.json)`
+    : "";
+  lines.push(
+    "",
+    ...failures,
+    allOk
+      ? `REPLAY OK: ${attempted.length} bundle(s) reproduced exactly${skippedNote}`
+      : `REPLAY FAILED: ${attempted.filter((r) => !r.ok).length}/${attempted.length} bundle(s) did not reproduce${failures.length ? `, ${failures.length} verification failure(s)` : ""}${skippedNote}`,
+  );
+  // An explicit --bundle of a known-unreplayable run did not reproduce: never a pass.
+  const explicitSkip = opts.bundle !== undefined && skipped.length > 0;
+  return { exitCode: allOk && !explicitSkip ? 0 : 1, lines, replays };
 }
 
 async function driftReplay(opts: ReplayOptions, bundles: RunBundle[], lines: string[], failures: string[]): Promise<ReplayResult> {

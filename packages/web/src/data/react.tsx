@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import type { HealthResponse, IntegrationName } from "../../../core/src/schema";
 import { integrationView, type IntegrationView } from "./integration";
 import { replaySelection, selectDataSource, type Selection, type SelectOptions } from "./select";
+import { isHostedBuild } from "./env";
 import type { DataMode, DataSource } from "./types";
 
 export type DataSourceValue = {
@@ -80,6 +81,12 @@ export function useDataSource(): DataSourceValue {
   const ctx = useContext(Ctx);
   if (!ctx) throw new Error("useDataSource must be used within a DataSourceProvider.");
   return ctx;
+}
+
+/** True on the hosted build (always replay, never probed). Outside a provider: the build's own flag. */
+export function useHostedBuild(): boolean {
+  const ctx = useContext(Ctx);
+  return ctx ? ctx.hosted : isHostedBuild();
 }
 
 /** The live server's health at selection time (null in replay). */

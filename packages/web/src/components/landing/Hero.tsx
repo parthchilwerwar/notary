@@ -5,26 +5,30 @@ import { EVALUATION_TAG, NO_RUNS_YET, mockupAddress } from "../../landing-data";
 import { Clouds } from "../brand/Clouds";
 import { BrowserFrame } from "./BrowserFrame";
 import { gsap, MOTION_OK, SplitText, useGSAP } from "./gsap";
-import { replayFor, replayPair } from "./replay";
+import { previewData, replayFor } from "./replay";
 
-const RunPreview = lazy(() => import("./RunPreview"));
+// The preview chunk (Run page rows and kit pieces) is fetched in parallel with its data, not after it.
+const loadRunPreview = () => import("./RunPreview");
+const RunPreview = lazy(loadRunPreview);
 /** The preview's design width (scaled to the frame). */
 const SHOT_WIDTH = 1280;
 
 /**
- * The preview is decoration whose data costs a bundle hash: load it on the visitor's first
- * interaction (pointer, touch, key, wheel or scroll) or after 8 s, whichever comes first, so the
- * first render and the main thread stay free.
+ * The preview is decoration whose data costs a few bundle hashes: start it after the first paint,
+ * at the browser's first idle moment (at most 1.5 s later) or on the visitor's first interaction,
+ * whichever comes first, so the first render stays free.
  */
 function useEngaged() {
   const [on, setOn] = useState(false);
   useEffect(() => {
     const events = ["pointermove", "pointerdown", "keydown", "wheel", "touchstart", "scroll"] as const;
     const go = () => setOn(true);
-    const timer = window.setTimeout(go, 8000);
+    const idle = typeof window.requestIdleCallback === "function";
+    const handle = idle ? window.requestIdleCallback(go, { timeout: 1500 }) : window.setTimeout(go, 600);
     for (const e of events) window.addEventListener(e, go, { once: true, passive: true });
     return () => {
-      window.clearTimeout(timer);
+      if (idle) window.cancelIdleCallback(handle);
+      else window.clearTimeout(handle);
       for (const e of events) window.removeEventListener(e, go);
     };
   }, []);
@@ -65,12 +69,14 @@ export function Hero({
   useEffect(() => {
     if (!idle) return;
     let live = true;
-    replayPair(replay).then(
-      (p) => {
+    // Chunk and data together: the bundles verify while the preview's code downloads.
+    void loadRunPreview().catch(() => undefined);
+    previewData(replay).then(
+      (d) => {
         if (!live) return;
-        setRun(!!p.preview);
-        setSample(!!p.preview?.sample);
-        setEmpty(!p.preview);
+        setRun(!!d);
+        setSample(!!d?.bundle.sample);
+        setEmpty(!d);
       },
       () => undefined,
     );
