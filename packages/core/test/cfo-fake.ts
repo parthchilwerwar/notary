@@ -22,6 +22,11 @@ export interface FakeOptions {
   scenarios?: { id: string; name: string }[];
   /** Advertise a `list` action on inspect_scenarios (default true). */
   scenarioList?: boolean;
+  /**
+   * Scenario refs the workspace has. When set, a table read naming any other scenario gets the live
+   * cfo.ai not_found error (seen Oct 12, 2026) with these refs as candidates.
+   */
+  scenarioRefs?: string[];
 }
 
 export interface FakeCfo {
@@ -137,6 +142,21 @@ export function fakeCfo(opts: FakeOptions = {}): FakeCfo {
       async (args) => {
         fake.calls.push({ tool: "inspect_table_blocks", args: args as Record<string, unknown> });
         const t = args.read?.target ?? "";
+        if (opts.scenarioRefs && !opts.scenarioRefs.includes(String(args.scenario))) {
+          return {
+            ...text({
+              error: {
+                code: "not_found",
+                message: `No available scenario named "${String(args.scenario)}" was found.`,
+                transient: false,
+                candidates: opts.scenarioRefs.map((ref) => ({ display_name: ref, ref, kind: "scenario", score: 0.95 })),
+                hint: "inspect_scenarios lists the visible scenarios.",
+              },
+              state_changed: "no",
+            }),
+            isError: true,
+          };
+        }
         if (!opts.tables || !(t in opts.tables)) return { ...text(`no table named ${t}`), isError: true };
         return text(opts.tables[t]);
       },

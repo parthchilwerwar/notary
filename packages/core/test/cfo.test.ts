@@ -159,6 +159,27 @@ describe("notary cfo sync (fake cfo.ai)", () => {
     for (const token of fake.issued) expect(readFileSync(paths.lastPayload, "utf8") + md + readFileSync(econ.economicsJson, "utf8")).not.toContain(token);
   });
 
+  it("default scenario missing: uses cfo.ai's only suggested scenario, says so, saves and records it", async () => {
+    const fake = fakeCfo({ tables, scenarioRefs: ["Main Scenario#52f"] });
+    await connect(fake);
+    const logs: string[] = [];
+    await cfoSync({ paths, server: FAKE_MCP, fetch: fake.fetch, now: () => T0, tables: ["Notary Plan"], economics: econ, log: (l) => logs.push(l) });
+    expect(logs.join(" ")).toContain('cfo.ai has no scenario "Main"; using its only suggestion "Main Scenario#52f"');
+    expect(fake.calls.filter((c) => c.tool === "inspect_table_blocks").map((c) => c.args.scenario)).toEqual(["Main", "Main Scenario#52f"]);
+    const v = verifyEconomics(JSON.parse(readFileSync(econ.economicsJson, "utf8")));
+    expect(v.ok && v.file.plan!.source.scenario).toBe("Main Scenario#52f");
+    expect(readSettings(paths, FAKE_MCP).scenario).toBe("Main Scenario#52f");
+  });
+
+  it("an explicit --scenario is never substituted; several suggestions are never guessed between", async () => {
+    const one = fakeCfo({ tables, scenarioRefs: ["Main Scenario#52f"] });
+    await connect(one);
+    await expect(cfoSync({ paths, server: FAKE_MCP, fetch: one.fetch, now: () => T0, tables: ["Notary Plan"], scenario: "Upside", economics: econ })).rejects.toThrow(/--scenario "Main Scenario#52f"/);
+    const two = fakeCfo({ tables, scenarioRefs: ["Main A#1", "Main B#2"] });
+    await connect(two);
+    await expect(cfoSync({ paths, server: FAKE_MCP, fetch: two.fetch, now: () => T0, tables: ["Notary Plan"], economics: econ })).rejects.toThrow(/--scenario "Main A#1" or --scenario "Main B#2"/);
+  });
+
   it("an access token cfo.ai no longer accepts is refreshed without the browser", async () => {
     const fake = fakeCfo({ tables });
     await connect(fake);

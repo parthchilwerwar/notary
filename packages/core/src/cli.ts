@@ -327,9 +327,9 @@ export function buildProgram(): Command {
     .command("sync")
     .description("Read the plan from cfo.ai (inspect_table_blocks), map it strictly into economics.json's plan, then regenerate economics.json, docs/BUSINESS.md and export/cfo-inputs.csv like `notary economics`")
     .option("--table <name>", "cfo.ai table block to read (repeatable; saved for later syncs; default \"Notary Plan\")", (v: string, acc: string[]) => [...acc, v], [] as string[])
-    .option("--scenario <name>", "cfo.ai scenario to read (saved; default Main)")
+    .option("--scenario <name>", "cfo.ai scenario to read (saved; default Main; if cfo.ai has no \"Main\" but suggests exactly one scenario, that one is used and saved)")
     .action(async (opts: { table: string[]; scenario?: string }) => {
-      const { cfoSync, CfoNotConnectedError, CfoMappingError } = await import("./cfo/index.js");
+      const { cfoSync, CfoNotConnectedError, CfoMappingError, CfoMcpError } = await import("./cfo/index.js");
       try {
         await cfoSync({ tables: opts.table, ...(opts.scenario ? { scenario: opts.scenario } : {}), log: (l) => console.log(l) });
       } catch (err) {
@@ -338,6 +338,15 @@ export function buildProgram(): Command {
           process.exitCode = 3;
         } else if (err instanceof CfoMappingError) {
           console.error(`cfo.ai plan rejected, nothing written: ${err.message}`);
+          process.exitCode = 1;
+        } else if (err instanceof CfoMcpError) {
+          // cfo.ai answered with an error (e.g. a table or scenario name it does not have): say so plainly.
+          const e = (err.details as { error?: { code?: unknown; message?: unknown } } | undefined)?.error;
+          console.error(`cfo.ai: ${typeof e?.message === "string" ? e.message : err.message} Nothing was written.`);
+          if (e?.code === "not_found" && /table_block/.test(String(e.message))) {
+            console.error('Create the table in cfo.ai (see docs/BUSINESS.md, "Build the plan in cfo.ai"), or pass the name you used: --table "<name>"');
+          }
+          if (/Re-run with one of/.test(err.message)) console.error(err.message.split("\n").slice(1).join("\n"));
           process.exitCode = 1;
         } else throw err;
       }

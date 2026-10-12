@@ -13,10 +13,44 @@ import { CfoNotConnectedError, type CfoOAuthProvider } from "./oauth.js";
 export const NOTARY_CLIENT_INFO = { name: "notary", version: "0.0.0" } as const;
 
 export class CfoMcpError extends Error {
-  constructor(message: string) {
+  /** The tool's error payload when it was JSON (e.g. cfo.ai's {error: {code, candidates}}), else undefined. */
+  readonly details: unknown;
+  constructor(message: string, details?: unknown) {
     super(message);
     this.name = "CfoMcpError";
+    this.details = details;
   }
+}
+
+function parseJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * The single scenario cfo.ai suggests when a scenario name was not found: its error is
+ * `{error: {code: "not_found", candidates: [{ref, kind: "scenario", ...}]}}`. Returns the ref only
+ * when exactly one scenario candidate is offered; otherwise null (never a guess between several).
+ */
+export function soleScenarioCandidate(err: unknown): { ref: string; names: string[] } | null {
+  if (!(err instanceof CfoMcpError)) return null;
+  const e = (err.details as { error?: { code?: unknown; candidates?: unknown } } | undefined)?.error;
+  if (!e || e.code !== "not_found" || !Array.isArray(e.candidates)) return null;
+  const scen = e.candidates.filter(
+    (c): c is { ref: string; display_name?: string } => !!c && typeof c === "object" && (c as { kind?: unknown }).kind === "scenario" && typeof (c as { ref?: unknown }).ref === "string",
+  );
+  return scen.length === 1 ? { ref: scen[0]!.ref, names: scen.map((c) => c.display_name ?? c.ref) } : null;
+}
+
+/** Every scenario name cfo.ai suggested in a not_found error (for a helpful message). */
+export function scenarioCandidates(err: unknown): string[] {
+  if (!(err instanceof CfoMcpError)) return [];
+  const e = (err.details as { error?: { candidates?: unknown } } | undefined)?.error;
+  if (!e || !Array.isArray(e.candidates)) return [];
+  return e.candidates.filter((c) => !!c && typeof c === "object" && (c as { kind?: unknown }).kind === "scenario" && typeof (c as { ref?: unknown }).ref === "string").map((c) => (c as { ref: string }).ref);
 }
 
 export interface ToolInfo {
@@ -47,7 +81,7 @@ function transportFor(opts: OpenOptions): StreamableHTTPClientTransport {
 export function resultJson(tool: string, result: unknown): unknown {
   const r = result as { isError?: boolean; structuredContent?: unknown; content?: { type: string; text?: string }[] };
   const texts = (r.content ?? []).filter((c) => c.type === "text").map((c) => c.text ?? "");
-  if (r.isError) throw new CfoMcpError(`cfo.ai ${tool} returned an error: ${(texts.join(" ") || "no message").slice(0, 400)}`);
+  if (r.isError) throw new CfoMcpError(`cfo.ai ${tool} returned an error: ${(texts.join(" ") || "no message").slice(0, 400)}`, texts.length === 1 ? parseJson(texts[0]!) : undefined);
   if (r.structuredContent !== undefined && r.structuredContent !== null && typeof r.structuredContent === "object") return r.structuredContent;
   if (texts.length !== 1) throw new CfoMcpError(`cfo.ai ${tool} returned ${texts.length} text blocks and no structured content; Notary reads exactly one JSON block`);
   try {

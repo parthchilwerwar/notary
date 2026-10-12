@@ -18,7 +18,7 @@ import { canonicalJson, sha256Hex } from "../bundle/hash.js";
 import { writeEconomics, type WriteEconomicsOptions } from "../economics/index.js";
 import { CfoPlanSchema, type CfoPlan } from "../schema/economics.js";
 import { CFO_CONNECT_COMMAND, CfoStatusSchema, type CfoOrg, type CfoStatus, type CfoSyncResponse } from "../schema/cfo.js";
-import { CfoMcpError, openCfoSession, resultJson, type CfoSession } from "./client.js";
+import { CfoMcpError, openCfoSession, resultJson, scenarioCandidates, soleScenarioCandidate, type CfoSession } from "./client.js";
 import { CfoMappingError, extractIdNameList, extractTable, mapRows, type GridRow } from "./map.js";
 import { CfoNotConnectedError, CfoOAuthProvider, newState, startCallbackServer } from "./oauth.js";
 import { CFO_MCP_URL, DEFAULT_CFO_PATHS, clearOAuth, readOAuth, readSettings, writeLastPayload, writeSettings, type CfoPaths } from "./store.js";
@@ -244,7 +244,8 @@ export async function cfoSync(opts: SyncOptions = {}): Promise<CfoSyncResponse> 
   const { paths, server, now } = ctx(opts);
   const settings = readSettings(paths, server);
   const tables = opts.tables?.length ? [...new Set(opts.tables.map((t) => t.trim()).filter(Boolean))] : settings.tables;
-  const scenario = opts.scenario?.trim() || settings.scenario;
+  const explicitScenario = !!opts.scenario?.trim();
+  let scenario = opts.scenario?.trim() || settings.scenario;
   const at = now().toISOString();
   const record = (ok: boolean, payloadSha256: string | null, error: string | null) =>
     writeSettings(paths, { ...readSettings(paths, server), tables, scenario, lastSync: { at, ok, payloadSha256, tables, error } });
@@ -262,8 +263,26 @@ export async function cfoSync(opts: SyncOptions = {}): Promise<CfoSyncResponse> 
     let scenarios: { args: unknown; result: unknown; error: string | null } | null = null;
     try {
       for (const table of tables) {
-        const args = tableReadArgs(table, scenario);
-        const { raw } = await session.call("inspect_table_blocks", args, org.id);
+        let args = tableReadArgs(table, scenario);
+        let raw: unknown;
+        try {
+          ({ raw } = await session.call("inspect_table_blocks", args, org.id));
+        } catch (e) {
+          // The scenario name was not found. Without --scenario, take cfo.ai's own suggestion only
+          // when it offers exactly one scenario (it is printed, saved and recorded in the plan source);
+          // with --scenario, never substitute: show what cfo.ai suggested instead.
+          const sole = reads.length === 0 ? soleScenarioCandidate(e) : null;
+          if (sole && !explicitScenario) {
+            opts.log?.(`cfo.ai has no scenario "${scenario}"; using its only suggestion "${sole.ref}" (pass --scenario to choose another)`);
+            scenario = sole.ref;
+            args = tableReadArgs(table, scenario);
+            ({ raw } = await session.call("inspect_table_blocks", args, org.id));
+          } else {
+            const names = scenarioCandidates(e);
+            if (names.length) throw new CfoMcpError(`${(e as Error).message}\nRe-run with one of cfo.ai's scenarios: ${names.map((n) => `--scenario "${n}"`).join(" or ")}`, (e as CfoMcpError).details);
+            throw e;
+          }
+        }
         reads.push({ table, args, result: raw });
       }
       // Scenario id: only when the server's own schema offers a `list` action, and only an exact,
