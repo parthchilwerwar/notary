@@ -16,7 +16,7 @@ const RESOURCE_META = "https://cfo.test/.well-known/oauth-protected-resource/mcp
 const AS = "https://auth.cfo.test";
 
 export interface FakeOptions {
-  orgs?: { id: string; name: string }[];
+  orgs?: Record<string, string>[];
   /** Table name -> the JSON the fake returns for inspect_table_blocks read (or a raw text block). */
   tables?: Record<string, unknown>;
   scenarios?: { id: string; name: string }[];
@@ -42,7 +42,8 @@ const json = (body: unknown, status = 200, headers: Record<string, string> = {})
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", ...headers } });
 
 export function fakeCfo(opts: FakeOptions = {}): FakeCfo {
-  const orgs = opts.orgs ?? [{ id: "org_test_1", name: "Test workspace" }];
+  // The live cfo.ai list_orgs shape (Oct 12, 2026): {name, org_id, role, slug}.
+  const orgs = opts.orgs ?? [{ name: "Test workspace", org_id: "org_test_1", role: "owner", slug: "test-workspace" }];
   const clients = new Map<string, string[]>();
   const codes = new Map<string, { challenge: string; redirect: string; client: string }>();
   let access: string | null = null;

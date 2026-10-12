@@ -208,6 +208,19 @@ export function mapRows(rows: readonly GridRow[]): MappedPlan {
   return { currency: currencies.size === 1 ? [...currencies][0]! : null, tiers, series, figures };
 }
 
+/**
+ * Id keys accepted on list items, in order. The live cfo.ai `list_orgs` answers
+ * `{name, org_id, role, slug}` (seen Oct 12, 2026), so `org_id` is the org id; `id` and
+ * `scenario_id` cover the other list results. An item with two different ids is refused.
+ */
+const ID_KEYS = ["id", "org_id", "scenario_id"] as const;
+
+function itemId(item: Record<string, unknown>): string | null {
+  const ids = ID_KEYS.map((k) => item[k]).filter((v): v is string => typeof v === "string" && v.trim() !== "");
+  if (!ids.length || new Set(ids).size > 1) return null;
+  return ids[0]!;
+}
+
 /** list_orgs (and similar list results): [{id, name}], strictly. */
 export function extractIdNameList(what: string, json: unknown): { id: string; name: string | null }[] {
   let list: unknown;
@@ -218,8 +231,9 @@ export function extractIdNameList(what: string, json: unknown): { id: string; na
   }
   if (!Array.isArray(list)) throw new CfoMappingError(`${what}: no list Notary recognizes (top-level keys: ${keysOf(json)})`);
   return list.map((item, i) => {
-    if (!isObj(item) || typeof item.id !== "string" || !item.id.trim()) throw new CfoMappingError(`${what} item ${i + 1}: has no string id (keys: ${keysOf(item)})`);
+    const id = isObj(item) ? itemId(item) : null;
+    if (!isObj(item) || id === null) throw new CfoMappingError(`${what} item ${i + 1}: has no single string id (${ID_KEYS.join(" / ")}; keys: ${keysOf(item)})`);
     const name = typeof item.name === "string" ? item.name : typeof item.slug === "string" ? item.slug : null;
-    return { id: item.id, name };
+    return { id, name };
   });
 }

@@ -233,7 +233,13 @@ describe("strict mapping", () => {
     expect(() => resultJson("x", { content: [{ type: "text", text: "Revenue is about 1.2k" }] })).toThrow(/not JSON/);
     expect(() => resultJson("x", { content: [] })).toThrow(/0 text blocks/);
     expect(resultJson("x", { structuredContent: { a: 1 }, content: [] })).toEqual({ a: 1 });
-    expect(() => extractIdNameList("list_orgs", { orgs: [{ name: "no id" }] })).toThrow(/no string id/);
+    expect(() => extractIdNameList("list_orgs", { orgs: [{ name: "no id" }] })).toThrow(/no single string id/);
+  });
+  it("list_orgs: reads the live cfo.ai shape {name, org_id, role, slug}; refuses an item with two different ids", () => {
+    expect(extractIdNameList("list_orgs", { orgs: [{ name: "Acme", org_id: "org_123", role: "owner", slug: "acme" }] })).toEqual([{ id: "org_123", name: "Acme" }]);
+    expect(extractIdNameList("list_orgs", [{ org_id: "org_9", slug: "nine" }])).toEqual([{ id: "org_9", name: "nine" }]);
+    expect(() => extractIdNameList("list_orgs", [{ id: "a", org_id: "b" }])).toThrow(/no single string id/);
+    expect(extractIdNameList("list_orgs", [{ id: "a", org_id: "a", name: "same" }])).toEqual([{ id: "a", name: "same" }]);
   });
 });
 
