@@ -55,7 +55,7 @@ Step 3 is what was run in this repo. It wrote:
 
 **`commit_linking: "always"`.** Entire's default is `prompt`: when a commit follows agent work, the prepare-commit-msg hook asks `[Y/n/a]` on the terminal. The adversary's verdict commit is made by Node with no terminal, so the hook waited forever (observed live). With `always`, every commit made while Entire tracks a session is linked without asking.
 
-**Pushing.** With `checkpoint_push_remote: origin`, the pre-push hook pushes the checkpoint refs along with `git push`. Checkpoints contain session transcripts. Entire redacts secrets before anything leaves the machine ([security](https://docs.entire.io/security)). The GitHub repo is private today, so the pushed checkpoint refs are visible only to collaborators; once the repo is made public, anyone who can clone it can fetch them. Run `entire configure --skip-push-sessions` to keep checkpoints local.
+**Pushing.** With `checkpoint_push_remote: origin`, the pre-push hook pushes the checkpoint refs along with `git push`. Checkpoints contain session transcripts. Entire's docs say it redacts secrets before anything leaves the machine ([security](https://docs.entire.io/security)), but in this repo its redaction missed an ElevenLabs key and an AWS access key id that appeared in session transcripts. Before the repo went public, every ref was scanned for the `.env` values and the five checkpoints that contained them were deleted, locally and on GitHub (DECISIONS #221). The repo is public now, so anyone who clones it can fetch the remaining checkpoint refs. This clone now runs `entire configure --local --skip-push-sessions`, so new session logs stay local.
 
 ## How checkpoints map to agent sessions
 
