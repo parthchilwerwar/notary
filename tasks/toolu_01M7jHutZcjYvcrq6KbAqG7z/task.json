@@ -1,0 +1,15 @@
+{
+  "tool_use_id": "toolu_01M7jHutZcjYvcrq6KbAqG7z",
+  "agent_id": "ac74b74e1ee79e2bb",
+  "subagent_type": "general-purpose",
+  "task_description": "Audit A: data truthfulness",
+  "token_usage": {
+    "input_tokens": 178,
+    "cache_creation_tokens": 270020,
+    "cache_read_tokens": 17082696,
+    "output_tokens": 6409,
+    "api_call_count": 89
+  },
+  "started_at": "2026-10-12T09:09:52.8613558+05:30",
+  "completed_at": "2026-10-12T09:43:22.2096123+05:30"
+}

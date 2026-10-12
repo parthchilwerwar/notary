@@ -1,0 +1,15 @@
+{
+  "tool_use_id": "toolu_015C6QkSx4KhuaPd7kkQKHiE",
+  "agent_id": "af98ef03a5ef437de",
+  "subagent_type": "general-purpose",
+  "task_description": "Audit web package changes",
+  "token_usage": {
+    "input_tokens": 164,
+    "cache_creation_tokens": 197996,
+    "cache_read_tokens": 14099140,
+    "output_tokens": 22237,
+    "api_call_count": 82
+  },
+  "started_at": "2026-10-12T09:10:48.9668449+05:30",
+  "completed_at": "2026-10-12T09:26:48.8822812+05:30"
+}

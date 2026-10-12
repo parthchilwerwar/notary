@@ -1,0 +1,15 @@
+{
+  "tool_use_id": "toolu_01CtytXazHBqbTz3xMER3K7R",
+  "agent_id": "a92b7454d750c708b",
+  "subagent_type": "general-purpose",
+  "task_description": "Audit D: code, tests, security",
+  "token_usage": {
+    "input_tokens": 138,
+    "cache_creation_tokens": 216024,
+    "cache_read_tokens": 10930582,
+    "output_tokens": 9546,
+    "api_call_count": 69
+  },
+  "started_at": "2026-10-12T09:09:52.7963927+05:30",
+  "completed_at": "2026-10-12T09:36:36.5953873+05:30"
+}

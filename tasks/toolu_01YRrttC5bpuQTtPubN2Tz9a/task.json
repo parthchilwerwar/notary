@@ -1,0 +1,15 @@
+{
+  "tool_use_id": "toolu_01YRrttC5bpuQTtPubN2Tz9a",
+  "agent_id": "ae0247788956120b0",
+  "subagent_type": "general-purpose",
+  "task_description": "Audit B: functional end-to-end",
+  "token_usage": {
+    "input_tokens": 154,
+    "cache_creation_tokens": 228674,
+    "cache_read_tokens": 12081888,
+    "output_tokens": 7489,
+    "api_call_count": 77
+  },
+  "started_at": "2026-10-12T09:09:52.6788988+05:30",
+  "completed_at": "2026-10-12T09:51:18.9471701+05:30"
+}
