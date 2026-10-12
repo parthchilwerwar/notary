@@ -118,6 +118,17 @@ export function CfoScene() {
               })}
             </div>
             <div style={{ fontFamily: SANS, fontSize: 20, color: C.muted, marginTop: 14 }}>Columns from the file: one row per run, the numbers straight from the run bundles.</div>
+            {A.data.cfo && (
+              <div style={{ marginTop: 18, display: "flex", alignItems: "center", gap: 14, opacity: p(frame, t.source - 4, 12), transform: `translateY(${(1 - p(frame, t.source - 4, 12)) * 14}px)` }}>
+                <span style={{ fontFamily: SANS, fontSize: 26, fontWeight: 650 }}>cfo.ai</span>
+                <Pill tone="neutral" size={20}>data source: {e.exportPath.split("/").pop()}</Pill>
+                <Pill tone="neutral" size={20}>MCP · {A.data.cfo.server.replace(/^https?:\/\//, "")}</Pill>
+                <Pill tone="neutral" size={20}>workspace {A.data.cfo.workspace}</Pill>
+              </div>
+            )}
+            <div style={{ marginTop: 18, opacity: p(frame, t.aws - 4, 12), transform: `translateY(${(1 - p(frame, t.aws - 4, 12)) * 14}px)` }}>
+              <Pill tone="accent" size={24}>Built to deploy on AWS · {A.data.aws.dir}</Pill>
+            </div>
           </Panel>
         </div>
       )}
@@ -126,13 +137,13 @@ export function CfoScene() {
 }
 
 /** A number that counts up to its value (eased), with a pop when it lands. */
-function CountUp({ value, decimals, prefix, at, size }: { value: number; decimals: number; prefix: string; at: number; size: number }) {
+function CountUp({ value, decimals, prefix, at, size, color = C.accentText }: { value: number; decimals: number; prefix: string; at: number; size: number; color?: string }) {
   const frame = useCurrentFrame();
   const k = p(frame, at, 20, (x) => 1 - (1 - x) ** 3);
   const land = Math.sin(Math.PI * p(frame, at + 18, 12));
   const shown = value * k;
   return (
-    <span style={{ ...display, fontSize: size, lineHeight: 1, color: C.accentText, display: "inline-block", whiteSpace: "nowrap", minWidth: size * 0.7, transform: `scale(${1 + land * 0.08})`, transformOrigin: "100% 80%", fontVariantNumeric: "tabular-nums" }}>
+    <span style={{ ...display, fontSize: size, lineHeight: 1, color, display: "inline-block", whiteSpace: "nowrap", minWidth: size * 0.7, transform: `scale(${1 + land * 0.08})`, transformOrigin: "100% 80%", fontVariantNumeric: "tabular-nums" }}>
       {prefix}
       {decimals ? shown.toFixed(decimals) : Math.round(shown)}
     </span>
@@ -145,28 +156,30 @@ export function CloseScene() {
   const t = P.close;
   const stats = closeStats();
   const out = p(frame, t.sky + 6, 18, IN);
+  const tones = { unsafe: [C.unsafeText, C.unsafeBg], safe: [C.certifiedText, C.certifiedBg], held: [C.heldText, C.heldBg] } as const;
   return (
     <>
       <SceneShell id="close" dur={s.dur}>
         <div style={{ position: "absolute", inset: 0, opacity: 1 - out, transform: `scale(${1 + out * 0.05})` }}>
           <div style={{ position: "absolute", left: 160, top: 150 }}>
-            <Kinetic id="close" phrase="So here is what Notary proved." size={84} emphasis={["proved"]} at={30} />
+            <Kinetic id="close" phrase="On our test suite," size={84} at={20} />
           </div>
-          {stats.map((st, i) => {
-            const a = p(frame, st.at - 6, 14);
-            const dim = stats[i + 1] ? p(frame, stats[i + 1]!.at - 4, 12) * 0.35 : 0;
-            if (a <= 0) return null;
-            return (
-              <div key={st.key} style={{ position: "absolute", left: 160, top: 280 + i * 150, display: "flex", alignItems: "baseline", gap: 34, whiteSpace: "nowrap", opacity: a * (1 - dim), transform: `translateX(${(1 - a) * -50}px)` }}>
-                <div style={{ width: 400, textAlign: "right" }}>
-                  <CountUp value={st.value} decimals={st.decimals} prefix={st.prefix} at={st.at - 2} size={130} />
+          <div style={{ position: "absolute", left: 160, right: 160, top: 300, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 36 }}>
+            {stats.map((st) => {
+              const a = p(frame, st.at - 4, 14);
+              const [fg, bg] = tones[st.tone];
+              return (
+                <div key={st.key} style={{ opacity: Math.max(0.3, a), transform: `translateY(${(1 - a) * 24}px) scale(${mix(a, 0.97, 1)})` }}>
+                  <Panel style={{ padding: "30px 34px", background: a > 0 ? bg : C.page }}>
+                    <div style={{ fontFamily: SANS, fontSize: 28, fontWeight: 600, color: C.strongMuted }}>{st.label}</div>
+                    <div style={{ marginTop: 10, height: 230, display: "flex", alignItems: "flex-end" }}>
+                      {a > 0 ? <CountUp value={st.value} decimals={0} prefix="" at={st.at - 2} size={220} color={fg} /> : <span style={{ ...display, fontSize: 220, lineHeight: 1, color: C.hairline }}>–</span>}
+                    </div>
+                    <div style={{ fontFamily: SANS, fontSize: 26, color: C.strongMuted, marginTop: 8 }}>{st.text}</div>
+                  </Panel>
                 </div>
-                <div style={{ ...display, fontSize: 60, color: C.text }}>{st.text}</div>
-              </div>
-            );
-          })}
-          <div style={{ position: "absolute", left: 0, right: 0, top: 980, textAlign: "center", fontFamily: SANS, fontSize: 16, color: C.faint, opacity: p(frame, t.three, 12) }}>
-            From the runs' incidents, certificates, coverage output and economics.json
+              );
+            })}
           </div>
         </div>
       </SceneShell>
@@ -174,4 +187,3 @@ export function CloseScene() {
     </>
   );
 }
-

@@ -25,18 +25,12 @@
     },
     {
       "id": "notary",
-      "visual": "five steps; transcript row with committed prediction; certificate detail with Adversary 'narrowed'; certificates grid; Guard holding an uncovered action as a motion-graphic diagram (no data)",
+      "visual": "v1 edit: five steps; committed prediction; certificate with Adversary 'narrowed'; certificates grid; held card (approvals-held, zoomed to the card, no tag)",
       "clips": [
         "transcript-prediction",
         "certificate-adversary",
-        "certificates-grid"
-      ]
-    },
-    {
-      "id": "stack",
-      "visual": "Dodo Payments (4 real certificates), Crustdata (customer tier), LiteLLM with Claude Sonnet (Reflector) / Opus (Adversary), AWS (deploy/aws scripts card + Bedrock as drop-in provider; no running deployment shown)",
-      "clips": [
-        "certificates-grid"
+        "certificates-grid",
+        "approvals-held"
       ]
     },
     {
@@ -60,7 +54,7 @@
     },
     {
       "id": "close",
-      "visual": "real results: 3 documented claims that didn't hold, 5 certificates each narrowed, 0 unguarded money calls, ~$0.03 per run; wordmark, github, Voice: ElevenLabs",
+      "visual": "v1 close: 9 unsafe without Notary -> 0 with, 9 refunds held (narration: 'On our test suite'); closing sky, wordmark, github, Voice: ElevenLabs",
       "clips": []
     }
   ]

@@ -4,7 +4,6 @@
   "intro": "explainer/voice/intro.wav",
   "problem": "explainer/voice/problem.wav",
   "notary": "explainer/voice/notary.wav",
-  "stack": "explainer/voice/stack.wav",
   "neatlogs": "explainer/voice/neatlogs.wav",
   "entire": "explainer/voice/entire.wav",
   "cfo": "explainer/voice/cfo.wav",
@@ -12,14 +11,14 @@
  },
  "music": "explainer/audio/music.wav",
  "musicGain": 1,
- "sfxGain": 0.5973,
+ "sfxGain": 0.5949,
  "report": {
-  "totalSec": 247.73,
+  "totalSec": 174.67,
   "mixLufs": -14.2,
-  "mixPeakDb": -1.6,
+  "mixPeakDb": -1.5,
   "voiceLufs": -14.1,
   "musicLufsUnducked": -19.5,
   "duckDb": -12,
-  "cues": 100
+  "cues": 96
  }
 }

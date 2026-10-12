@@ -60,14 +60,14 @@ function mirror(src: string, sub: string): string {
   mkdirSync(dirname(dest), { recursive: true });
   const a = statSync(src);
   const b = existsSync(dest) ? statSync(dest) : null;
-  if (!b || b.size !== a.size || b.mtimeMs < a.mtimeMs) copyFileSync(src, dest);
-  // Clips get a second copy for the focus lens, so its frames come from their own decoder (two
-  // simultaneous extractions from one source made Remotion's compositor miss frames).
   if (sub === "clips") {
-    const lens = dest.replace(/.mp4$/, ".lens.mp4");
-    const c = existsSync(lens) ? statSync(lens) : null;
-    if (!c || c.size !== a.size || c.mtimeMs < a.mtimeMs) copyFileSync(src, lens);
-  }
+    // Clips are re-encoded for frame-exact seeking (constant 30 fps, every frame a keyframe): the
+    // composition shows arbitrary clip frames (time-warped), and Remotion's compositor missed frames
+    // in the recordings' original encoding. Same pixels, nothing edited.
+    if (!b || b.mtimeMs < a.mtimeMs) {
+      execFileSync(remotionBinary("ffmpeg"), ["-v", "error", "-y", "-i", src, "-an", "-r", "30", "-fps_mode", "cfr", "-c:v", "libx264", "-preset", "veryfast", "-crf", "14", "-g", "1", "-pix_fmt", "yuv420p", dest]);
+    }
+  } else if (!b || b.size !== a.size || b.mtimeMs < a.mtimeMs) copyFileSync(src, dest);
   return `explainer/${sub}/${basename(src)}`;
 }
 
@@ -131,7 +131,7 @@ function voices(text: Record<string, string>): Assets["voice"] {
 function clips(): Assets["clips"] {
   const out: Assets["clips"] = {};
   const ids = new Set<string>(CLIP_IDS);
-  if (existsSync(join(EXPL, "clips"))) for (const f of readdirSync(join(EXPL, "clips"))) if (f.endsWith(".mp4")) ids.add(f.slice(0, -4));
+  // Only the clips the film uses are mirrored (each re-encoded copy is large).
   for (const id of ids) {
     const mp4 = join(EXPL, "clips", `${id}.mp4`);
     const json = join(EXPL, "clips", `${id}.json`);
@@ -543,6 +543,16 @@ function aws(): Assets["data"]["aws"] {
   return { docPath: "docs/DEPLOY_AWS.md", docTitle: title, dir: "deploy/aws/", files: walk(dir) };
 }
 
+/** packages/core/config/cfo.json (gitignored): only the MCP server URL and the workspace name are read. */
+function cfoConnection(): Assets["data"]["cfo"] {
+  const p = join(REPO, "packages/core/config/cfo.json");
+  if (!existsSync(p)) return null;
+  const j = readJson(p) as Obj;
+  const org = isObj(j.org) ? str(j.org.name) : null;
+  const server = str(j.server);
+  return org && server ? { server, workspace: org } : null;
+}
+
 // ------------------------------------------------------------------------------- main
 
 export function prepare(): Assets {
@@ -570,6 +580,7 @@ export function prepare(): Assets {
       certificatesSource: certificates().source,
       models: models(t.traces),
       aws: aws(),
+      cfo: cfoConnection(),
       github: d.github,
     },
   };

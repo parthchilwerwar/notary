@@ -47,7 +47,7 @@ await renderMedia({
   puppeteerInstance: browser,
   browserExecutable,
   chromeMode: "chrome-for-testing",
-  concurrency: 4,
+  concurrency: 6,
   onProgress: ({ progress }) => {
     const pct = Math.floor(progress * 20) * 5;
     if (pct !== last) {

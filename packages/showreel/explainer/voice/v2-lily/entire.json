@@ -1,0 +1,226 @@
+{
+  "sectionId": "entire",
+  "voiceId": "pFZP5JQG7iQjIQuC4Bku",
+  "voiceName": "Lily - Velvety Actress",
+  "modelId": "eleven_multilingual_v2",
+  "textHash": "ad1d8aa4fb5d317fefa555b505d593077e11635b23949b8b4a63878e135975c5",
+  "text": "Entire captured how Notary was built. Seven checkpoints tie each commit to the coding-agent session that wrote it. Notary also uses Entire's code graph to prove a safety property: every call that can move money goes through a guard. Zero unguarded call sites.",
+  "durationSec": 19.148,
+  "words": [
+    {
+      "text": "Entire",
+      "startSec": 0,
+      "endSec": 0.604
+    },
+    {
+      "text": "captured",
+      "startSec": 0.65,
+      "endSec": 1.033
+    },
+    {
+      "text": "how",
+      "startSec": 1.068,
+      "endSec": 1.161
+    },
+    {
+      "text": "Notary",
+      "startSec": 1.242,
+      "endSec": 1.649
+    },
+    {
+      "text": "was",
+      "startSec": 1.707,
+      "endSec": 1.823
+    },
+    {
+      "text": "built.",
+      "startSec": 1.881,
+      "endSec": 2.426
+    },
+    {
+      "text": "Seven",
+      "startSec": 2.81,
+      "endSec": 3.193
+    },
+    {
+      "text": "checkpoints",
+      "startSec": 3.251,
+      "endSec": 3.855
+    },
+    {
+      "text": "tie",
+      "startSec": 3.913,
+      "endSec": 4.226
+    },
+    {
+      "text": "each",
+      "startSec": 4.307,
+      "endSec": 4.551
+    },
+    {
+      "text": "commit",
+      "startSec": 4.609,
+      "endSec": 4.899
+    },
+    {
+      "text": "to",
+      "startSec": 4.946,
+      "endSec": 5.004
+    },
+    {
+      "text": "the",
+      "startSec": 5.062,
+      "endSec": 5.132
+    },
+    {
+      "text": "coding-agent",
+      "startSec": 5.201,
+      "endSec": 5.921
+    },
+    {
+      "text": "session",
+      "startSec": 5.979,
+      "endSec": 6.339
+    },
+    {
+      "text": "that",
+      "startSec": 6.385,
+      "endSec": 6.502
+    },
+    {
+      "text": "wrote",
+      "startSec": 6.548,
+      "endSec": 6.838
+    },
+    {
+      "text": "it.",
+      "startSec": 6.885,
+      "endSec": 7.256
+    },
+    {
+      "text": "Notary",
+      "startSec": 7.697,
+      "endSec": 8.185
+    },
+    {
+      "text": "also",
+      "startSec": 8.243,
+      "endSec": 8.742
+    },
+    {
+      "text": "uses",
+      "startSec": 8.858,
+      "endSec": 9.3
+    },
+    {
+      "text": "Entire's",
+      "startSec": 9.381,
+      "endSec": 9.927
+    },
+    {
+      "text": "code",
+      "startSec": 9.996,
+      "endSec": 10.263
+    },
+    {
+      "text": "graph",
+      "startSec": 10.298,
+      "endSec": 10.704
+    },
+    {
+      "text": "to",
+      "startSec": 10.913,
+      "endSec": 11.029
+    },
+    {
+      "text": "prove",
+      "startSec": 11.099,
+      "endSec": 11.366
+    },
+    {
+      "text": "a",
+      "startSec": 11.389,
+      "endSec": 11.413
+    },
+    {
+      "text": "safety",
+      "startSec": 11.482,
+      "endSec": 11.865
+    },
+    {
+      "text": "property:",
+      "startSec": 11.923,
+      "endSec": 12.632
+    },
+    {
+      "text": "every",
+      "startSec": 13.073,
+      "endSec": 13.351
+    },
+    {
+      "text": "call",
+      "startSec": 13.433,
+      "endSec": 13.711
+    },
+    {
+      "text": "that",
+      "startSec": 13.769,
+      "endSec": 13.885
+    },
+    {
+      "text": "can",
+      "startSec": 13.92,
+      "endSec": 14.036
+    },
+    {
+      "text": "move",
+      "startSec": 14.106,
+      "endSec": 14.35
+    },
+    {
+      "text": "money",
+      "startSec": 14.408,
+      "endSec": 14.745
+    },
+    {
+      "text": "goes",
+      "startSec": 15.07,
+      "endSec": 15.43
+    },
+    {
+      "text": "through",
+      "startSec": 15.476,
+      "endSec": 15.743
+    },
+    {
+      "text": "a",
+      "startSec": 15.778,
+      "endSec": 15.801
+    },
+    {
+      "text": "guard.",
+      "startSec": 15.859,
+      "endSec": 16.37
+    },
+    {
+      "text": "Zero",
+      "startSec": 16.695,
+      "endSec": 17.16
+    },
+    {
+      "text": "unguarded",
+      "startSec": 17.276,
+      "endSec": 17.833
+    },
+    {
+      "text": "call",
+      "startSec": 17.903,
+      "endSec": 18.146
+    },
+    {
+      "text": "sites.",
+      "startSec": 18.216,
+      "endSec": 19.087
+    }
+  ]
+}

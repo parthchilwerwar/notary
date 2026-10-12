@@ -36,229 +36,151 @@ An agent that trusts the docs breaks on
 exactly these cases.
 
 9
-00:00:35,387 --> 00:00:40,252
-Notary is an agent that won't touch money
-until it has proven how its tools behave.
+00:00:35,387 --> 00:00:39,509
+Notary won't touch money until it has
+proven how its tools behave.
 
 10
-00:00:40,635 --> 00:00:44,362
-It reads the docs and turns every promise
-into a claim.
+00:00:39,950 --> 00:00:42,829
+It turns every promise in the docs into a
+claim,
 
 11
-00:00:44,803 --> 00:00:48,367
-Before each test call, it commits a
-prediction, hashed,
+00:00:43,212 --> 00:00:46,184
+commits a hashed prediction before each
+test call,
 
 12
-00:00:48,518 --> 00:00:50,422
-so it can't change afterwards.
+00:00:46,393 --> 00:00:49,110
+then calls the API and compares.
 
 13
-00:00:50,863 --> 00:00:53,313
-Then it calls the API and compares.
+00:00:49,923 --> 00:00:54,950
+A Reflector proposes explanations, and a
+stronger Adversary tries to refute them.
 
 14
-00:00:53,754 --> 00:00:56,087
-A Reflector proposes explanations.
+00:00:55,647 --> 00:00:58,955
+In our runs, it narrowed all five beliefs.
 
 15
-00:00:56,366 --> 00:01:00,731
-A stronger Adversary, running on a
-different model, tries to refute them.
+00:00:59,338 --> 00:01:01,533
+What survives becomes a certificate.
 
 16
-00:01:01,173 --> 00:01:05,874
-In our runs, it narrowed all five beliefs
-instead of rubber-stamping them.
+00:01:01,974 --> 00:01:07,326
+No certificate, no money moves: the Guard
+holds anything uncovered for a person to
 
 17
-00:01:06,316 --> 00:01:10,542
-What survives becomes a certificate, valid
-only where it was tested.
+00:01:07,407 --> 00:01:08,405
+review.
 
 18
-00:01:10,983 --> 00:01:12,248
-And the rule is simple.
+00:01:08,858 --> 00:01:12,689
+neatlogs is how we looked into these
+incidents and checked how each one was
 
 19
-00:01:12,690 --> 00:01:15,255
-No certificate, no money moves.
+00:01:12,747 --> 00:01:13,421
+resolved.
 
 20
-00:01:15,638 --> 00:01:19,597
-The Guard holds anything uncovered for a
-person to review.
+00:01:13,862 --> 00:01:18,866
+Each run is one trace, with every probe
+and model call behind it.
 
 21
-00:01:20,065 --> 00:01:24,848
-Dodo Payments is where the money moves:
-refunds, credits and plan changes,
+00:01:19,377 --> 00:01:23,927
+On the Crustdata run, the trace showed a
+disputed claim's prediction,
 
 22
-00:01:25,057 --> 00:01:26,590
-run in test mode.
+00:01:24,252 --> 00:01:28,548
+logged with its hash before the call, and
+an inconclusive result.
 
 23
-00:01:27,286 --> 00:01:31,176
-Notary certified four Dodo behaviors
-before trusting them,
+00:01:28,989 --> 00:01:33,297
+So Notary abstained, and no payment can
+depend on that claim.
 
 24
-00:01:31,350 --> 00:01:35,762
-from page limits to wallet credit units
-and idempotency keys.
+00:01:33,900 --> 00:01:38,927
+Two more mismatches stay open and
+uncertified, so the Guard blocks them.
 
 25
-00:01:36,575 --> 00:01:41,660
-Crustdata tells the agent who each
-customer is, so the right policy applies.
+00:01:39,624 --> 00:01:44,233
+On the Dodo run, the trace showed the
+Adversary narrowing four beliefs,
 
 26
-00:01:41,985 --> 00:01:44,760
-The models run through a LiteLLM gateway,
+00:01:44,407 --> 00:01:47,576
+like wallet credits in minor units only
+for US dollars,
 
 27
-00:01:44,969 --> 00:01:47,546
-with Claude as the Reflector and
-Adversary.
+00:01:47,855 --> 00:01:51,210
+so Notary certified only that narrower
+scope.
 
 28
-00:01:47,929 --> 00:01:54,907
-And Notary is built to run on AWS: deploy
-scripts for a read-only hosted API on ECS,
-
-29
-00:01:55,081 --> 00:01:58,065
-and Amazon Bedrock as a drop-in model
-provider,
-
-30
-00:01:58,216 --> 00:02:03,533
-so the agents and their models can run
-inside a team's own AWS account.
-
-31
-00:02:03,985 --> 00:02:06,771
-We used neatlogs to look inside every run.
-
-32
-00:02:07,155 --> 00:02:13,261
-Each run is one trace: every probe, every
-model call, every guard decision,
-
-33
-00:02:13,470 --> 00:02:14,817
-labelled by agent.
-
-34
-00:02:15,258 --> 00:02:19,752
-On the Crustdata run, the trace shows the
-probe for one disputed claim.
-
-35
-00:02:20,193 --> 00:02:24,477
-Its prediction is logged, with its hash,
-before the call is made.
-
-36
-00:02:24,802 --> 00:02:29,748
-The result came back inconclusive, so
-Notary resolved it the safe way:
-
-37
-00:02:30,131 --> 00:02:34,229
-it abstained, and no payment can depend on
-that claim.
-
-38
-00:02:35,344 --> 00:02:40,417
-Two more mismatches, lookups that error
-where the docs promise an empty result,
-
-39
-00:02:40,568 --> 00:02:41,660
-are still open.
-
-40
-00:02:42,170 --> 00:02:46,814
-Notary hasn't certified them, so the Guard
-won't let money depend on them either.
-
-41
-00:02:47,627 --> 00:02:52,805
-On the Dodo run, the trace shows the
-Adversary narrowing four beliefs instead
-
-42
-00:02:52,851 --> 00:02:54,442
-of upholding them as written.
-
-43
-00:02:54,953 --> 00:02:59,109
-Wallet credits, for example, are in minor
-units only for US dollars.
-
-44
-00:02:59,550 --> 00:03:04,589
-Notary resolved those by certifying only
-the narrower scope it had proven.
-
-45
-00:03:05,041 --> 00:03:07,467
+00:01:51,681 --> 00:01:54,107
 Entire captured how Notary was built.
 
-46
-00:03:07,851 --> 00:03:12,297
+29
+00:01:54,491 --> 00:01:58,937
 Seven checkpoints tie each commit to the
 coding-agent session that wrote it.
 
-47
-00:03:12,738 --> 00:03:17,673
+30
+00:01:59,378 --> 00:02:04,313
 Notary also uses Entire's code graph to
 prove a safety property:
 
-48
-00:03:18,114 --> 00:03:21,411
+31
+00:02:04,754 --> 00:02:08,051
 every call that can move money goes
 through a guard.
 
-49
-00:03:21,736 --> 00:03:24,128
+32
+00:02:08,376 --> 00:02:10,768
 Zero unguarded call sites.
 
-50
-00:03:24,589 --> 00:03:29,779
-And Notary measures what certainty costs:
+33
+00:02:11,229 --> 00:02:13,714
+cfo.ai runs the business side.
+
+34
+00:02:14,143 --> 00:02:19,089
+Notary measures what certainty costs,
 about three cents of model spend and
 
-51
-00:03:29,860 --> 00:03:32,124
-fifteen Crustdata credits per run.
+35
+00:02:19,170 --> 00:02:25,567
+fifteen Crustdata credits per run, exports
+those real costs to cfo.ai as a data
 
-52
-00:03:32,565 --> 00:03:37,917
-It exports those numbers for cfo.ai to
-build the business plan on.
+36
+00:02:25,613 --> 00:02:31,302
+source, and connects to cfo.ai's MCP
+server to sync the plan back.
 
-53
-00:03:38,390 --> 00:03:40,422
-So here is what Notary proved.
+37
+00:02:31,511 --> 00:02:34,449
+And it's built to deploy on AWS.
 
-54
-00:03:40,747 --> 00:03:43,278
-Three documented claims that didn't hold.
+38
+00:02:34,904 --> 00:02:39,827
+On our test suite, the agent without
+Notary made nine unsafe money moves.
 
-55
-00:03:43,522 --> 00:03:47,179
-Five certificates, each one narrowed by
-the Adversary.
+39
+00:02:40,105 --> 00:02:44,099
+With Notary, zero, and nine refunds held
+for review.
 
-56
-00:03:47,504 --> 00:03:51,289
-Zero unguarded money calls, at about three
-cents a run.
-
-57
-00:03:51,730 --> 00:03:55,759
+40
+00:02:44,540 --> 00:02:48,325
 Notary. No certificate, no money moves.

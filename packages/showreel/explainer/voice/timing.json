@@ -15,32 +15,27 @@
     {
       "id": "notary",
       "startSec": 35.387,
-      "durationSec": 44.278
-    },
-    {
-      "id": "stack",
-      "startSec": 80.065,
-      "durationSec": 43.52
+      "durationSec": 33.071
     },
     {
       "id": "neatlogs",
-      "startSec": 123.985,
-      "durationSec": 60.656
+      "startSec": 68.858,
+      "durationSec": 42.423
     },
     {
       "id": "entire",
-      "startSec": 185.041,
+      "startSec": 111.681,
       "durationSec": 19.148
     },
     {
       "id": "cfo",
-      "startSec": 204.589,
-      "durationSec": 13.401
+      "startSec": 131.229,
+      "durationSec": 23.275
     },
     {
       "id": "close",
-      "startSec": 218.39,
-      "durationSec": 17.424
+      "startSec": 154.904,
+      "durationSec": 13.479
     }
   ]
 }

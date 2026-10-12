@@ -1,0 +1,191 @@
+{
+  "sectionId": "close",
+  "voiceId": "pFZP5JQG7iQjIQuC4Bku",
+  "voiceName": "Lily - Velvety Actress",
+  "modelId": "eleven_multilingual_v2",
+  "textHash": "bdd0bc8b0ba48875de8d53e7517f33cc2baff009d350b6523a044d5396d5b45c",
+  "text": "So here is what Notary proved. Three documented claims that didn't hold. Five certificates, each one narrowed by the Adversary. Zero unguarded money calls, at about three cents a run. Notary. No certificate, no money moves.",
+  "durationSec": 17.424,
+  "words": [
+    {
+      "text": "So",
+      "startSec": 0,
+      "endSec": 0.209
+    },
+    {
+      "text": "here",
+      "startSec": 0.29,
+      "endSec": 0.488
+    },
+    {
+      "text": "is",
+      "startSec": 0.522,
+      "endSec": 0.604
+    },
+    {
+      "text": "what",
+      "startSec": 0.65,
+      "endSec": 0.801
+    },
+    {
+      "text": "Notary",
+      "startSec": 0.871,
+      "endSec": 1.3
+    },
+    {
+      "text": "proved.",
+      "startSec": 1.382,
+      "endSec": 2.032
+    },
+    {
+      "text": "Three",
+      "startSec": 2.357,
+      "endSec": 2.682
+    },
+    {
+      "text": "documented",
+      "startSec": 2.74,
+      "endSec": 3.309
+    },
+    {
+      "text": "claims",
+      "startSec": 3.355,
+      "endSec": 3.796
+    },
+    {
+      "text": "that",
+      "startSec": 3.855,
+      "endSec": 4.017
+    },
+    {
+      "text": "didn't",
+      "startSec": 4.087,
+      "endSec": 4.377
+    },
+    {
+      "text": "hold.",
+      "startSec": 4.435,
+      "endSec": 4.888
+    },
+    {
+      "text": "Five",
+      "startSec": 5.132,
+      "endSec": 5.503
+    },
+    {
+      "text": "certificates,",
+      "startSec": 5.538,
+      "endSec": 6.351
+    },
+    {
+      "text": "each",
+      "startSec": 6.56,
+      "endSec": 6.815
+    },
+    {
+      "text": "one",
+      "startSec": 6.885,
+      "endSec": 7.129
+    },
+    {
+      "text": "narrowed",
+      "startSec": 7.187,
+      "endSec": 7.605
+    },
+    {
+      "text": "by",
+      "startSec": 7.663,
+      "endSec": 7.767
+    },
+    {
+      "text": "the",
+      "startSec": 7.825,
+      "endSec": 7.895
+    },
+    {
+      "text": "Adversary.",
+      "startSec": 7.964,
+      "endSec": 8.789
+    },
+    {
+      "text": "Zero",
+      "startSec": 9.114,
+      "endSec": 9.532
+    },
+    {
+      "text": "unguarded",
+      "startSec": 9.659,
+      "endSec": 10.217
+    },
+    {
+      "text": "money",
+      "startSec": 10.275,
+      "endSec": 10.472
+    },
+    {
+      "text": "calls,",
+      "startSec": 10.519,
+      "endSec": 11.041
+    },
+    {
+      "text": "at",
+      "startSec": 11.192,
+      "endSec": 11.355
+    },
+    {
+      "text": "about",
+      "startSec": 11.389,
+      "endSec": 11.622
+    },
+    {
+      "text": "three",
+      "startSec": 11.668,
+      "endSec": 11.935
+    },
+    {
+      "text": "cents",
+      "startSec": 11.981,
+      "endSec": 12.295
+    },
+    {
+      "text": "a",
+      "startSec": 12.341,
+      "endSec": 12.365
+    },
+    {
+      "text": "run.",
+      "startSec": 12.434,
+      "endSec": 12.899
+    },
+    {
+      "text": "Notary.",
+      "startSec": 13.34,
+      "endSec": 14.106
+    },
+    {
+      "text": "No",
+      "startSec": 14.547,
+      "endSec": 14.745
+    },
+    {
+      "text": "certificate,",
+      "startSec": 14.814,
+      "endSec": 15.662
+    },
+    {
+      "text": "no",
+      "startSec": 16.045,
+      "endSec": 16.242
+    },
+    {
+      "text": "money",
+      "startSec": 16.335,
+      "endSec": 16.556
+    },
+    {
+      "text": "moves.",
+      "startSec": 16.614,
+      "endSec": 17.369
+    }
+  ]
+}

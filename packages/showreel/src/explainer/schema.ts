@@ -6,7 +6,7 @@
 // file or a placeholder still waiting for it.
 import { z } from "zod";
 
-export const SECTION_IDS = ["intro", "problem", "notary", "stack", "neatlogs", "entire", "cfo", "close"] as const;
+export const SECTION_IDS = ["intro", "problem", "notary", "neatlogs", "entire", "cfo", "close"] as const;
 export type SectionId = (typeof SECTION_IDS)[number];
 
 export const WordSchema = z.object({ text: z.string(), startSec: z.number(), endSec: z.number() });
@@ -162,6 +162,8 @@ export const AssetsSchema = z.object({
     models: z.array(z.object({ agent: z.string(), model: z.string(), provider: z.string().nullable() })),
     /** The AWS deploy kit as it is in the repo (file names + the deploy doc's title); nothing about a running deployment. */
     aws: z.object({ docPath: z.string(), docTitle: z.string(), dir: z.string(), files: z.array(z.string()) }),
+    /** The cfo.ai MCP connection as configured (server + workspace name only; never tokens). */
+    cfo: z.object({ server: z.string(), workspace: z.string() }).nullable(),
     github: z.string(),
   }),
 });

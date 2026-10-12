@@ -20,7 +20,6 @@ export const SECTION_TITLES: Record<SectionId, string> = {
   intro: "Notary",
   problem: "The problem",
   notary: "What Notary does",
-  stack: "The stack",
   neatlogs: "neatlogs",
   entire: "Entire",
   cfo: "cfo.ai",
@@ -37,7 +36,7 @@ export const CARD = { in: 12, dock: 22, docked: 34, content: 20 } as const;
  * White page + grid. Zooms through: the scene arrives from slightly larger as it fades in over the
  * previous one (which keeps drawing for OVERLAP frames and recedes). Opens on its title card.
  */
-export function SceneShell({ id, children, dur, bg = C.page, card = true }: { id: SectionId; children: ReactNode; dur: number; bg?: string; card?: boolean }) {
+export function SceneShell({ id, children, dur, bg = C.page, card = false }: { id: SectionId; children: ReactNode; dur: number; bg?: string; card?: boolean }) {
   const frame = useCurrentFrame();
   const a = p(frame, 0, OVERLAP + 4, OUT);
   const out = p(frame, dur, OVERLAP, IN);
@@ -46,7 +45,7 @@ export function SceneShell({ id, children, dur, bg = C.page, card = true }: { id
     <div style={{ position: "absolute", inset: 0, opacity: a, background: bg, overflow: "hidden", transform: `scale(${mix(a, 1.07, 1) * mix(out, 1, 0.93)})`, transformOrigin: "50% 45%" }}>
       <Frame color={C.hairline} node={C.hairline} fill={C.page} opacity={0.9} />
       <div style={{ position: "absolute", inset: 0, opacity: content, transform: `translateY(${(1 - content) * 28}px) scale(${mix(content, 0.985, 1)})` }}>{children}</div>
-      {card && <TitleCard id={id} />}
+      {card ? <TitleCard id={id} /> : <Kicker n={sectionNumber(id)} label={SECTION_TITLES[id]} opacity={p(frame, 4, 14)} />}
     </div>
   );
 }
@@ -362,10 +361,8 @@ export function ClipShot({ shot, fallback, tag, overlay, frameStyle, width = 144
     const pb = toBody(ptr.x, ptr.y);
     overlays = (
       <>
-        {ripples}
-        {lens}
         {callouts}
-        {ptr.visible > 0 && <Pointer x={pb.x} y={pb.y} press={press} lift={ptr.lift} />}
+        {ptr.visible > 0 && <Pointer x={pb.x} y={pb.y} press={press} lift={0} />}
       </>
     );
   }
@@ -373,7 +370,7 @@ export function ClipShot({ shot, fallback, tag, overlay, frameStyle, width = 144
     <div style={{ position: "absolute", left: (W - width) / 2, top: 112, width, opacity: enter, transform: `translateY(${(1 - enter) * 50}px) scale(${mix(enter, 0.96, 1)})`, transformOrigin: "50% 0", ...frameStyle }}>
       {real ? (
         <div style={{ width: BODY_W, transform: `scale(${scale})`, transformOrigin: "0 0" }}>
-          <BrowserFrame address={clip.url ? `127.0.0.1:5173${clip.url.replace(/^https?:\/\/[^/]+/, "")}` : undefined} tag={tag}>
+          <BrowserFrame address={clip.url ? `127.0.0.1:5173${clip.url.replace(/^https?:\/\/[^/]+/, "").replace(/\?.*$/, "")}` : undefined} tag={tag}>
             <div style={{ position: "relative", width: BODY_W, height: BODY_H, overflow: "hidden", background: C.page }}>
               {inner}
               {overlays}

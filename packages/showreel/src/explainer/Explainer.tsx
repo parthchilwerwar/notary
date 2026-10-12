@@ -13,12 +13,11 @@ import { IntroSky } from "./scenes/Sky";
 import { Problem } from "./scenes/Problem";
 import { NotaryScene } from "./scenes/NotaryScene";
 import { Neatlogs } from "./scenes/Neatlogs";
-import { StackScene } from "./scenes/Stack";
 import { ProgressBar } from "./kit";
 import { P } from "./plan";
 import { CfoScene, CloseScene, EntireScene } from "./scenes/Closing";
 
-const SCENES = { intro: IntroSky, problem: Problem, notary: NotaryScene, stack: StackScene, neatlogs: Neatlogs, entire: EntireScene, cfo: CfoScene, close: CloseScene } as const;
+const SCENES = { intro: IntroSky, problem: Problem, notary: NotaryScene, neatlogs: Neatlogs, entire: EntireScene, cfo: CfoScene, close: CloseScene } as const;
 
 /** Assets still missing (shown as a small corner badge in previews; the final render has none). */
 export const PENDING = [
