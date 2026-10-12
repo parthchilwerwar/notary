@@ -17,7 +17,8 @@
       "onPath": true,
       "checkpointRefs": [
         "refs/entire/checkpoints/S7/01M4Q2JS4B3N3B42W0X9MGNSS7",
-        "refs/entire/checkpoints/V1/01M4Q2CJDTHF76EE7QK11TEEV1"
+        "refs/entire/checkpoints/V1/01M4Q2CJDTHF76EE7QK11TEEV1",
+        "refs/entire/checkpoints/W2/01M4QFBNF7X6DEY607639689W2"
       ]
     },
     "businessPlan": true,
