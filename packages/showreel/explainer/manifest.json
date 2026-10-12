@@ -1,0 +1,22 @@
+{
+  "title": "Notary — neatHack submission video",
+  "fps": 30,
+  "width": 1920,
+  "height": 1080,
+  "narration": "docs/video/NARRATION.md",
+  "contract": {
+    "voice": "explainer/voice/<sectionId>.mp3 + explainer/voice/<sectionId>.json  { sectionId, durationSec, words: [{ text, startSec, endSec }] }  (ElevenLabs with-timestamps; written by the voice agent)",
+    "clips": "explainer/clips/<clipId>.mp4 (1920x1080, 30fps, no cursor drawn) + explainer/clips/<clipId>.json  { clipId, durationSec, url, events: [{ tSec, type: 'move'|'click'|'scroll'|'type', x, y, label? }] }  (Playwright recordings of the real dashboard; written by the recording agent)",
+    "data": "explainer/data/*.json — real artifacts for rendered scenes: traces.json (neatlogs spans fetched via the traces API), coverage.txt (real `notary guards coverage --backend entire` output), entire.json/economics.json/incidents copied from packages/web/public",
+    "userSlots": "explainer/user/neatlogs-incidents.mp4 (optional: the user's own screen recording of neatlogs' critical-incidents view; when present it replaces the rendered trace scene)"
+  },
+  "sections": [
+    { "id": "intro", "visual": "motion graphic intro (showreel v2 sky + headline)", "clips": [] },
+    { "id": "problem", "visual": "Run page of the real Crustdata notarize run, its 3 checker anomalies / incidents", "clips": ["crustdata-anomalies"] },
+    { "id": "notary", "visual": "five steps; transcript row with committed prediction; certificate detail with Adversary 'narrowed'; certificates grid; held card (evaluation suite, labelled)", "clips": ["transcript-prediction", "certificate-adversary", "certificates-grid", "approvals-held"] },
+    { "id": "neatlogs", "visual": "neatlogs trace 9db41ecd43406cef291c93ef8c9ab1cd (prediction span before tool span, 400) then trace a0e6fda50d71… (Adversary narrowing); dashboard incidents with resolution", "clips": ["incidents-resolution"] },
+    { "id": "entire", "visual": "Entire checkpoints (7) from entire.json; terminal with real coverage output: 0 unguarded call sites", "clips": [] },
+    { "id": "cfo", "visual": "economics page with real per-run cost; cfo-inputs export", "clips": ["economics"] },
+    { "id": "close", "visual": "stats 9 → 0, 9 held — label 'Evaluation suite — simulated APIs, not a live run'; closing sky, wordmark, github URL", "clips": [] }
+  ]
+}

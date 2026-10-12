@@ -1,0 +1,118 @@
+{
+  "clipId": "approvals-held",
+  "durationSec": 14.133,
+  "url": "/app/approvals?run=demo-run-guarded&fixtures=1",
+  "finalUrl": "/app/approvals?run=demo-run-guarded&fixtures=1",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "coordinates": "viewport pixels of the 1920x1080 frame",
+  "events": [
+    {
+      "tSec": 0,
+      "type": "move",
+      "x": 1500,
+      "y": 640,
+      "label": "start"
+    },
+    {
+      "tSec": 0.669,
+      "type": "move",
+      "x": 1500,
+      "y": 640
+    },
+    {
+      "tSec": 1.37,
+      "type": "move",
+      "x": 963,
+      "y": 106,
+      "label": "fixture label"
+    },
+    {
+      "tSec": 3.078,
+      "type": "move",
+      "x": 963,
+      "y": 106
+    },
+    {
+      "tSec": 3.619,
+      "type": "move",
+      "x": 592,
+      "y": 566,
+      "label": "held by the guard"
+    },
+    {
+      "tSec": 5.009,
+      "type": "move",
+      "x": 592,
+      "y": 566
+    },
+    {
+      "tSec": 5.462,
+      "type": "move",
+      "x": 728,
+      "y": 615,
+      "label": "why it was held"
+    },
+    {
+      "tSec": 6.947,
+      "type": "move",
+      "x": 728,
+      "y": 615
+    },
+    {
+      "tSec": 7.401,
+      "type": "move",
+      "x": 812,
+      "y": 430,
+      "label": "recorded run: not approvable"
+    },
+    {
+      "tSec": 9.064,
+      "type": "move",
+      "x": 812,
+      "y": 430
+    },
+    {
+      "tSec": 9.529,
+      "type": "move",
+      "x": 583,
+      "y": 670,
+      "label": "show evidence and trail"
+    },
+    {
+      "tSec": 9.656,
+      "type": "click",
+      "x": 583,
+      "y": 670,
+      "label": "show evidence and trail"
+    },
+    {
+      "tSec": 10.825,
+      "type": "move",
+      "x": 583,
+      "y": 670
+    },
+    {
+      "tSec": 11.277,
+      "type": "move",
+      "x": 789,
+      "y": 789,
+      "label": "missing belief (abstained)"
+    },
+    {
+      "tSec": 12.278,
+      "type": "move",
+      "x": 789,
+      "y": 789
+    },
+    {
+      "tSec": 12.729,
+      "type": "move",
+      "x": 660,
+      "y": 816,
+      "label": "belief-dodo.payments.page-size-max-100"
+    }
+  ]
+}

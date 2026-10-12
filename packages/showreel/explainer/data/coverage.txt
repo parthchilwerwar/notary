@@ -1,0 +1,49 @@
+notary guards coverage  backend: entire
+  entire graph edges (entire-graph v0.4.0, working tree): 8640 call and 402 construct relations scanned, 2 reach a raw client; wiring and createTools() checks via TypeScript
+  entire graph edges --repo . --format ndjson --worktree --relation CALLS,ASYNC_CALLS,CONSTRUCTS
+  graph: entire-graph v0.4.0, commit 4ff95480a5c4 + working tree, completeness ok, 0 partial failures
+
+Raw client methods (18 public methods from the class declarations)
+  OP                            STATUS   CALL SITE                             DETAIL
+  crustdata.enrichCompany       guarded  packages/core/src/tools/index.ts:118  exposed(crustdata, CRUSTDATA_OPS, wrap) -> wrap(op, raw.bind(client))
+  crustdata.getCreditBalance    guarded  packages/core/src/tools/index.ts:120  exposed(crustdata, CRUSTDATA_OPS, wrap) -> wrap(op, raw.bind(client))
+  crustdata.identifyCompany     guarded  packages/core/src/tools/index.ts:119  exposed(crustdata, CRUSTDATA_OPS, wrap) -> wrap(op, raw.bind(client))
+  dodo.changeSubscriptionPlan   guarded  packages/core/src/tools/index.ts:135  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))
+  dodo.createCheckoutSession    guarded  packages/core/src/tools/index.ts:128  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))
+  dodo.createCustomer           guarded  packages/core/src/tools/index.ts:124  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))
+  dodo.createPayment            guarded  packages/core/src/tools/index.ts:127  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))
+  dodo.createProduct            guarded  packages/core/src/tools/index.ts:126  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))
+  dodo.createRefund             guarded  packages/core/src/tools/index.ts:131  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))
+  dodo.createWalletLedgerEntry  guarded  packages/core/src/tools/index.ts:137  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))
+  dodo.getPayment               guarded  packages/core/src/tools/index.ts:129  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))
+  dodo.getRefund                guarded  packages/core/src/tools/index.ts:133  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))
+  dodo.getSubscription          guarded  packages/core/src/tools/index.ts:134  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))
+  dodo.listCustomers            guarded  packages/core/src/tools/index.ts:125  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))
+  dodo.listCustomerWallets      guarded  packages/core/src/tools/index.ts:136  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))
+  dodo.listPayments             guarded  packages/core/src/tools/index.ts:130  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))
+  dodo.listRefunds              guarded  packages/core/src/tools/index.ts:132  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))
+  dodo.listWalletLedgerEntries  guarded  packages/core/src/tools/index.ts:138  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))
+
+Raw client constructions
+  OP                   STATUS   CALL SITE                             DETAIL
+  new CrustdataClient  guarded  packages/core/src/tools/index.ts:219  exposed(crustdata, CRUSTDATA_OPS, wrap) -> wrap(op, raw.bind(client))
+  new DodoClient       guarded  packages/core/src/tools/index.ts:225  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))
+
+createTools() calls
+  OP             STATUS         CALL SITE                                  DETAIL
+  createTools()  raw-by-design  packages/core/scripts/seed-dodo.ts:135     seeding: builds the test-mode world (including the states guards exist to block) before any belief exists
+  createTools()  guarded        packages/core/src/api/approvals.ts:433     wrap: gctx.wrap
+  createTools()  guarded        packages/core/src/api/health.ts:134        wrap: readOnlyProbeWrap(["crustdata.getCreditBalance"])
+  createTools()  guarded        packages/core/src/api/health.ts:150        wrap: readOnlyProbeWrap(["dodo.listCustomers"])
+  createTools()  guarded        packages/core/src/chat/tools.ts:616        wrap: chatReadOnlyWrap(["crustdata.enrichCompany"])
+  createTools()  guarded        packages/core/src/chat/tools.ts:677        wrap: chatReadOnlyWrap([`dodo.${method}`])
+  createTools()  raw-by-design  packages/core/src/checker/recon.ts:168     probing: the recon sweep measures the raw tool behavior that guards would hide (DECISIONS #56)
+  createTools()  raw-by-design  packages/core/src/queue/run.ts:265         wrap: wrap can be identityWrap; naive baseline: `gctx?.wrap ?? identityWrap` is identity only for --variant naive, the unguarded control
+  createTools()  raw-by-design  packages/core/src/queue/run.ts:279         wrap: wrap can be identityWrap; naive baseline: `gctx?.wrap ?? identityWrap` is identity only for --variant naive, the unguarded control
+  createTools()  guarded        packages/core/src/queue/run.ts:502         wrap: gctx.wrap
+  createTools()  raw-by-design  packages/core/src/reflect/notarize.ts:207  probing (replay of recorded probes, incl. drift): probes must see the raw response (DECISIONS #56)
+  createTools()  raw-by-design  packages/core/src/reflect/notarize.ts:230  probing: re-verification sentinel probes must see the raw response, never the guards they re-verify (DECISIONS #56, #105)
+  createTools()  raw-by-design  packages/core/src/reflect/notarize.ts:430  probing: probes must see the raw response to confirm or refute a belief (DECISIONS #56)
+
+Totals: 33 sites, 26 guarded, 7 raw-by-design, 0 UNGUARDED (18 ops)
+unguarded_call_sites = 0

@@ -1,0 +1,137 @@
+{
+  "clipId": "transcript-prediction",
+  "durationSec": 12.433,
+  "url": "/app/run?run=notarize-crustdata-20261012T011404Z&speed=instant&view=order",
+  "finalUrl": "/app/run?run=notarize-crustdata-20261012T011404Z&speed=instant&view=order",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "coordinates": "viewport pixels of the 1920x1080 frame",
+  "events": [
+    {
+      "tSec": 0,
+      "type": "move",
+      "x": 1500,
+      "y": 640,
+      "label": "start"
+    },
+    {
+      "tSec": 0,
+      "type": "move",
+      "x": 1500,
+      "y": 640
+    },
+    {
+      "tSec": 0.475,
+      "type": "move",
+      "x": 1000,
+      "y": 480
+    },
+    {
+      "tSec": 0.501,
+      "type": "move",
+      "x": 1000,
+      "y": 480
+    },
+    {
+      "tSec": 1.06,
+      "type": "move",
+      "x": 620,
+      "y": 377,
+      "label": "committed prediction (before the call)"
+    },
+    {
+      "tSec": 1.184,
+      "type": "click",
+      "x": 620,
+      "y": 377,
+      "label": "committed prediction (before the call)"
+    },
+    {
+      "tSec": 2.21,
+      "type": "move",
+      "x": 620,
+      "y": 377
+    },
+    {
+      "tSec": 2.829,
+      "type": "move",
+      "x": 1236,
+      "y": 279,
+      "label": "prediction hash"
+    },
+    {
+      "tSec": 4.062,
+      "type": "move",
+      "x": 1236,
+      "y": 279
+    },
+    {
+      "tSec": 4.52,
+      "type": "move",
+      "x": 977,
+      "y": 248,
+      "label": "commit time"
+    },
+    {
+      "tSec": 5.53,
+      "type": "move",
+      "x": 977,
+      "y": 248
+    },
+    {
+      "tSec": 6.212,
+      "type": "move",
+      "x": 620,
+      "y": 430,
+      "label": "observation: status 403"
+    },
+    {
+      "tSec": 6.347,
+      "type": "click",
+      "x": 620,
+      "y": 430,
+      "label": "observation: status 403"
+    },
+    {
+      "tSec": 7.468,
+      "type": "move",
+      "x": 620,
+      "y": 430
+    },
+    {
+      "tSec": 8.062,
+      "type": "move",
+      "x": 1106,
+      "y": 349,
+      "label": "predicted (committed first)"
+    },
+    {
+      "tSec": 9.088,
+      "type": "move",
+      "x": 1106,
+      "y": 349
+    },
+    {
+      "tSec": 9.547,
+      "type": "move",
+      "x": 1486,
+      "y": 349,
+      "label": "observed"
+    },
+    {
+      "tSec": 10.478,
+      "type": "move",
+      "x": 1486,
+      "y": 349
+    },
+    {
+      "tSec": 10.928,
+      "type": "move",
+      "x": 1535,
+      "y": 426,
+      "label": "observed status 403"
+    }
+  ]
+}

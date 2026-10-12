@@ -1,0 +1,531 @@
+{
+  "sectionId": "notary",
+  "voiceId": "onwK4e9ZLuTAKqWW03F9",
+  "voiceName": "Daniel - Steady Broadcaster",
+  "modelId": "eleven_multilingual_v2",
+  "textHash": "554da43c7f7bfdbcfec9f6a3f9d1cad54add9f47ea544072a451c7e974ffa551",
+  "text": "Notary is an agent that won't touch money until it has proven how its tools behave. It reads the docs and turns every promise into a claim. Before each test call, it commits a prediction, hashed, so it can't change afterwards. Then it calls the live API and compares. A Reflector proposes explanations. A stronger Adversary, running on a different model, tries to refute them. On our live runs, it narrowed all five beliefs instead of rubber-stamping them. What survives becomes a certificate, valid only where it was tested. No certificate, no money moves: the Guard holds anything uncovered for a person to review.",
+  "durationSec": 48.823,
+  "words": [
+    {
+      "text": "Notary",
+      "startSec": 0,
+      "endSec": 0.499
+    },
+    {
+      "text": "is",
+      "startSec": 0.569,
+      "endSec": 0.662
+    },
+    {
+      "text": "an",
+      "startSec": 0.708,
+      "endSec": 0.778
+    },
+    {
+      "text": "agent",
+      "startSec": 0.848,
+      "endSec": 1.207
+    },
+    {
+      "text": "that",
+      "startSec": 1.254,
+      "endSec": 1.405
+    },
+    {
+      "text": "won't",
+      "startSec": 1.474,
+      "endSec": 1.741
+    },
+    {
+      "text": "touch",
+      "startSec": 1.788,
+      "endSec": 2.032
+    },
+    {
+      "text": "money",
+      "startSec": 2.101,
+      "endSec": 2.392
+    },
+    {
+      "text": "until",
+      "startSec": 2.775,
+      "endSec": 3.053
+    },
+    {
+      "text": "it",
+      "startSec": 3.1,
+      "endSec": 3.158
+    },
+    {
+      "text": "has",
+      "startSec": 3.193,
+      "endSec": 3.286
+    },
+    {
+      "text": "proven",
+      "startSec": 3.355,
+      "endSec": 3.773
+    },
+    {
+      "text": "how",
+      "startSec": 4.098,
+      "endSec": 4.249
+    },
+    {
+      "text": "its",
+      "startSec": 4.307,
+      "endSec": 4.435
+    },
+    {
+      "text": "tools",
+      "startSec": 4.481,
+      "endSec": 4.807
+    },
+    {
+      "text": "behave.",
+      "startSec": 4.865,
+      "endSec": 5.608
+    },
+    {
+      "text": "It",
+      "startSec": 5.991,
+      "endSec": 6.13
+    },
+    {
+      "text": "reads",
+      "startSec": 6.211,
+      "endSec": 6.513
+    },
+    {
+      "text": "the",
+      "startSec": 6.56,
+      "endSec": 6.629
+    },
+    {
+      "text": "docs",
+      "startSec": 6.687,
+      "endSec": 7.082
+    },
+    {
+      "text": "and",
+      "startSec": 7.291,
+      "endSec": 7.465
+    },
+    {
+      "text": "turns",
+      "startSec": 7.523,
+      "endSec": 7.93
+    },
+    {
+      "text": "every",
+      "startSec": 8.081,
+      "endSec": 8.452
+    },
+    {
+      "text": "promise",
+      "startSec": 8.522,
+      "endSec": 9.079
+    },
+    {
+      "text": "into",
+      "startSec": 9.23,
+      "endSec": 9.509
+    },
+    {
+      "text": "a",
+      "startSec": 9.59,
+      "endSec": 9.613
+    },
+    {
+      "text": "claim.",
+      "startSec": 9.683,
+      "endSec": 10.31
+    },
+    {
+      "text": "Before",
+      "startSec": 10.913,
+      "endSec": 11.262
+    },
+    {
+      "text": "each",
+      "startSec": 11.32,
+      "endSec": 11.517
+    },
+    {
+      "text": "test",
+      "startSec": 11.575,
+      "endSec": 11.831
+    },
+    {
+      "text": "call,",
+      "startSec": 11.877,
+      "endSec": 12.307
+    },
+    {
+      "text": "it",
+      "startSec": 12.481,
+      "endSec": 12.608
+    },
+    {
+      "text": "commits",
+      "startSec": 12.655,
+      "endSec": 12.968
+    },
+    {
+      "text": "a",
+      "startSec": 13.015,
+      "endSec": 13.038
+    },
+    {
+      "text": "prediction,",
+      "startSec": 13.096,
+      "endSec": 13.804
+    },
+    {
+      "text": "hashed,",
+      "startSec": 14.013,
+      "endSec": 14.594
+    },
+    {
+      "text": "so",
+      "startSec": 14.768,
+      "endSec": 14.907
+    },
+    {
+      "text": "it",
+      "startSec": 14.977,
+      "endSec": 15.046
+    },
+    {
+      "text": "can't",
+      "startSec": 15.093,
+      "endSec": 15.371
+    },
+    {
+      "text": "change",
+      "startSec": 15.43,
+      "endSec": 15.929
+    },
+    {
+      "text": "afterwards.",
+      "startSec": 15.975,
+      "endSec": 16.823
+    },
+    {
+      "text": "Then",
+      "startSec": 17.183,
+      "endSec": 17.357
+    },
+    {
+      "text": "it",
+      "startSec": 17.403,
+      "endSec": 17.461
+    },
+    {
+      "text": "calls",
+      "startSec": 17.519,
+      "endSec": 17.798
+    },
+    {
+      "text": "the",
+      "startSec": 17.844,
+      "endSec": 17.902
+    },
+    {
+      "text": "live",
+      "startSec": 17.961,
+      "endSec": 18.262
+    },
+    {
+      "text": "API",
+      "startSec": 18.332,
+      "endSec": 19.04
+    },
+    {
+      "text": "and",
+      "startSec": 19.342,
+      "endSec": 19.505
+    },
+    {
+      "text": "compares.",
+      "startSec": 19.563,
+      "endSec": 20.375
+    },
+    {
+      "text": "A",
+      "startSec": 20.735,
+      "endSec": 20.817
+    },
+    {
+      "text": "Reflector",
+      "startSec": 20.909,
+      "endSec": 21.42
+    },
+    {
+      "text": "proposes",
+      "startSec": 21.618,
+      "endSec": 22.198
+    },
+    {
+      "text": "explanations.",
+      "startSec": 22.279,
+      "endSec": 23.348
+    },
+    {
+      "text": "A",
+      "startSec": 23.557,
+      "endSec": 23.626
+    },
+    {
+      "text": "stronger",
+      "startSec": 23.719,
+      "endSec": 24.114
+    },
+    {
+      "text": "Adversary,",
+      "startSec": 24.183,
+      "endSec": 24.996
+    },
+    {
+      "text": "running",
+      "startSec": 25.298,
+      "endSec": 25.588
+    },
+    {
+      "text": "on",
+      "startSec": 25.67,
+      "endSec": 25.762
+    },
+    {
+      "text": "a",
+      "startSec": 25.809,
+      "endSec": 25.832
+    },
+    {
+      "text": "different",
+      "startSec": 25.902,
+      "endSec": 26.204
+    },
+    {
+      "text": "model,",
+      "startSec": 26.262,
+      "endSec": 26.749
+    },
+    {
+      "text": "tries",
+      "startSec": 27.121,
+      "endSec": 27.504
+    },
+    {
+      "text": "to",
+      "startSec": 27.562,
+      "endSec": 27.632
+    },
+    {
+      "text": "refute",
+      "startSec": 27.713,
+      "endSec": 28.119
+    },
+    {
+      "text": "them.",
+      "startSec": 28.154,
+      "endSec": 28.502
+    },
+    {
+      "text": "On",
+      "startSec": 29.071,
+      "endSec": 29.245
+    },
+    {
+      "text": "our",
+      "startSec": 29.292,
+      "endSec": 29.408
+    },
+    {
+      "text": "live",
+      "startSec": 29.478,
+      "endSec": 29.756
+    },
+    {
+      "text": "runs,",
+      "startSec": 29.803,
+      "endSec": 30.348
+    },
+    {
+      "text": "it",
+      "startSec": 30.488,
+      "endSec": 30.639
+    },
+    {
+      "text": "narrowed",
+      "startSec": 30.697,
+      "endSec": 31.068
+    },
+    {
+      "text": "all",
+      "startSec": 31.138,
+      "endSec": 31.358
+    },
+    {
+      "text": "five",
+      "startSec": 31.44,
+      "endSec": 31.8
+    },
+    {
+      "text": "beliefs",
+      "startSec": 31.846,
+      "endSec": 32.334
+    },
+    {
+      "text": "instead",
+      "startSec": 32.601,
+      "endSec": 32.984
+    },
+    {
+      "text": "of",
+      "startSec": 33.031,
+      "endSec": 33.077
+    },
+    {
+      "text": "rubber-stamping",
+      "startSec": 33.193,
+      "endSec": 33.936
+    },
+    {
+      "text": "them.",
+      "startSec": 33.994,
+      "endSec": 34.296
+    },
+    {
+      "text": "What",
+      "startSec": 34.807,
+      "endSec": 35.016
+    },
+    {
+      "text": "survives",
+      "startSec": 35.074,
+      "endSec": 35.724
+    },
+    {
+      "text": "becomes",
+      "startSec": 36.049,
+      "endSec": 36.549
+    },
+    {
+      "text": "a",
+      "startSec": 36.874,
+      "endSec": 36.99
+    },
+    {
+      "text": "certificate,",
+      "startSec": 37.071,
+      "endSec": 37.895
+    },
+    {
+      "text": "valid",
+      "startSec": 38.406,
+      "endSec": 38.824
+    },
+    {
+      "text": "only",
+      "startSec": 38.917,
+      "endSec": 39.277
+    },
+    {
+      "text": "where",
+      "startSec": 39.335,
+      "endSec": 39.556
+    },
+    {
+      "text": "it",
+      "startSec": 39.59,
+      "endSec": 39.66
+    },
+    {
+      "text": "was",
+      "startSec": 39.695,
+      "endSec": 39.811
+    },
+    {
+      "text": "tested.",
+      "startSec": 39.881,
+      "endSec": 40.496
+    },
+    {
+      "text": "No",
+      "startSec": 41.007,
+      "endSec": 41.204
+    },
+    {
+      "text": "certificate,",
+      "startSec": 41.274,
+      "endSec": 42.052
+    },
+    {
+      "text": "no",
+      "startSec": 42.435,
+      "endSec": 42.632
+    },
+    {
+      "text": "money",
+      "startSec": 42.748,
+      "endSec": 43.004
+    },
+    {
+      "text": "moves:",
+      "startSec": 43.097,
+      "endSec": 43.782
+    },
+    {
+      "text": "the",
+      "startSec": 44.107,
+      "endSec": 44.211
+    },
+    {
+      "text": "Guard",
+      "startSec": 44.281,
+      "endSec": 44.629
+    },
+    {
+      "text": "holds",
+      "startSec": 44.699,
+      "endSec": 45.012
+    },
+    {
+      "text": "anything",
+      "startSec": 45.082,
+      "endSec": 45.523
+    },
+    {
+      "text": "uncovered",
+      "startSec": 45.651,
+      "endSec": 46.313
+    },
+    {
+      "text": "for",
+      "startSec": 46.638,
+      "endSec": 46.823
+    },
+    {
+      "text": "a",
+      "startSec": 46.881,
+      "endSec": 46.905
+    },
+    {
+      "text": "person",
+      "startSec": 46.974,
+      "endSec": 47.346
+    },
+    {
+      "text": "to",
+      "startSec": 47.415,
+      "endSec": 47.497
+    },
+    {
+      "text": "review.",
+      "startSec": 47.578,
+      "endSec": 48.762
+    }
+  ]
+}

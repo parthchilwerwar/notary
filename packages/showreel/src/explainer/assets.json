@@ -1,0 +1,5633 @@
+{
+ "narration": {
+  "intro": "Notary. No certificate, no money moves.",
+  "problem": "AI agents are starting to move real money: refunds, plan changes, credits. They learn how from API docs. But docs and real APIs disagree. We pointed our agent at two real APIs, Crustdata and Dodo Payments. Crustdata's own docs say a company lookup with no match returns an empty result. Live, it returned an error, on three separate documented claims. An agent that trusts the docs breaks on exactly these cases.",
+  "notary": "Notary is an agent that won't touch money until it has proven how its tools behave. It reads the docs and turns every promise into a claim. Before each test call, it commits a prediction, hashed, so it can't change afterwards. Then it calls the live API and compares. A Reflector proposes explanations. A stronger Adversary, running on a different model, tries to refute them. On our live runs, it narrowed all five beliefs instead of rubber-stamping them. What survives becomes a certificate, valid only where it was tested. No certificate, no money moves: the Guard holds anything uncovered for a person to review.",
+  "neatlogs": "We used neatlogs to look inside every run. Each run is one trace: every probe, every model call, every guard decision, labelled by agent. On the Crustdata run, the trace shows the probe for one disputed claim. Its prediction is logged, with its hash, before the call is made. The result came back inconclusive, so Notary resolved it the safe way: it abstained, and no payment can depend on that claim. Two more mismatches, lookups that error where the docs promise an empty result, are still open. Notary hasn't certified them, so the Guard won't let money depend on them either. On the Dodo run, the trace shows the Adversary narrowing four beliefs instead of upholding them as written. Wallet credits, for example, are in minor units only for US dollars. Notary resolved those by certifying only the narrower scope it had proven.",
+  "entire": "Entire captured how Notary was built. Seven checkpoints tie each commit to the coding-agent session that wrote it. Notary also uses Entire's code graph to prove a safety property: every call that can move money goes through a guard. Zero unguarded call sites.",
+  "cfo": "And Notary measures what certainty costs: about three cents of model spend and fifteen Crustdata credits per live run. It exports those real numbers for cfo.ai to build the business plan on.",
+  "close": "On our evaluation suite, with simulated payment APIs, the agent without Notary made nine unsafe money moves. With Notary, zero, and nine refunds held for review. Notary. No certificate, no money moves."
+ },
+ "voice": {
+  "intro": {
+   "status": "real",
+   "src": "explainer/voice/intro.mp3",
+   "durationSec": 4.023,
+   "words": [
+    {
+     "text": "Notary.",
+     "startSec": 0,
+     "endSec": 0.72
+    },
+    {
+     "text": "No",
+     "startSec": 1.161,
+     "endSec": 1.324
+    },
+    {
+     "text": "certificate,",
+     "startSec": 1.393,
+     "endSec": 2.043
+    },
+    {
+     "text": "no",
+     "startSec": 2.426,
+     "endSec": 2.612
+    },
+    {
+     "text": "money",
+     "startSec": 2.694,
+     "endSec": 2.926
+    },
+    {
+     "text": "moves.",
+     "startSec": 2.984,
+     "endSec": 3.947
+    }
+   ]
+  },
+  "problem": {
+   "status": "real",
+   "src": "explainer/voice/problem.mp3",
+   "durationSec": 32.888,
+   "words": [
+    {
+     "text": "AI",
+     "startSec": 0,
+     "endSec": 0.441
+    },
+    {
+     "text": "agents",
+     "startSec": 0.499,
+     "endSec": 0.859
+    },
+    {
+     "text": "are",
+     "startSec": 0.882,
+     "endSec": 0.952
+    },
+    {
+     "text": "starting",
+     "startSec": 0.975,
+     "endSec": 1.265
+    },
+    {
+     "text": "to",
+     "startSec": 1.312,
+     "endSec": 1.358
+    },
+    {
+     "text": "move",
+     "startSec": 1.428,
+     "endSec": 1.66
+    },
+    {
+     "text": "real",
+     "startSec": 1.707,
+     "endSec": 1.881
+    },
+    {
+     "text": "money:",
+     "startSec": 1.939,
+     "endSec": 2.392
+    },
+    {
+     "text": "refunds,",
+     "startSec": 2.682,
+     "endSec": 3.39
+    },
+    {
+     "text": "plan",
+     "startSec": 3.541,
+     "endSec": 3.808
+    },
+    {
+     "text": "changes,",
+     "startSec": 3.866,
+     "endSec": 4.435
+    },
+    {
+     "text": "credits.",
+     "startSec": 4.586,
+     "endSec": 5.201
+    },
+    {
+     "text": "They",
+     "startSec": 5.387,
+     "endSec": 5.538
+    },
+    {
+     "text": "learn",
+     "startSec": 5.596,
+     "endSec": 5.805
+    },
+    {
+     "text": "how",
+     "startSec": 5.875,
+     "endSec": 6.037
+    },
+    {
+     "text": "from",
+     "startSec": 6.118,
+     "endSec": 6.269
+    },
+    {
+     "text": "API",
+     "startSec": 6.397,
+     "endSec": 7.024
+    },
+    {
+     "text": "docs.",
+     "startSec": 7.105,
+     "endSec": 7.663
+    },
+    {
+     "text": "But",
+     "startSec": 8.046,
+     "endSec": 8.197
+    },
+    {
+     "text": "docs",
+     "startSec": 8.243,
+     "endSec": 8.568
+    },
+    {
+     "text": "and",
+     "startSec": 8.638,
+     "endSec": 8.777
+    },
+    {
+     "text": "real",
+     "startSec": 8.858,
+     "endSec": 9.056
+    },
+    {
+     "text": "APIs",
+     "startSec": 9.137,
+     "endSec": 9.892
+    },
+    {
+     "text": "disagree.",
+     "startSec": 10.101,
+     "endSec": 10.867
+    },
+    {
+     "text": "We",
+     "startSec": 11.401,
+     "endSec": 11.517
+    },
+    {
+     "text": "pointed",
+     "startSec": 11.575,
+     "endSec": 11.854
+    },
+    {
+     "text": "our",
+     "startSec": 11.889,
+     "endSec": 11.993
+    },
+    {
+     "text": "agent",
+     "startSec": 12.051,
+     "endSec": 12.341
+    },
+    {
+     "text": "at",
+     "startSec": 12.376,
+     "endSec": 12.446
+    },
+    {
+     "text": "two",
+     "startSec": 12.469,
+     "endSec": 12.666
+    },
+    {
+     "text": "real",
+     "startSec": 12.771,
+     "endSec": 12.957
+    },
+    {
+     "text": "APIs,",
+     "startSec": 13.038,
+     "endSec": 13.944
+    },
+    {
+     "text": "Crustdata",
+     "startSec": 14.129,
+     "endSec": 14.757
+    },
+    {
+     "text": "and",
+     "startSec": 14.966,
+     "endSec": 15.128
+    },
+    {
+     "text": "Dodo",
+     "startSec": 15.186,
+     "endSec": 15.453
+    },
+    {
+     "text": "Payments.",
+     "startSec": 15.535,
+     "endSec": 16.173
+    },
+    {
+     "text": "Crustdata's",
+     "startSec": 16.614,
+     "endSec": 17.241
+    },
+    {
+     "text": "own",
+     "startSec": 17.288,
+     "endSec": 17.415
+    },
+    {
+     "text": "docs",
+     "startSec": 17.473,
+     "endSec": 17.857
+    },
+    {
+     "text": "say",
+     "startSec": 18.008,
+     "endSec": 18.205
+    },
+    {
+     "text": "a",
+     "startSec": 18.263,
+     "endSec": 18.286
+    },
+    {
+     "text": "company",
+     "startSec": 18.344,
+     "endSec": 18.646
+    },
+    {
+     "text": "lookup",
+     "startSec": 18.692,
+     "endSec": 18.971
+    },
+    {
+     "text": "with",
+     "startSec": 19.018,
+     "endSec": 19.169
+    },
+    {
+     "text": "no",
+     "startSec": 19.25,
+     "endSec": 19.424
+    },
+    {
+     "text": "match",
+     "startSec": 19.517,
+     "endSec": 19.853
+    },
+    {
+     "text": "returns",
+     "startSec": 20.237,
+     "endSec": 20.84
+    },
+    {
+     "text": "an",
+     "startSec": 20.922,
+     "endSec": 21.049
+    },
+    {
+     "text": "empty",
+     "startSec": 21.107,
+     "endSec": 21.374
+    },
+    {
+     "text": "result.",
+     "startSec": 21.432,
+     "endSec": 22.071
+    },
+    {
+     "text": "Live,",
+     "startSec": 22.768,
+     "endSec": 23.348
+    },
+    {
+     "text": "it",
+     "startSec": 23.476,
+     "endSec": 23.604
+    },
+    {
+     "text": "returned",
+     "startSec": 23.662,
+     "endSec": 24.08
+    },
+    {
+     "text": "an",
+     "startSec": 24.126,
+     "endSec": 24.184
+    },
+    {
+     "text": "error,",
+     "startSec": 24.265,
+     "endSec": 24.753
+    },
+    {
+     "text": "on",
+     "startSec": 24.927,
+     "endSec": 25.101
+    },
+    {
+     "text": "three",
+     "startSec": 25.182,
+     "endSec": 25.6
+    },
+    {
+     "text": "separate",
+     "startSec": 25.728,
+     "endSec": 26.146
+    },
+    {
+     "text": "documented",
+     "startSec": 26.193,
+     "endSec": 26.773
+    },
+    {
+     "text": "claims.",
+     "startSec": 26.831,
+     "endSec": 27.551
+    },
+    {
+     "text": "An",
+     "startSec": 28.155,
+     "endSec": 28.306
+    },
+    {
+     "text": "agent",
+     "startSec": 28.375,
+     "endSec": 28.712
+    },
+    {
+     "text": "that",
+     "startSec": 28.747,
+     "endSec": 28.874
+    },
+    {
+     "text": "trusts",
+     "startSec": 28.898,
+     "endSec": 29.327
+    },
+    {
+     "text": "the",
+     "startSec": 29.385,
+     "endSec": 29.455
+    },
+    {
+     "text": "docs",
+     "startSec": 29.513,
+     "endSec": 29.885
+    },
+    {
+     "text": "breaks",
+     "startSec": 30.21,
+     "endSec": 30.581
+    },
+    {
+     "text": "on",
+     "startSec": 30.651,
+     "endSec": 30.744
+    },
+    {
+     "text": "exactly",
+     "startSec": 30.802,
+     "endSec": 31.313
+    },
+    {
+     "text": "these",
+     "startSec": 31.371,
+     "endSec": 31.568
+    },
+    {
+     "text": "cases.",
+     "startSec": 31.614,
+     "endSec": 32.833
+    }
+   ]
+  },
+  "notary": {
+   "status": "real",
+   "src": "explainer/voice/notary.mp3",
+   "durationSec": 48.823,
+   "words": [
+    {
+     "text": "Notary",
+     "startSec": 0,
+     "endSec": 0.499
+    },
+    {
+     "text": "is",
+     "startSec": 0.569,
+     "endSec": 0.662
+    },
+    {
+     "text": "an",
+     "startSec": 0.708,
+     "endSec": 0.778
+    },
+    {
+     "text": "agent",
+     "startSec": 0.848,
+     "endSec": 1.207
+    },
+    {
+     "text": "that",
+     "startSec": 1.254,
+     "endSec": 1.405
+    },
+    {
+     "text": "won't",
+     "startSec": 1.474,
+     "endSec": 1.741
+    },
+    {
+     "text": "touch",
+     "startSec": 1.788,
+     "endSec": 2.032
+    },
+    {
+     "text": "money",
+     "startSec": 2.101,
+     "endSec": 2.392
+    },
+    {
+     "text": "until",
+     "startSec": 2.775,
+     "endSec": 3.053
+    },
+    {
+     "text": "it",
+     "startSec": 3.1,
+     "endSec": 3.158
+    },
+    {
+     "text": "has",
+     "startSec": 3.193,
+     "endSec": 3.286
+    },
+    {
+     "text": "proven",
+     "startSec": 3.355,
+     "endSec": 3.773
+    },
+    {
+     "text": "how",
+     "startSec": 4.098,
+     "endSec": 4.249
+    },
+    {
+     "text": "its",
+     "startSec": 4.307,
+     "endSec": 4.435
+    },
+    {
+     "text": "tools",
+     "startSec": 4.481,
+     "endSec": 4.807
+    },
+    {
+     "text": "behave.",
+     "startSec": 4.865,
+     "endSec": 5.608
+    },
+    {
+     "text": "It",
+     "startSec": 5.991,
+     "endSec": 6.13
+    },
+    {
+     "text": "reads",
+     "startSec": 6.211,
+     "endSec": 6.513
+    },
+    {
+     "text": "the",
+     "startSec": 6.56,
+     "endSec": 6.629
+    },
+    {
+     "text": "docs",
+     "startSec": 6.687,
+     "endSec": 7.082
+    },
+    {
+     "text": "and",
+     "startSec": 7.291,
+     "endSec": 7.465
+    },
+    {
+     "text": "turns",
+     "startSec": 7.523,
+     "endSec": 7.93
+    },
+    {
+     "text": "every",
+     "startSec": 8.081,
+     "endSec": 8.452
+    },
+    {
+     "text": "promise",
+     "startSec": 8.522,
+     "endSec": 9.079
+    },
+    {
+     "text": "into",
+     "startSec": 9.23,
+     "endSec": 9.509
+    },
+    {
+     "text": "a",
+     "startSec": 9.59,
+     "endSec": 9.613
+    },
+    {
+     "text": "claim.",
+     "startSec": 9.683,
+     "endSec": 10.31
+    },
+    {
+     "text": "Before",
+     "startSec": 10.913,
+     "endSec": 11.262
+    },
+    {
+     "text": "each",
+     "startSec": 11.32,
+     "endSec": 11.517
+    },
+    {
+     "text": "test",
+     "startSec": 11.575,
+     "endSec": 11.831
+    },
+    {
+     "text": "call,",
+     "startSec": 11.877,
+     "endSec": 12.307
+    },
+    {
+     "text": "it",
+     "startSec": 12.481,
+     "endSec": 12.608
+    },
+    {
+     "text": "commits",
+     "startSec": 12.655,
+     "endSec": 12.968
+    },
+    {
+     "text": "a",
+     "startSec": 13.015,
+     "endSec": 13.038
+    },
+    {
+     "text": "prediction,",
+     "startSec": 13.096,
+     "endSec": 13.804
+    },
+    {
+     "text": "hashed,",
+     "startSec": 14.013,
+     "endSec": 14.594
+    },
+    {
+     "text": "so",
+     "startSec": 14.768,
+     "endSec": 14.907
+    },
+    {
+     "text": "it",
+     "startSec": 14.977,
+     "endSec": 15.046
+    },
+    {
+     "text": "can't",
+     "startSec": 15.093,
+     "endSec": 15.371
+    },
+    {
+     "text": "change",
+     "startSec": 15.43,
+     "endSec": 15.929
+    },
+    {
+     "text": "afterwards.",
+     "startSec": 15.975,
+     "endSec": 16.823
+    },
+    {
+     "text": "Then",
+     "startSec": 17.183,
+     "endSec": 17.357
+    },
+    {
+     "text": "it",
+     "startSec": 17.403,
+     "endSec": 17.461
+    },
+    {
+     "text": "calls",
+     "startSec": 17.519,
+     "endSec": 17.798
+    },
+    {
+     "text": "the",
+     "startSec": 17.844,
+     "endSec": 17.902
+    },
+    {
+     "text": "live",
+     "startSec": 17.961,
+     "endSec": 18.262
+    },
+    {
+     "text": "API",
+     "startSec": 18.332,
+     "endSec": 19.04
+    },
+    {
+     "text": "and",
+     "startSec": 19.342,
+     "endSec": 19.505
+    },
+    {
+     "text": "compares.",
+     "startSec": 19.563,
+     "endSec": 20.375
+    },
+    {
+     "text": "A",
+     "startSec": 20.735,
+     "endSec": 20.817
+    },
+    {
+     "text": "Reflector",
+     "startSec": 20.909,
+     "endSec": 21.42
+    },
+    {
+     "text": "proposes",
+     "startSec": 21.618,
+     "endSec": 22.198
+    },
+    {
+     "text": "explanations.",
+     "startSec": 22.279,
+     "endSec": 23.348
+    },
+    {
+     "text": "A",
+     "startSec": 23.557,
+     "endSec": 23.626
+    },
+    {
+     "text": "stronger",
+     "startSec": 23.719,
+     "endSec": 24.114
+    },
+    {
+     "text": "Adversary,",
+     "startSec": 24.183,
+     "endSec": 24.996
+    },
+    {
+     "text": "running",
+     "startSec": 25.298,
+     "endSec": 25.588
+    },
+    {
+     "text": "on",
+     "startSec": 25.67,
+     "endSec": 25.762
+    },
+    {
+     "text": "a",
+     "startSec": 25.809,
+     "endSec": 25.832
+    },
+    {
+     "text": "different",
+     "startSec": 25.902,
+     "endSec": 26.204
+    },
+    {
+     "text": "model,",
+     "startSec": 26.262,
+     "endSec": 26.749
+    },
+    {
+     "text": "tries",
+     "startSec": 27.121,
+     "endSec": 27.504
+    },
+    {
+     "text": "to",
+     "startSec": 27.562,
+     "endSec": 27.632
+    },
+    {
+     "text": "refute",
+     "startSec": 27.713,
+     "endSec": 28.119
+    },
+    {
+     "text": "them.",
+     "startSec": 28.154,
+     "endSec": 28.502
+    },
+    {
+     "text": "On",
+     "startSec": 29.071,
+     "endSec": 29.245
+    },
+    {
+     "text": "our",
+     "startSec": 29.292,
+     "endSec": 29.408
+    },
+    {
+     "text": "live",
+     "startSec": 29.478,
+     "endSec": 29.756
+    },
+    {
+     "text": "runs,",
+     "startSec": 29.803,
+     "endSec": 30.348
+    },
+    {
+     "text": "it",
+     "startSec": 30.488,
+     "endSec": 30.639
+    },
+    {
+     "text": "narrowed",
+     "startSec": 30.697,
+     "endSec": 31.068
+    },
+    {
+     "text": "all",
+     "startSec": 31.138,
+     "endSec": 31.358
+    },
+    {
+     "text": "five",
+     "startSec": 31.44,
+     "endSec": 31.8
+    },
+    {
+     "text": "beliefs",
+     "startSec": 31.846,
+     "endSec": 32.334
+    },
+    {
+     "text": "instead",
+     "startSec": 32.601,
+     "endSec": 32.984
+    },
+    {
+     "text": "of",
+     "startSec": 33.031,
+     "endSec": 33.077
+    },
+    {
+     "text": "rubber-stamping",
+     "startSec": 33.193,
+     "endSec": 33.936
+    },
+    {
+     "text": "them.",
+     "startSec": 33.994,
+     "endSec": 34.296
+    },
+    {
+     "text": "What",
+     "startSec": 34.807,
+     "endSec": 35.016
+    },
+    {
+     "text": "survives",
+     "startSec": 35.074,
+     "endSec": 35.724
+    },
+    {
+     "text": "becomes",
+     "startSec": 36.049,
+     "endSec": 36.549
+    },
+    {
+     "text": "a",
+     "startSec": 36.874,
+     "endSec": 36.99
+    },
+    {
+     "text": "certificate,",
+     "startSec": 37.071,
+     "endSec": 37.895
+    },
+    {
+     "text": "valid",
+     "startSec": 38.406,
+     "endSec": 38.824
+    },
+    {
+     "text": "only",
+     "startSec": 38.917,
+     "endSec": 39.277
+    },
+    {
+     "text": "where",
+     "startSec": 39.335,
+     "endSec": 39.556
+    },
+    {
+     "text": "it",
+     "startSec": 39.59,
+     "endSec": 39.66
+    },
+    {
+     "text": "was",
+     "startSec": 39.695,
+     "endSec": 39.811
+    },
+    {
+     "text": "tested.",
+     "startSec": 39.881,
+     "endSec": 40.496
+    },
+    {
+     "text": "No",
+     "startSec": 41.007,
+     "endSec": 41.204
+    },
+    {
+     "text": "certificate,",
+     "startSec": 41.274,
+     "endSec": 42.052
+    },
+    {
+     "text": "no",
+     "startSec": 42.435,
+     "endSec": 42.632
+    },
+    {
+     "text": "money",
+     "startSec": 42.748,
+     "endSec": 43.004
+    },
+    {
+     "text": "moves:",
+     "startSec": 43.097,
+     "endSec": 43.782
+    },
+    {
+     "text": "the",
+     "startSec": 44.107,
+     "endSec": 44.211
+    },
+    {
+     "text": "Guard",
+     "startSec": 44.281,
+     "endSec": 44.629
+    },
+    {
+     "text": "holds",
+     "startSec": 44.699,
+     "endSec": 45.012
+    },
+    {
+     "text": "anything",
+     "startSec": 45.082,
+     "endSec": 45.523
+    },
+    {
+     "text": "uncovered",
+     "startSec": 45.651,
+     "endSec": 46.313
+    },
+    {
+     "text": "for",
+     "startSec": 46.638,
+     "endSec": 46.823
+    },
+    {
+     "text": "a",
+     "startSec": 46.881,
+     "endSec": 46.905
+    },
+    {
+     "text": "person",
+     "startSec": 46.974,
+     "endSec": 47.346
+    },
+    {
+     "text": "to",
+     "startSec": 47.415,
+     "endSec": 47.497
+    },
+    {
+     "text": "review.",
+     "startSec": 47.578,
+     "endSec": 48.762
+    }
+   ]
+  },
+  "neatlogs": {
+   "status": "real",
+   "src": "explainer/voice/neatlogs.mp3",
+   "durationSec": 66.795,
+   "words": [
+    {
+     "text": "We",
+     "startSec": 0,
+     "endSec": 0.244
+    },
+    {
+     "text": "used",
+     "startSec": 0.313,
+     "endSec": 0.592
+    },
+    {
+     "text": "neatlogs",
+     "startSec": 0.65,
+     "endSec": 1.184
+    },
+    {
+     "text": "to",
+     "startSec": 1.231,
+     "endSec": 1.3
+    },
+    {
+     "text": "look",
+     "startSec": 1.37,
+     "endSec": 1.509
+    },
+    {
+     "text": "inside",
+     "startSec": 1.556,
+     "endSec": 2.02
+    },
+    {
+     "text": "every",
+     "startSec": 2.101,
+     "endSec": 2.415
+    },
+    {
+     "text": "run.",
+     "startSec": 2.496,
+     "endSec": 2.984
+    },
+    {
+     "text": "Each",
+     "startSec": 3.495,
+     "endSec": 3.715
+    },
+    {
+     "text": "run",
+     "startSec": 3.785,
+     "endSec": 4.075
+    },
+    {
+     "text": "is",
+     "startSec": 4.168,
+     "endSec": 4.342
+    },
+    {
+     "text": "one",
+     "startSec": 4.412,
+     "endSec": 4.656
+    },
+    {
+     "text": "trace:",
+     "startSec": 4.702,
+     "endSec": 5.341
+    },
+    {
+     "text": "every",
+     "startSec": 5.666,
+     "endSec": 5.933
+    },
+    {
+     "text": "probe,",
+     "startSec": 5.991,
+     "endSec": 6.571
+    },
+    {
+     "text": "every",
+     "startSec": 6.78,
+     "endSec": 7.07
+    },
+    {
+     "text": "model",
+     "startSec": 7.129,
+     "endSec": 7.396
+    },
+    {
+     "text": "call,",
+     "startSec": 7.465,
+     "endSec": 7.988
+    },
+    {
+     "text": "every",
+     "startSec": 8.266,
+     "endSec": 8.58
+    },
+    {
+     "text": "guard",
+     "startSec": 8.649,
+     "endSec": 8.975
+    },
+    {
+     "text": "decision,",
+     "startSec": 9.044,
+     "endSec": 9.694
+    },
+    {
+     "text": "labelled",
+     "startSec": 10.019,
+     "endSec": 10.484
+    },
+    {
+     "text": "by",
+     "startSec": 10.553,
+     "endSec": 10.728
+    },
+    {
+     "text": "agent.",
+     "startSec": 10.809,
+     "endSec": 11.447
+    },
+    {
+     "text": "On",
+     "startSec": 12.051,
+     "endSec": 12.179
+    },
+    {
+     "text": "the",
+     "startSec": 12.214,
+     "endSec": 12.283
+    },
+    {
+     "text": "Crustdata",
+     "startSec": 12.33,
+     "endSec": 12.875
+    },
+    {
+     "text": "run,",
+     "startSec": 12.934,
+     "endSec": 13.328
+    },
+    {
+     "text": "the",
+     "startSec": 13.537,
+     "endSec": 13.642
+    },
+    {
+     "text": "trace",
+     "startSec": 13.688,
+     "endSec": 14.002
+    },
+    {
+     "text": "shows",
+     "startSec": 14.025,
+     "endSec": 14.303
+    },
+    {
+     "text": "the",
+     "startSec": 14.362,
+     "endSec": 14.431
+    },
+    {
+     "text": "probe",
+     "startSec": 14.466,
+     "endSec": 14.849
+    },
+    {
+     "text": "for",
+     "startSec": 14.907,
+     "endSec": 15.046
+    },
+    {
+     "text": "one",
+     "startSec": 15.127,
+     "endSec": 15.394
+    },
+    {
+     "text": "disputed",
+     "startSec": 15.464,
+     "endSec": 16.01
+    },
+    {
+     "text": "claim.",
+     "startSec": 16.068,
+     "endSec": 16.671
+    },
+    {
+     "text": "Its",
+     "startSec": 17.368,
+     "endSec": 17.554
+    },
+    {
+     "text": "prediction",
+     "startSec": 17.6,
+     "endSec": 18.158
+    },
+    {
+     "text": "is",
+     "startSec": 18.308,
+     "endSec": 18.483
+    },
+    {
+     "text": "logged,",
+     "startSec": 18.575,
+     "endSec": 19.133
+    },
+    {
+     "text": "with",
+     "startSec": 19.202,
+     "endSec": 19.388
+    },
+    {
+     "text": "its",
+     "startSec": 19.435,
+     "endSec": 19.551
+    },
+    {
+     "text": "hash,",
+     "startSec": 19.609,
+     "endSec": 20.247
+    },
+    {
+     "text": "before",
+     "startSec": 20.491,
+     "endSec": 20.816
+    },
+    {
+     "text": "the",
+     "startSec": 20.851,
+     "endSec": 20.921
+    },
+    {
+     "text": "call",
+     "startSec": 20.967,
+     "endSec": 21.234
+    },
+    {
+     "text": "is",
+     "startSec": 21.292,
+     "endSec": 21.385
+    },
+    {
+     "text": "made.",
+     "startSec": 21.455,
+     "endSec": 21.977
+    },
+    {
+     "text": "The",
+     "startSec": 22.418,
+     "endSec": 22.534
+    },
+    {
+     "text": "result",
+     "startSec": 22.593,
+     "endSec": 22.976
+    },
+    {
+     "text": "came",
+     "startSec": 23.034,
+     "endSec": 23.266
+    },
+    {
+     "text": "back",
+     "startSec": 23.312,
+     "endSec": 23.486
+    },
+    {
+     "text": "inconclusive,",
+     "startSec": 23.556,
+     "endSec": 24.497
+    },
+    {
+     "text": "so",
+     "startSec": 24.88,
+     "endSec": 25.077
+    },
+    {
+     "text": "Notary",
+     "startSec": 25.158,
+     "endSec": 25.611
+    },
+    {
+     "text": "resolved",
+     "startSec": 25.704,
+     "endSec": 26.157
+    },
+    {
+     "text": "it",
+     "startSec": 26.203,
+     "endSec": 26.273
+    },
+    {
+     "text": "the",
+     "startSec": 26.319,
+     "endSec": 26.389
+    },
+    {
+     "text": "safe",
+     "startSec": 26.447,
+     "endSec": 26.76
+    },
+    {
+     "text": "way:",
+     "startSec": 26.807,
+     "endSec": 27.283
+    },
+    {
+     "text": "it",
+     "startSec": 27.608,
+     "endSec": 27.747
+    },
+    {
+     "text": "abstained,",
+     "startSec": 27.794,
+     "endSec": 28.606
+    },
+    {
+     "text": "and",
+     "startSec": 28.99,
+     "endSec": 29.175
+    },
+    {
+     "text": "no",
+     "startSec": 29.291,
+     "endSec": 29.547
+    },
+    {
+     "text": "payment",
+     "startSec": 29.663,
+     "endSec": 30.116
+    },
+    {
+     "text": "can",
+     "startSec": 30.394,
+     "endSec": 30.557
+    },
+    {
+     "text": "depend",
+     "startSec": 30.615,
+     "endSec": 31.021
+    },
+    {
+     "text": "on",
+     "startSec": 31.103,
+     "endSec": 31.242
+    },
+    {
+     "text": "that",
+     "startSec": 31.288,
+     "endSec": 31.428
+    },
+    {
+     "text": "claim.",
+     "startSec": 31.497,
+     "endSec": 32.089
+    },
+    {
+     "text": "Two",
+     "startSec": 32.786,
+     "endSec": 33.018
+    },
+    {
+     "text": "more",
+     "startSec": 33.1,
+     "endSec": 33.308
+    },
+    {
+     "text": "mismatches,",
+     "startSec": 33.366,
+     "endSec": 34.295
+    },
+    {
+     "text": "lookups",
+     "startSec": 34.678,
+     "endSec": 35.143
+    },
+    {
+     "text": "that",
+     "startSec": 35.189,
+     "endSec": 35.375
+    },
+    {
+     "text": "error",
+     "startSec": 35.456,
+     "endSec": 35.816
+    },
+    {
+     "text": "where",
+     "startSec": 35.909,
+     "endSec": 36.118
+    },
+    {
+     "text": "the",
+     "startSec": 36.153,
+     "endSec": 36.223
+    },
+    {
+     "text": "docs",
+     "startSec": 36.281,
+     "endSec": 36.629
+    },
+    {
+     "text": "promise",
+     "startSec": 36.687,
+     "endSec": 37.012
+    },
+    {
+     "text": "an",
+     "startSec": 37.047,
+     "endSec": 37.105
+    },
+    {
+     "text": "empty",
+     "startSec": 37.163,
+     "endSec": 37.453
+    },
+    {
+     "text": "result,",
+     "startSec": 37.534,
+     "endSec": 38.196
+    },
+    {
+     "text": "are",
+     "startSec": 38.44,
+     "endSec": 38.614
+    },
+    {
+     "text": "still",
+     "startSec": 38.649,
+     "endSec": 38.904
+    },
+    {
+     "text": "open.",
+     "startSec": 38.986,
+     "endSec": 39.566
+    },
+    {
+     "text": "Notary",
+     "startSec": 40.077,
+     "endSec": 40.588
+    },
+    {
+     "text": "hasn't",
+     "startSec": 40.669,
+     "endSec": 40.983
+    },
+    {
+     "text": "certified",
+     "startSec": 41.029,
+     "endSec": 41.633
+    },
+    {
+     "text": "them,",
+     "startSec": 41.668,
+     "endSec": 42.004
+    },
+    {
+     "text": "so",
+     "startSec": 42.387,
+     "endSec": 42.562
+    },
+    {
+     "text": "the",
+     "startSec": 42.62,
+     "endSec": 42.689
+    },
+    {
+     "text": "Guard",
+     "startSec": 42.747,
+     "endSec": 43.119
+    },
+    {
+     "text": "won't",
+     "startSec": 43.444,
+     "endSec": 43.723
+    },
+    {
+     "text": "let",
+     "startSec": 43.781,
+     "endSec": 43.943
+    },
+    {
+     "text": "money",
+     "startSec": 44.024,
+     "endSec": 44.315
+    },
+    {
+     "text": "depend",
+     "startSec": 44.431,
+     "endSec": 44.814
+    },
+    {
+     "text": "on",
+     "startSec": 44.884,
+     "endSec": 44.976
+    },
+    {
+     "text": "them",
+     "startSec": 45.035,
+     "endSec": 45.232
+    },
+    {
+     "text": "either.",
+     "startSec": 45.348,
+     "endSec": 45.928
+    },
+    {
+     "text": "On",
+     "startSec": 46.613,
+     "endSec": 46.764
+    },
+    {
+     "text": "the",
+     "startSec": 46.799,
+     "endSec": 46.869
+    },
+    {
+     "text": "Dodo",
+     "startSec": 46.939,
+     "endSec": 47.322
+    },
+    {
+     "text": "run,",
+     "startSec": 47.438,
+     "endSec": 47.914
+    },
+    {
+     "text": "the",
+     "startSec": 48.158,
+     "endSec": 48.262
+    },
+    {
+     "text": "trace",
+     "startSec": 48.32,
+     "endSec": 48.692
+    },
+    {
+     "text": "shows",
+     "startSec": 48.738,
+     "endSec": 49.075
+    },
+    {
+     "text": "the",
+     "startSec": 49.133,
+     "endSec": 49.202
+    },
+    {
+     "text": "Adversary",
+     "startSec": 49.284,
+     "endSec": 49.992
+    },
+    {
+     "text": "narrowing",
+     "startSec": 50.596,
+     "endSec": 51.118
+    },
+    {
+     "text": "four",
+     "startSec": 51.293,
+     "endSec": 51.664
+    },
+    {
+     "text": "beliefs",
+     "startSec": 51.734,
+     "endSec": 52.279
+    },
+    {
+     "text": "instead",
+     "startSec": 52.663,
+     "endSec": 53.069
+    },
+    {
+     "text": "of",
+     "startSec": 53.115,
+     "endSec": 53.185
+    },
+    {
+     "text": "upholding",
+     "startSec": 53.301,
+     "endSec": 53.858
+    },
+    {
+     "text": "them",
+     "startSec": 53.916,
+     "endSec": 54.114
+    },
+    {
+     "text": "as",
+     "startSec": 54.265,
+     "endSec": 54.427
+    },
+    {
+     "text": "written.",
+     "startSec": 54.497,
+     "endSec": 55.019
+    },
+    {
+     "text": "Wallet",
+     "startSec": 55.623,
+     "endSec": 55.937
+    },
+    {
+     "text": "credits,",
+     "startSec": 55.983,
+     "endSec": 56.378
+    },
+    {
+     "text": "for",
+     "startSec": 56.401,
+     "endSec": 56.517
+    },
+    {
+     "text": "example,",
+     "startSec": 56.575,
+     "endSec": 57.26
+    },
+    {
+     "text": "are",
+     "startSec": 57.434,
+     "endSec": 57.632
+    },
+    {
+     "text": "in",
+     "startSec": 57.666,
+     "endSec": 57.725
+    },
+    {
+     "text": "minor",
+     "startSec": 57.794,
+     "endSec": 58.084
+    },
+    {
+     "text": "units",
+     "startSec": 58.177,
+     "endSec": 58.479
+    },
+    {
+     "text": "only",
+     "startSec": 58.572,
+     "endSec": 58.886
+    },
+    {
+     "text": "for",
+     "startSec": 58.955,
+     "endSec": 59.06
+    },
+    {
+     "text": "US",
+     "startSec": 59.129,
+     "endSec": 59.431
+    },
+    {
+     "text": "dollars.",
+     "startSec": 59.501,
+     "endSec": 60.105
+    },
+    {
+     "text": "Notary",
+     "startSec": 60.615,
+     "endSec": 61.08
+    },
+    {
+     "text": "resolved",
+     "startSec": 61.161,
+     "endSec": 61.707
+    },
+    {
+     "text": "those",
+     "startSec": 61.765,
+     "endSec": 62.287
+    },
+    {
+     "text": "by",
+     "startSec": 62.461,
+     "endSec": 62.636
+    },
+    {
+     "text": "certifying",
+     "startSec": 62.717,
+     "endSec": 63.413
+    },
+    {
+     "text": "only",
+     "startSec": 63.564,
+     "endSec": 63.947
+    },
+    {
+     "text": "the",
+     "startSec": 64.006,
+     "endSec": 64.087
+    },
+    {
+     "text": "narrower",
+     "startSec": 64.203,
+     "endSec": 64.632
+    },
+    {
+     "text": "scope",
+     "startSec": 64.69,
+     "endSec": 65.178
+    },
+    {
+     "text": "it",
+     "startSec": 65.329,
+     "endSec": 65.457
+    },
+    {
+     "text": "had",
+     "startSec": 65.492,
+     "endSec": 65.584
+    },
+    {
+     "text": "proven.",
+     "startSec": 65.643,
+     "endSec": 66.734
+    }
+   ]
+  },
+  "entire": {
+   "status": "real",
+   "src": "explainer/voice/entire.mp3",
+   "durationSec": 21.29,
+   "words": [
+    {
+     "text": "Entire",
+     "startSec": 0,
+     "endSec": 0.604
+    },
+    {
+     "text": "captured",
+     "startSec": 0.662,
+     "endSec": 1.057
+    },
+    {
+     "text": "how",
+     "startSec": 1.091,
+     "endSec": 1.196
+    },
+    {
+     "text": "Notary",
+     "startSec": 1.289,
+     "endSec": 1.776
+    },
+    {
+     "text": "was",
+     "startSec": 2.159,
+     "endSec": 2.334
+    },
+    {
+     "text": "built.",
+     "startSec": 2.392,
+     "endSec": 2.879
+    },
+    {
+     "text": "Seven",
+     "startSec": 3.32,
+     "endSec": 3.715
+    },
+    {
+     "text": "checkpoints",
+     "startSec": 3.785,
+     "endSec": 4.389
+    },
+    {
+     "text": "tie",
+     "startSec": 4.458,
+     "endSec": 4.865
+    },
+    {
+     "text": "each",
+     "startSec": 4.981,
+     "endSec": 5.201
+    },
+    {
+     "text": "commit",
+     "startSec": 5.259,
+     "endSec": 5.561
+    },
+    {
+     "text": "to",
+     "startSec": 5.619,
+     "endSec": 5.7
+    },
+    {
+     "text": "the",
+     "startSec": 5.759,
+     "endSec": 5.828
+    },
+    {
+     "text": "coding-agent",
+     "startSec": 5.898,
+     "endSec": 6.699
+    },
+    {
+     "text": "session",
+     "startSec": 6.757,
+     "endSec": 7.163
+    },
+    {
+     "text": "that",
+     "startSec": 7.442,
+     "endSec": 7.616
+    },
+    {
+     "text": "wrote",
+     "startSec": 7.674,
+     "endSec": 7.93
+    },
+    {
+     "text": "it.",
+     "startSec": 7.976,
+     "endSec": 8.313
+    },
+    {
+     "text": "Notary",
+     "startSec": 8.905,
+     "endSec": 9.358
+    },
+    {
+     "text": "also",
+     "startSec": 9.416,
+     "endSec": 9.81
+    },
+    {
+     "text": "uses",
+     "startSec": 9.903,
+     "endSec": 10.31
+    },
+    {
+     "text": "Entire's",
+     "startSec": 10.391,
+     "endSec": 10.948
+    },
+    {
+     "text": "code",
+     "startSec": 11.018,
+     "endSec": 11.285
+    },
+    {
+     "text": "graph",
+     "startSec": 11.32,
+     "endSec": 11.726
+    },
+    {
+     "text": "to",
+     "startSec": 11.993,
+     "endSec": 12.109
+    },
+    {
+     "text": "prove",
+     "startSec": 12.179,
+     "endSec": 12.481
+    },
+    {
+     "text": "a",
+     "startSec": 12.516,
+     "endSec": 12.539
+    },
+    {
+     "text": "safety",
+     "startSec": 12.62,
+     "endSec": 12.992
+    },
+    {
+     "text": "property:",
+     "startSec": 13.05,
+     "endSec": 13.63
+    },
+    {
+     "text": "every",
+     "startSec": 14.141,
+     "endSec": 14.431
+    },
+    {
+     "text": "call",
+     "startSec": 14.512,
+     "endSec": 14.907
+    },
+    {
+     "text": "that",
+     "startSec": 15.139,
+     "endSec": 15.313
+    },
+    {
+     "text": "can",
+     "startSec": 15.348,
+     "endSec": 15.464
+    },
+    {
+     "text": "move",
+     "startSec": 15.534,
+     "endSec": 15.755
+    },
+    {
+     "text": "money",
+     "startSec": 15.813,
+     "endSec": 16.126
+    },
+    {
+     "text": "goes",
+     "startSec": 16.567,
+     "endSec": 16.846
+    },
+    {
+     "text": "through",
+     "startSec": 16.892,
+     "endSec": 17.183
+    },
+    {
+     "text": "a",
+     "startSec": 17.252,
+     "endSec": 17.31
+    },
+    {
+     "text": "guard.",
+     "startSec": 17.392,
+     "endSec": 17.949
+    },
+    {
+     "text": "Zero",
+     "startSec": 18.39,
+     "endSec": 18.831
+    },
+    {
+     "text": "unguarded",
+     "startSec": 18.947,
+     "endSec": 19.493
+    },
+    {
+     "text": "call",
+     "startSec": 19.563,
+     "endSec": 19.853
+    },
+    {
+     "text": "sites.",
+     "startSec": 19.946,
+     "endSec": 21.223
+    }
+   ]
+  },
+  "cfo": {
+   "status": "real",
+   "src": "explainer/voice/cfo.mp3",
+   "durationSec": 16.353,
+   "words": [
+    {
+     "text": "And",
+     "startSec": 0,
+     "endSec": 0.186
+    },
+    {
+     "text": "Notary",
+     "startSec": 0.244,
+     "endSec": 0.569
+    },
+    {
+     "text": "measures",
+     "startSec": 0.639,
+     "endSec": 1.01
+    },
+    {
+     "text": "what",
+     "startSec": 1.393,
+     "endSec": 1.614
+    },
+    {
+     "text": "certainty",
+     "startSec": 1.695,
+     "endSec": 2.183
+    },
+    {
+     "text": "costs:",
+     "startSec": 2.252,
+     "endSec": 2.949
+    },
+    {
+     "text": "about",
+     "startSec": 3.39,
+     "endSec": 3.68
+    },
+    {
+     "text": "three",
+     "startSec": 3.727,
+     "endSec": 3.971
+    },
+    {
+     "text": "cents",
+     "startSec": 4.017,
+     "endSec": 4.354
+    },
+    {
+     "text": "of",
+     "startSec": 4.412,
+     "endSec": 4.481
+    },
+    {
+     "text": "model",
+     "startSec": 4.551,
+     "endSec": 4.783
+    },
+    {
+     "text": "spend",
+     "startSec": 4.83,
+     "endSec": 5.259
+    },
+    {
+     "text": "and",
+     "startSec": 5.573,
+     "endSec": 5.805
+    },
+    {
+     "text": "fifteen",
+     "startSec": 5.886,
+     "endSec": 6.351
+    },
+    {
+     "text": "Crustdata",
+     "startSec": 6.444,
+     "endSec": 7.059
+    },
+    {
+     "text": "credits",
+     "startSec": 7.105,
+     "endSec": 7.535
+    },
+    {
+     "text": "per",
+     "startSec": 7.814,
+     "endSec": 8.011
+    },
+    {
+     "text": "live",
+     "startSec": 8.081,
+     "endSec": 8.394
+    },
+    {
+     "text": "run.",
+     "startSec": 8.452,
+     "endSec": 8.963
+    },
+    {
+     "text": "It",
+     "startSec": 9.66,
+     "endSec": 9.81
+    },
+    {
+     "text": "exports",
+     "startSec": 9.868,
+     "endSec": 10.391
+    },
+    {
+     "text": "those",
+     "startSec": 10.437,
+     "endSec": 10.716
+    },
+    {
+     "text": "real",
+     "startSec": 10.809,
+     "endSec": 11.064
+    },
+    {
+     "text": "numbers",
+     "startSec": 11.146,
+     "endSec": 11.598
+    },
+    {
+     "text": "for",
+     "startSec": 11.773,
+     "endSec": 11.923
+    },
+    {
+     "text": "cfo.ai",
+     "startSec": 11.981,
+     "endSec": 13.456
+    },
+    {
+     "text": "to",
+     "startSec": 13.839,
+     "endSec": 13.955
+    },
+    {
+     "text": "build",
+     "startSec": 14.025,
+     "endSec": 14.303
+    },
+    {
+     "text": "the",
+     "startSec": 14.35,
+     "endSec": 14.431
+    },
+    {
+     "text": "business",
+     "startSec": 14.466,
+     "endSec": 14.803
+    },
+    {
+     "text": "plan",
+     "startSec": 14.838,
+     "endSec": 15.105
+    },
+    {
+     "text": "on.",
+     "startSec": 15.197,
+     "endSec": 16.3
+    }
+   ]
+  },
+  "close": {
+   "status": "real",
+   "src": "explainer/voice/close.mp3",
+   "durationSec": 18.599,
+   "words": [
+    {
+     "text": "On",
+     "startSec": 0,
+     "endSec": 0.209
+    },
+    {
+     "text": "our",
+     "startSec": 0.255,
+     "endSec": 0.36
+    },
+    {
+     "text": "evaluation",
+     "startSec": 0.406,
+     "endSec": 1.103
+    },
+    {
+     "text": "suite,",
+     "startSec": 1.184,
+     "endSec": 1.73
+    },
+    {
+     "text": "with",
+     "startSec": 1.939,
+     "endSec": 2.113
+    },
+    {
+     "text": "simulated",
+     "startSec": 2.159,
+     "endSec": 2.694
+    },
+    {
+     "text": "payment",
+     "startSec": 2.752,
+     "endSec": 3.088
+    },
+    {
+     "text": "APIs,",
+     "startSec": 3.146,
+     "endSec": 4.087
+    },
+    {
+     "text": "the",
+     "startSec": 4.528,
+     "endSec": 4.644
+    },
+    {
+     "text": "agent",
+     "startSec": 4.725,
+     "endSec": 5.074
+    },
+    {
+     "text": "without",
+     "startSec": 5.12,
+     "endSec": 5.445
+    },
+    {
+     "text": "Notary",
+     "startSec": 5.526,
+     "endSec": 6.026
+    },
+    {
+     "text": "made",
+     "startSec": 6.409,
+     "endSec": 6.664
+    },
+    {
+     "text": "nine",
+     "startSec": 6.757,
+     "endSec": 7.198
+    },
+    {
+     "text": "unsafe",
+     "startSec": 7.314,
+     "endSec": 7.964
+    },
+    {
+     "text": "money",
+     "startSec": 8.034,
+     "endSec": 8.278
+    },
+    {
+     "text": "moves.",
+     "startSec": 8.348,
+     "endSec": 9.044
+    },
+    {
+     "text": "With",
+     "startSec": 9.369,
+     "endSec": 9.555
+    },
+    {
+     "text": "Notary,",
+     "startSec": 9.636,
+     "endSec": 10.286
+    },
+    {
+     "text": "zero,",
+     "startSec": 10.53,
+     "endSec": 11.262
+    },
+    {
+     "text": "and",
+     "startSec": 11.436,
+     "endSec": 11.598
+    },
+    {
+     "text": "nine",
+     "startSec": 11.68,
+     "endSec": 11.993
+    },
+    {
+     "text": "refunds",
+     "startSec": 12.051,
+     "endSec": 12.69
+    },
+    {
+     "text": "held",
+     "startSec": 13.015,
+     "endSec": 13.305
+    },
+    {
+     "text": "for",
+     "startSec": 13.375,
+     "endSec": 13.491
+    },
+    {
+     "text": "review.",
+     "startSec": 13.549,
+     "endSec": 14.118
+    },
+    {
+     "text": "Notary.",
+     "startSec": 14.721,
+     "endSec": 15.372
+    },
+    {
+     "text": "No",
+     "startSec": 15.755,
+     "endSec": 15.952
+    },
+    {
+     "text": "certificate,",
+     "startSec": 16.022,
+     "endSec": 16.765
+    },
+    {
+     "text": "no",
+     "startSec": 17.09,
+     "endSec": 17.287
+    },
+    {
+     "text": "money",
+     "startSec": 17.403,
+     "endSec": 17.647
+    },
+    {
+     "text": "moves.",
+     "startSec": 17.717,
+     "endSec": 18.53
+    }
+   ]
+  }
+ },
+ "clips": {
+  "crustdata-anomalies": {
+   "status": "real",
+   "src": "explainer/clips/crustdata-anomalies.mp4",
+   "durationSec": 14.666667,
+   "width": 1920,
+   "height": 1080,
+   "url": "/app/run?run=notarize-crustdata-20261012T011404Z&speed=instant&view=order",
+   "events": [
+    {
+     "tSec": 0,
+     "type": "move",
+     "x": 1500,
+     "y": 640,
+     "label": "start"
+    },
+    {
+     "tSec": 0.027,
+     "type": "move",
+     "x": 1500,
+     "y": 640
+    },
+    {
+     "tSec": 0.951,
+     "type": "move",
+     "x": 583,
+     "y": 184,
+     "label": "run id"
+    },
+    {
+     "tSec": 1.677,
+     "type": "move",
+     "x": 583,
+     "y": 184
+    },
+    {
+     "tSec": 2.134,
+     "type": "move",
+     "x": 673,
+     "y": 345,
+     "label": "probes run"
+    },
+    {
+     "tSec": 2.65,
+     "type": "move",
+     "x": 673,
+     "y": 345
+    },
+    {
+     "tSec": 3.17,
+     "type": "move",
+     "x": 1200,
+     "y": 560
+    },
+    {
+     "tSec": 3.175,
+     "type": "scroll",
+     "x": 1200,
+     "y": 560,
+     "label": "scroll to transcript (down 557px)"
+    },
+    {
+     "tSec": 4.381,
+     "type": "move",
+     "x": 1200,
+     "y": 560
+    },
+    {
+     "tSec": 4.699,
+     "type": "move",
+     "x": 1200,
+     "y": 560
+    },
+    {
+     "tSec": 5.321,
+     "type": "move",
+     "x": 620,
+     "y": 276,
+     "label": "enrich no-match: docs 200, observed 400"
+    },
+    {
+     "tSec": 5.447,
+     "type": "click",
+     "x": 620,
+     "y": 276,
+     "label": "enrich no-match: docs 200, observed 400"
+    },
+    {
+     "tSec": 6.471,
+     "type": "move",
+     "x": 620,
+     "y": 276
+    },
+    {
+     "tSec": 7.254,
+     "type": "move",
+     "x": 1486,
+     "y": 349,
+     "label": "recorded response 400"
+    },
+    {
+     "tSec": 8.375,
+     "type": "move",
+     "x": 1486,
+     "y": 349
+    },
+    {
+     "tSec": 9.251,
+     "type": "move",
+     "x": 620,
+     "y": 223,
+     "label": "identify no-match: docs 200, observed 400"
+    },
+    {
+     "tSec": 9.384,
+     "type": "click",
+     "x": 620,
+     "y": 223,
+     "label": "identify no-match: docs 200, observed 400"
+    },
+    {
+     "tSec": 10.883,
+     "type": "move",
+     "x": 620,
+     "y": 223
+    },
+    {
+     "tSec": 11.439,
+     "type": "move",
+     "x": 620,
+     "y": 170,
+     "label": "identify invalid fields: docs 400, observed 403"
+    },
+    {
+     "tSec": 11.562,
+     "type": "click",
+     "x": 620,
+     "y": 170,
+     "label": "identify invalid fields: docs 400, observed 403"
+    },
+    {
+     "tSec": 12.567,
+     "type": "move",
+     "x": 620,
+     "y": 170
+    },
+    {
+     "tSec": 13.364,
+     "type": "move",
+     "x": 1486,
+     "y": 349,
+     "label": "recorded response 403"
+    }
+   ]
+  },
+  "transcript-prediction": {
+   "status": "real",
+   "src": "explainer/clips/transcript-prediction.mp4",
+   "durationSec": 12.433333,
+   "width": 1920,
+   "height": 1080,
+   "url": "/app/run?run=notarize-crustdata-20261012T011404Z&speed=instant&view=order",
+   "events": [
+    {
+     "tSec": 0,
+     "type": "move",
+     "x": 1500,
+     "y": 640,
+     "label": "start"
+    },
+    {
+     "tSec": 0,
+     "type": "move",
+     "x": 1500,
+     "y": 640
+    },
+    {
+     "tSec": 0.475,
+     "type": "move",
+     "x": 1000,
+     "y": 480
+    },
+    {
+     "tSec": 0.501,
+     "type": "move",
+     "x": 1000,
+     "y": 480
+    },
+    {
+     "tSec": 1.06,
+     "type": "move",
+     "x": 620,
+     "y": 377,
+     "label": "committed prediction (before the call)"
+    },
+    {
+     "tSec": 1.184,
+     "type": "click",
+     "x": 620,
+     "y": 377,
+     "label": "committed prediction (before the call)"
+    },
+    {
+     "tSec": 2.21,
+     "type": "move",
+     "x": 620,
+     "y": 377
+    },
+    {
+     "tSec": 2.829,
+     "type": "move",
+     "x": 1236,
+     "y": 279,
+     "label": "prediction hash"
+    },
+    {
+     "tSec": 4.062,
+     "type": "move",
+     "x": 1236,
+     "y": 279
+    },
+    {
+     "tSec": 4.52,
+     "type": "move",
+     "x": 977,
+     "y": 248,
+     "label": "commit time"
+    },
+    {
+     "tSec": 5.53,
+     "type": "move",
+     "x": 977,
+     "y": 248
+    },
+    {
+     "tSec": 6.212,
+     "type": "move",
+     "x": 620,
+     "y": 430,
+     "label": "observation: status 403"
+    },
+    {
+     "tSec": 6.347,
+     "type": "click",
+     "x": 620,
+     "y": 430,
+     "label": "observation: status 403"
+    },
+    {
+     "tSec": 7.468,
+     "type": "move",
+     "x": 620,
+     "y": 430
+    },
+    {
+     "tSec": 8.062,
+     "type": "move",
+     "x": 1106,
+     "y": 349,
+     "label": "predicted (committed first)"
+    },
+    {
+     "tSec": 9.088,
+     "type": "move",
+     "x": 1106,
+     "y": 349
+    },
+    {
+     "tSec": 9.547,
+     "type": "move",
+     "x": 1486,
+     "y": 349,
+     "label": "observed"
+    },
+    {
+     "tSec": 10.478,
+     "type": "move",
+     "x": 1486,
+     "y": 349
+    },
+    {
+     "tSec": 10.928,
+     "type": "move",
+     "x": 1535,
+     "y": 426,
+     "label": "observed status 403"
+    }
+   ]
+  },
+  "certificate-adversary": {
+   "status": "real",
+   "src": "explainer/clips/certificate-adversary.mp4",
+   "durationSec": 13.466667,
+   "width": 1920,
+   "height": 1080,
+   "url": "/app/certificates/cert-90b6704587c8abbf",
+   "events": [
+    {
+     "tSec": 0,
+     "type": "move",
+     "x": 1500,
+     "y": 640,
+     "label": "start"
+    },
+    {
+     "tSec": 0.027,
+     "type": "move",
+     "x": 1500,
+     "y": 640
+    },
+    {
+     "tSec": 0.76,
+     "type": "move",
+     "x": 870,
+     "y": 137,
+     "label": "dodo.wallet.credit-amount-minor-units"
+    },
+    {
+     "tSec": 1.686,
+     "type": "move",
+     "x": 870,
+     "y": 137
+    },
+    {
+     "tSec": 2.281,
+     "type": "move",
+     "x": 1382,
+     "y": 552,
+     "label": "observed"
+    },
+    {
+     "tSec": 3.206,
+     "type": "move",
+     "x": 1382,
+     "y": 552
+    },
+    {
+     "tSec": 3.825,
+     "type": "move",
+     "x": 717,
+     "y": 686,
+     "label": "probe 1, prediction committed"
+    },
+    {
+     "tSec": 4.538,
+     "type": "move",
+     "x": 717,
+     "y": 686
+    },
+    {
+     "tSec": 4.989,
+     "type": "move",
+     "x": 1150,
+     "y": 640
+    },
+    {
+     "tSec": 4.993,
+     "type": "scroll",
+     "x": 1150,
+     "y": 640,
+     "label": "scroll to Challenge (down 866px)"
+    },
+    {
+     "tSec": 6.473,
+     "type": "move",
+     "x": 1150,
+     "y": 640
+    },
+    {
+     "tSec": 6.99,
+     "type": "move",
+     "x": 1150,
+     "y": 640
+    },
+    {
+     "tSec": 7.637,
+     "type": "move",
+     "x": 609,
+     "y": 181,
+     "label": "Adversary claude-opus-4.6"
+    },
+    {
+     "tSec": 8.655,
+     "type": "move",
+     "x": 609,
+     "y": 181
+    },
+    {
+     "tSec": 9.114,
+     "type": "move",
+     "x": 720,
+     "y": 181,
+     "label": "verdict: narrow"
+    },
+    {
+     "tSec": 10.233,
+     "type": "move",
+     "x": 720,
+     "y": 181
+    },
+    {
+     "tSec": 10.687,
+     "type": "move",
+     "x": 890,
+     "y": 292,
+     "label": "adversary reasoning"
+    },
+    {
+     "tSec": 11.603,
+     "type": "move",
+     "x": 890,
+     "y": 292
+    },
+    {
+     "tSec": 12.062,
+     "type": "move",
+     "x": 890,
+     "y": 604,
+     "label": "scope narrowed to USD"
+    }
+   ]
+  },
+  "certificates-grid": {
+   "status": "real",
+   "src": "explainer/clips/certificates-grid.mp4",
+   "durationSec": 11.933333,
+   "width": 1920,
+   "height": 1080,
+   "url": "/app/certificates",
+   "events": [
+    {
+     "tSec": 0,
+     "type": "move",
+     "x": 1500,
+     "y": 640,
+     "label": "start"
+    },
+    {
+     "tSec": 0.08,
+     "type": "move",
+     "x": 1500,
+     "y": 640
+    },
+    {
+     "tSec": 0.929,
+     "type": "move",
+     "x": 673,
+     "y": 188,
+     "label": "5 active"
+    },
+    {
+     "tSec": 1.834,
+     "type": "move",
+     "x": 673,
+     "y": 188
+    },
+    {
+     "tSec": 2.568,
+     "type": "move",
+     "x": 1200,
+     "y": 700
+    },
+    {
+     "tSec": 2.589,
+     "type": "scroll",
+     "x": 1200,
+     "y": 700,
+     "label": "scroll to issued certificates (down 300px)"
+    },
+    {
+     "tSec": 3.712,
+     "type": "move",
+     "x": 1200,
+     "y": 700
+    },
+    {
+     "tSec": 4.139,
+     "type": "move",
+     "x": 1200,
+     "y": 700
+    },
+    {
+     "tSec": 4.839,
+     "type": "move",
+     "x": 679,
+     "y": 232,
+     "label": "crustdata.enrich.headcount-total-integer"
+    },
+    {
+     "tSec": 5.606,
+     "type": "move",
+     "x": 679,
+     "y": 232
+    },
+    {
+     "tSec": 6.099,
+     "type": "move",
+     "x": 646,
+     "y": 368,
+     "label": "dodo.payments.page-size-max-100"
+    },
+    {
+     "tSec": 6.869,
+     "type": "move",
+     "x": 646,
+     "y": 368
+    },
+    {
+     "tSec": 7.385,
+     "type": "move",
+     "x": 643,
+     "y": 503,
+     "label": "dodo.refunds.page-size-max-100"
+    },
+    {
+     "tSec": 8.156,
+     "type": "move",
+     "x": 643,
+     "y": 503
+    },
+    {
+     "tSec": 8.691,
+     "type": "move",
+     "x": 668,
+     "y": 639,
+     "label": "dodo.wallet.credit-amount-minor-units"
+    },
+    {
+     "tSec": 9.456,
+     "type": "move",
+     "x": 668,
+     "y": 639
+    },
+    {
+     "tSec": 9.98,
+     "type": "move",
+     "x": 679,
+     "y": 774,
+     "label": "dodo.wallet.idempotency-key-no-duplicate"
+    },
+    {
+     "tSec": 10.749,
+     "type": "move",
+     "x": 679,
+     "y": 774
+    },
+    {
+     "tSec": 11.202,
+     "type": "move",
+     "x": 1154,
+     "y": 776,
+     "label": "certified"
+    }
+   ]
+  },
+  "approvals-held": {
+   "status": "real",
+   "src": "explainer/clips/approvals-held.mp4",
+   "durationSec": 14.133333,
+   "width": 1920,
+   "height": 1080,
+   "url": "/app/approvals?run=demo-run-guarded&fixtures=1",
+   "events": [
+    {
+     "tSec": 0,
+     "type": "move",
+     "x": 1500,
+     "y": 640,
+     "label": "start"
+    },
+    {
+     "tSec": 0.669,
+     "type": "move",
+     "x": 1500,
+     "y": 640
+    },
+    {
+     "tSec": 1.37,
+     "type": "move",
+     "x": 963,
+     "y": 106,
+     "label": "fixture label"
+    },
+    {
+     "tSec": 3.078,
+     "type": "move",
+     "x": 963,
+     "y": 106
+    },
+    {
+     "tSec": 3.619,
+     "type": "move",
+     "x": 592,
+     "y": 566,
+     "label": "held by the guard"
+    },
+    {
+     "tSec": 5.009,
+     "type": "move",
+     "x": 592,
+     "y": 566
+    },
+    {
+     "tSec": 5.462,
+     "type": "move",
+     "x": 728,
+     "y": 615,
+     "label": "why it was held"
+    },
+    {
+     "tSec": 6.947,
+     "type": "move",
+     "x": 728,
+     "y": 615
+    },
+    {
+     "tSec": 7.401,
+     "type": "move",
+     "x": 812,
+     "y": 430,
+     "label": "recorded run: not approvable"
+    },
+    {
+     "tSec": 9.064,
+     "type": "move",
+     "x": 812,
+     "y": 430
+    },
+    {
+     "tSec": 9.529,
+     "type": "move",
+     "x": 583,
+     "y": 670,
+     "label": "show evidence and trail"
+    },
+    {
+     "tSec": 9.656,
+     "type": "click",
+     "x": 583,
+     "y": 670,
+     "label": "show evidence and trail"
+    },
+    {
+     "tSec": 10.825,
+     "type": "move",
+     "x": 583,
+     "y": 670
+    },
+    {
+     "tSec": 11.277,
+     "type": "move",
+     "x": 789,
+     "y": 789,
+     "label": "missing belief (abstained)"
+    },
+    {
+     "tSec": 12.278,
+     "type": "move",
+     "x": 789,
+     "y": 789
+    },
+    {
+     "tSec": 12.729,
+     "type": "move",
+     "x": 660,
+     "y": 816,
+     "label": "belief-dodo.payments.page-size-max-100"
+    }
+   ]
+  },
+  "incidents-resolution": {
+   "status": "real",
+   "src": "explainer/clips/incidents-resolution.mp4",
+   "durationSec": 13.5,
+   "width": 1920,
+   "height": 1080,
+   "url": "/app/incidents?run=notarize-crustdata-20261012T011404Z",
+   "events": [
+    {
+     "tSec": 0,
+     "type": "move",
+     "x": 1500,
+     "y": 640,
+     "label": "start"
+    },
+    {
+     "tSec": 0.029,
+     "type": "move",
+     "x": 1500,
+     "y": 640
+    },
+    {
+     "tSec": 0.689,
+     "type": "move",
+     "x": 933,
+     "y": 188,
+     "label": "5 resolved"
+    },
+    {
+     "tSec": 1.517,
+     "type": "move",
+     "x": 933,
+     "y": 188
+    },
+    {
+     "tSec": 2.049,
+     "type": "move",
+     "x": 1523,
+     "y": 188,
+     "label": "3 open"
+    },
+    {
+     "tSec": 2.864,
+     "type": "move",
+     "x": 1523,
+     "y": 188
+    },
+    {
+     "tSec": 3.367,
+     "type": "move",
+     "x": 1300,
+     "y": 700
+    },
+    {
+     "tSec": 3.37,
+     "type": "scroll",
+     "x": 1300,
+     "y": 700,
+     "label": "scroll to the Crustdata run (down 2241px)"
+    },
+    {
+     "tSec": 4.987,
+     "type": "move",
+     "x": 1300,
+     "y": 700
+    },
+    {
+     "tSec": 5.607,
+     "type": "move",
+     "x": 1300,
+     "y": 700
+    },
+    {
+     "tSec": 6.129,
+     "type": "move",
+     "x": 747,
+     "y": 529,
+     "label": "open — belief abstained"
+    },
+    {
+     "tSec": 7.438,
+     "type": "move",
+     "x": 747,
+     "y": 529
+    },
+    {
+     "tSec": 7.987,
+     "type": "move",
+     "x": 1300,
+     "y": 760
+    },
+    {
+     "tSec": 7.998,
+     "type": "scroll",
+     "x": 1300,
+     "y": 760,
+     "label": "scroll to the resolved incident (down 291px)"
+    },
+    {
+     "tSec": 9.001,
+     "type": "move",
+     "x": 1300,
+     "y": 760
+    },
+    {
+     "tSec": 9.416,
+     "type": "move",
+     "x": 1300,
+     "y": 760
+    },
+    {
+     "tSec": 9.93,
+     "type": "move",
+     "x": 740,
+     "y": 862,
+     "label": "resolved — certified in narrowed scope"
+    },
+    {
+     "tSec": 11.043,
+     "type": "move",
+     "x": 740,
+     "y": 862
+    },
+    {
+     "tSec": 11.494,
+     "type": "move",
+     "x": 658,
+     "y": 907,
+     "label": "neatlogs trace 9db41ecd…"
+    }
+   ]
+  },
+  "economics": {
+   "status": "real",
+   "src": "explainer/clips/economics.mp4",
+   "durationSec": 12.2,
+   "width": 1920,
+   "height": 1080,
+   "url": "/app/business",
+   "events": [
+    {
+     "tSec": 0,
+     "type": "move",
+     "x": 1500,
+     "y": 640,
+     "label": "start"
+    },
+    {
+     "tSec": 0.045,
+     "type": "move",
+     "x": 1500,
+     "y": 640
+    },
+    {
+     "tSec": 0.942,
+     "type": "move",
+     "x": 556,
+     "y": 345,
+     "label": "$0.0316 per live run"
+    },
+    {
+     "tSec": 2.058,
+     "type": "move",
+     "x": 556,
+     "y": 345
+    },
+    {
+     "tSec": 2.514,
+     "type": "move",
+     "x": 594,
+     "y": 384,
+     "label": "+15.5 Crustdata credits"
+    },
+    {
+     "tSec": 3.439,
+     "type": "move",
+     "x": 594,
+     "y": 384
+    },
+    {
+     "tSec": 3.897,
+     "type": "move",
+     "x": 1081,
+     "y": 307,
+     "label": "$0.0253 per certificate"
+    },
+    {
+     "tSec": 5.013,
+     "type": "move",
+     "x": 1081,
+     "y": 307
+    },
+    {
+     "tSec": 5.468,
+     "type": "move",
+     "x": 1317,
+     "y": 307,
+     "label": "not recorded yet"
+    },
+    {
+     "tSec": 6.373,
+     "type": "move",
+     "x": 1317,
+     "y": 307
+    },
+    {
+     "tSec": 6.88,
+     "type": "move",
+     "x": 1200,
+     "y": 700
+    },
+    {
+     "tSec": 6.898,
+     "type": "scroll",
+     "x": 1200,
+     "y": 700,
+     "label": "scroll to cost per certificate (down 1221px)"
+    },
+    {
+     "tSec": 8.306,
+     "type": "move",
+     "x": 1200,
+     "y": 700
+    },
+    {
+     "tSec": 8.82,
+     "type": "move",
+     "x": 1200,
+     "y": 700
+    },
+    {
+     "tSec": 9.37,
+     "type": "move",
+     "x": 1607,
+     "y": 249,
+     "label": "Crustdata $0.0394 per certificate"
+    },
+    {
+     "tSec": 10.386,
+     "type": "move",
+     "x": 1607,
+     "y": 249
+    },
+    {
+     "tSec": 10.893,
+     "type": "move",
+     "x": 1607,
+     "y": 302,
+     "label": "Dodo $0.0217 per certificate"
+    }
+   ]
+  },
+  "chat-live-full": {
+   "status": "real",
+   "src": "explainer/clips/chat-live-full.mp4",
+   "durationSec": 42.466667,
+   "width": 1920,
+   "height": 1080,
+   "url": "/app/chat",
+   "events": [
+    {
+     "tSec": 0.001,
+     "type": "move",
+     "x": 1500,
+     "y": 640,
+     "label": "start"
+    },
+    {
+     "tSec": 0.037,
+     "type": "move",
+     "x": 1500,
+     "y": 640
+    },
+    {
+     "tSec": 0.567,
+     "type": "move",
+     "x": 1062,
+     "y": 1016,
+     "label": "message box"
+    },
+    {
+     "tSec": 0.702,
+     "type": "click",
+     "x": 1062,
+     "y": 1016,
+     "label": "message box"
+    },
+    {
+     "tSec": 1.129,
+     "type": "type",
+     "x": 1062,
+     "y": 1016,
+     "label": "Why did the Crustdata run abstain on the no-match claim?"
+    },
+    {
+     "tSec": 4.025,
+     "type": "move",
+     "x": 1062,
+     "y": 1016
+    },
+    {
+     "tSec": 4.582,
+     "type": "move",
+     "x": 1433,
+     "y": 1016,
+     "label": "send"
+    },
+    {
+     "tSec": 4.711,
+     "type": "click",
+     "x": 1433,
+     "y": 1016,
+     "label": "send"
+    },
+    {
+     "tSec": 5.054,
+     "type": "move",
+     "x": 1433,
+     "y": 1016
+    },
+    {
+     "tSec": 6.511,
+     "type": "move",
+     "x": 1500,
+     "y": 620
+    },
+    {
+     "tSec": 30.663,
+     "type": "move",
+     "x": 1500,
+     "y": 620,
+     "label": "answer finished"
+    },
+    {
+     "tSec": 33.975,
+     "type": "move",
+     "x": 1500,
+     "y": 620
+    },
+    {
+     "tSec": 39.092,
+     "type": "move",
+     "x": 1500,
+     "y": 620
+    },
+    {
+     "tSec": 40.353,
+     "type": "move",
+     "x": 1500,
+     "y": 620
+    },
+    {
+     "tSec": 40.95,
+     "type": "move",
+     "x": 930,
+     "y": 935,
+     "label": "cost, tokens and trace of this answer"
+    }
+   ]
+  },
+  "chat-live": {
+   "status": "real",
+   "src": "explainer/clips/chat-live.mp4",
+   "durationSec": 16.966667,
+   "width": 1920,
+   "height": 1080,
+   "url": "/app/chat",
+   "events": [
+    {
+     "tSec": 0.001,
+     "type": "move",
+     "x": 1500,
+     "y": 640,
+     "label": "start"
+    },
+    {
+     "tSec": 0.037,
+     "type": "move",
+     "x": 1500,
+     "y": 640
+    },
+    {
+     "tSec": 0.567,
+     "type": "move",
+     "x": 1062,
+     "y": 1016,
+     "label": "message box"
+    },
+    {
+     "tSec": 0.702,
+     "type": "click",
+     "x": 1062,
+     "y": 1016,
+     "label": "message box"
+    },
+    {
+     "tSec": 1.129,
+     "type": "type",
+     "x": 1062,
+     "y": 1016,
+     "label": "Why did the Crustdata run abstain on the no-match claim?"
+    },
+    {
+     "tSec": 4.025,
+     "type": "move",
+     "x": 1062,
+     "y": 1016
+    },
+    {
+     "tSec": 4.582,
+     "type": "move",
+     "x": 1433,
+     "y": 1016,
+     "label": "send"
+    },
+    {
+     "tSec": 4.711,
+     "type": "click",
+     "x": 1433,
+     "y": 1016,
+     "label": "send"
+    },
+    {
+     "tSec": 5.054,
+     "type": "move",
+     "x": 1433,
+     "y": 1016
+    },
+    {
+     "tSec": 6.511,
+     "type": "move",
+     "x": 1500,
+     "y": 620
+    },
+    {
+     "tSec": 11.763,
+     "type": "move",
+     "x": 1500,
+     "y": 620,
+     "label": "answer finished"
+    },
+    {
+     "tSec": 14.853,
+     "type": "move",
+     "x": 1500,
+     "y": 620
+    },
+    {
+     "tSec": 15.45,
+     "type": "move",
+     "x": 930,
+     "y": 935,
+     "label": "cost, tokens and trace of this answer"
+    }
+   ]
+  }
+ },
+ "user": {
+  "neatlogsIncidents": null
+ },
+ "data": {
+  "traces": [
+   {
+    "traceId": "9db41ecd43406cef291c93ef8c9ab1cd",
+    "runId": "notarize-crustdata-20261012T011404Z",
+    "source": "neatlogs API (explainer/data/traces.json)",
+    "startedAt": "2026-10-12T01:14:04.750Z",
+    "meta": {
+     "spanCount": 25,
+     "errorCount": 0,
+     "detections": 0,
+     "status": "success",
+     "endpoint": "GET https://ingest.neatlogs.com/api/traces/v3/<traceId> (project key)"
+    },
+    "spans": [
+     {
+      "id": "525a5a15a962466a",
+      "parentId": null,
+      "name": "notarize.crustdata",
+      "kind": "workflow",
+      "agent": null,
+      "model": null,
+      "startMs": -750,
+      "endMs": 209037,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "372fa325e77c9cb9",
+      "parentId": "525a5a15a962466a",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": -750,
+      "endMs": 4284,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "7b942757150db313",
+      "parentId": "525a5a15a962466a",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": 4250,
+      "endMs": 7000,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "45a7a0560b018ab7",
+      "parentId": "525a5a15a962466a",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": 7250,
+      "endMs": 8037,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "5681e2301faf3084",
+      "parentId": "525a5a15a962466a",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": 8250,
+      "endMs": 12593,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "6825c042839f75e8",
+      "parentId": "525a5a15a962466a",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": 12250,
+      "endMs": 14831,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "2275b3938d018c59",
+      "parentId": "525a5a15a962466a",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": 15250,
+      "endMs": 16470,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "a92ca40c2614a204",
+      "parentId": "525a5a15a962466a",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": 16250,
+      "endMs": 17055,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "d402e6b67f153d1a",
+      "parentId": "525a5a15a962466a",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": 17250,
+      "endMs": 18128,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "b62ac03a0ed32b8f",
+      "parentId": "525a5a15a962466a",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": 18250,
+      "endMs": 19875,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "b30c9c1751d6b5d8",
+      "parentId": "525a5a15a962466a",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": 20250,
+      "endMs": 20250,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "9f3094fb38f999ec",
+      "parentId": "525a5a15a962466a",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": 20250,
+      "endMs": 20911,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "03e14148b251a712",
+      "parentId": "525a5a15a962466a",
+      "name": "notary.llm",
+      "kind": "chain",
+      "agent": "Reflector",
+      "model": "claude-sonnet-4.6",
+      "startMs": 21250,
+      "endMs": 36136,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.agent": "Reflector",
+       "notary.role": "reflector",
+       "llm.model_id": "claude-sonnet-4.6",
+       "llm.input_tokens": 1076,
+       "llm.output_tokens": 975,
+       "llm.usd": 0.0196383
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "91039c4136b1ee2b",
+      "parentId": "03e14148b251a712",
+      "name": "claude-sonnet-4.6",
+      "kind": "llm",
+      "agent": null,
+      "model": "claude-sonnet-4.6",
+      "startMs": 25250,
+      "endMs": 35430,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "llm.input_tokens": 1076,
+       "llm.output_tokens": 975
+      },
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "859f41bc47f6fb80",
+      "parentId": "9359a5e2c7b08a00",
+      "name": "notary.probe.committed",
+      "kind": "log",
+      "agent": null,
+      "model": null,
+      "startMs": 36250,
+      "endMs": 36250,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.probeId": "notarize-crustdata-20261012T011404Z-p001",
+       "notary.predictionHash": "04eea097807bf25ab1e9ee6c5b7789413e6124d0b6f6abd759b39a06682f0a9d",
+       "notary.committedAt": "2026-10-12T01:14:41.071Z"
+      },
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "9359a5e2c7b08a00",
+      "parentId": "525a5a15a962466a",
+      "name": "notary.probe",
+      "kind": "tool_call",
+      "agent": null,
+      "model": null,
+      "startMs": 36250,
+      "endMs": 38366,
+      "status": "success",
+      "httpStatus": 403,
+      "httpStatusSource": "run bundle · probe p001",
+      "attrs": {
+       "tool_name": "notary.probe",
+       "notary.probeId": "notarize-crustdata-20261012T011404Z-p001",
+       "notary.claimId": "crustdata.identify.invalid-fields-400",
+       "notary.template": "unknown_param",
+       "notary.prediction": "{\"hyp-0469c35fd429\":{\"class\":\"mislabelled_semantics\",\"outcomes\":[\"*\"]},\"hyp-74a1872b1174\":{\"class\":\"undocumented_flag\",\"outcomes\":[\"applied\"]},\"hyp-fb7ef16c1268\":{\"class\":\"honored\",\"outcomes\":[\"rejected\"]}}",
+       "notary.predictionHash": "04eea097807bf25ab1e9ee6c5b7789413e6124d0b6f6abd759b39a06682f0a9d",
+       "notary.verdict": "inconclusive"
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "fa4361ca6bf127c2",
+      "parentId": "bd9f4bd23a4f3880",
+      "name": "notary.probe.committed",
+      "kind": "log",
+      "agent": null,
+      "model": null,
+      "startMs": 38250,
+      "endMs": 38250,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.probeId": "notarize-crustdata-20261012T011404Z-p002",
+       "notary.predictionHash": "fbae0b3c8bcc4278e8e80b3727573fe42e4d6d4663b00b878618b2f67cdd45fc",
+       "notary.committedAt": "2026-10-12T01:14:43.238Z"
+      },
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "bd9f4bd23a4f3880",
+      "parentId": "525a5a15a962466a",
+      "name": "notary.probe",
+      "kind": "tool_call",
+      "agent": null,
+      "model": null,
+      "startMs": 38250,
+      "endMs": 42362,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "tool_name": "notary.probe",
+       "notary.probeId": "notarize-crustdata-20261012T011404Z-p002",
+       "notary.claimId": "crustdata.enrich.headcount-total-integer",
+       "notary.template": "type_edge",
+       "notary.prediction": "{\"hyp-269cf9d8efea\":{\"class\":\"silent_coercion\",\"outcomes\":[\"float\",\"formatted_string\",\"numeric_string\"]},\"hyp-6c3fd63e8a75\":{\"class\":\"honored\",\"outcomes\":[\"doc_type\"]}}",
+       "notary.predictionHash": "fbae0b3c8bcc4278e8e80b3727573fe42e4d6d4663b00b878618b2f67cdd45fc",
+       "notary.verdict": "confirmed",
+       "notary.winningHypothesisId": "hyp-6c3fd63e8a75"
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "98ed71e2d73f88d5",
+      "parentId": "ce85309267f9c126",
+      "name": "notary.probe.committed",
+      "kind": "log",
+      "agent": null,
+      "model": null,
+      "startMs": 42250,
+      "endMs": 42250,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.probeId": "notarize-crustdata-20261012T011404Z-p003",
+       "notary.predictionHash": "fbae0b3c8bcc4278e8e80b3727573fe42e4d6d4663b00b878618b2f67cdd45fc",
+       "notary.committedAt": "2026-10-12T01:14:47.430Z"
+      },
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "ce85309267f9c126",
+      "parentId": "525a5a15a962466a",
+      "name": "notary.probe",
+      "kind": "tool_call",
+      "agent": null,
+      "model": null,
+      "startMs": 42250,
+      "endMs": 62625,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "tool_name": "notary.probe",
+       "notary.probeId": "notarize-crustdata-20261012T011404Z-p003",
+       "notary.claimId": "crustdata.enrich.headcount-total-integer",
+       "notary.template": "type_edge",
+       "notary.prediction": "{\"hyp-269cf9d8efea\":{\"class\":\"silent_coercion\",\"outcomes\":[\"float\",\"formatted_string\",\"numeric_string\"]},\"hyp-6c3fd63e8a75\":{\"class\":\"honored\",\"outcomes\":[\"doc_type\"]}}",
+       "notary.predictionHash": "fbae0b3c8bcc4278e8e80b3727573fe42e4d6d4663b00b878618b2f67cdd45fc",
+       "notary.verdict": "confirmed",
+       "notary.winningHypothesisId": "hyp-6c3fd63e8a75"
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "b2ead45f8fc71360",
+      "parentId": "fcd5eaabc8a16ea7",
+      "name": "notary.probe.committed",
+      "kind": "log",
+      "agent": null,
+      "model": null,
+      "startMs": 63250,
+      "endMs": 63250,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.probeId": "notarize-crustdata-20261012T011404Z-p004",
+       "notary.predictionHash": "fbae0b3c8bcc4278e8e80b3727573fe42e4d6d4663b00b878618b2f67cdd45fc",
+       "notary.committedAt": "2026-10-12T01:15:08.163Z"
+      },
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "fcd5eaabc8a16ea7",
+      "parentId": "525a5a15a962466a",
+      "name": "notary.probe",
+      "kind": "tool_call",
+      "agent": null,
+      "model": null,
+      "startMs": 63250,
+      "endMs": 68872,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "tool_name": "notary.probe",
+       "notary.probeId": "notarize-crustdata-20261012T011404Z-p004",
+       "notary.claimId": "crustdata.enrich.headcount-total-integer",
+       "notary.template": "type_edge",
+       "notary.prediction": "{\"hyp-269cf9d8efea\":{\"class\":\"silent_coercion\",\"outcomes\":[\"float\",\"formatted_string\",\"numeric_string\"]},\"hyp-6c3fd63e8a75\":{\"class\":\"honored\",\"outcomes\":[\"doc_type\"]}}",
+       "notary.predictionHash": "fbae0b3c8bcc4278e8e80b3727573fe42e4d6d4663b00b878618b2f67cdd45fc",
+       "notary.verdict": "confirmed",
+       "notary.winningHypothesisId": "hyp-6c3fd63e8a75"
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "8938a471d80a5e21",
+      "parentId": "f00137b5419282be",
+      "name": "claude-opus-4.6",
+      "kind": "llm",
+      "agent": null,
+      "model": "claude-opus-4.6",
+      "startMs": 69250,
+      "endMs": 77556,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "llm.input_tokens": 2186,
+       "llm.output_tokens": 282
+      },
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "c46575e0ee81d5c4",
+      "parentId": "525a5a15a962466a",
+      "name": "notary.adversary",
+      "kind": "evaluator",
+      "agent": "Adversary",
+      "model": null,
+      "startMs": 69250,
+      "endMs": 77596,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.agent": "Adversary",
+       "notary.beliefId": "belief-crustdata.enrich.headcount-total-integer",
+       "notary.claimId": "crustdata.enrich.headcount-total-integer",
+       "notary.adversary.backend": "bedrock",
+       "notary.adversary.probes": 3,
+       "notary.verdict": "narrow"
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "f00137b5419282be",
+      "parentId": "c46575e0ee81d5c4",
+      "name": "notary.llm",
+      "kind": "chain",
+      "agent": "Adversary",
+      "model": "claude-opus-4.6",
+      "startMs": 69250,
+      "endMs": 77578,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.agent": "Adversary",
+       "notary.role": "adversary",
+       "llm.model_id": "claude-opus-4.6",
+       "llm.input_tokens": 2186,
+       "llm.output_tokens": 282,
+       "llm.usd": 0.019778
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     }
+    ],
+    "probes": [
+     {
+      "id": "notarize-crustdata-20261012T011404Z-p001",
+      "spanId": "9359a5e2c7b08a00",
+      "claimId": "crustdata.identify.invalid-fields-400",
+      "committedAt": "2026-10-12T01:14:41.071Z",
+      "ranAt": "2026-10-12T01:14:43.162Z",
+      "predictionHash": "04eea097807bf25ab1e9ee6c5b7789413e6124d0b6f6abd759b39a06682f0a9d",
+      "observedStatus": 403,
+      "observedOutcome": "rejected",
+      "verdict": "inconclusive"
+     },
+     {
+      "id": "notarize-crustdata-20261012T011404Z-p002",
+      "spanId": "bd9f4bd23a4f3880",
+      "claimId": "crustdata.enrich.headcount-total-integer",
+      "committedAt": "2026-10-12T01:14:43.238Z",
+      "ranAt": "2026-10-12T01:14:47.280Z",
+      "predictionHash": "fbae0b3c8bcc4278e8e80b3727573fe42e4d6d4663b00b878618b2f67cdd45fc",
+      "observedStatus": null,
+      "observedOutcome": "doc_type",
+      "verdict": "confirmed"
+     },
+     {
+      "id": "notarize-crustdata-20261012T011404Z-p003",
+      "spanId": "ce85309267f9c126",
+      "claimId": "crustdata.enrich.headcount-total-integer",
+      "committedAt": "2026-10-12T01:14:47.430Z",
+      "ranAt": "2026-10-12T01:15:07.421Z",
+      "predictionHash": "fbae0b3c8bcc4278e8e80b3727573fe42e4d6d4663b00b878618b2f67cdd45fc",
+      "observedStatus": null,
+      "observedOutcome": "doc_type",
+      "verdict": "confirmed"
+     },
+     {
+      "id": "notarize-crustdata-20261012T011404Z-p004",
+      "spanId": "fcd5eaabc8a16ea7",
+      "claimId": "crustdata.enrich.headcount-total-integer",
+      "committedAt": "2026-10-12T01:15:08.163Z",
+      "ranAt": "2026-10-12T01:15:13.585Z",
+      "predictionHash": "fbae0b3c8bcc4278e8e80b3727573fe42e4d6d4663b00b878618b2f67cdd45fc",
+      "observedStatus": null,
+      "observedOutcome": "doc_type",
+      "verdict": "confirmed"
+     }
+    ]
+   },
+   {
+    "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+    "runId": "notarize-dodo-20261012T012315Z",
+    "source": "neatlogs API (explainer/data/traces.json)",
+    "startedAt": "2026-10-12T01:23:15.188Z",
+    "meta": {
+     "spanCount": 55,
+     "errorCount": 0,
+     "detections": 0,
+     "status": "success",
+     "endpoint": "GET https://ingest.neatlogs.com/api/traces/v3/<traceId> (project key)"
+    },
+    "spans": [
+     {
+      "id": "2a16f5965846462e",
+      "parentId": null,
+      "name": "notarize.dodo",
+      "kind": "workflow",
+      "agent": null,
+      "model": null,
+      "startMs": -1188,
+      "endMs": 361828,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "06af4217af013fc8",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": -188,
+      "endMs": -187,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "40887fd64db28b12",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": -188,
+      "endMs": -186,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "33eaa53493f8be1e",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": -188,
+      "endMs": 8549,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "6aa2fb9544ceb37b",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": 8812,
+      "endMs": 10015,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "bd148126070f6dfd",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": 9812,
+      "endMs": 10028,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "a0a294357b4f33b9",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": 9812,
+      "endMs": 12049,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "74e8895e71073cfd",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": 11812,
+      "endMs": 11829,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "031e000d58fa8c55",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": 11812,
+      "endMs": 12021,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "329f8e4a1b25e103",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": 12812,
+      "endMs": 12813,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "bfd4a1c8a836ca9e",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": 12812,
+      "endMs": 13000,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "9664a57fa0ce5e5b",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": 12812,
+      "endMs": 14035,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "e4787fa54b47281f",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": 13812,
+      "endMs": 16183,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "a13d73eda7b5db72",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": 16812,
+      "endMs": 17063,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "e81c9c8ebf854039",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": 16812,
+      "endMs": 17064,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "a01e8f4df7f0b5e0",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.recon",
+      "kind": "chain",
+      "agent": null,
+      "model": null,
+      "startMs": 17812,
+      "endMs": 18032,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {},
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "7bb6547bc20b3ac8",
+      "parentId": "1945989db8704aad",
+      "name": "notary.probe.committed",
+      "kind": "log",
+      "agent": null,
+      "model": null,
+      "startMs": 18812,
+      "endMs": 18812,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p001",
+       "notary.predictionHash": "3204744d3794dfc64f8f3596481bc86a7922c879ce90799a83335aba3964a2d2",
+       "notary.committedAt": "2026-10-12T01:23:34.762Z"
+      },
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "1945989db8704aad",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.probe",
+      "kind": "tool_call",
+      "agent": null,
+      "model": null,
+      "startMs": 18812,
+      "endMs": 19948,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "tool_name": "notary.probe",
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p001",
+       "notary.claimId": "dodo.payments.page-size-max-100",
+       "notary.template": "boundary_sweep",
+       "notary.prediction": "{\"hyp-4daedaff3435\":{\"class\":\"silent_truncation\",\"outcomes\":[\"clamped\"]},\"hyp-6b09f86e4f55\":{\"class\":\"honored\",\"outcomes\":[\"rejected\"]}}",
+       "notary.predictionHash": "3204744d3794dfc64f8f3596481bc86a7922c879ce90799a83335aba3964a2d2",
+       "notary.verdict": "confirmed",
+       "notary.winningHypothesisId": "hyp-6b09f86e4f55"
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "91cbcc308464b87f",
+      "parentId": "72b633a7b83766e5",
+      "name": "notary.probe.committed",
+      "kind": "log",
+      "agent": null,
+      "model": null,
+      "startMs": 20812,
+      "endMs": 20812,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p002",
+       "notary.predictionHash": "3204744d3794dfc64f8f3596481bc86a7922c879ce90799a83335aba3964a2d2",
+       "notary.committedAt": "2026-10-12T01:23:36.112Z"
+      },
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "ad0029bab7ad2f30",
+      "parentId": "e5099c5f7c0c3642",
+      "name": "notary.probe.committed",
+      "kind": "log",
+      "agent": null,
+      "model": null,
+      "startMs": 20812,
+      "endMs": 20812,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p003",
+       "notary.predictionHash": "3204744d3794dfc64f8f3596481bc86a7922c879ce90799a83335aba3964a2d2",
+       "notary.committedAt": "2026-10-12T01:23:36.523Z"
+      },
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "72b633a7b83766e5",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.probe",
+      "kind": "tool_call",
+      "agent": null,
+      "model": null,
+      "startMs": 20812,
+      "endMs": 21173,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "tool_name": "notary.probe",
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p002",
+       "notary.claimId": "dodo.payments.page-size-max-100",
+       "notary.template": "boundary_sweep",
+       "notary.prediction": "{\"hyp-4daedaff3435\":{\"class\":\"silent_truncation\",\"outcomes\":[\"clamped\"]},\"hyp-6b09f86e4f55\":{\"class\":\"honored\",\"outcomes\":[\"rejected\"]}}",
+       "notary.predictionHash": "3204744d3794dfc64f8f3596481bc86a7922c879ce90799a83335aba3964a2d2",
+       "notary.verdict": "confirmed",
+       "notary.winningHypothesisId": "hyp-6b09f86e4f55"
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "e5099c5f7c0c3642",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.probe",
+      "kind": "tool_call",
+      "agent": null,
+      "model": null,
+      "startMs": 20812,
+      "endMs": 21246,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "tool_name": "notary.probe",
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p003",
+       "notary.claimId": "dodo.payments.page-size-max-100",
+       "notary.template": "boundary_sweep",
+       "notary.prediction": "{\"hyp-4daedaff3435\":{\"class\":\"silent_truncation\",\"outcomes\":[\"clamped\"]},\"hyp-6b09f86e4f55\":{\"class\":\"honored\",\"outcomes\":[\"rejected\"]}}",
+       "notary.predictionHash": "3204744d3794dfc64f8f3596481bc86a7922c879ce90799a83335aba3964a2d2",
+       "notary.verdict": "confirmed",
+       "notary.winningHypothesisId": "hyp-6b09f86e4f55"
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "67e5e4aa0ede427a",
+      "parentId": "02d0e7282a6f7a0a",
+      "name": "notary.probe.committed",
+      "kind": "log",
+      "agent": null,
+      "model": null,
+      "startMs": 21812,
+      "endMs": 21812,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p005",
+       "notary.predictionHash": "87c8c94a07ac0b114212dc1fb2ec4067e30f88c353364346346cbbd1c6480ae4",
+       "notary.committedAt": "2026-10-12T01:23:37.577Z"
+      },
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "691d46ed87d9dc2d",
+      "parentId": "bb144e442ddb71d5",
+      "name": "notary.probe.committed",
+      "kind": "log",
+      "agent": null,
+      "model": null,
+      "startMs": 21812,
+      "endMs": 21812,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p004",
+       "notary.predictionHash": "87c8c94a07ac0b114212dc1fb2ec4067e30f88c353364346346cbbd1c6480ae4",
+       "notary.committedAt": "2026-10-12T01:23:37.207Z"
+      },
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "fdf99fb38a0b0d8d",
+      "parentId": "9558137ba92b262c",
+      "name": "notary.probe.committed",
+      "kind": "log",
+      "agent": null,
+      "model": null,
+      "startMs": 21812,
+      "endMs": 21812,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p006",
+       "notary.predictionHash": "87c8c94a07ac0b114212dc1fb2ec4067e30f88c353364346346cbbd1c6480ae4",
+       "notary.committedAt": "2026-10-12T01:23:37.846Z"
+      },
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "bb144e442ddb71d5",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.probe",
+      "kind": "tool_call",
+      "agent": null,
+      "model": null,
+      "startMs": 21812,
+      "endMs": 22064,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "tool_name": "notary.probe",
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p004",
+       "notary.claimId": "dodo.refunds.amount-integer",
+       "notary.template": "type_edge",
+       "notary.prediction": "{\"hyp-c744a27924fa\":{\"class\":\"honored\",\"outcomes\":[\"doc_type\"]},\"hyp-d6cbdd6239f9\":{\"class\":\"silent_coercion\",\"outcomes\":[\"float\",\"formatted_string\",\"numeric_string\"]}}",
+       "notary.predictionHash": "87c8c94a07ac0b114212dc1fb2ec4067e30f88c353364346346cbbd1c6480ae4",
+       "notary.verdict": "uninformative"
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "02d0e7282a6f7a0a",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.probe",
+      "kind": "tool_call",
+      "agent": null,
+      "model": null,
+      "startMs": 21812,
+      "endMs": 22000,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "tool_name": "notary.probe",
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p005",
+       "notary.claimId": "dodo.refunds.amount-integer",
+       "notary.template": "type_edge",
+       "notary.prediction": "{\"hyp-c744a27924fa\":{\"class\":\"honored\",\"outcomes\":[\"doc_type\"]},\"hyp-d6cbdd6239f9\":{\"class\":\"silent_coercion\",\"outcomes\":[\"float\",\"formatted_string\",\"numeric_string\"]}}",
+       "notary.predictionHash": "87c8c94a07ac0b114212dc1fb2ec4067e30f88c353364346346cbbd1c6480ae4",
+       "notary.verdict": "uninformative"
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "9558137ba92b262c",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.probe",
+      "kind": "tool_call",
+      "agent": null,
+      "model": null,
+      "startMs": 21812,
+      "endMs": 22146,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "tool_name": "notary.probe",
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p006",
+       "notary.claimId": "dodo.refunds.amount-integer",
+       "notary.template": "type_edge",
+       "notary.prediction": "{\"hyp-c744a27924fa\":{\"class\":\"honored\",\"outcomes\":[\"doc_type\"]},\"hyp-d6cbdd6239f9\":{\"class\":\"silent_coercion\",\"outcomes\":[\"float\",\"formatted_string\",\"numeric_string\"]}}",
+       "notary.predictionHash": "87c8c94a07ac0b114212dc1fb2ec4067e30f88c353364346346cbbd1c6480ae4",
+       "notary.verdict": "uninformative"
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "759e74ecadc5b5fd",
+      "parentId": "0e61d4642d36cf14",
+      "name": "notary.probe.committed",
+      "kind": "log",
+      "agent": null,
+      "model": null,
+      "startMs": 22812,
+      "endMs": 22812,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p007",
+       "notary.predictionHash": "78362dca1c7ec31bc1f4ff759ec47d0d8d3b2135220d782f643028fb23bbc1cd",
+       "notary.committedAt": "2026-10-12T01:23:38.341Z"
+      },
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "ae16d4f153997a0d",
+      "parentId": "55bd76ed9155d3d3",
+      "name": "notary.probe.committed",
+      "kind": "log",
+      "agent": null,
+      "model": null,
+      "startMs": 22812,
+      "endMs": 22812,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p008",
+       "notary.predictionHash": "78362dca1c7ec31bc1f4ff759ec47d0d8d3b2135220d782f643028fb23bbc1cd",
+       "notary.committedAt": "2026-10-12T01:23:38.763Z"
+      },
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "0e61d4642d36cf14",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.probe",
+      "kind": "tool_call",
+      "agent": null,
+      "model": null,
+      "startMs": 22812,
+      "endMs": 23127,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "tool_name": "notary.probe",
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p007",
+       "notary.claimId": "dodo.refunds.page-size-max-100",
+       "notary.template": "boundary_sweep",
+       "notary.prediction": "{\"hyp-47335cea9441\":{\"class\":\"honored\",\"outcomes\":[\"rejected\"]},\"hyp-b6be1c089529\":{\"class\":\"silent_truncation\",\"outcomes\":[\"clamped\"]}}",
+       "notary.predictionHash": "78362dca1c7ec31bc1f4ff759ec47d0d8d3b2135220d782f643028fb23bbc1cd",
+       "notary.verdict": "confirmed",
+       "notary.winningHypothesisId": "hyp-47335cea9441"
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "55bd76ed9155d3d3",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.probe",
+      "kind": "tool_call",
+      "agent": null,
+      "model": null,
+      "startMs": 22812,
+      "endMs": 23497,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "tool_name": "notary.probe",
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p008",
+       "notary.claimId": "dodo.refunds.page-size-max-100",
+       "notary.template": "boundary_sweep",
+       "notary.prediction": "{\"hyp-47335cea9441\":{\"class\":\"honored\",\"outcomes\":[\"rejected\"]},\"hyp-b6be1c089529\":{\"class\":\"silent_truncation\",\"outcomes\":[\"clamped\"]}}",
+       "notary.predictionHash": "78362dca1c7ec31bc1f4ff759ec47d0d8d3b2135220d782f643028fb23bbc1cd",
+       "notary.verdict": "confirmed",
+       "notary.winningHypothesisId": "hyp-47335cea9441"
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "c94a21702fcb0d74",
+      "parentId": "a6d08cc4f6ea3782",
+      "name": "notary.probe.committed",
+      "kind": "log",
+      "agent": null,
+      "model": null,
+      "startMs": 23812,
+      "endMs": 23812,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p009",
+       "notary.predictionHash": "78362dca1c7ec31bc1f4ff759ec47d0d8d3b2135220d782f643028fb23bbc1cd",
+       "notary.committedAt": "2026-10-12T01:23:39.488Z"
+      },
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "a6d08cc4f6ea3782",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.probe",
+      "kind": "tool_call",
+      "agent": null,
+      "model": null,
+      "startMs": 23812,
+      "endMs": 24217,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "tool_name": "notary.probe",
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p009",
+       "notary.claimId": "dodo.refunds.page-size-max-100",
+       "notary.template": "boundary_sweep",
+       "notary.prediction": "{\"hyp-47335cea9441\":{\"class\":\"honored\",\"outcomes\":[\"rejected\"]},\"hyp-b6be1c089529\":{\"class\":\"silent_truncation\",\"outcomes\":[\"clamped\"]}}",
+       "notary.predictionHash": "78362dca1c7ec31bc1f4ff759ec47d0d8d3b2135220d782f643028fb23bbc1cd",
+       "notary.verdict": "confirmed",
+       "notary.winningHypothesisId": "hyp-47335cea9441"
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "e142e56ea9a65a76",
+      "parentId": "3a8574d582bac49d",
+      "name": "notary.probe.committed",
+      "kind": "log",
+      "agent": null,
+      "model": null,
+      "startMs": 24812,
+      "endMs": 24812,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p010",
+       "notary.predictionHash": "5561a402a3c313ba71164d967ee60e3eb946121e52d550a0fa8caa0ae6f5d01e",
+       "notary.committedAt": "2026-10-12T01:23:40.398Z"
+      },
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "3a8574d582bac49d",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.probe",
+      "kind": "tool_call",
+      "agent": null,
+      "model": null,
+      "startMs": 24812,
+      "endMs": 25566,
+      "status": "success",
+      "httpStatus": 200,
+      "httpStatusSource": "run bundle · probe p010",
+      "attrs": {
+       "tool_name": "notary.probe",
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p010",
+       "notary.claimId": "dodo.wallet.credit-amount-minor-units",
+       "notary.template": "unit_roundtrip",
+       "notary.prediction": "{\"hyp-be916b968dc8\":{\"class\":\"honored\",\"outcomes\":[\"equal\"]},\"hyp-ca8a731b4705\":{\"class\":\"unit_mismatch\",\"outcomes\":[\"div100\",\"x100\"]}}",
+       "notary.predictionHash": "5561a402a3c313ba71164d967ee60e3eb946121e52d550a0fa8caa0ae6f5d01e",
+       "notary.verdict": "confirmed",
+       "notary.winningHypothesisId": "hyp-be916b968dc8"
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "3614cbe938c51b99",
+      "parentId": "1bbe2f47612997f0",
+      "name": "notary.probe.committed",
+      "kind": "log",
+      "agent": null,
+      "model": null,
+      "startMs": 25812,
+      "endMs": 25812,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p011",
+       "notary.predictionHash": "5561a402a3c313ba71164d967ee60e3eb946121e52d550a0fa8caa0ae6f5d01e",
+       "notary.committedAt": "2026-10-12T01:23:41.182Z"
+      },
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "1bbe2f47612997f0",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.probe",
+      "kind": "tool_call",
+      "agent": null,
+      "model": null,
+      "startMs": 25812,
+      "endMs": 26995,
+      "status": "success",
+      "httpStatus": 200,
+      "httpStatusSource": "run bundle · probe p011",
+      "attrs": {
+       "tool_name": "notary.probe",
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p011",
+       "notary.claimId": "dodo.wallet.credit-amount-minor-units",
+       "notary.template": "unit_roundtrip",
+       "notary.prediction": "{\"hyp-be916b968dc8\":{\"class\":\"honored\",\"outcomes\":[\"equal\"]},\"hyp-ca8a731b4705\":{\"class\":\"unit_mismatch\",\"outcomes\":[\"div100\",\"x100\"]}}",
+       "notary.predictionHash": "5561a402a3c313ba71164d967ee60e3eb946121e52d550a0fa8caa0ae6f5d01e",
+       "notary.verdict": "confirmed",
+       "notary.winningHypothesisId": "hyp-be916b968dc8"
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "01a6d257b0993a27",
+      "parentId": "a2b43db07c66ed7f",
+      "name": "notary.probe.committed",
+      "kind": "log",
+      "agent": null,
+      "model": null,
+      "startMs": 26812,
+      "endMs": 26812,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p012",
+       "notary.predictionHash": "5561a402a3c313ba71164d967ee60e3eb946121e52d550a0fa8caa0ae6f5d01e",
+       "notary.committedAt": "2026-10-12T01:23:42.408Z"
+      },
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "a2b43db07c66ed7f",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.probe",
+      "kind": "tool_call",
+      "agent": null,
+      "model": null,
+      "startMs": 26812,
+      "endMs": 27677,
+      "status": "success",
+      "httpStatus": 200,
+      "httpStatusSource": "run bundle · probe p012",
+      "attrs": {
+       "tool_name": "notary.probe",
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p012",
+       "notary.claimId": "dodo.wallet.credit-amount-minor-units",
+       "notary.template": "unit_roundtrip",
+       "notary.prediction": "{\"hyp-be916b968dc8\":{\"class\":\"honored\",\"outcomes\":[\"equal\"]},\"hyp-ca8a731b4705\":{\"class\":\"unit_mismatch\",\"outcomes\":[\"div100\",\"x100\"]}}",
+       "notary.predictionHash": "5561a402a3c313ba71164d967ee60e3eb946121e52d550a0fa8caa0ae6f5d01e",
+       "notary.verdict": "confirmed",
+       "notary.winningHypothesisId": "hyp-be916b968dc8"
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "65289dfe44870cea",
+      "parentId": "ada7d2e6ce46f23f",
+      "name": "notary.probe.committed",
+      "kind": "log",
+      "agent": null,
+      "model": null,
+      "startMs": 27812,
+      "endMs": 27812,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p013",
+       "notary.predictionHash": "7f115373c6b470ef374eec1c0a08cd724ea92630772d5a69f2df57ef5651eff1",
+       "notary.committedAt": "2026-10-12T01:23:43.494Z"
+      },
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "ada7d2e6ce46f23f",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.probe",
+      "kind": "tool_call",
+      "agent": null,
+      "model": null,
+      "startMs": 27812,
+      "endMs": 30092,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "tool_name": "notary.probe",
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p013",
+       "notary.claimId": "dodo.wallet.idempotency-key-no-duplicate",
+       "notary.template": "retry_after_timeout",
+       "notary.prediction": "{\"hyp-8599a750e379\":{\"class\":\"idempotency_hazard\",\"outcomes\":[\"duplicate\"]},\"hyp-d9ead836ca14\":{\"class\":\"honored\",\"outcomes\":[\"single\"]}}",
+       "notary.predictionHash": "7f115373c6b470ef374eec1c0a08cd724ea92630772d5a69f2df57ef5651eff1",
+       "notary.verdict": "confirmed",
+       "notary.winningHypothesisId": "hyp-d9ead836ca14"
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "be6cb6c7a2d2b1f5",
+      "parentId": "8b9d81d00c515c93",
+      "name": "notary.probe.committed",
+      "kind": "log",
+      "agent": null,
+      "model": null,
+      "startMs": 29812,
+      "endMs": 29812,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p014",
+       "notary.predictionHash": "7f115373c6b470ef374eec1c0a08cd724ea92630772d5a69f2df57ef5651eff1",
+       "notary.committedAt": "2026-10-12T01:23:45.834Z"
+      },
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "8b9d81d00c515c93",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.probe",
+      "kind": "tool_call",
+      "agent": null,
+      "model": null,
+      "startMs": 29812,
+      "endMs": 31601,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "tool_name": "notary.probe",
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p014",
+       "notary.claimId": "dodo.wallet.idempotency-key-no-duplicate",
+       "notary.template": "retry_after_timeout",
+       "notary.prediction": "{\"hyp-8599a750e379\":{\"class\":\"idempotency_hazard\",\"outcomes\":[\"duplicate\"]},\"hyp-d9ead836ca14\":{\"class\":\"honored\",\"outcomes\":[\"single\"]}}",
+       "notary.predictionHash": "7f115373c6b470ef374eec1c0a08cd724ea92630772d5a69f2df57ef5651eff1",
+       "notary.verdict": "confirmed",
+       "notary.winningHypothesisId": "hyp-d9ead836ca14"
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "900a10f9f5101756",
+      "parentId": "2dda79e4e9691cad",
+      "name": "notary.probe.committed",
+      "kind": "log",
+      "agent": null,
+      "model": null,
+      "startMs": 31812,
+      "endMs": 31812,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p015",
+       "notary.predictionHash": "7f115373c6b470ef374eec1c0a08cd724ea92630772d5a69f2df57ef5651eff1",
+       "notary.committedAt": "2026-10-12T01:23:47.648Z"
+      },
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "2dda79e4e9691cad",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.probe",
+      "kind": "tool_call",
+      "agent": null,
+      "model": null,
+      "startMs": 31812,
+      "endMs": 33507,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "tool_name": "notary.probe",
+       "notary.probeId": "notarize-dodo-20261012T012315Z-p015",
+       "notary.claimId": "dodo.wallet.idempotency-key-no-duplicate",
+       "notary.template": "retry_after_timeout",
+       "notary.prediction": "{\"hyp-8599a750e379\":{\"class\":\"idempotency_hazard\",\"outcomes\":[\"duplicate\"]},\"hyp-d9ead836ca14\":{\"class\":\"honored\",\"outcomes\":[\"single\"]}}",
+       "notary.predictionHash": "7f115373c6b470ef374eec1c0a08cd724ea92630772d5a69f2df57ef5651eff1",
+       "notary.verdict": "confirmed",
+       "notary.winningHypothesisId": "hyp-d9ead836ca14"
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "fa77b07d81fb2125",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.adversary",
+      "kind": "evaluator",
+      "agent": "Adversary",
+      "model": null,
+      "startMs": 33812,
+      "endMs": 48587,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.agent": "Adversary",
+       "notary.beliefId": "belief-dodo.payments.page-size-max-100",
+       "notary.claimId": "dodo.payments.page-size-max-100",
+       "notary.adversary.backend": "bedrock",
+       "notary.adversary.probes": 3,
+       "notary.verdict": "narrow"
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "721dd4138f97fcf8",
+      "parentId": "fa77b07d81fb2125",
+      "name": "notary.llm",
+      "kind": "chain",
+      "agent": "Adversary",
+      "model": "claude-opus-4.6",
+      "startMs": 33812,
+      "endMs": 48542,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.agent": "Adversary",
+       "notary.role": "adversary",
+       "llm.model_id": "claude-opus-4.6",
+       "llm.input_tokens": 2177,
+       "llm.output_tokens": 272,
+       "llm.usd": 0.0194535
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "d31f225d85e3e5b2",
+      "parentId": "721dd4138f97fcf8",
+      "name": "claude-opus-4.6",
+      "kind": "llm",
+      "agent": null,
+      "model": "claude-opus-4.6",
+      "startMs": 38812,
+      "endMs": 48633,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "llm.input_tokens": 2177,
+       "llm.output_tokens": 272
+      },
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "c4ec1b9a2ce672da",
+      "parentId": "8cd870488571ce9b",
+      "name": "claude-opus-4.6",
+      "kind": "llm",
+      "agent": null,
+      "model": "claude-opus-4.6",
+      "startMs": 48812,
+      "endMs": 58408,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "llm.input_tokens": 2155,
+       "llm.output_tokens": 345
+      },
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "ecc36f72447540f1",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.adversary",
+      "kind": "evaluator",
+      "agent": "Adversary",
+      "model": null,
+      "startMs": 48812,
+      "endMs": 58467,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.agent": "Adversary",
+       "notary.beliefId": "belief-dodo.refunds.page-size-max-100",
+       "notary.claimId": "dodo.refunds.page-size-max-100",
+       "notary.adversary.backend": "bedrock",
+       "notary.adversary.probes": 3,
+       "notary.verdict": "narrow"
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "8cd870488571ce9b",
+      "parentId": "ecc36f72447540f1",
+      "name": "notary.llm",
+      "kind": "chain",
+      "agent": "Adversary",
+      "model": "claude-opus-4.6",
+      "startMs": 48812,
+      "endMs": 58445,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.agent": "Adversary",
+       "notary.role": "adversary",
+       "llm.model_id": "claude-opus-4.6",
+       "llm.input_tokens": 2155,
+       "llm.output_tokens": 345,
+       "llm.usd": 0.02134
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "621d7a03616bb3bb",
+      "parentId": "bd23cab5de9517dc",
+      "name": "claude-opus-4.6",
+      "kind": "llm",
+      "agent": null,
+      "model": "claude-opus-4.6",
+      "startMs": 58812,
+      "endMs": 65845,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "llm.input_tokens": 2911,
+       "llm.output_tokens": 201
+      },
+      "origin": "api",
+      "attrsFromReceipt": false
+     },
+     {
+      "id": "6a4aa9428dd95c00",
+      "parentId": "2a16f5965846462e",
+      "name": "notary.adversary",
+      "kind": "evaluator",
+      "agent": "Adversary",
+      "model": null,
+      "startMs": 58812,
+      "endMs": 65899,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.agent": "Adversary",
+       "notary.beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+       "notary.claimId": "dodo.wallet.credit-amount-minor-units",
+       "notary.adversary.backend": "bedrock",
+       "notary.adversary.probes": 3,
+       "notary.verdict": "narrow"
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "bd23cab5de9517dc",
+      "parentId": "6a4aa9428dd95c00",
+      "name": "notary.llm",
+      "kind": "chain",
+      "agent": "Adversary",
+      "model": "claude-opus-4.6",
+      "startMs": 58812,
+      "endMs": 65873,
+      "status": "success",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.agent": "Adversary",
+       "notary.role": "adversary",
+       "llm.model_id": "claude-opus-4.6",
+       "llm.input_tokens": 2911,
+       "llm.output_tokens": 201,
+       "llm.usd": 0.021538
+      },
+      "origin": "api",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "fefcd300f701682c",
+      "parentId": null,
+      "name": "notary.adversary",
+      "kind": "evaluator",
+      "agent": "Adversary",
+      "model": null,
+      "startMs": 66330,
+      "endMs": 75230,
+      "status": "ok",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.agent": "Adversary",
+       "notary.beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
+       "notary.claimId": "dodo.wallet.idempotency-key-no-duplicate",
+       "notary.adversary.backend": "bedrock",
+       "notary.adversary.probes": 3,
+       "notary.verdict": "narrow"
+      },
+      "origin": "receipt",
+      "attrsFromReceipt": true
+     },
+     {
+      "id": "b7ccbd7ceb7a8357",
+      "parentId": "fefcd300f701682c",
+      "name": "notary.llm",
+      "kind": "chain",
+      "agent": "Adversary",
+      "model": "claude-opus-4.6",
+      "startMs": 66366,
+      "endMs": 75143,
+      "status": "ok",
+      "httpStatus": null,
+      "httpStatusSource": null,
+      "attrs": {
+       "notary.agent": "Adversary",
+       "notary.role": "adversary",
+       "llm.model_id": "claude-opus-4.6",
+       "llm.input_tokens": 3029,
+       "llm.output_tokens": 288,
+       "llm.usd": 0.0245795
+      },
+      "origin": "receipt",
+      "attrsFromReceipt": true
+     }
+    ],
+    "probes": [
+     {
+      "id": "notarize-dodo-20261012T012315Z-p001",
+      "spanId": "1945989db8704aad",
+      "claimId": "dodo.payments.page-size-max-100",
+      "committedAt": "2026-10-12T01:23:34.762Z",
+      "ranAt": "2026-10-12T01:23:35.534Z",
+      "predictionHash": "3204744d3794dfc64f8f3596481bc86a7922c879ce90799a83335aba3964a2d2",
+      "observedStatus": null,
+      "observedOutcome": "rejected",
+      "verdict": "confirmed"
+     },
+     {
+      "id": "notarize-dodo-20261012T012315Z-p002",
+      "spanId": "72b633a7b83766e5",
+      "claimId": "dodo.payments.page-size-max-100",
+      "committedAt": "2026-10-12T01:23:36.112Z",
+      "ranAt": "2026-10-12T01:23:36.415Z",
+      "predictionHash": "3204744d3794dfc64f8f3596481bc86a7922c879ce90799a83335aba3964a2d2",
+      "observedStatus": null,
+      "observedOutcome": "rejected",
+      "verdict": "confirmed"
+     },
+     {
+      "id": "notarize-dodo-20261012T012315Z-p003",
+      "spanId": "e5099c5f7c0c3642",
+      "claimId": "dodo.payments.page-size-max-100",
+      "committedAt": "2026-10-12T01:23:36.523Z",
+      "ranAt": "2026-10-12T01:23:36.891Z",
+      "predictionHash": "3204744d3794dfc64f8f3596481bc86a7922c879ce90799a83335aba3964a2d2",
+      "observedStatus": null,
+      "observedOutcome": "rejected",
+      "verdict": "confirmed"
+     },
+     {
+      "id": "notarize-dodo-20261012T012315Z-p004",
+      "spanId": "bb144e442ddb71d5",
+      "claimId": "dodo.refunds.amount-integer",
+      "committedAt": "2026-10-12T01:23:37.207Z",
+      "ranAt": "2026-10-12T01:23:37.430Z",
+      "predictionHash": "87c8c94a07ac0b114212dc1fb2ec4067e30f88c353364346346cbbd1c6480ae4",
+      "observedStatus": null,
+      "observedOutcome": null,
+      "verdict": "uninformative"
+     },
+     {
+      "id": "notarize-dodo-20261012T012315Z-p005",
+      "spanId": "02d0e7282a6f7a0a",
+      "claimId": "dodo.refunds.amount-integer",
+      "committedAt": "2026-10-12T01:23:37.577Z",
+      "ranAt": "2026-10-12T01:23:37.734Z",
+      "predictionHash": "87c8c94a07ac0b114212dc1fb2ec4067e30f88c353364346346cbbd1c6480ae4",
+      "observedStatus": null,
+      "observedOutcome": null,
+      "verdict": "uninformative"
+     },
+     {
+      "id": "notarize-dodo-20261012T012315Z-p006",
+      "spanId": "9558137ba92b262c",
+      "claimId": "dodo.refunds.amount-integer",
+      "committedAt": "2026-10-12T01:23:37.846Z",
+      "ranAt": "2026-10-12T01:23:38.072Z",
+      "predictionHash": "87c8c94a07ac0b114212dc1fb2ec4067e30f88c353364346346cbbd1c6480ae4",
+      "observedStatus": null,
+      "observedOutcome": null,
+      "verdict": "uninformative"
+     },
+     {
+      "id": "notarize-dodo-20261012T012315Z-p007",
+      "spanId": "0e61d4642d36cf14",
+      "claimId": "dodo.refunds.page-size-max-100",
+      "committedAt": "2026-10-12T01:23:38.341Z",
+      "ranAt": "2026-10-12T01:23:38.603Z",
+      "predictionHash": "78362dca1c7ec31bc1f4ff759ec47d0d8d3b2135220d782f643028fb23bbc1cd",
+      "observedStatus": null,
+      "observedOutcome": "rejected",
+      "verdict": "confirmed"
+     },
+     {
+      "id": "notarize-dodo-20261012T012315Z-p008",
+      "spanId": "55bd76ed9155d3d3",
+      "claimId": "dodo.refunds.page-size-max-100",
+      "committedAt": "2026-10-12T01:23:38.763Z",
+      "ranAt": "2026-10-12T01:23:39.086Z",
+      "predictionHash": "78362dca1c7ec31bc1f4ff759ec47d0d8d3b2135220d782f643028fb23bbc1cd",
+      "observedStatus": null,
+      "observedOutcome": "rejected",
+      "verdict": "confirmed"
+     },
+     {
+      "id": "notarize-dodo-20261012T012315Z-p009",
+      "spanId": "a6d08cc4f6ea3782",
+      "claimId": "dodo.refunds.page-size-max-100",
+      "committedAt": "2026-10-12T01:23:39.488Z",
+      "ranAt": "2026-10-12T01:23:39.772Z",
+      "predictionHash": "78362dca1c7ec31bc1f4ff759ec47d0d8d3b2135220d782f643028fb23bbc1cd",
+      "observedStatus": null,
+      "observedOutcome": "rejected",
+      "verdict": "confirmed"
+     },
+     {
+      "id": "notarize-dodo-20261012T012315Z-p010",
+      "spanId": "3a8574d582bac49d",
+      "claimId": "dodo.wallet.credit-amount-minor-units",
+      "committedAt": "2026-10-12T01:23:40.398Z",
+      "ranAt": "2026-10-12T01:23:41.112Z",
+      "predictionHash": "5561a402a3c313ba71164d967ee60e3eb946121e52d550a0fa8caa0ae6f5d01e",
+      "observedStatus": 200,
+      "observedOutcome": "equal",
+      "verdict": "confirmed"
+     },
+     {
+      "id": "notarize-dodo-20261012T012315Z-p011",
+      "spanId": "1bbe2f47612997f0",
+      "claimId": "dodo.wallet.credit-amount-minor-units",
+      "committedAt": "2026-10-12T01:23:41.182Z",
+      "ranAt": "2026-10-12T01:23:42.325Z",
+      "predictionHash": "5561a402a3c313ba71164d967ee60e3eb946121e52d550a0fa8caa0ae6f5d01e",
+      "observedStatus": 200,
+      "observedOutcome": "equal",
+      "verdict": "confirmed"
+     },
+     {
+      "id": "notarize-dodo-20261012T012315Z-p012",
+      "spanId": "a2b43db07c66ed7f",
+      "claimId": "dodo.wallet.credit-amount-minor-units",
+      "committedAt": "2026-10-12T01:23:42.408Z",
+      "ranAt": "2026-10-12T01:23:43.181Z",
+      "predictionHash": "5561a402a3c313ba71164d967ee60e3eb946121e52d550a0fa8caa0ae6f5d01e",
+      "observedStatus": 200,
+      "observedOutcome": "equal",
+      "verdict": "confirmed"
+     },
+     {
+      "id": "notarize-dodo-20261012T012315Z-p013",
+      "spanId": "ada7d2e6ce46f23f",
+      "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+      "committedAt": "2026-10-12T01:23:43.494Z",
+      "ranAt": "2026-10-12T01:23:45.585Z",
+      "predictionHash": "7f115373c6b470ef374eec1c0a08cd724ea92630772d5a69f2df57ef5651eff1",
+      "observedStatus": null,
+      "observedOutcome": "single",
+      "verdict": "confirmed"
+     },
+     {
+      "id": "notarize-dodo-20261012T012315Z-p014",
+      "spanId": "8b9d81d00c515c93",
+      "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+      "committedAt": "2026-10-12T01:23:45.834Z",
+      "ranAt": "2026-10-12T01:23:47.572Z",
+      "predictionHash": "7f115373c6b470ef374eec1c0a08cd724ea92630772d5a69f2df57ef5651eff1",
+      "observedStatus": null,
+      "observedOutcome": "single",
+      "verdict": "confirmed"
+     },
+     {
+      "id": "notarize-dodo-20261012T012315Z-p015",
+      "spanId": "2dda79e4e9691cad",
+      "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+      "committedAt": "2026-10-12T01:23:47.648Z",
+      "ranAt": "2026-10-12T01:23:49.308Z",
+      "predictionHash": "7f115373c6b470ef374eec1c0a08cd724ea92630772d5a69f2df57ef5651eff1",
+      "observedStatus": null,
+      "observedOutcome": "single",
+      "verdict": "confirmed"
+     }
+    ]
+   }
+  ],
+  "tracesSource": "explainer/data/traces.json",
+  "incidents": [
+   {
+    "id": "inc-2c16f0080f1c842d",
+    "runId": "notarize-crustdata-20261012T011404Z",
+    "kind": "checker_anomaly",
+    "severity": "warning",
+    "at": "2026-10-12T01:14:04.667Z",
+    "tool": "crustdata",
+    "agent": null,
+    "summary": "The checker saw crustdata.identify.no-match-200-empty disagree with the docs: expected {\"status\":200}, observed {\"status\":400}.",
+    "claimId": "crustdata.identify.no-match-200-empty",
+    "traceId": null,
+    "spanId": null,
+    "expected": 200,
+    "observed": 400,
+    "resolution": {
+     "status": "open",
+     "action": "none",
+     "summary": "Still under investigation: belief-crustdata.identify.no-match-200-empty is hypothesis at P(holds)=0.500."
+    }
+   },
+   {
+    "id": "inc-95eb3d8070c8630b",
+    "runId": "notarize-crustdata-20261012T011404Z",
+    "kind": "checker_anomaly",
+    "severity": "warning",
+    "at": "2026-10-12T01:14:04.667Z",
+    "tool": "crustdata",
+    "agent": null,
+    "summary": "The checker saw crustdata.identify.invalid-fields-400 disagree with the docs: expected {\"status\":400}, observed {\"status\":403}.",
+    "claimId": "crustdata.identify.invalid-fields-400",
+    "traceId": null,
+    "spanId": null,
+    "expected": 400,
+    "observed": 403,
+    "resolution": {
+     "status": "open",
+     "action": "belief_abstained",
+     "summary": "Notary abstained on belief-crustdata.identify.invalid-fields-400: not enough evidence to certify; no guard relies on it."
+    }
+   },
+   {
+    "id": "inc-c27a0109972a95d6",
+    "runId": "notarize-crustdata-20261012T011404Z",
+    "kind": "checker_anomaly",
+    "severity": "warning",
+    "at": "2026-10-12T01:14:04.667Z",
+    "tool": "crustdata",
+    "agent": null,
+    "summary": "The checker saw crustdata.enrich.no-match-200-empty disagree with the docs: expected {\"status\":200}, observed {\"status\":400}.",
+    "claimId": "crustdata.enrich.no-match-200-empty",
+    "traceId": null,
+    "spanId": null,
+    "expected": 200,
+    "observed": 400,
+    "resolution": {
+     "status": "open",
+     "action": "none",
+     "summary": "Still under investigation: belief-crustdata.enrich.no-match-200-empty is hypothesis at P(holds)=0.500."
+    }
+   },
+   {
+    "id": "inc-5b4a8f4942bcb288",
+    "runId": "notarize-crustdata-20261012T011404Z",
+    "kind": "adversary_downgrade",
+    "severity": "warning",
+    "at": "2026-10-12T01:15:22.554Z",
+    "tool": "crustdata",
+    "agent": "adversary",
+    "summary": "The Adversary narrowed belief-crustdata.enrich.headcount-total-integer instead of upholding it (model claude-opus-4.6).",
+    "claimId": "crustdata.enrich.headcount-total-integer",
+    "traceId": "9db41ecd43406cef291c93ef8c9ab1cd",
+    "spanId": "c46575e0ee81d5c4",
+    "expected": null,
+    "observed": null,
+    "resolution": {
+     "status": "resolved",
+     "action": "certified",
+     "summary": "Certified only within the narrowed scope (headcount.total is an integer for well-known companies with non-null headcount …); guards refuse calls outside it."
+    }
+   },
+   {
+    "id": "inc-b1b8a63eb27021d0",
+    "runId": "notarize-dodo-20261012T012315Z",
+    "kind": "adversary_downgrade",
+    "severity": "warning",
+    "at": "2026-10-12T01:24:04.644Z",
+    "tool": "dodo",
+    "agent": "adversary",
+    "summary": "The Adversary narrowed belief-dodo.payments.page-size-max-100 instead of upholding it (model claude-opus-4.6).",
+    "claimId": "dodo.payments.page-size-max-100",
+    "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+    "spanId": "fa77b07d81fb2125",
+    "expected": null,
+    "observed": null,
+    "resolution": {
+     "status": "resolved",
+     "action": "certified",
+     "summary": "Certified only within the narrowed scope (dodo.listPayments rejects page_size values above 100 with HTTP 400, tested with…); guards refuse calls outside it."
+    }
+   },
+   {
+    "id": "inc-e6ba1d36ca5bf893",
+    "runId": "notarize-dodo-20261012T012315Z",
+    "kind": "adversary_downgrade",
+    "severity": "warning",
+    "at": "2026-10-12T01:24:14.365Z",
+    "tool": "dodo",
+    "agent": "adversary",
+    "summary": "The Adversary narrowed belief-dodo.refunds.page-size-max-100 instead of upholding it (model claude-opus-4.6).",
+    "claimId": "dodo.refunds.page-size-max-100",
+    "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+    "spanId": "ecc36f72447540f1",
+    "expected": null,
+    "observed": null,
+    "resolution": {
+     "status": "resolved",
+     "action": "certified",
+     "summary": "Certified only within the narrowed scope (The API rejects page_size values above 100 with HTTP 400 on GET /refunds for th…); guards refuse calls outside it."
+    }
+   },
+   {
+    "id": "inc-c2fa23625ee43ae7",
+    "runId": "notarize-dodo-20261012T012315Z",
+    "kind": "adversary_downgrade",
+    "severity": "warning",
+    "at": "2026-10-12T01:24:21.481Z",
+    "tool": "dodo",
+    "agent": "adversary",
+    "summary": "The Adversary narrowed belief-dodo.wallet.credit-amount-minor-units instead of upholding it (model claude-opus-4.6).",
+    "claimId": "dodo.wallet.credit-amount-minor-units",
+    "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+    "spanId": "6a4aa9428dd95c00",
+    "expected": null,
+    "observed": null,
+    "resolution": {
+     "status": "resolved",
+     "action": "certified",
+     "summary": "Certified only within the narrowed scope (amount is in minor units for USD wallets only); guards refuse calls outside it."
+    }
+   },
+   {
+    "id": "inc-2c3bdd6adaaad9b5",
+    "runId": "notarize-dodo-20261012T012315Z",
+    "kind": "adversary_downgrade",
+    "severity": "warning",
+    "at": "2026-10-12T01:24:30.416Z",
+    "tool": "dodo",
+    "agent": "adversary",
+    "summary": "The Adversary narrowed belief-dodo.wallet.idempotency-key-no-duplicate instead of upholding it (model claude-opus-4.6).",
+    "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+    "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+    "spanId": "fefcd300f701682c",
+    "expected": null,
+    "observed": null,
+    "resolution": {
+     "status": "resolved",
+     "action": "certified",
+     "summary": "Certified only within the narrowed scope (Idempotency key deduplication is confirmed for rapid successive credit entries …); guards refuse calls outside it."
+    }
+   }
+  ],
+  "incidentsSource": "packages/showreel/explainer/data/incidents-crustdata.json, packages/showreel/explainer/data/incidents-dodo.json",
+  "entire": {
+   "source": "packages/showreel/explainer/data/entire.json",
+   "cliVersion": "0.11.4",
+   "checkpoints": [
+    {
+     "id": "01M4QHYRRA305WSAFABGA55801",
+     "at": "2026-10-12T07:59:05.000Z",
+     "agent": "Claude Code",
+     "model": "claude-opus-5-5",
+     "commit": "e08acbcc40da9085dd42815e94b5ee4bd0f7f3b5",
+     "message": "Fix findings from the fresh-clone check"
+    },
+    {
+     "id": "01M4QGCEHN5Z2R0775S6EY114C",
+     "at": "2026-10-12T07:31:38.000Z",
+     "agent": "Claude Code",
+     "model": "claude-opus-5-5",
+     "commit": "5ad950271fb48d911aeab25f3fec18de410ab8be",
+     "message": "cfo.ai sync: resolve the workspace's real scenario name; plain error messages"
+    },
+    {
+     "id": "01M4QG2XWAW0V7W40SJR0NTCW7",
+     "at": "2026-10-12T07:26:26.000Z",
+     "agent": "Claude Code",
+     "model": "claude-opus-5-5",
+     "commit": "ba78a9fa5f259dfdbf901a562e5c3f28ee2bcca4",
+     "message": "cfo.ai: read the workspace id from org_id (the live list_orgs shape)"
+    },
+    {
+     "id": "01M4QFHA5QFV33NKTR8X3XBVJS",
+     "at": "2026-10-12T07:16:44.000Z",
+     "agent": "Claude Code",
+     "model": "claude-opus-5-5",
+     "commit": "aa0618327a2de52a7ca28b97c56284426a8d017d",
+     "message": "Evidence after the third Entire checkpoint (3 checkpoints, 0 unguarded call sites)"
+    },
+    {
+     "id": "01M4QFBNF7X6DEY607639689W2",
+     "at": "2026-10-12T07:13:42.000Z",
+     "agent": "Claude Code",
+     "model": "claude-opus-5-5",
+     "commit": "1592c6e4b69856a75f9a8fcf890ab3633fa0d46f",
+     "message": "Hackathon audit fixes: direct cfo.ai MCP, honest replay, correct incidents, hardened chat and server"
+    },
+    {
+     "id": "01M4Q2JS4B3N3B42W0X9MGNSS7",
+     "at": "2026-10-12T03:30:23.000Z",
+     "agent": "Claude Code",
+     "model": "claude-opus-5-5",
+     "commit": "0f2406fc35c800478c2a208c0cf678ba06686d7d",
+     "message": "Evidence after the first Entire checkpoint; cfo.ai live only with an imported plan"
+    },
+    {
+     "id": "01M4Q2CJDTHF76EE7QK11TEEV1",
+     "at": "2026-10-12T03:27:01.000Z",
+     "agent": "Claude Code",
+     "model": "claude-opus-5-5",
+     "commit": "409fd51b91c296324b434942aa13628c48a93259",
+     "message": "Session 12: real runs, real agents, all sponsors wired"
+    }
+   ],
+   "coverage": {
+    "sites": 33,
+    "guarded": 26,
+    "rawByDesign": 7,
+    "unguardedCallSites": 0,
+    "callEdges": 8635,
+    "commit": "e08acbcc40da9085dd42815e94b5ee4bd0f7f3b5"
+   }
+  },
+  "coverage": {
+   "source": "packages/showreel/explainer/data/coverage.txt",
+   "command": "notary guards coverage  backend: entire",
+   "lines": [
+    "notary guards coverage  backend: entire",
+    "  entire graph edges (entire-graph v0.4.0, working tree): 8640 call and 402 construct relations scanned, 2 reach a raw client; wiring and createTools() checks via TypeScript",
+    "  entire graph edges --repo . --format ndjson --worktree --relation CALLS,ASYNC_CALLS,CONSTRUCTS",
+    "  graph: entire-graph v0.4.0, commit 4ff95480a5c4 + working tree, completeness ok, 0 partial failures",
+    "",
+    "Raw client methods (18 public methods from the class declarations)",
+    "  OP                            STATUS   CALL SITE                             DETAIL",
+    "  crustdata.enrichCompany       guarded  packages/core/src/tools/index.ts:118  exposed(crustdata, CRUSTDATA_OPS, wrap) -> wrap(op, raw.bind(client))",
+    "  crustdata.getCreditBalance    guarded  packages/core/src/tools/index.ts:120  exposed(crustdata, CRUSTDATA_OPS, wrap) -> wrap(op, raw.bind(client))",
+    "  crustdata.identifyCompany     guarded  packages/core/src/tools/index.ts:119  exposed(crustdata, CRUSTDATA_OPS, wrap) -> wrap(op, raw.bind(client))",
+    "  dodo.changeSubscriptionPlan   guarded  packages/core/src/tools/index.ts:135  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))",
+    "  dodo.createCheckoutSession    guarded  packages/core/src/tools/index.ts:128  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))",
+    "  dodo.createCustomer           guarded  packages/core/src/tools/index.ts:124  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))",
+    "  dodo.createPayment            guarded  packages/core/src/tools/index.ts:127  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))",
+    "  dodo.createProduct            guarded  packages/core/src/tools/index.ts:126  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))",
+    "  dodo.createRefund             guarded  packages/core/src/tools/index.ts:131  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))",
+    "  dodo.createWalletLedgerEntry  guarded  packages/core/src/tools/index.ts:137  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))",
+    "  dodo.getPayment               guarded  packages/core/src/tools/index.ts:129  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))",
+    "  dodo.getRefund                guarded  packages/core/src/tools/index.ts:133  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))",
+    "  dodo.getSubscription          guarded  packages/core/src/tools/index.ts:134  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))",
+    "  dodo.listCustomers            guarded  packages/core/src/tools/index.ts:125  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))",
+    "  dodo.listCustomerWallets      guarded  packages/core/src/tools/index.ts:136  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))",
+    "  dodo.listPayments             guarded  packages/core/src/tools/index.ts:130  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))",
+    "  dodo.listRefunds              guarded  packages/core/src/tools/index.ts:132  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))",
+    "  dodo.listWalletLedgerEntries  guarded  packages/core/src/tools/index.ts:138  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))",
+    "",
+    "Raw client constructions",
+    "  OP                   STATUS   CALL SITE                             DETAIL",
+    "  new CrustdataClient  guarded  packages/core/src/tools/index.ts:219  exposed(crustdata, CRUSTDATA_OPS, wrap) -> wrap(op, raw.bind(client))",
+    "  new DodoClient       guarded  packages/core/src/tools/index.ts:225  exposed(dodo, DODO_OPS, wrap) -> wrap(op, raw.bind(client))",
+    "",
+    "createTools() calls",
+    "  OP             STATUS         CALL SITE                                  DETAIL",
+    "  createTools()  raw-by-design  packages/core/scripts/seed-dodo.ts:135     seeding: builds the test-mode world (including the states guards exist to block) before any belief exists",
+    "  createTools()  guarded        packages/core/src/api/approvals.ts:433     wrap: gctx.wrap",
+    "  createTools()  guarded        packages/core/src/api/health.ts:134        wrap: readOnlyProbeWrap([\"crustdata.getCreditBalance\"])",
+    "  createTools()  guarded        packages/core/src/api/health.ts:150        wrap: readOnlyProbeWrap([\"dodo.listCustomers\"])",
+    "  createTools()  guarded        packages/core/src/chat/tools.ts:616        wrap: chatReadOnlyWrap([\"crustdata.enrichCompany\"])",
+    "  createTools()  guarded        packages/core/src/chat/tools.ts:677        wrap: chatReadOnlyWrap([`dodo.${method}`])",
+    "  createTools()  raw-by-design  packages/core/src/checker/recon.ts:168     probing: the recon sweep measures the raw tool behavior that guards would hide (DECISIONS #56)",
+    "  createTools()  raw-by-design  packages/core/src/queue/run.ts:265         wrap: wrap can be identityWrap; naive baseline: `gctx?.wrap ?? identityWrap` is identity only for --variant naive, the unguarded control",
+    "  createTools()  raw-by-design  packages/core/src/queue/run.ts:279         wrap: wrap can be identityWrap; naive baseline: `gctx?.wrap ?? identityWrap` is identity only for --variant naive, the unguarded control",
+    "  createTools()  guarded        packages/core/src/queue/run.ts:502         wrap: gctx.wrap",
+    "  createTools()  raw-by-design  packages/core/src/reflect/notarize.ts:207  probing (replay of recorded probes, incl. drift): probes must see the raw response (DECISIONS #56)",
+    "  createTools()  raw-by-design  packages/core/src/reflect/notarize.ts:230  probing: re-verification sentinel probes must see the raw response, never the guards they re-verify (DECISIONS #56, #105)",
+    "  createTools()  raw-by-design  packages/core/src/reflect/notarize.ts:430  probing: probes must see the raw response to confirm or refute a belief (DECISIONS #56)",
+    "",
+    "Totals: 33 sites, 26 guarded, 7 raw-by-design, 0 UNGUARDED (18 ops)",
+    "unguarded_call_sites = 0"
+   ]
+  },
+  "economics": {
+   "source": "packages/showreel/explainer/data/economics.json",
+   "costPerRun": {
+    "usd": 0.031581825,
+    "credits": 15.5
+   },
+   "costPerCertificate": {
+    "usd": 0.02526546,
+    "credits": 12.4
+   },
+   "liveRuns": 4,
+   "certified": [
+    {
+     "tool": "crustdata",
+     "certified": 1
+    },
+    {
+     "tool": "dodo",
+     "certified": 4
+    }
+   ],
+   "planImported": false,
+   "exportPath": "export/cfo-inputs.csv",
+   "exportHead": [
+    "run_id,started_at,month,stage,variant,tool,mode,new_spend,status,model_usd,usd_executor,usd_reflector,usd_adversary,tokens,crustdata_credits,unsafe_actions,held_actions,notarized_beliefs",
+    "notarize-crustdata-20261012T011404Z,2026-10-12T01:14:04.667Z,2026-10,notarize-full,notarize,crustdata,live,yes,completed,0.0394163,0,0.0196383,0.019778,4519,62,,,1",
+    "notarize-dodo-20261012T012315Z,2026-10-12T01:23:15.107Z,2026-10,notarize-full,notarize,dodo,live,yes,completed,0.086911,0,0,0.086911,11378,0,,,4",
+    "recon-dodo-20261012T013640Z,2026-10-12T01:36:40.797Z,2026-10,notarize-recon,notarize,dodo,live,yes,completed,0,0,0,0,0,0,,,0",
+    "notarize-dodo-20261012T014032Z,2026-10-12T01:40:32.072Z,2026-10,notarize-full,notarize,dodo,live,yes,completed,0,0,0,0,0,0,,,4"
+   ]
+  },
+  "evalSuite": {
+   "source": "packages/web/public/bundles/fixture/demo-run-{naive,guarded}.json (content hashes recomputed)",
+   "label": "Evaluation suite — simulated APIs, not a live run",
+   "naiveUnsafe": 9,
+   "guardedUnsafe": 0,
+   "held": 9,
+   "queueSize": 20
+  },
+  "certificates": [
+   {
+    "id": "cert-ac8e10949d6a64f5",
+    "tool": "crustdata",
+    "claimId": "crustdata.enrich.headcount-total-integer",
+    "status": "active",
+    "verdict": "matches docs",
+    "scope": "as probed: crustdata.enrichCompany; fields ∈ {[\"basic_info\",\"headcount\",\"funding\"]} (3 cited probes); narrowed by the adversary: \"headcount.total is an integer for well-known companies with non-null headcount data (stripe.com, notion.so, atlassian.com, buttondown.com); the null case is untested\" (not machine-checkable: guards refuse outside the probed scope)",
+    "evidence": 3,
+    "sha256": "c0ea96db5d7aba16e4f82a32b6f8fd398a230040b28b99cc0fc13ae51a220ffd",
+    "adversaryVerdict": "narrow",
+    "issuedAt": "2026-10-12T01:15:22.570Z"
+   },
+   {
+    "id": "cert-56762217f480a3c4",
+    "tool": "dodo",
+    "claimId": "dodo.payments.page-size-max-100",
+    "status": "active",
+    "verdict": "matches docs",
+    "scope": "as probed: dodo.listPayments; page_size ∈ {101, 110, 200} (3 cited probes); narrowed by the adversary: \"dodo.listPayments rejects page_size values above 100 with HTTP 400, tested with a single API key and minimal dataset (1 record)\" (not machine-checkable: guards refuse outside the probed scope)",
+    "evidence": 3,
+    "sha256": "67becde04051cfcdd68386f50d6103e667f7a2474ef71676aab0acdf5dbc73ec",
+    "adversaryVerdict": "narrow",
+    "issuedAt": "2026-10-12T01:24:04.681Z"
+   },
+   {
+    "id": "cert-fd3fe92edee88644",
+    "tool": "dodo",
+    "claimId": "dodo.refunds.page-size-max-100",
+    "status": "active",
+    "verdict": "matches docs",
+    "scope": "as probed: dodo.listRefunds; page_size ∈ {101, 110, 200} (3 cited probes); narrowed by the adversary: \"The API rejects page_size values above 100 with HTTP 400 on GET /refunds for this single test account/key. The default-of-10 sub-claim is untested, and the functional effect of page_size on result count is unverified due to empty data.\" (not machine-checkable: guards refuse outside the probed scope)",
+    "evidence": 3,
+    "sha256": "ce2a75c2437b74436a5a62d3224ddbeb8bb012df4e9d83bf5e416c09b60b40b9",
+    "adversaryVerdict": "narrow",
+    "issuedAt": "2026-10-12T01:24:14.377Z"
+   },
+   {
+    "id": "cert-90b6704587c8abbf",
+    "tool": "dodo",
+    "claimId": "dodo.wallet.credit-amount-minor-units",
+    "status": "active",
+    "verdict": "matches docs",
+    "scope": "as probed: dodo.createWalletLedgerEntry in USD; amount ∈ {1234, 3517, 4321} (3 cited probes); narrowed by the adversary: \"amount is in minor units for USD wallets only\" (not machine-checkable: guards refuse outside the probed scope)",
+    "evidence": 3,
+    "sha256": "5bab1f80e4112ff6f55700ca574c0eae142fc9a6e861c0927b74ae69626994b0",
+    "adversaryVerdict": "narrow",
+    "issuedAt": "2026-10-12T01:24:21.497Z"
+   },
+   {
+    "id": "cert-a38f91281f30925e",
+    "tool": "dodo",
+    "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+    "status": "active",
+    "verdict": "matches docs",
+    "scope": "as probed: dodo.createWalletLedgerEntry, dodo.listWalletLedgerEntries in USD (3 cited probes); narrowed by the adversary: \"Idempotency key deduplication is confirmed for rapid successive credit entries in USD, but not verified for debit entries, other currencies, or longer time gaps between retries.\" (not machine-checkable: guards refuse outside the probed scope)",
+    "evidence": 3,
+    "sha256": "81f10d1b6fddd977bcaaad40e04429275b79fe0679ba78d9bb5b34202b2e3219",
+    "adversaryVerdict": "narrow",
+    "issuedAt": "2026-10-12T01:24:30.469Z"
+   }
+  ],
+  "certificatesSource": "packages/web/public/certificates/crustdata.json, packages/web/public/certificates/dodo.json",
+  "github": "github.com/parthchilwerwar/notary"
+ }
+}

@@ -1,0 +1,123 @@
+{
+  "clipId": "economics",
+  "durationSec": 12.2,
+  "url": "/app/business",
+  "finalUrl": "/app/business?run=notarize-dodo-20261012T012315Z",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "coordinates": "viewport pixels of the 1920x1080 frame",
+  "events": [
+    {
+      "tSec": 0,
+      "type": "move",
+      "x": 1500,
+      "y": 640,
+      "label": "start"
+    },
+    {
+      "tSec": 0.045,
+      "type": "move",
+      "x": 1500,
+      "y": 640
+    },
+    {
+      "tSec": 0.942,
+      "type": "move",
+      "x": 556,
+      "y": 345,
+      "label": "$0.0316 per live run"
+    },
+    {
+      "tSec": 2.058,
+      "type": "move",
+      "x": 556,
+      "y": 345
+    },
+    {
+      "tSec": 2.514,
+      "type": "move",
+      "x": 594,
+      "y": 384,
+      "label": "+15.5 Crustdata credits"
+    },
+    {
+      "tSec": 3.439,
+      "type": "move",
+      "x": 594,
+      "y": 384
+    },
+    {
+      "tSec": 3.897,
+      "type": "move",
+      "x": 1081,
+      "y": 307,
+      "label": "$0.0253 per certificate"
+    },
+    {
+      "tSec": 5.013,
+      "type": "move",
+      "x": 1081,
+      "y": 307
+    },
+    {
+      "tSec": 5.468,
+      "type": "move",
+      "x": 1317,
+      "y": 307,
+      "label": "not recorded yet"
+    },
+    {
+      "tSec": 6.373,
+      "type": "move",
+      "x": 1317,
+      "y": 307
+    },
+    {
+      "tSec": 6.88,
+      "type": "move",
+      "x": 1200,
+      "y": 700
+    },
+    {
+      "tSec": 6.898,
+      "type": "scroll",
+      "x": 1200,
+      "y": 700,
+      "label": "scroll to cost per certificate (down 1221px)"
+    },
+    {
+      "tSec": 8.306,
+      "type": "move",
+      "x": 1200,
+      "y": 700
+    },
+    {
+      "tSec": 8.82,
+      "type": "move",
+      "x": 1200,
+      "y": 700
+    },
+    {
+      "tSec": 9.37,
+      "type": "move",
+      "x": 1607,
+      "y": 249,
+      "label": "Crustdata $0.0394 per certificate"
+    },
+    {
+      "tSec": 10.386,
+      "type": "move",
+      "x": 1607,
+      "y": 249
+    },
+    {
+      "tSec": 10.893,
+      "type": "move",
+      "x": 1607,
+      "y": 302,
+      "label": "Dodo $0.0217 per certificate"
+    }
+  ]
+}

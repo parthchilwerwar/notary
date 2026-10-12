@@ -1,0 +1,135 @@
+{
+  "clipId": "incidents-resolution",
+  "durationSec": 13.5,
+  "url": "/app/incidents?run=notarize-crustdata-20261012T011404Z",
+  "finalUrl": "/app/incidents?run=notarize-crustdata-20261012T011404Z",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "coordinates": "viewport pixels of the 1920x1080 frame",
+  "events": [
+    {
+      "tSec": 0,
+      "type": "move",
+      "x": 1500,
+      "y": 640,
+      "label": "start"
+    },
+    {
+      "tSec": 0.029,
+      "type": "move",
+      "x": 1500,
+      "y": 640
+    },
+    {
+      "tSec": 0.689,
+      "type": "move",
+      "x": 933,
+      "y": 188,
+      "label": "5 resolved"
+    },
+    {
+      "tSec": 1.517,
+      "type": "move",
+      "x": 933,
+      "y": 188
+    },
+    {
+      "tSec": 2.049,
+      "type": "move",
+      "x": 1523,
+      "y": 188,
+      "label": "3 open"
+    },
+    {
+      "tSec": 2.864,
+      "type": "move",
+      "x": 1523,
+      "y": 188
+    },
+    {
+      "tSec": 3.367,
+      "type": "move",
+      "x": 1300,
+      "y": 700
+    },
+    {
+      "tSec": 3.37,
+      "type": "scroll",
+      "x": 1300,
+      "y": 700,
+      "label": "scroll to the Crustdata run (down 2241px)"
+    },
+    {
+      "tSec": 4.987,
+      "type": "move",
+      "x": 1300,
+      "y": 700
+    },
+    {
+      "tSec": 5.607,
+      "type": "move",
+      "x": 1300,
+      "y": 700
+    },
+    {
+      "tSec": 6.129,
+      "type": "move",
+      "x": 747,
+      "y": 529,
+      "label": "open — belief abstained"
+    },
+    {
+      "tSec": 7.438,
+      "type": "move",
+      "x": 747,
+      "y": 529
+    },
+    {
+      "tSec": 7.987,
+      "type": "move",
+      "x": 1300,
+      "y": 760
+    },
+    {
+      "tSec": 7.998,
+      "type": "scroll",
+      "x": 1300,
+      "y": 760,
+      "label": "scroll to the resolved incident (down 291px)"
+    },
+    {
+      "tSec": 9.001,
+      "type": "move",
+      "x": 1300,
+      "y": 760
+    },
+    {
+      "tSec": 9.416,
+      "type": "move",
+      "x": 1300,
+      "y": 760
+    },
+    {
+      "tSec": 9.93,
+      "type": "move",
+      "x": 740,
+      "y": 862,
+      "label": "resolved — certified in narrowed scope"
+    },
+    {
+      "tSec": 11.043,
+      "type": "move",
+      "x": 740,
+      "y": 862
+    },
+    {
+      "tSec": 11.494,
+      "type": "move",
+      "x": 658,
+      "y": 907,
+      "label": "neatlogs trace 9db41ecd…"
+    }
+  ]
+}

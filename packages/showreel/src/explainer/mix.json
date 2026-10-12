@@ -1,0 +1,24 @@
+{
+ "ready": true,
+ "voice": {
+  "intro": "explainer/voice/intro.wav",
+  "problem": "explainer/voice/problem.wav",
+  "notary": "explainer/voice/notary.wav",
+  "neatlogs": "explainer/voice/neatlogs.wav",
+  "entire": "explainer/voice/entire.wav",
+  "cfo": "explainer/voice/cfo.wav",
+  "close": "explainer/voice/close.wav"
+ },
+ "music": "explainer/audio/music.wav",
+ "musicGain": 1,
+ "sfxGain": 0.5912,
+ "report": {
+  "totalSec": 220.8,
+  "mixLufs": -14.1,
+  "mixPeakDb": -1.7,
+  "voiceLufs": -14,
+  "musicLufsUnducked": -19.5,
+  "duckDb": -12,
+  "cues": 27
+ }
+}

@@ -1,0 +1,136 @@
+{
+  "clipId": "certificate-adversary",
+  "durationSec": 13.467,
+  "url": "/app/certificates/cert-90b6704587c8abbf",
+  "finalUrl": "/app/certificates/cert-90b6704587c8abbf?run=notarize-dodo-20261012T012315Z",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "coordinates": "viewport pixels of the 1920x1080 frame",
+  "events": [
+    {
+      "tSec": 0,
+      "type": "move",
+      "x": 1500,
+      "y": 640,
+      "label": "start"
+    },
+    {
+      "tSec": 0.027,
+      "type": "move",
+      "x": 1500,
+      "y": 640
+    },
+    {
+      "tSec": 0.76,
+      "type": "move",
+      "x": 870,
+      "y": 137,
+      "label": "dodo.wallet.credit-amount-minor-units"
+    },
+    {
+      "tSec": 1.686,
+      "type": "move",
+      "x": 870,
+      "y": 137
+    },
+    {
+      "tSec": 2.281,
+      "type": "move",
+      "x": 1382,
+      "y": 552,
+      "label": "observed"
+    },
+    {
+      "tSec": 3.206,
+      "type": "move",
+      "x": 1382,
+      "y": 552
+    },
+    {
+      "tSec": 3.825,
+      "type": "move",
+      "x": 717,
+      "y": 686,
+      "label": "probe 1, prediction committed"
+    },
+    {
+      "tSec": 4.538,
+      "type": "move",
+      "x": 717,
+      "y": 686
+    },
+    {
+      "tSec": 4.989,
+      "type": "move",
+      "x": 1150,
+      "y": 640
+    },
+    {
+      "tSec": 4.993,
+      "type": "scroll",
+      "x": 1150,
+      "y": 640,
+      "label": "scroll to Challenge (down 866px)"
+    },
+    {
+      "tSec": 6.473,
+      "type": "move",
+      "x": 1150,
+      "y": 640
+    },
+    {
+      "tSec": 6.99,
+      "type": "move",
+      "x": 1150,
+      "y": 640
+    },
+    {
+      "tSec": 7.637,
+      "type": "move",
+      "x": 609,
+      "y": 181,
+      "label": "Adversary claude-opus-4.6"
+    },
+    {
+      "tSec": 8.655,
+      "type": "move",
+      "x": 609,
+      "y": 181
+    },
+    {
+      "tSec": 9.114,
+      "type": "move",
+      "x": 720,
+      "y": 181,
+      "label": "verdict: narrow"
+    },
+    {
+      "tSec": 10.233,
+      "type": "move",
+      "x": 720,
+      "y": 181
+    },
+    {
+      "tSec": 10.687,
+      "type": "move",
+      "x": 890,
+      "y": 292,
+      "label": "adversary reasoning"
+    },
+    {
+      "tSec": 11.603,
+      "type": "move",
+      "x": 890,
+      "y": 292
+    },
+    {
+      "tSec": 12.062,
+      "type": "move",
+      "x": 890,
+      "y": 604,
+      "label": "scope narrowed to USD"
+    }
+  ]
+}

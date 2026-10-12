@@ -1,0 +1,112 @@
+{
+  "clipId": "chat-live-full",
+  "durationSec": 42.467,
+  "url": "/app/chat",
+  "finalUrl": "/app/chat?run=notarize-dodo-20261012T012315Z&c=conv-8f1d98d8-8858-4e55-9686-7b157eec97f4",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "coordinates": "viewport pixels of the 1920x1080 frame",
+  "events": [
+    {
+      "tSec": 0.001,
+      "type": "move",
+      "x": 1500,
+      "y": 640,
+      "label": "start"
+    },
+    {
+      "tSec": 0.037,
+      "type": "move",
+      "x": 1500,
+      "y": 640
+    },
+    {
+      "tSec": 0.567,
+      "type": "move",
+      "x": 1062,
+      "y": 1016,
+      "label": "message box"
+    },
+    {
+      "tSec": 0.702,
+      "type": "click",
+      "x": 1062,
+      "y": 1016,
+      "label": "message box"
+    },
+    {
+      "tSec": 1.129,
+      "type": "type",
+      "x": 1062,
+      "y": 1016,
+      "label": "Why did the Crustdata run abstain on the no-match claim?"
+    },
+    {
+      "tSec": 4.025,
+      "type": "move",
+      "x": 1062,
+      "y": 1016
+    },
+    {
+      "tSec": 4.582,
+      "type": "move",
+      "x": 1433,
+      "y": 1016,
+      "label": "send"
+    },
+    {
+      "tSec": 4.711,
+      "type": "click",
+      "x": 1433,
+      "y": 1016,
+      "label": "send"
+    },
+    {
+      "tSec": 5.054,
+      "type": "move",
+      "x": 1433,
+      "y": 1016
+    },
+    {
+      "tSec": 6.511,
+      "type": "move",
+      "x": 1500,
+      "y": 620
+    },
+    {
+      "tSec": 30.663,
+      "type": "move",
+      "x": 1500,
+      "y": 620,
+      "label": "answer finished"
+    },
+    {
+      "tSec": 33.975,
+      "type": "move",
+      "x": 1500,
+      "y": 620
+    },
+    {
+      "tSec": 39.092,
+      "type": "move",
+      "x": 1500,
+      "y": 620
+    },
+    {
+      "tSec": 40.353,
+      "type": "move",
+      "x": 1500,
+      "y": 620
+    },
+    {
+      "tSec": 40.95,
+      "type": "move",
+      "x": 930,
+      "y": 935,
+      "label": "cost, tokens and trace of this answer"
+    }
+  ],
+  "note": "Uncut recording of chat-live (real time)."
+}

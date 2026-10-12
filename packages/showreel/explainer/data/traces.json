@@ -1,0 +1,1469 @@
+{
+  "generatedAt": "2026-10-12T10:40:10.880Z",
+  "traces": [
+    {
+      "id": "9db41ecd43406cef291c93ef8c9ab1cd",
+      "runId": "notarize-crustdata-20261012T011404Z",
+      "source": "neatlogs API",
+      "endpoint": "GET https://ingest.neatlogs.com/api/traces/v3/<traceId> (project key)",
+      "rootName": "notarize.crustdata",
+      "startedAt": "2026-10-12T01:14:04.750Z",
+      "endedAt": "2026-10-12T01:17:34.537Z",
+      "spanCount": 25,
+      "llmCalls": 2,
+      "toolCalls": 4,
+      "status": "success",
+      "hasError": 0,
+      "errorCount": 0,
+      "detections": 0,
+      "note": "Span times come from neatlogs (start rounded to the second, durations exact). neatlogs stores notary.* span attributes only for log records (notary.probe.committed); `receipt` adds the same span's record from the run's local receipts (spans.jsonl) where the span ids match.",
+      "spans": [
+        {
+          "spanId": "372fa325e77c9cb9",
+          "parentId": "525a5a15a962466a",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": -750,
+          "endMs": 4284,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "525a5a15a962466a",
+          "parentId": null,
+          "name": "notarize.crustdata",
+          "kind": "workflow",
+          "startMs": -750,
+          "endMs": 209037,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "7b942757150db313",
+          "parentId": "525a5a15a962466a",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": 4250,
+          "endMs": 7000,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "45a7a0560b018ab7",
+          "parentId": "525a5a15a962466a",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": 7250,
+          "endMs": 8037,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "5681e2301faf3084",
+          "parentId": "525a5a15a962466a",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": 8250,
+          "endMs": 12593,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "6825c042839f75e8",
+          "parentId": "525a5a15a962466a",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": 12250,
+          "endMs": 14831,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "2275b3938d018c59",
+          "parentId": "525a5a15a962466a",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": 15250,
+          "endMs": 16470,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "a92ca40c2614a204",
+          "parentId": "525a5a15a962466a",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": 16250,
+          "endMs": 17055,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "d402e6b67f153d1a",
+          "parentId": "525a5a15a962466a",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": 17250,
+          "endMs": 18128,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "b62ac03a0ed32b8f",
+          "parentId": "525a5a15a962466a",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": 18250,
+          "endMs": 19875,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "b30c9c1751d6b5d8",
+          "parentId": "525a5a15a962466a",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": 20250,
+          "endMs": 20250,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "9f3094fb38f999ec",
+          "parentId": "525a5a15a962466a",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": 20250,
+          "endMs": 20911,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "03e14148b251a712",
+          "parentId": "525a5a15a962466a",
+          "name": "notary.llm",
+          "kind": "chain",
+          "startMs": 21250,
+          "endMs": 36136,
+          "status": "SUCCESS",
+          "attributes": {},
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:14:26.089Z",
+            "endedAt": "2026-10-12T01:14:40.857Z",
+            "kind": "CHAIN",
+            "parentId": null,
+            "attributes": {
+              "notary.agent": "Reflector",
+              "notary.role": "reflector",
+              "llm.model_id": "claude-sonnet-4.6",
+              "llm.input_tokens": 1076,
+              "llm.output_tokens": 975,
+              "llm.usd": 0.0196383
+            }
+          }
+        },
+        {
+          "spanId": "91039c4136b1ee2b",
+          "parentId": "03e14148b251a712",
+          "name": "claude-sonnet-4.6",
+          "kind": "llm",
+          "startMs": 25250,
+          "endMs": 35430,
+          "status": "SUCCESS",
+          "attributes": {
+            "model": "claude-sonnet-4.6",
+            "llm.input_tokens": 1076,
+            "llm.output_tokens": 975
+          }
+        },
+        {
+          "spanId": "859f41bc47f6fb80",
+          "parentId": "9359a5e2c7b08a00",
+          "name": "notary.probe.committed",
+          "kind": "log",
+          "startMs": 36250,
+          "endMs": 36250,
+          "status": "SUCCESS",
+          "attributes": {
+            "notary.probeId": "notarize-crustdata-20261012T011404Z-p001",
+            "notary.predictionHash": "04eea097807bf25ab1e9ee6c5b7789413e6124d0b6f6abd759b39a06682f0a9d",
+            "notary.committedAt": "2026-10-12T01:14:41.071Z",
+            "log_level": "info"
+          }
+        },
+        {
+          "spanId": "9359a5e2c7b08a00",
+          "parentId": "525a5a15a962466a",
+          "name": "notary.probe",
+          "kind": "tool_call",
+          "startMs": 36250,
+          "endMs": 38366,
+          "status": "SUCCESS",
+          "attributes": {
+            "tool_name": "notary.probe"
+          },
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:14:41.069Z",
+            "endedAt": "2026-10-12T01:14:43.180Z",
+            "kind": "TOOL",
+            "parentId": null,
+            "attributes": {
+              "notary.probeId": "notarize-crustdata-20261012T011404Z-p001",
+              "notary.claimId": "crustdata.identify.invalid-fields-400",
+              "notary.template": "unknown_param",
+              "notary.prediction": "{\"hyp-0469c35fd429\":{\"class\":\"mislabelled_semantics\",\"outcomes\":[\"*\"]},\"hyp-74a1872b1174\":{\"class\":\"undocumented_flag\",\"outcomes\":[\"applied\"]},\"hyp-fb7ef16c1268\":{\"class\":\"honored\",\"outcomes\":[\"rejected\"]}}",
+              "notary.predictionHash": "04eea097807bf25ab1e9ee6c5b7789413e6124d0b6f6abd759b39a06682f0a9d",
+              "notary.verdict": "inconclusive"
+            }
+          }
+        },
+        {
+          "spanId": "fa4361ca6bf127c2",
+          "parentId": "bd9f4bd23a4f3880",
+          "name": "notary.probe.committed",
+          "kind": "log",
+          "startMs": 38250,
+          "endMs": 38250,
+          "status": "SUCCESS",
+          "attributes": {
+            "notary.probeId": "notarize-crustdata-20261012T011404Z-p002",
+            "notary.predictionHash": "fbae0b3c8bcc4278e8e80b3727573fe42e4d6d4663b00b878618b2f67cdd45fc",
+            "notary.committedAt": "2026-10-12T01:14:43.238Z",
+            "log_level": "info"
+          }
+        },
+        {
+          "spanId": "bd9f4bd23a4f3880",
+          "parentId": "525a5a15a962466a",
+          "name": "notary.probe",
+          "kind": "tool_call",
+          "startMs": 38250,
+          "endMs": 42362,
+          "status": "SUCCESS",
+          "attributes": {
+            "tool_name": "notary.probe"
+          },
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:14:43.237Z",
+            "endedAt": "2026-10-12T01:14:47.288Z",
+            "kind": "TOOL",
+            "parentId": null,
+            "attributes": {
+              "notary.probeId": "notarize-crustdata-20261012T011404Z-p002",
+              "notary.claimId": "crustdata.enrich.headcount-total-integer",
+              "notary.template": "type_edge",
+              "notary.prediction": "{\"hyp-269cf9d8efea\":{\"class\":\"silent_coercion\",\"outcomes\":[\"float\",\"formatted_string\",\"numeric_string\"]},\"hyp-6c3fd63e8a75\":{\"class\":\"honored\",\"outcomes\":[\"doc_type\"]}}",
+              "notary.predictionHash": "fbae0b3c8bcc4278e8e80b3727573fe42e4d6d4663b00b878618b2f67cdd45fc",
+              "notary.verdict": "confirmed",
+              "notary.winningHypothesisId": "hyp-6c3fd63e8a75"
+            }
+          }
+        },
+        {
+          "spanId": "98ed71e2d73f88d5",
+          "parentId": "ce85309267f9c126",
+          "name": "notary.probe.committed",
+          "kind": "log",
+          "startMs": 42250,
+          "endMs": 42250,
+          "status": "SUCCESS",
+          "attributes": {
+            "notary.probeId": "notarize-crustdata-20261012T011404Z-p003",
+            "notary.predictionHash": "fbae0b3c8bcc4278e8e80b3727573fe42e4d6d4663b00b878618b2f67cdd45fc",
+            "notary.committedAt": "2026-10-12T01:14:47.430Z",
+            "log_level": "info"
+          }
+        },
+        {
+          "spanId": "ce85309267f9c126",
+          "parentId": "525a5a15a962466a",
+          "name": "notary.probe",
+          "kind": "tool_call",
+          "startMs": 42250,
+          "endMs": 62625,
+          "status": "SUCCESS",
+          "attributes": {
+            "tool_name": "notary.probe"
+          },
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:14:47.429Z",
+            "endedAt": "2026-10-12T01:15:07.518Z",
+            "kind": "TOOL",
+            "parentId": null,
+            "attributes": {
+              "notary.probeId": "notarize-crustdata-20261012T011404Z-p003",
+              "notary.claimId": "crustdata.enrich.headcount-total-integer",
+              "notary.template": "type_edge",
+              "notary.prediction": "{\"hyp-269cf9d8efea\":{\"class\":\"silent_coercion\",\"outcomes\":[\"float\",\"formatted_string\",\"numeric_string\"]},\"hyp-6c3fd63e8a75\":{\"class\":\"honored\",\"outcomes\":[\"doc_type\"]}}",
+              "notary.predictionHash": "fbae0b3c8bcc4278e8e80b3727573fe42e4d6d4663b00b878618b2f67cdd45fc",
+              "notary.verdict": "confirmed",
+              "notary.winningHypothesisId": "hyp-6c3fd63e8a75"
+            }
+          }
+        },
+        {
+          "spanId": "b2ead45f8fc71360",
+          "parentId": "fcd5eaabc8a16ea7",
+          "name": "notary.probe.committed",
+          "kind": "log",
+          "startMs": 63250,
+          "endMs": 63250,
+          "status": "SUCCESS",
+          "attributes": {
+            "notary.probeId": "notarize-crustdata-20261012T011404Z-p004",
+            "notary.predictionHash": "fbae0b3c8bcc4278e8e80b3727573fe42e4d6d4663b00b878618b2f67cdd45fc",
+            "notary.committedAt": "2026-10-12T01:15:08.163Z",
+            "log_level": "info"
+          }
+        },
+        {
+          "spanId": "fcd5eaabc8a16ea7",
+          "parentId": "525a5a15a962466a",
+          "name": "notary.probe",
+          "kind": "tool_call",
+          "startMs": 63250,
+          "endMs": 68872,
+          "status": "SUCCESS",
+          "attributes": {
+            "tool_name": "notary.probe"
+          },
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:15:08.163Z",
+            "endedAt": "2026-10-12T01:15:13.601Z",
+            "kind": "TOOL",
+            "parentId": null,
+            "attributes": {
+              "notary.probeId": "notarize-crustdata-20261012T011404Z-p004",
+              "notary.claimId": "crustdata.enrich.headcount-total-integer",
+              "notary.template": "type_edge",
+              "notary.prediction": "{\"hyp-269cf9d8efea\":{\"class\":\"silent_coercion\",\"outcomes\":[\"float\",\"formatted_string\",\"numeric_string\"]},\"hyp-6c3fd63e8a75\":{\"class\":\"honored\",\"outcomes\":[\"doc_type\"]}}",
+              "notary.predictionHash": "fbae0b3c8bcc4278e8e80b3727573fe42e4d6d4663b00b878618b2f67cdd45fc",
+              "notary.verdict": "confirmed",
+              "notary.winningHypothesisId": "hyp-6c3fd63e8a75"
+            }
+          }
+        },
+        {
+          "spanId": "8938a471d80a5e21",
+          "parentId": "f00137b5419282be",
+          "name": "claude-opus-4.6",
+          "kind": "llm",
+          "startMs": 69250,
+          "endMs": 77556,
+          "status": "SUCCESS",
+          "attributes": {
+            "model": "claude-opus-4.6",
+            "llm.input_tokens": 2186,
+            "llm.output_tokens": 282
+          }
+        },
+        {
+          "spanId": "c46575e0ee81d5c4",
+          "parentId": "525a5a15a962466a",
+          "name": "notary.adversary",
+          "kind": "evaluator",
+          "startMs": 69250,
+          "endMs": 77596,
+          "status": "SUCCESS",
+          "attributes": {},
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:15:14.213Z",
+            "endedAt": "2026-10-12T01:15:22.556Z",
+            "kind": "EVALUATOR",
+            "parentId": null,
+            "attributes": {
+              "notary.agent": "Adversary",
+              "notary.beliefId": "belief-crustdata.enrich.headcount-total-integer",
+              "notary.claimId": "crustdata.enrich.headcount-total-integer",
+              "notary.adversary.backend": "bedrock",
+              "notary.adversary.probes": 3,
+              "notary.verdict": "narrow"
+            }
+          }
+        },
+        {
+          "spanId": "f00137b5419282be",
+          "parentId": "c46575e0ee81d5c4",
+          "name": "notary.llm",
+          "kind": "chain",
+          "startMs": 69250,
+          "endMs": 77578,
+          "status": "SUCCESS",
+          "attributes": {},
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:15:14.218Z",
+            "endedAt": "2026-10-12T01:15:22.544Z",
+            "kind": "CHAIN",
+            "parentId": "c46575e0ee81d5c4",
+            "attributes": {
+              "notary.agent": "Adversary",
+              "notary.role": "adversary",
+              "llm.model_id": "claude-opus-4.6",
+              "llm.input_tokens": 2186,
+              "llm.output_tokens": 282,
+              "llm.usd": 0.019778
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "a0e6fda50d71a9eb2fec0f04843bff4d",
+      "runId": "notarize-dodo-20261012T012315Z",
+      "source": "neatlogs API",
+      "endpoint": "GET https://ingest.neatlogs.com/api/traces/v3/<traceId> (project key)",
+      "rootName": "notarize.dodo",
+      "startedAt": "2026-10-12T01:23:15.188Z",
+      "endedAt": "2026-10-12T01:29:18.204Z",
+      "spanCount": 55,
+      "llmCalls": 3,
+      "toolCalls": 15,
+      "status": "success",
+      "hasError": 0,
+      "errorCount": 0,
+      "detections": 0,
+      "note": "Span times come from neatlogs (start rounded to the second, durations exact). neatlogs stores notary.* span attributes only for log records (notary.probe.committed); `receipt` adds the same span's record from the run's local receipts (spans.jsonl) where the span ids match.",
+      "spans": [
+        {
+          "spanId": "2a16f5965846462e",
+          "parentId": null,
+          "name": "notarize.dodo",
+          "kind": "workflow",
+          "startMs": -1188,
+          "endMs": 361828,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "06af4217af013fc8",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": -188,
+          "endMs": -187,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "40887fd64db28b12",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": -188,
+          "endMs": -186,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "33eaa53493f8be1e",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": -188,
+          "endMs": 8549,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "6aa2fb9544ceb37b",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": 8812,
+          "endMs": 10015,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "bd148126070f6dfd",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": 9812,
+          "endMs": 10028,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "a0a294357b4f33b9",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": 9812,
+          "endMs": 12049,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "74e8895e71073cfd",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": 11812,
+          "endMs": 11829,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "031e000d58fa8c55",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": 11812,
+          "endMs": 12021,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "329f8e4a1b25e103",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": 12812,
+          "endMs": 12813,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "bfd4a1c8a836ca9e",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": 12812,
+          "endMs": 13000,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "9664a57fa0ce5e5b",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": 12812,
+          "endMs": 14035,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "e4787fa54b47281f",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": 13812,
+          "endMs": 16183,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "a13d73eda7b5db72",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": 16812,
+          "endMs": 17063,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "e81c9c8ebf854039",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": 16812,
+          "endMs": 17064,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "a01e8f4df7f0b5e0",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.recon",
+          "kind": "chain",
+          "startMs": 17812,
+          "endMs": 18032,
+          "status": "SUCCESS",
+          "attributes": {}
+        },
+        {
+          "spanId": "7bb6547bc20b3ac8",
+          "parentId": "1945989db8704aad",
+          "name": "notary.probe.committed",
+          "kind": "log",
+          "startMs": 18812,
+          "endMs": 18812,
+          "status": "SUCCESS",
+          "attributes": {
+            "notary.probeId": "notarize-dodo-20261012T012315Z-p001",
+            "notary.predictionHash": "3204744d3794dfc64f8f3596481bc86a7922c879ce90799a83335aba3964a2d2",
+            "notary.committedAt": "2026-10-12T01:23:34.762Z",
+            "log_level": "info"
+          }
+        },
+        {
+          "spanId": "1945989db8704aad",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.probe",
+          "kind": "tool_call",
+          "startMs": 18812,
+          "endMs": 19948,
+          "status": "SUCCESS",
+          "attributes": {
+            "tool_name": "notary.probe"
+          },
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:23:34.760Z",
+            "endedAt": "2026-10-12T01:23:35.752Z",
+            "kind": "TOOL",
+            "parentId": null,
+            "attributes": {
+              "notary.probeId": "notarize-dodo-20261012T012315Z-p001",
+              "notary.claimId": "dodo.payments.page-size-max-100",
+              "notary.template": "boundary_sweep",
+              "notary.prediction": "{\"hyp-4daedaff3435\":{\"class\":\"silent_truncation\",\"outcomes\":[\"clamped\"]},\"hyp-6b09f86e4f55\":{\"class\":\"honored\",\"outcomes\":[\"rejected\"]}}",
+              "notary.predictionHash": "3204744d3794dfc64f8f3596481bc86a7922c879ce90799a83335aba3964a2d2",
+              "notary.verdict": "confirmed",
+              "notary.winningHypothesisId": "hyp-6b09f86e4f55"
+            }
+          }
+        },
+        {
+          "spanId": "91cbcc308464b87f",
+          "parentId": "72b633a7b83766e5",
+          "name": "notary.probe.committed",
+          "kind": "log",
+          "startMs": 20812,
+          "endMs": 20812,
+          "status": "SUCCESS",
+          "attributes": {
+            "notary.probeId": "notarize-dodo-20261012T012315Z-p002",
+            "notary.predictionHash": "3204744d3794dfc64f8f3596481bc86a7922c879ce90799a83335aba3964a2d2",
+            "notary.committedAt": "2026-10-12T01:23:36.112Z",
+            "log_level": "info"
+          }
+        },
+        {
+          "spanId": "ad0029bab7ad2f30",
+          "parentId": "e5099c5f7c0c3642",
+          "name": "notary.probe.committed",
+          "kind": "log",
+          "startMs": 20812,
+          "endMs": 20812,
+          "status": "SUCCESS",
+          "attributes": {
+            "notary.probeId": "notarize-dodo-20261012T012315Z-p003",
+            "notary.predictionHash": "3204744d3794dfc64f8f3596481bc86a7922c879ce90799a83335aba3964a2d2",
+            "notary.committedAt": "2026-10-12T01:23:36.523Z",
+            "log_level": "info"
+          }
+        },
+        {
+          "spanId": "72b633a7b83766e5",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.probe",
+          "kind": "tool_call",
+          "startMs": 20812,
+          "endMs": 21173,
+          "status": "SUCCESS",
+          "attributes": {
+            "tool_name": "notary.probe"
+          },
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:23:36.112Z",
+            "endedAt": "2026-10-12T01:23:36.432Z",
+            "kind": "TOOL",
+            "parentId": null,
+            "attributes": {
+              "notary.probeId": "notarize-dodo-20261012T012315Z-p002",
+              "notary.claimId": "dodo.payments.page-size-max-100",
+              "notary.template": "boundary_sweep",
+              "notary.prediction": "{\"hyp-4daedaff3435\":{\"class\":\"silent_truncation\",\"outcomes\":[\"clamped\"]},\"hyp-6b09f86e4f55\":{\"class\":\"honored\",\"outcomes\":[\"rejected\"]}}",
+              "notary.predictionHash": "3204744d3794dfc64f8f3596481bc86a7922c879ce90799a83335aba3964a2d2",
+              "notary.verdict": "confirmed",
+              "notary.winningHypothesisId": "hyp-6b09f86e4f55"
+            }
+          }
+        },
+        {
+          "spanId": "e5099c5f7c0c3642",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.probe",
+          "kind": "tool_call",
+          "startMs": 20812,
+          "endMs": 21246,
+          "status": "SUCCESS",
+          "attributes": {
+            "tool_name": "notary.probe"
+          },
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:23:36.507Z",
+            "endedAt": "2026-10-12T01:23:36.914Z",
+            "kind": "TOOL",
+            "parentId": null,
+            "attributes": {
+              "notary.probeId": "notarize-dodo-20261012T012315Z-p003",
+              "notary.claimId": "dodo.payments.page-size-max-100",
+              "notary.template": "boundary_sweep",
+              "notary.prediction": "{\"hyp-4daedaff3435\":{\"class\":\"silent_truncation\",\"outcomes\":[\"clamped\"]},\"hyp-6b09f86e4f55\":{\"class\":\"honored\",\"outcomes\":[\"rejected\"]}}",
+              "notary.predictionHash": "3204744d3794dfc64f8f3596481bc86a7922c879ce90799a83335aba3964a2d2",
+              "notary.verdict": "confirmed",
+              "notary.winningHypothesisId": "hyp-6b09f86e4f55"
+            }
+          }
+        },
+        {
+          "spanId": "67e5e4aa0ede427a",
+          "parentId": "02d0e7282a6f7a0a",
+          "name": "notary.probe.committed",
+          "kind": "log",
+          "startMs": 21812,
+          "endMs": 21812,
+          "status": "SUCCESS",
+          "attributes": {
+            "notary.probeId": "notarize-dodo-20261012T012315Z-p005",
+            "notary.predictionHash": "87c8c94a07ac0b114212dc1fb2ec4067e30f88c353364346346cbbd1c6480ae4",
+            "notary.committedAt": "2026-10-12T01:23:37.577Z",
+            "log_level": "info"
+          }
+        },
+        {
+          "spanId": "691d46ed87d9dc2d",
+          "parentId": "bb144e442ddb71d5",
+          "name": "notary.probe.committed",
+          "kind": "log",
+          "startMs": 21812,
+          "endMs": 21812,
+          "status": "SUCCESS",
+          "attributes": {
+            "notary.probeId": "notarize-dodo-20261012T012315Z-p004",
+            "notary.predictionHash": "87c8c94a07ac0b114212dc1fb2ec4067e30f88c353364346346cbbd1c6480ae4",
+            "notary.committedAt": "2026-10-12T01:23:37.207Z",
+            "log_level": "info"
+          }
+        },
+        {
+          "spanId": "fdf99fb38a0b0d8d",
+          "parentId": "9558137ba92b262c",
+          "name": "notary.probe.committed",
+          "kind": "log",
+          "startMs": 21812,
+          "endMs": 21812,
+          "status": "SUCCESS",
+          "attributes": {
+            "notary.probeId": "notarize-dodo-20261012T012315Z-p006",
+            "notary.predictionHash": "87c8c94a07ac0b114212dc1fb2ec4067e30f88c353364346346cbbd1c6480ae4",
+            "notary.committedAt": "2026-10-12T01:23:37.846Z",
+            "log_level": "info"
+          }
+        },
+        {
+          "spanId": "bb144e442ddb71d5",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.probe",
+          "kind": "tool_call",
+          "startMs": 21812,
+          "endMs": 22064,
+          "status": "SUCCESS",
+          "attributes": {
+            "tool_name": "notary.probe"
+          },
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:23:37.207Z",
+            "endedAt": "2026-10-12T01:23:37.455Z",
+            "kind": "TOOL",
+            "parentId": null,
+            "attributes": {
+              "notary.probeId": "notarize-dodo-20261012T012315Z-p004",
+              "notary.claimId": "dodo.refunds.amount-integer",
+              "notary.template": "type_edge",
+              "notary.prediction": "{\"hyp-c744a27924fa\":{\"class\":\"honored\",\"outcomes\":[\"doc_type\"]},\"hyp-d6cbdd6239f9\":{\"class\":\"silent_coercion\",\"outcomes\":[\"float\",\"formatted_string\",\"numeric_string\"]}}",
+              "notary.predictionHash": "87c8c94a07ac0b114212dc1fb2ec4067e30f88c353364346346cbbd1c6480ae4",
+              "notary.verdict": "uninformative"
+            }
+          }
+        },
+        {
+          "spanId": "02d0e7282a6f7a0a",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.probe",
+          "kind": "tool_call",
+          "startMs": 21812,
+          "endMs": 22000,
+          "status": "SUCCESS",
+          "attributes": {
+            "tool_name": "notary.probe"
+          },
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:23:37.576Z",
+            "endedAt": "2026-10-12T01:23:37.754Z",
+            "kind": "TOOL",
+            "parentId": null,
+            "attributes": {
+              "notary.probeId": "notarize-dodo-20261012T012315Z-p005",
+              "notary.claimId": "dodo.refunds.amount-integer",
+              "notary.template": "type_edge",
+              "notary.prediction": "{\"hyp-c744a27924fa\":{\"class\":\"honored\",\"outcomes\":[\"doc_type\"]},\"hyp-d6cbdd6239f9\":{\"class\":\"silent_coercion\",\"outcomes\":[\"float\",\"formatted_string\",\"numeric_string\"]}}",
+              "notary.predictionHash": "87c8c94a07ac0b114212dc1fb2ec4067e30f88c353364346346cbbd1c6480ae4",
+              "notary.verdict": "uninformative"
+            }
+          }
+        },
+        {
+          "spanId": "9558137ba92b262c",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.probe",
+          "kind": "tool_call",
+          "startMs": 21812,
+          "endMs": 22146,
+          "status": "SUCCESS",
+          "attributes": {
+            "tool_name": "notary.probe"
+          },
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:23:37.843Z",
+            "endedAt": "2026-10-12T01:23:38.174Z",
+            "kind": "TOOL",
+            "parentId": null,
+            "attributes": {
+              "notary.probeId": "notarize-dodo-20261012T012315Z-p006",
+              "notary.claimId": "dodo.refunds.amount-integer",
+              "notary.template": "type_edge",
+              "notary.prediction": "{\"hyp-c744a27924fa\":{\"class\":\"honored\",\"outcomes\":[\"doc_type\"]},\"hyp-d6cbdd6239f9\":{\"class\":\"silent_coercion\",\"outcomes\":[\"float\",\"formatted_string\",\"numeric_string\"]}}",
+              "notary.predictionHash": "87c8c94a07ac0b114212dc1fb2ec4067e30f88c353364346346cbbd1c6480ae4",
+              "notary.verdict": "uninformative"
+            }
+          }
+        },
+        {
+          "spanId": "759e74ecadc5b5fd",
+          "parentId": "0e61d4642d36cf14",
+          "name": "notary.probe.committed",
+          "kind": "log",
+          "startMs": 22812,
+          "endMs": 22812,
+          "status": "SUCCESS",
+          "attributes": {
+            "notary.probeId": "notarize-dodo-20261012T012315Z-p007",
+            "notary.predictionHash": "78362dca1c7ec31bc1f4ff759ec47d0d8d3b2135220d782f643028fb23bbc1cd",
+            "notary.committedAt": "2026-10-12T01:23:38.341Z",
+            "log_level": "info"
+          }
+        },
+        {
+          "spanId": "ae16d4f153997a0d",
+          "parentId": "55bd76ed9155d3d3",
+          "name": "notary.probe.committed",
+          "kind": "log",
+          "startMs": 22812,
+          "endMs": 22812,
+          "status": "SUCCESS",
+          "attributes": {
+            "notary.probeId": "notarize-dodo-20261012T012315Z-p008",
+            "notary.predictionHash": "78362dca1c7ec31bc1f4ff759ec47d0d8d3b2135220d782f643028fb23bbc1cd",
+            "notary.committedAt": "2026-10-12T01:23:38.763Z",
+            "log_level": "info"
+          }
+        },
+        {
+          "spanId": "0e61d4642d36cf14",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.probe",
+          "kind": "tool_call",
+          "startMs": 22812,
+          "endMs": 23127,
+          "status": "SUCCESS",
+          "attributes": {
+            "tool_name": "notary.probe"
+          },
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:23:38.340Z",
+            "endedAt": "2026-10-12T01:23:38.649Z",
+            "kind": "TOOL",
+            "parentId": null,
+            "attributes": {
+              "notary.probeId": "notarize-dodo-20261012T012315Z-p007",
+              "notary.claimId": "dodo.refunds.page-size-max-100",
+              "notary.template": "boundary_sweep",
+              "notary.prediction": "{\"hyp-47335cea9441\":{\"class\":\"honored\",\"outcomes\":[\"rejected\"]},\"hyp-b6be1c089529\":{\"class\":\"silent_truncation\",\"outcomes\":[\"clamped\"]}}",
+              "notary.predictionHash": "78362dca1c7ec31bc1f4ff759ec47d0d8d3b2135220d782f643028fb23bbc1cd",
+              "notary.verdict": "confirmed",
+              "notary.winningHypothesisId": "hyp-47335cea9441"
+            }
+          }
+        },
+        {
+          "spanId": "55bd76ed9155d3d3",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.probe",
+          "kind": "tool_call",
+          "startMs": 22812,
+          "endMs": 23497,
+          "status": "SUCCESS",
+          "attributes": {
+            "tool_name": "notary.probe"
+          },
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:23:38.748Z",
+            "endedAt": "2026-10-12T01:23:39.427Z",
+            "kind": "TOOL",
+            "parentId": null,
+            "attributes": {
+              "notary.probeId": "notarize-dodo-20261012T012315Z-p008",
+              "notary.claimId": "dodo.refunds.page-size-max-100",
+              "notary.template": "boundary_sweep",
+              "notary.prediction": "{\"hyp-47335cea9441\":{\"class\":\"honored\",\"outcomes\":[\"rejected\"]},\"hyp-b6be1c089529\":{\"class\":\"silent_truncation\",\"outcomes\":[\"clamped\"]}}",
+              "notary.predictionHash": "78362dca1c7ec31bc1f4ff759ec47d0d8d3b2135220d782f643028fb23bbc1cd",
+              "notary.verdict": "confirmed",
+              "notary.winningHypothesisId": "hyp-47335cea9441"
+            }
+          }
+        },
+        {
+          "spanId": "c94a21702fcb0d74",
+          "parentId": "a6d08cc4f6ea3782",
+          "name": "notary.probe.committed",
+          "kind": "log",
+          "startMs": 23812,
+          "endMs": 23812,
+          "status": "SUCCESS",
+          "attributes": {
+            "notary.probeId": "notarize-dodo-20261012T012315Z-p009",
+            "notary.predictionHash": "78362dca1c7ec31bc1f4ff759ec47d0d8d3b2135220d782f643028fb23bbc1cd",
+            "notary.committedAt": "2026-10-12T01:23:39.488Z",
+            "log_level": "info"
+          }
+        },
+        {
+          "spanId": "a6d08cc4f6ea3782",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.probe",
+          "kind": "tool_call",
+          "startMs": 23812,
+          "endMs": 24217,
+          "status": "SUCCESS",
+          "attributes": {
+            "tool_name": "notary.probe"
+          },
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:23:39.470Z",
+            "endedAt": "2026-10-12T01:23:39.847Z",
+            "kind": "TOOL",
+            "parentId": null,
+            "attributes": {
+              "notary.probeId": "notarize-dodo-20261012T012315Z-p009",
+              "notary.claimId": "dodo.refunds.page-size-max-100",
+              "notary.template": "boundary_sweep",
+              "notary.prediction": "{\"hyp-47335cea9441\":{\"class\":\"honored\",\"outcomes\":[\"rejected\"]},\"hyp-b6be1c089529\":{\"class\":\"silent_truncation\",\"outcomes\":[\"clamped\"]}}",
+              "notary.predictionHash": "78362dca1c7ec31bc1f4ff759ec47d0d8d3b2135220d782f643028fb23bbc1cd",
+              "notary.verdict": "confirmed",
+              "notary.winningHypothesisId": "hyp-47335cea9441"
+            }
+          }
+        },
+        {
+          "spanId": "e142e56ea9a65a76",
+          "parentId": "3a8574d582bac49d",
+          "name": "notary.probe.committed",
+          "kind": "log",
+          "startMs": 24812,
+          "endMs": 24812,
+          "status": "SUCCESS",
+          "attributes": {
+            "notary.probeId": "notarize-dodo-20261012T012315Z-p010",
+            "notary.predictionHash": "5561a402a3c313ba71164d967ee60e3eb946121e52d550a0fa8caa0ae6f5d01e",
+            "notary.committedAt": "2026-10-12T01:23:40.398Z",
+            "log_level": "info"
+          }
+        },
+        {
+          "spanId": "3a8574d582bac49d",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.probe",
+          "kind": "tool_call",
+          "startMs": 24812,
+          "endMs": 25566,
+          "status": "SUCCESS",
+          "attributes": {
+            "tool_name": "notary.probe"
+          },
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:23:40.396Z",
+            "endedAt": "2026-10-12T01:23:41.147Z",
+            "kind": "TOOL",
+            "parentId": null,
+            "attributes": {
+              "notary.probeId": "notarize-dodo-20261012T012315Z-p010",
+              "notary.claimId": "dodo.wallet.credit-amount-minor-units",
+              "notary.template": "unit_roundtrip",
+              "notary.prediction": "{\"hyp-be916b968dc8\":{\"class\":\"honored\",\"outcomes\":[\"equal\"]},\"hyp-ca8a731b4705\":{\"class\":\"unit_mismatch\",\"outcomes\":[\"div100\",\"x100\"]}}",
+              "notary.predictionHash": "5561a402a3c313ba71164d967ee60e3eb946121e52d550a0fa8caa0ae6f5d01e",
+              "notary.verdict": "confirmed",
+              "notary.winningHypothesisId": "hyp-be916b968dc8"
+            }
+          }
+        },
+        {
+          "spanId": "3614cbe938c51b99",
+          "parentId": "1bbe2f47612997f0",
+          "name": "notary.probe.committed",
+          "kind": "log",
+          "startMs": 25812,
+          "endMs": 25812,
+          "status": "SUCCESS",
+          "attributes": {
+            "notary.probeId": "notarize-dodo-20261012T012315Z-p011",
+            "notary.predictionHash": "5561a402a3c313ba71164d967ee60e3eb946121e52d550a0fa8caa0ae6f5d01e",
+            "notary.committedAt": "2026-10-12T01:23:41.182Z",
+            "log_level": "info"
+          }
+        },
+        {
+          "spanId": "1bbe2f47612997f0",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.probe",
+          "kind": "tool_call",
+          "startMs": 25812,
+          "endMs": 26995,
+          "status": "SUCCESS",
+          "attributes": {
+            "tool_name": "notary.probe"
+          },
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:23:41.181Z",
+            "endedAt": "2026-10-12T01:23:42.355Z",
+            "kind": "TOOL",
+            "parentId": null,
+            "attributes": {
+              "notary.probeId": "notarize-dodo-20261012T012315Z-p011",
+              "notary.claimId": "dodo.wallet.credit-amount-minor-units",
+              "notary.template": "unit_roundtrip",
+              "notary.prediction": "{\"hyp-be916b968dc8\":{\"class\":\"honored\",\"outcomes\":[\"equal\"]},\"hyp-ca8a731b4705\":{\"class\":\"unit_mismatch\",\"outcomes\":[\"div100\",\"x100\"]}}",
+              "notary.predictionHash": "5561a402a3c313ba71164d967ee60e3eb946121e52d550a0fa8caa0ae6f5d01e",
+              "notary.verdict": "confirmed",
+              "notary.winningHypothesisId": "hyp-be916b968dc8"
+            }
+          }
+        },
+        {
+          "spanId": "01a6d257b0993a27",
+          "parentId": "a2b43db07c66ed7f",
+          "name": "notary.probe.committed",
+          "kind": "log",
+          "startMs": 26812,
+          "endMs": 26812,
+          "status": "SUCCESS",
+          "attributes": {
+            "notary.probeId": "notarize-dodo-20261012T012315Z-p012",
+            "notary.predictionHash": "5561a402a3c313ba71164d967ee60e3eb946121e52d550a0fa8caa0ae6f5d01e",
+            "notary.committedAt": "2026-10-12T01:23:42.408Z",
+            "log_level": "info"
+          }
+        },
+        {
+          "spanId": "a2b43db07c66ed7f",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.probe",
+          "kind": "tool_call",
+          "startMs": 26812,
+          "endMs": 27677,
+          "status": "SUCCESS",
+          "attributes": {
+            "tool_name": "notary.probe"
+          },
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:23:42.399Z",
+            "endedAt": "2026-10-12T01:23:43.219Z",
+            "kind": "TOOL",
+            "parentId": null,
+            "attributes": {
+              "notary.probeId": "notarize-dodo-20261012T012315Z-p012",
+              "notary.claimId": "dodo.wallet.credit-amount-minor-units",
+              "notary.template": "unit_roundtrip",
+              "notary.prediction": "{\"hyp-be916b968dc8\":{\"class\":\"honored\",\"outcomes\":[\"equal\"]},\"hyp-ca8a731b4705\":{\"class\":\"unit_mismatch\",\"outcomes\":[\"div100\",\"x100\"]}}",
+              "notary.predictionHash": "5561a402a3c313ba71164d967ee60e3eb946121e52d550a0fa8caa0ae6f5d01e",
+              "notary.verdict": "confirmed",
+              "notary.winningHypothesisId": "hyp-be916b968dc8"
+            }
+          }
+        },
+        {
+          "spanId": "65289dfe44870cea",
+          "parentId": "ada7d2e6ce46f23f",
+          "name": "notary.probe.committed",
+          "kind": "log",
+          "startMs": 27812,
+          "endMs": 27812,
+          "status": "SUCCESS",
+          "attributes": {
+            "notary.probeId": "notarize-dodo-20261012T012315Z-p013",
+            "notary.predictionHash": "7f115373c6b470ef374eec1c0a08cd724ea92630772d5a69f2df57ef5651eff1",
+            "notary.committedAt": "2026-10-12T01:23:43.494Z",
+            "log_level": "info"
+          }
+        },
+        {
+          "spanId": "ada7d2e6ce46f23f",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.probe",
+          "kind": "tool_call",
+          "startMs": 27812,
+          "endMs": 30092,
+          "status": "SUCCESS",
+          "attributes": {
+            "tool_name": "notary.probe"
+          },
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:23:43.493Z",
+            "endedAt": "2026-10-12T01:23:45.650Z",
+            "kind": "TOOL",
+            "parentId": null,
+            "attributes": {
+              "notary.probeId": "notarize-dodo-20261012T012315Z-p013",
+              "notary.claimId": "dodo.wallet.idempotency-key-no-duplicate",
+              "notary.template": "retry_after_timeout",
+              "notary.prediction": "{\"hyp-8599a750e379\":{\"class\":\"idempotency_hazard\",\"outcomes\":[\"duplicate\"]},\"hyp-d9ead836ca14\":{\"class\":\"honored\",\"outcomes\":[\"single\"]}}",
+              "notary.predictionHash": "7f115373c6b470ef374eec1c0a08cd724ea92630772d5a69f2df57ef5651eff1",
+              "notary.verdict": "confirmed",
+              "notary.winningHypothesisId": "hyp-d9ead836ca14"
+            }
+          }
+        },
+        {
+          "spanId": "be6cb6c7a2d2b1f5",
+          "parentId": "8b9d81d00c515c93",
+          "name": "notary.probe.committed",
+          "kind": "log",
+          "startMs": 29812,
+          "endMs": 29812,
+          "status": "SUCCESS",
+          "attributes": {
+            "notary.probeId": "notarize-dodo-20261012T012315Z-p014",
+            "notary.predictionHash": "7f115373c6b470ef374eec1c0a08cd724ea92630772d5a69f2df57ef5651eff1",
+            "notary.committedAt": "2026-10-12T01:23:45.834Z",
+            "log_level": "info"
+          }
+        },
+        {
+          "spanId": "8b9d81d00c515c93",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.probe",
+          "kind": "tool_call",
+          "startMs": 29812,
+          "endMs": 31601,
+          "status": "SUCCESS",
+          "attributes": {
+            "tool_name": "notary.probe"
+          },
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:23:45.833Z",
+            "endedAt": "2026-10-12T01:23:47.610Z",
+            "kind": "TOOL",
+            "parentId": null,
+            "attributes": {
+              "notary.probeId": "notarize-dodo-20261012T012315Z-p014",
+              "notary.claimId": "dodo.wallet.idempotency-key-no-duplicate",
+              "notary.template": "retry_after_timeout",
+              "notary.prediction": "{\"hyp-8599a750e379\":{\"class\":\"idempotency_hazard\",\"outcomes\":[\"duplicate\"]},\"hyp-d9ead836ca14\":{\"class\":\"honored\",\"outcomes\":[\"single\"]}}",
+              "notary.predictionHash": "7f115373c6b470ef374eec1c0a08cd724ea92630772d5a69f2df57ef5651eff1",
+              "notary.verdict": "confirmed",
+              "notary.winningHypothesisId": "hyp-d9ead836ca14"
+            }
+          }
+        },
+        {
+          "spanId": "900a10f9f5101756",
+          "parentId": "2dda79e4e9691cad",
+          "name": "notary.probe.committed",
+          "kind": "log",
+          "startMs": 31812,
+          "endMs": 31812,
+          "status": "SUCCESS",
+          "attributes": {
+            "notary.probeId": "notarize-dodo-20261012T012315Z-p015",
+            "notary.predictionHash": "7f115373c6b470ef374eec1c0a08cd724ea92630772d5a69f2df57ef5651eff1",
+            "notary.committedAt": "2026-10-12T01:23:47.648Z",
+            "log_level": "info"
+          }
+        },
+        {
+          "spanId": "2dda79e4e9691cad",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.probe",
+          "kind": "tool_call",
+          "startMs": 31812,
+          "endMs": 33507,
+          "status": "SUCCESS",
+          "attributes": {
+            "tool_name": "notary.probe"
+          },
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:23:47.647Z",
+            "endedAt": "2026-10-12T01:23:49.328Z",
+            "kind": "TOOL",
+            "parentId": null,
+            "attributes": {
+              "notary.probeId": "notarize-dodo-20261012T012315Z-p015",
+              "notary.claimId": "dodo.wallet.idempotency-key-no-duplicate",
+              "notary.template": "retry_after_timeout",
+              "notary.prediction": "{\"hyp-8599a750e379\":{\"class\":\"idempotency_hazard\",\"outcomes\":[\"duplicate\"]},\"hyp-d9ead836ca14\":{\"class\":\"honored\",\"outcomes\":[\"single\"]}}",
+              "notary.predictionHash": "7f115373c6b470ef374eec1c0a08cd724ea92630772d5a69f2df57ef5651eff1",
+              "notary.verdict": "confirmed",
+              "notary.winningHypothesisId": "hyp-d9ead836ca14"
+            }
+          }
+        },
+        {
+          "spanId": "fa77b07d81fb2125",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.adversary",
+          "kind": "evaluator",
+          "startMs": 33812,
+          "endMs": 48587,
+          "status": "SUCCESS",
+          "attributes": {},
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:23:49.873Z",
+            "endedAt": "2026-10-12T01:24:04.646Z",
+            "kind": "EVALUATOR",
+            "parentId": null,
+            "attributes": {
+              "notary.agent": "Adversary",
+              "notary.beliefId": "belief-dodo.payments.page-size-max-100",
+              "notary.claimId": "dodo.payments.page-size-max-100",
+              "notary.adversary.backend": "bedrock",
+              "notary.adversary.probes": 3,
+              "notary.verdict": "narrow"
+            }
+          }
+        },
+        {
+          "spanId": "721dd4138f97fcf8",
+          "parentId": "fa77b07d81fb2125",
+          "name": "notary.llm",
+          "kind": "chain",
+          "startMs": 33812,
+          "endMs": 48542,
+          "status": "SUCCESS",
+          "attributes": {},
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:23:49.882Z",
+            "endedAt": "2026-10-12T01:24:04.595Z",
+            "kind": "CHAIN",
+            "parentId": "fa77b07d81fb2125",
+            "attributes": {
+              "notary.agent": "Adversary",
+              "notary.role": "adversary",
+              "llm.model_id": "claude-opus-4.6",
+              "llm.input_tokens": 2177,
+              "llm.output_tokens": 272,
+              "llm.usd": 0.0194535
+            }
+          }
+        },
+        {
+          "spanId": "d31f225d85e3e5b2",
+          "parentId": "721dd4138f97fcf8",
+          "name": "claude-opus-4.6",
+          "kind": "llm",
+          "startMs": 38812,
+          "endMs": 48633,
+          "status": "SUCCESS",
+          "attributes": {
+            "model": "claude-opus-4.6",
+            "llm.input_tokens": 2177,
+            "llm.output_tokens": 272
+          }
+        },
+        {
+          "spanId": "c4ec1b9a2ce672da",
+          "parentId": "8cd870488571ce9b",
+          "name": "claude-opus-4.6",
+          "kind": "llm",
+          "startMs": 48812,
+          "endMs": 58408,
+          "status": "SUCCESS",
+          "attributes": {
+            "model": "claude-opus-4.6",
+            "llm.input_tokens": 2155,
+            "llm.output_tokens": 345
+          }
+        },
+        {
+          "spanId": "ecc36f72447540f1",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.adversary",
+          "kind": "evaluator",
+          "startMs": 48812,
+          "endMs": 58467,
+          "status": "SUCCESS",
+          "attributes": {},
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:24:04.712Z",
+            "endedAt": "2026-10-12T01:24:14.366Z",
+            "kind": "EVALUATOR",
+            "parentId": null,
+            "attributes": {
+              "notary.agent": "Adversary",
+              "notary.beliefId": "belief-dodo.refunds.page-size-max-100",
+              "notary.claimId": "dodo.refunds.page-size-max-100",
+              "notary.adversary.backend": "bedrock",
+              "notary.adversary.probes": 3,
+              "notary.verdict": "narrow"
+            }
+          }
+        },
+        {
+          "spanId": "8cd870488571ce9b",
+          "parentId": "ecc36f72447540f1",
+          "name": "notary.llm",
+          "kind": "chain",
+          "startMs": 48812,
+          "endMs": 58445,
+          "status": "SUCCESS",
+          "attributes": {},
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:24:04.719Z",
+            "endedAt": "2026-10-12T01:24:14.347Z",
+            "kind": "CHAIN",
+            "parentId": "ecc36f72447540f1",
+            "attributes": {
+              "notary.agent": "Adversary",
+              "notary.role": "adversary",
+              "llm.model_id": "claude-opus-4.6",
+              "llm.input_tokens": 2155,
+              "llm.output_tokens": 345,
+              "llm.usd": 0.02134
+            }
+          }
+        },
+        {
+          "spanId": "621d7a03616bb3bb",
+          "parentId": "bd23cab5de9517dc",
+          "name": "claude-opus-4.6",
+          "kind": "llm",
+          "startMs": 58812,
+          "endMs": 65845,
+          "status": "SUCCESS",
+          "attributes": {
+            "model": "claude-opus-4.6",
+            "llm.input_tokens": 2911,
+            "llm.output_tokens": 201
+          }
+        },
+        {
+          "spanId": "6a4aa9428dd95c00",
+          "parentId": "2a16f5965846462e",
+          "name": "notary.adversary",
+          "kind": "evaluator",
+          "startMs": 58812,
+          "endMs": 65899,
+          "status": "SUCCESS",
+          "attributes": {},
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:24:14.397Z",
+            "endedAt": "2026-10-12T01:24:21.482Z",
+            "kind": "EVALUATOR",
+            "parentId": null,
+            "attributes": {
+              "notary.agent": "Adversary",
+              "notary.beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+              "notary.claimId": "dodo.wallet.credit-amount-minor-units",
+              "notary.adversary.backend": "bedrock",
+              "notary.adversary.probes": 3,
+              "notary.verdict": "narrow"
+            }
+          }
+        },
+        {
+          "spanId": "bd23cab5de9517dc",
+          "parentId": "6a4aa9428dd95c00",
+          "name": "notary.llm",
+          "kind": "chain",
+          "startMs": 58812,
+          "endMs": 65873,
+          "status": "SUCCESS",
+          "attributes": {},
+          "receipt": {
+            "source": "local receipts",
+            "startedAt": "2026-10-12T01:24:14.402Z",
+            "endedAt": "2026-10-12T01:24:21.448Z",
+            "kind": "CHAIN",
+            "parentId": "6a4aa9428dd95c00",
+            "attributes": {
+              "notary.agent": "Adversary",
+              "notary.role": "adversary",
+              "llm.model_id": "claude-opus-4.6",
+              "llm.input_tokens": 2911,
+              "llm.output_tokens": 201,
+              "llm.usd": 0.021538
+            }
+          }
+        }
+      ],
+      "inReceiptsNotInApi": [
+        {
+          "source": "local receipts",
+          "spanId": "b7ccbd7ceb7a8357",
+          "parentId": "fefcd300f701682c",
+          "name": "notary.llm",
+          "kind": "CHAIN",
+          "startedAt": "2026-10-12T01:24:21.554Z",
+          "endedAt": "2026-10-12T01:24:30.331Z",
+          "status": "ok",
+          "attributes": {
+            "notary.agent": "Adversary",
+            "notary.role": "adversary",
+            "llm.model_id": "claude-opus-4.6",
+            "llm.input_tokens": 3029,
+            "llm.output_tokens": 288,
+            "llm.usd": 0.0245795
+          }
+        },
+        {
+          "source": "local receipts",
+          "spanId": "fefcd300f701682c",
+          "parentId": null,
+          "name": "notary.adversary",
+          "kind": "EVALUATOR",
+          "startedAt": "2026-10-12T01:24:21.518Z",
+          "endedAt": "2026-10-12T01:24:30.418Z",
+          "status": "ok",
+          "attributes": {
+            "notary.agent": "Adversary",
+            "notary.beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
+            "notary.claimId": "dodo.wallet.idempotency-key-no-duplicate",
+            "notary.adversary.backend": "bedrock",
+            "notary.adversary.probes": 3,
+            "notary.verdict": "narrow"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -25,11 +25,11 @@ const BEAT = 60 / BPM;
 
 // ------------------------------------------------------------------------------ primitives
 
-type Stereo = { l: Float32Array; r: Float32Array };
-const stereo = (n: number): Stereo => ({ l: new Float32Array(n), r: new Float32Array(n) });
+export type Stereo = { l: Float32Array; r: Float32Array };
+export const stereo = (n: number): Stereo => ({ l: new Float32Array(n), r: new Float32Array(n) });
 
 /** Seeded PRNG (mulberry32): the same noise every run. */
-function rng(seed: number) {
+export function rng(seed: number) {
   let a = seed >>> 0;
   return () => {
     a = (a + 0x6d2b79f5) >>> 0;
@@ -40,10 +40,10 @@ function rng(seed: number) {
   };
 }
 
-const midi = (n: number) => 440 * 2 ** ((n - 69) / 12);
+export const midi = (n: number) => 440 * 2 ** ((n - 69) / 12);
 
 /** Attack / decay / sustain / release envelope sampled at t seconds for a note of `dur` seconds. */
-function adsr(t: number, dur: number, a: number, d: number, s: number, r: number): number {
+export function adsr(t: number, dur: number, a: number, d: number, s: number, r: number): number {
   if (t < 0) return 0;
   if (t < a) return t / a;
   if (t < a + d) return 1 - (1 - s) * ((t - a) / d);
@@ -53,7 +53,7 @@ function adsr(t: number, dur: number, a: number, d: number, s: number, r: number
 }
 
 /** RBJ biquad (lowpass / highpass / bandpass / highshelf), processed in place. */
-function biquad(x: Float32Array, type: "lp" | "hp" | "bp", f: number, q = 0.707): Float32Array {
+export function biquad(x: Float32Array, type: "lp" | "hp" | "bp", f: number, q = 0.707): Float32Array {
   const w = (2 * Math.PI * f) / SR;
   const cos = Math.cos(w);
   const alpha = Math.sin(w) / (2 * q);
@@ -77,7 +77,7 @@ function biquad(x: Float32Array, type: "lp" | "hp" | "bp", f: number, q = 0.707)
 }
 
 /** Schroeder reverb (4 combs + 2 allpasses per side), returns the wet signal. */
-function reverb(src: Stereo, size = 1, damp = 0.35): Stereo {
+export function reverb(src: Stereo, size = 1, damp = 0.35): Stereo {
   const out = stereo(src.l.length);
   const side = (x: Float32Array, y: Float32Array, spread: number) => {
     const combs = [1116, 1188, 1277, 1356].map((d) => Math.round((d + spread) * size));
@@ -112,7 +112,7 @@ function reverb(src: Stereo, size = 1, damp = 0.35): Stereo {
 }
 
 /** Ping-pong delay: returns the wet signal. */
-function pingpong(src: Stereo, time: number, feedback: number): Stereo {
+export function pingpong(src: Stereo, time: number, feedback: number): Stereo {
   const d = Math.round(time * SR);
   const out = stereo(src.l.length);
   for (let i = 0; i < src.l.length; i++) {
@@ -124,7 +124,7 @@ function pingpong(src: Stereo, time: number, feedback: number): Stereo {
   return out;
 }
 
-function mixInto(dst: Stereo, src: Stereo, gain = 1, offset = 0) {
+export function mixInto(dst: Stereo, src: Stereo, gain = 1, offset = 0) {
   for (let i = 0; i < src.l.length && i + offset < dst.l.length; i++) {
     if (i + offset < 0) continue;
     dst.l[i + offset]! += src.l[i]! * gain;
@@ -191,7 +191,7 @@ function pad(n: number): Stereo {
 }
 
 /** Karplus–Strong pluck. */
-function pluck(f: number, dur: number, seed: number, bright = 0.5): Float32Array {
+export function pluck(f: number, dur: number, seed: number, bright = 0.5): Float32Array {
   const n = Math.floor(dur * SR);
   const out = new Float32Array(n);
   const period = Math.max(2, Math.round(SR / f));
@@ -343,7 +343,7 @@ function render(seconds: number, fn: (t: number, i: number) => [number, number])
   return out;
 }
 
-function sfx(name: SfxName): Stereo {
+export function sfx(name: SfxName): Stereo {
   const r = rng(SFX.indexOf(name) * 97 + 5);
   const noise = () => r() * 2 - 1;
   switch (name) {
@@ -449,7 +449,7 @@ function sfx(name: SfxName): Stereo {
 
 // ------------------------------------------------------------------------------ WAV + loudness
 
-function wav(s: Stereo): Buffer {
+export function wav(s: Stereo): Buffer {
   const n = s.l.length;
   const buf = Buffer.alloc(44 + n * 4);
   buf.write("RIFF", 0);
@@ -561,7 +561,7 @@ const padTo = (x: Float32Array, n: number) => {
   return y;
 };
 
-function normalize(s: Stereo, targetLufs: number, ceilingDb: number): Stereo {
+export function normalize(s: Stereo, targetLufs: number, ceilingDb: number): Stereo {
   // Effects shorter than one 400 ms gating block have no BS.1770 loudness: pad them with silence to
   // measure (a short sound measured over 400 ms, like a listener hears it).
   const measured = s.l.length >= 0.4 * SR ? lufs(s) : lufs({ l: padTo(s.l, 0.4 * SR), r: padTo(s.r, 0.4 * SR) });

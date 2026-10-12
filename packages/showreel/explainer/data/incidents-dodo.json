@@ -1,0 +1,140 @@
+{
+  "runId": "notarize-dodo-20261012T012315Z",
+  "sample": false,
+  "bundleHash": "047476038381d524113b7b312c4da7bc8ccf937446990e74c0836a16c0751fd5",
+  "sources": [
+    "bundle",
+    "timeline",
+    "spans"
+  ],
+  "incidents": [
+    {
+      "id": "inc-b1b8a63eb27021d0",
+      "runId": "notarize-dodo-20261012T012315Z",
+      "kind": "adversary_downgrade",
+      "severity": "warning",
+      "at": "2026-10-12T01:24:04.644Z",
+      "agent": "adversary",
+      "tool": "dodo",
+      "summary": "The Adversary narrowed belief-dodo.payments.page-size-max-100 instead of upholding it (model claude-opus-4.6).",
+      "recordIds": [
+        "belief-dodo.payments.page-size-max-100",
+        "dodo.payments.page-size-max-100"
+      ],
+      "claimId": "dodo.payments.page-size-max-100",
+      "beliefId": "belief-dodo.payments.page-size-max-100",
+      "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+      "spanId": "fa77b07d81fb2125",
+      "exported": true,
+      "resolution": {
+        "status": "resolved",
+        "action": "certified",
+        "summary": "Certified only within the narrowed scope (dodo.listPayments rejects page_size values above 100 with HTTP 400, tested with…); guards refuse calls outside it.",
+        "at": "2026-10-12T01:24:04.672Z",
+        "recordIds": [
+          "belief-dodo.payments.page-size-max-100"
+        ]
+      },
+      "data": {
+        "verdict": "narrow",
+        "backend": "bedrock"
+      }
+    },
+    {
+      "id": "inc-e6ba1d36ca5bf893",
+      "runId": "notarize-dodo-20261012T012315Z",
+      "kind": "adversary_downgrade",
+      "severity": "warning",
+      "at": "2026-10-12T01:24:14.365Z",
+      "agent": "adversary",
+      "tool": "dodo",
+      "summary": "The Adversary narrowed belief-dodo.refunds.page-size-max-100 instead of upholding it (model claude-opus-4.6).",
+      "recordIds": [
+        "belief-dodo.refunds.page-size-max-100",
+        "dodo.refunds.page-size-max-100"
+      ],
+      "claimId": "dodo.refunds.page-size-max-100",
+      "beliefId": "belief-dodo.refunds.page-size-max-100",
+      "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+      "spanId": "ecc36f72447540f1",
+      "exported": true,
+      "resolution": {
+        "status": "resolved",
+        "action": "certified",
+        "summary": "Certified only within the narrowed scope (The API rejects page_size values above 100 with HTTP 400 on GET /refunds for th…); guards refuse calls outside it.",
+        "at": "2026-10-12T01:24:14.373Z",
+        "recordIds": [
+          "belief-dodo.refunds.page-size-max-100"
+        ]
+      },
+      "data": {
+        "verdict": "narrow",
+        "backend": "bedrock"
+      }
+    },
+    {
+      "id": "inc-c2fa23625ee43ae7",
+      "runId": "notarize-dodo-20261012T012315Z",
+      "kind": "adversary_downgrade",
+      "severity": "warning",
+      "at": "2026-10-12T01:24:21.481Z",
+      "agent": "adversary",
+      "tool": "dodo",
+      "summary": "The Adversary narrowed belief-dodo.wallet.credit-amount-minor-units instead of upholding it (model claude-opus-4.6).",
+      "recordIds": [
+        "belief-dodo.wallet.credit-amount-minor-units",
+        "dodo.wallet.credit-amount-minor-units"
+      ],
+      "claimId": "dodo.wallet.credit-amount-minor-units",
+      "beliefId": "belief-dodo.wallet.credit-amount-minor-units",
+      "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+      "spanId": "6a4aa9428dd95c00",
+      "exported": true,
+      "resolution": {
+        "status": "resolved",
+        "action": "certified",
+        "summary": "Certified only within the narrowed scope (amount is in minor units for USD wallets only); guards refuse calls outside it.",
+        "at": "2026-10-12T01:24:21.488Z",
+        "recordIds": [
+          "belief-dodo.wallet.credit-amount-minor-units"
+        ]
+      },
+      "data": {
+        "verdict": "narrow",
+        "backend": "bedrock"
+      }
+    },
+    {
+      "id": "inc-2c3bdd6adaaad9b5",
+      "runId": "notarize-dodo-20261012T012315Z",
+      "kind": "adversary_downgrade",
+      "severity": "warning",
+      "at": "2026-10-12T01:24:30.416Z",
+      "agent": "adversary",
+      "tool": "dodo",
+      "summary": "The Adversary narrowed belief-dodo.wallet.idempotency-key-no-duplicate instead of upholding it (model claude-opus-4.6).",
+      "recordIds": [
+        "belief-dodo.wallet.idempotency-key-no-duplicate",
+        "dodo.wallet.idempotency-key-no-duplicate"
+      ],
+      "claimId": "dodo.wallet.idempotency-key-no-duplicate",
+      "beliefId": "belief-dodo.wallet.idempotency-key-no-duplicate",
+      "traceId": "a0e6fda50d71a9eb2fec0f04843bff4d",
+      "spanId": "fefcd300f701682c",
+      "exported": true,
+      "resolution": {
+        "status": "resolved",
+        "action": "certified",
+        "summary": "Certified only within the narrowed scope (Idempotency key deduplication is confirmed for rapid successive credit entries …); guards refuse calls outside it.",
+        "at": "2026-10-12T01:24:30.438Z",
+        "recordIds": [
+          "belief-dodo.wallet.idempotency-key-no-duplicate"
+        ]
+      },
+      "data": {
+        "verdict": "narrow",
+        "backend": "bedrock"
+      }
+    }
+  ]
+}

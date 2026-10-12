@@ -1,0 +1,136 @@
+{
+  "clipId": "certificates-grid",
+  "durationSec": 11.933,
+  "url": "/app/certificates",
+  "finalUrl": "/app/certificates?run=notarize-dodo-20261012T012315Z",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "coordinates": "viewport pixels of the 1920x1080 frame",
+  "events": [
+    {
+      "tSec": 0,
+      "type": "move",
+      "x": 1500,
+      "y": 640,
+      "label": "start"
+    },
+    {
+      "tSec": 0.08,
+      "type": "move",
+      "x": 1500,
+      "y": 640
+    },
+    {
+      "tSec": 0.929,
+      "type": "move",
+      "x": 673,
+      "y": 188,
+      "label": "5 active"
+    },
+    {
+      "tSec": 1.834,
+      "type": "move",
+      "x": 673,
+      "y": 188
+    },
+    {
+      "tSec": 2.568,
+      "type": "move",
+      "x": 1200,
+      "y": 700
+    },
+    {
+      "tSec": 2.589,
+      "type": "scroll",
+      "x": 1200,
+      "y": 700,
+      "label": "scroll to issued certificates (down 300px)"
+    },
+    {
+      "tSec": 3.712,
+      "type": "move",
+      "x": 1200,
+      "y": 700
+    },
+    {
+      "tSec": 4.139,
+      "type": "move",
+      "x": 1200,
+      "y": 700
+    },
+    {
+      "tSec": 4.839,
+      "type": "move",
+      "x": 679,
+      "y": 232,
+      "label": "crustdata.enrich.headcount-total-integer"
+    },
+    {
+      "tSec": 5.606,
+      "type": "move",
+      "x": 679,
+      "y": 232
+    },
+    {
+      "tSec": 6.099,
+      "type": "move",
+      "x": 646,
+      "y": 368,
+      "label": "dodo.payments.page-size-max-100"
+    },
+    {
+      "tSec": 6.869,
+      "type": "move",
+      "x": 646,
+      "y": 368
+    },
+    {
+      "tSec": 7.385,
+      "type": "move",
+      "x": 643,
+      "y": 503,
+      "label": "dodo.refunds.page-size-max-100"
+    },
+    {
+      "tSec": 8.156,
+      "type": "move",
+      "x": 643,
+      "y": 503
+    },
+    {
+      "tSec": 8.691,
+      "type": "move",
+      "x": 668,
+      "y": 639,
+      "label": "dodo.wallet.credit-amount-minor-units"
+    },
+    {
+      "tSec": 9.456,
+      "type": "move",
+      "x": 668,
+      "y": 639
+    },
+    {
+      "tSec": 9.98,
+      "type": "move",
+      "x": 679,
+      "y": 774,
+      "label": "dodo.wallet.idempotency-key-no-duplicate"
+    },
+    {
+      "tSec": 10.749,
+      "type": "move",
+      "x": 679,
+      "y": 774
+    },
+    {
+      "tSec": 11.202,
+      "type": "move",
+      "x": 1154,
+      "y": 776,
+      "label": "certified"
+    }
+  ]
+}

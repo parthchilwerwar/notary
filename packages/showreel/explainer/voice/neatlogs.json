@@ -1,0 +1,726 @@
+{
+  "sectionId": "neatlogs",
+  "voiceId": "onwK4e9ZLuTAKqWW03F9",
+  "voiceName": "Daniel - Steady Broadcaster",
+  "modelId": "eleven_multilingual_v2",
+  "textHash": "bc8ffeff37f880664bc760e15417522f488e1c56ff57052d2d860b60074b5a19",
+  "text": "We used neatlogs to look inside every run. Each run is one trace: every probe, every model call, every guard decision, labelled by agent. On the Crustdata run, the trace shows the probe for one disputed claim. Its prediction is logged, with its hash, before the call is made. The result came back inconclusive, so Notary resolved it the safe way: it abstained, and no payment can depend on that claim. Two more mismatches, lookups that error where the docs promise an empty result, are still open. Notary hasn't certified them, so the Guard won't let money depend on them either. On the Dodo run, the trace shows the Adversary narrowing four beliefs instead of upholding them as written. Wallet credits, for example, are in minor units only for US dollars. Notary resolved those by certifying only the narrower scope it had proven.",
+  "durationSec": 66.795,
+  "words": [
+    {
+      "text": "We",
+      "startSec": 0,
+      "endSec": 0.244
+    },
+    {
+      "text": "used",
+      "startSec": 0.313,
+      "endSec": 0.592
+    },
+    {
+      "text": "neatlogs",
+      "startSec": 0.65,
+      "endSec": 1.184
+    },
+    {
+      "text": "to",
+      "startSec": 1.231,
+      "endSec": 1.3
+    },
+    {
+      "text": "look",
+      "startSec": 1.37,
+      "endSec": 1.509
+    },
+    {
+      "text": "inside",
+      "startSec": 1.556,
+      "endSec": 2.02
+    },
+    {
+      "text": "every",
+      "startSec": 2.101,
+      "endSec": 2.415
+    },
+    {
+      "text": "run.",
+      "startSec": 2.496,
+      "endSec": 2.984
+    },
+    {
+      "text": "Each",
+      "startSec": 3.495,
+      "endSec": 3.715
+    },
+    {
+      "text": "run",
+      "startSec": 3.785,
+      "endSec": 4.075
+    },
+    {
+      "text": "is",
+      "startSec": 4.168,
+      "endSec": 4.342
+    },
+    {
+      "text": "one",
+      "startSec": 4.412,
+      "endSec": 4.656
+    },
+    {
+      "text": "trace:",
+      "startSec": 4.702,
+      "endSec": 5.341
+    },
+    {
+      "text": "every",
+      "startSec": 5.666,
+      "endSec": 5.933
+    },
+    {
+      "text": "probe,",
+      "startSec": 5.991,
+      "endSec": 6.571
+    },
+    {
+      "text": "every",
+      "startSec": 6.78,
+      "endSec": 7.07
+    },
+    {
+      "text": "model",
+      "startSec": 7.129,
+      "endSec": 7.396
+    },
+    {
+      "text": "call,",
+      "startSec": 7.465,
+      "endSec": 7.988
+    },
+    {
+      "text": "every",
+      "startSec": 8.266,
+      "endSec": 8.58
+    },
+    {
+      "text": "guard",
+      "startSec": 8.649,
+      "endSec": 8.975
+    },
+    {
+      "text": "decision,",
+      "startSec": 9.044,
+      "endSec": 9.694
+    },
+    {
+      "text": "labelled",
+      "startSec": 10.019,
+      "endSec": 10.484
+    },
+    {
+      "text": "by",
+      "startSec": 10.553,
+      "endSec": 10.728
+    },
+    {
+      "text": "agent.",
+      "startSec": 10.809,
+      "endSec": 11.447
+    },
+    {
+      "text": "On",
+      "startSec": 12.051,
+      "endSec": 12.179
+    },
+    {
+      "text": "the",
+      "startSec": 12.214,
+      "endSec": 12.283
+    },
+    {
+      "text": "Crustdata",
+      "startSec": 12.33,
+      "endSec": 12.875
+    },
+    {
+      "text": "run,",
+      "startSec": 12.934,
+      "endSec": 13.328
+    },
+    {
+      "text": "the",
+      "startSec": 13.537,
+      "endSec": 13.642
+    },
+    {
+      "text": "trace",
+      "startSec": 13.688,
+      "endSec": 14.002
+    },
+    {
+      "text": "shows",
+      "startSec": 14.025,
+      "endSec": 14.303
+    },
+    {
+      "text": "the",
+      "startSec": 14.362,
+      "endSec": 14.431
+    },
+    {
+      "text": "probe",
+      "startSec": 14.466,
+      "endSec": 14.849
+    },
+    {
+      "text": "for",
+      "startSec": 14.907,
+      "endSec": 15.046
+    },
+    {
+      "text": "one",
+      "startSec": 15.127,
+      "endSec": 15.394
+    },
+    {
+      "text": "disputed",
+      "startSec": 15.464,
+      "endSec": 16.01
+    },
+    {
+      "text": "claim.",
+      "startSec": 16.068,
+      "endSec": 16.671
+    },
+    {
+      "text": "Its",
+      "startSec": 17.368,
+      "endSec": 17.554
+    },
+    {
+      "text": "prediction",
+      "startSec": 17.6,
+      "endSec": 18.158
+    },
+    {
+      "text": "is",
+      "startSec": 18.308,
+      "endSec": 18.483
+    },
+    {
+      "text": "logged,",
+      "startSec": 18.575,
+      "endSec": 19.133
+    },
+    {
+      "text": "with",
+      "startSec": 19.202,
+      "endSec": 19.388
+    },
+    {
+      "text": "its",
+      "startSec": 19.435,
+      "endSec": 19.551
+    },
+    {
+      "text": "hash,",
+      "startSec": 19.609,
+      "endSec": 20.247
+    },
+    {
+      "text": "before",
+      "startSec": 20.491,
+      "endSec": 20.816
+    },
+    {
+      "text": "the",
+      "startSec": 20.851,
+      "endSec": 20.921
+    },
+    {
+      "text": "call",
+      "startSec": 20.967,
+      "endSec": 21.234
+    },
+    {
+      "text": "is",
+      "startSec": 21.292,
+      "endSec": 21.385
+    },
+    {
+      "text": "made.",
+      "startSec": 21.455,
+      "endSec": 21.977
+    },
+    {
+      "text": "The",
+      "startSec": 22.418,
+      "endSec": 22.534
+    },
+    {
+      "text": "result",
+      "startSec": 22.593,
+      "endSec": 22.976
+    },
+    {
+      "text": "came",
+      "startSec": 23.034,
+      "endSec": 23.266
+    },
+    {
+      "text": "back",
+      "startSec": 23.312,
+      "endSec": 23.486
+    },
+    {
+      "text": "inconclusive,",
+      "startSec": 23.556,
+      "endSec": 24.497
+    },
+    {
+      "text": "so",
+      "startSec": 24.88,
+      "endSec": 25.077
+    },
+    {
+      "text": "Notary",
+      "startSec": 25.158,
+      "endSec": 25.611
+    },
+    {
+      "text": "resolved",
+      "startSec": 25.704,
+      "endSec": 26.157
+    },
+    {
+      "text": "it",
+      "startSec": 26.203,
+      "endSec": 26.273
+    },
+    {
+      "text": "the",
+      "startSec": 26.319,
+      "endSec": 26.389
+    },
+    {
+      "text": "safe",
+      "startSec": 26.447,
+      "endSec": 26.76
+    },
+    {
+      "text": "way:",
+      "startSec": 26.807,
+      "endSec": 27.283
+    },
+    {
+      "text": "it",
+      "startSec": 27.608,
+      "endSec": 27.747
+    },
+    {
+      "text": "abstained,",
+      "startSec": 27.794,
+      "endSec": 28.606
+    },
+    {
+      "text": "and",
+      "startSec": 28.99,
+      "endSec": 29.175
+    },
+    {
+      "text": "no",
+      "startSec": 29.291,
+      "endSec": 29.547
+    },
+    {
+      "text": "payment",
+      "startSec": 29.663,
+      "endSec": 30.116
+    },
+    {
+      "text": "can",
+      "startSec": 30.394,
+      "endSec": 30.557
+    },
+    {
+      "text": "depend",
+      "startSec": 30.615,
+      "endSec": 31.021
+    },
+    {
+      "text": "on",
+      "startSec": 31.103,
+      "endSec": 31.242
+    },
+    {
+      "text": "that",
+      "startSec": 31.288,
+      "endSec": 31.428
+    },
+    {
+      "text": "claim.",
+      "startSec": 31.497,
+      "endSec": 32.089
+    },
+    {
+      "text": "Two",
+      "startSec": 32.786,
+      "endSec": 33.018
+    },
+    {
+      "text": "more",
+      "startSec": 33.1,
+      "endSec": 33.308
+    },
+    {
+      "text": "mismatches,",
+      "startSec": 33.366,
+      "endSec": 34.295
+    },
+    {
+      "text": "lookups",
+      "startSec": 34.678,
+      "endSec": 35.143
+    },
+    {
+      "text": "that",
+      "startSec": 35.189,
+      "endSec": 35.375
+    },
+    {
+      "text": "error",
+      "startSec": 35.456,
+      "endSec": 35.816
+    },
+    {
+      "text": "where",
+      "startSec": 35.909,
+      "endSec": 36.118
+    },
+    {
+      "text": "the",
+      "startSec": 36.153,
+      "endSec": 36.223
+    },
+    {
+      "text": "docs",
+      "startSec": 36.281,
+      "endSec": 36.629
+    },
+    {
+      "text": "promise",
+      "startSec": 36.687,
+      "endSec": 37.012
+    },
+    {
+      "text": "an",
+      "startSec": 37.047,
+      "endSec": 37.105
+    },
+    {
+      "text": "empty",
+      "startSec": 37.163,
+      "endSec": 37.453
+    },
+    {
+      "text": "result,",
+      "startSec": 37.534,
+      "endSec": 38.196
+    },
+    {
+      "text": "are",
+      "startSec": 38.44,
+      "endSec": 38.614
+    },
+    {
+      "text": "still",
+      "startSec": 38.649,
+      "endSec": 38.904
+    },
+    {
+      "text": "open.",
+      "startSec": 38.986,
+      "endSec": 39.566
+    },
+    {
+      "text": "Notary",
+      "startSec": 40.077,
+      "endSec": 40.588
+    },
+    {
+      "text": "hasn't",
+      "startSec": 40.669,
+      "endSec": 40.983
+    },
+    {
+      "text": "certified",
+      "startSec": 41.029,
+      "endSec": 41.633
+    },
+    {
+      "text": "them,",
+      "startSec": 41.668,
+      "endSec": 42.004
+    },
+    {
+      "text": "so",
+      "startSec": 42.387,
+      "endSec": 42.562
+    },
+    {
+      "text": "the",
+      "startSec": 42.62,
+      "endSec": 42.689
+    },
+    {
+      "text": "Guard",
+      "startSec": 42.747,
+      "endSec": 43.119
+    },
+    {
+      "text": "won't",
+      "startSec": 43.444,
+      "endSec": 43.723
+    },
+    {
+      "text": "let",
+      "startSec": 43.781,
+      "endSec": 43.943
+    },
+    {
+      "text": "money",
+      "startSec": 44.024,
+      "endSec": 44.315
+    },
+    {
+      "text": "depend",
+      "startSec": 44.431,
+      "endSec": 44.814
+    },
+    {
+      "text": "on",
+      "startSec": 44.884,
+      "endSec": 44.976
+    },
+    {
+      "text": "them",
+      "startSec": 45.035,
+      "endSec": 45.232
+    },
+    {
+      "text": "either.",
+      "startSec": 45.348,
+      "endSec": 45.928
+    },
+    {
+      "text": "On",
+      "startSec": 46.613,
+      "endSec": 46.764
+    },
+    {
+      "text": "the",
+      "startSec": 46.799,
+      "endSec": 46.869
+    },
+    {
+      "text": "Dodo",
+      "startSec": 46.939,
+      "endSec": 47.322
+    },
+    {
+      "text": "run,",
+      "startSec": 47.438,
+      "endSec": 47.914
+    },
+    {
+      "text": "the",
+      "startSec": 48.158,
+      "endSec": 48.262
+    },
+    {
+      "text": "trace",
+      "startSec": 48.32,
+      "endSec": 48.692
+    },
+    {
+      "text": "shows",
+      "startSec": 48.738,
+      "endSec": 49.075
+    },
+    {
+      "text": "the",
+      "startSec": 49.133,
+      "endSec": 49.202
+    },
+    {
+      "text": "Adversary",
+      "startSec": 49.284,
+      "endSec": 49.992
+    },
+    {
+      "text": "narrowing",
+      "startSec": 50.596,
+      "endSec": 51.118
+    },
+    {
+      "text": "four",
+      "startSec": 51.293,
+      "endSec": 51.664
+    },
+    {
+      "text": "beliefs",
+      "startSec": 51.734,
+      "endSec": 52.279
+    },
+    {
+      "text": "instead",
+      "startSec": 52.663,
+      "endSec": 53.069
+    },
+    {
+      "text": "of",
+      "startSec": 53.115,
+      "endSec": 53.185
+    },
+    {
+      "text": "upholding",
+      "startSec": 53.301,
+      "endSec": 53.858
+    },
+    {
+      "text": "them",
+      "startSec": 53.916,
+      "endSec": 54.114
+    },
+    {
+      "text": "as",
+      "startSec": 54.265,
+      "endSec": 54.427
+    },
+    {
+      "text": "written.",
+      "startSec": 54.497,
+      "endSec": 55.019
+    },
+    {
+      "text": "Wallet",
+      "startSec": 55.623,
+      "endSec": 55.937
+    },
+    {
+      "text": "credits,",
+      "startSec": 55.983,
+      "endSec": 56.378
+    },
+    {
+      "text": "for",
+      "startSec": 56.401,
+      "endSec": 56.517
+    },
+    {
+      "text": "example,",
+      "startSec": 56.575,
+      "endSec": 57.26
+    },
+    {
+      "text": "are",
+      "startSec": 57.434,
+      "endSec": 57.632
+    },
+    {
+      "text": "in",
+      "startSec": 57.666,
+      "endSec": 57.725
+    },
+    {
+      "text": "minor",
+      "startSec": 57.794,
+      "endSec": 58.084
+    },
+    {
+      "text": "units",
+      "startSec": 58.177,
+      "endSec": 58.479
+    },
+    {
+      "text": "only",
+      "startSec": 58.572,
+      "endSec": 58.886
+    },
+    {
+      "text": "for",
+      "startSec": 58.955,
+      "endSec": 59.06
+    },
+    {
+      "text": "US",
+      "startSec": 59.129,
+      "endSec": 59.431
+    },
+    {
+      "text": "dollars.",
+      "startSec": 59.501,
+      "endSec": 60.105
+    },
+    {
+      "text": "Notary",
+      "startSec": 60.615,
+      "endSec": 61.08
+    },
+    {
+      "text": "resolved",
+      "startSec": 61.161,
+      "endSec": 61.707
+    },
+    {
+      "text": "those",
+      "startSec": 61.765,
+      "endSec": 62.287
+    },
+    {
+      "text": "by",
+      "startSec": 62.461,
+      "endSec": 62.636
+    },
+    {
+      "text": "certifying",
+      "startSec": 62.717,
+      "endSec": 63.413
+    },
+    {
+      "text": "only",
+      "startSec": 63.564,
+      "endSec": 63.947
+    },
+    {
+      "text": "the",
+      "startSec": 64.006,
+      "endSec": 64.087
+    },
+    {
+      "text": "narrower",
+      "startSec": 64.203,
+      "endSec": 64.632
+    },
+    {
+      "text": "scope",
+      "startSec": 64.69,
+      "endSec": 65.178
+    },
+    {
+      "text": "it",
+      "startSec": 65.329,
+      "endSec": 65.457
+    },
+    {
+      "text": "had",
+      "startSec": 65.492,
+      "endSec": 65.584
+    },
+    {
+      "text": "proven.",
+      "startSec": 65.643,
+      "endSec": 66.734
+    }
+  ]
+}

@@ -1,0 +1,126 @@
+{
+  "clipId": "chat-live",
+  "durationSec": 16.967,
+  "url": "/app/chat",
+  "finalUrl": "/app/chat?run=notarize-dodo-20261012T012315Z&c=conv-8f1d98d8-8858-4e55-9686-7b157eec97f4",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "coordinates": "viewport pixels of the 1920x1080 frame",
+  "events": [
+    {
+      "tSec": 0.001,
+      "type": "move",
+      "x": 1500,
+      "y": 640,
+      "label": "start"
+    },
+    {
+      "tSec": 0.037,
+      "type": "move",
+      "x": 1500,
+      "y": 640
+    },
+    {
+      "tSec": 0.567,
+      "type": "move",
+      "x": 1062,
+      "y": 1016,
+      "label": "message box"
+    },
+    {
+      "tSec": 0.702,
+      "type": "click",
+      "x": 1062,
+      "y": 1016,
+      "label": "message box"
+    },
+    {
+      "tSec": 1.129,
+      "type": "type",
+      "x": 1062,
+      "y": 1016,
+      "label": "Why did the Crustdata run abstain on the no-match claim?"
+    },
+    {
+      "tSec": 4.025,
+      "type": "move",
+      "x": 1062,
+      "y": 1016
+    },
+    {
+      "tSec": 4.582,
+      "type": "move",
+      "x": 1433,
+      "y": 1016,
+      "label": "send"
+    },
+    {
+      "tSec": 4.711,
+      "type": "click",
+      "x": 1433,
+      "y": 1016,
+      "label": "send"
+    },
+    {
+      "tSec": 5.054,
+      "type": "move",
+      "x": 1433,
+      "y": 1016
+    },
+    {
+      "tSec": 6.511,
+      "type": "move",
+      "x": 1500,
+      "y": 620
+    },
+    {
+      "tSec": 11.763,
+      "type": "move",
+      "x": 1500,
+      "y": 620,
+      "label": "answer finished"
+    },
+    {
+      "tSec": 14.853,
+      "type": "move",
+      "x": 1500,
+      "y": 620
+    },
+    {
+      "tSec": 15.45,
+      "type": "move",
+      "x": 930,
+      "y": 935,
+      "label": "cost, tokens and trace of this answer"
+    }
+  ],
+  "edits": [
+    {
+      "sourceFromSec": 0,
+      "sourceToSec": 8,
+      "speed": 1,
+      "outStartSec": 0
+    },
+    {
+      "sourceFromSec": 8,
+      "sourceToSec": 29.6,
+      "speed": 8,
+      "outStartSec": 8
+    },
+    {
+      "sourceFromSec": 29.6,
+      "sourceToSec": 33.6,
+      "speed": 1,
+      "outStartSec": 10.7
+    },
+    {
+      "sourceFromSec": 40.2,
+      "sourceToSec": 42.467,
+      "speed": 1,
+      "outStartSec": 14.7
+    }
+  ],
+  "note": "Condensed from chat-live-full.mp4: the agent's tool steps (8–29.6 s of the real-time recording) play at 8x; 33.6–40.2 s (idle) is cut. Real time is in chat-live-full."
+}

@@ -1,0 +1,41 @@
+# Notary — 3-minute explainer (faceless)
+
+Draft 1 · narration ≈ 430 words (≈ 2:55 at a calm 150 wpm) · voice: AI narrator (ElevenLabs) · no face on camera.
+
+Every number on screen comes from the exported runs (`packages/web/public/`). Two kinds of footage, never mixed in one shot:
+
+- **Real runs** (live Crustdata and Dodo test mode, Oct 12): `packages/web/public/bundles/*.json`, `certificates/`, `incidents/`, `economics.json`. No label needed beyond the run id.
+- **Evaluation suite** (simulated APIs with planted quirks and model doubles; `?fixtures=1`): every shot sourced from it carries the on-screen label **"Evaluation suite — simulated APIs, not a live run"**, and any number from it carries the footnote **"Measured on Notary's evaluation suite (simulated APIs)"**. The word "simulated" is required: the suite's APIs and planted quirks are documented in `docs/EVALUATION.md#evaluation-suite`, and its results say nothing about the real Crustdata or Dodo.
+
+> Note on the 15 s showreel (`docs/media/notary-showreel.mp4`): its footnote reads "Measured on Notary's evaluation suite" without "simulated". Before it is published next to this video, the on-screen label must say "simulated APIs" (re-render from `packages/showreel`). <!-- TODO(user): re-render the showreel footnote -->
+
+| # | Time | Narration (voice) | On screen |
+|---|------|-------------------|-----------|
+| 1 | 0:00–0:20 | AI agents are starting to move real money. They refund customers, change plans, issue credits. And they learn how to do it from API docs. But docs and reality drift apart. A refund endpoint that "returns the amount in dollars" might really take cents. A retry that "is safe" might pay twice. | Sky open, headline "No certificate, no money *moves*." → a transcript row: refund sent 100× too small; a second row: duplicate refund, both flagged red. **These rows come from the evaluation suite: show the label "Evaluation suite — simulated APIs, not a live run".** |
+| 2 | 0:20–0:40 | Notary is an agent that won't touch money until it has proven how its tools actually behave. It works in five steps: read, test, challenge, certify, enforce. | Five-step bar lights up in turn; "Notary" wordmark. |
+| 3 | 0:40–1:05 | First, it reads the docs and turns every promise into a claim it can check. Then it tests. Before each call, Notary commits a prediction — written down and hashed, so it can't be changed afterwards. Then it calls the real API and compares. When the observation doesn't match, that's not a log line. It's evidence. | **Use the real Crustdata run** (`/app/run?run=notarize-crustdata-20261012T011404Z`): a probe card with its committed prediction hash and commit time before the call, then the checker's mismatch — docs say `/company/enrich` returns 200 with an empty result for a no-match domain, live Crustdata returned **400**. (The earlier card "expected *rejected* → observed *clamped*" is the simulated page-size quirk; real Dodo rejected page sizes over 100 exactly as documented. If that card is used, label it as the evaluation suite.) |
+| 4 | 1:05–1:25 | A second model, the Reflector, proposes what might be going on. A stronger third model, the Adversary, tries to knock every explanation down. Only beliefs that survive the challenge, backed by repeated evidence, become certificates — often in a narrower scope than the docs claim. | Reflector hypothesis card → Adversary review card → a real certificate stamping: e.g. `cert-90b6704587c8abbf` (Dodo wallet credits in minor units), adversary verdict **narrowed** to USD only. (Not "Survived 1 of 1 challenge": on the real runs the Adversary narrowed all 5 beliefs.) |
+| 5 | 1:25–1:55 | Here's the dashboard, on our evaluation suite, where the APIs are simulated with known quirks. Every step is in the transcript: the request, the tool, the decision. When an action needs a behaviour Notary hasn't certified, the Guard holds it. No certificate, no money moves. This refund was held because, in this simulated world, Notary never certified how the API pages its results. | UI walkthrough with `?fixtures=1`, banner visible the whole time ("Fixture data — simulated APIs, not a live run"): Run page, transcript scrolls, cursor opens refund q03 held card ("no certificate for dodo.payments.page-size-max-100"). Do **not** call this a real run of the billing queue: no real queue run exists yet (blocked on the Dodo seed), and on the real Dodo that page-size behaviour *is* certified. Replace with the real guarded run if it is recorded before the edit. |
+| 6 | 1:55–2:15 | Each certificate shows exactly what it covers, and the experiments behind it. If the API changes later, Notary re-checks, and the certificate is revoked — before the next payment goes out. | Real certificates page → real certificate detail (scope, probes, adversary review). Then the revocation card from the change-api world, **labelled "Evaluation suite — simulated APIs, not a live run"** (no real certificate has been revoked). |
+| 7 | 2:15–2:35 | Held actions go to a person. The approval desk shows why each one was held and the evidence behind it. A human approves or rejects, and that decision is recorded too. | Approvals page with `?fixtures=1` and the banner: held card, cursor hovers Approve (typed-amount confirm shown). The real pending list is empty (no real guarded run yet). |
+| 8 | 2:35–2:50 | And you can just ask. Notary Chat reads the runs, the certificates and the approved docs, and answers with citations to the exact records. It can explain anything. It can't move money. | Chat on real data (local `notary serve`): question typed, lookup steps tick, cited answer; citation chip highlights its step. |
+| 9 | 2:50–3:00 | On our evaluation suite, with simulated APIs, the agent without Notary made nine unsafe money moves. With Notary: zero, and nine refunds safely held for review. Notary. Let your agent prove it first. | Stats 9 → 0, 9 refunds held, with the footnote "Measured on Notary's evaluation suite (simulated APIs)"; dither chart; closing sky, wordmark, github.com/parthchilwerwar/notary. |
+
+## Sponsor beats (insert)
+
+Short lines to fold into the scenes above. Each one shows a real artifact; timings are approximate and come out of the existing scenes' pauses (expect ~10–15 s over 3:00 if all are kept).
+
+| Where | Narration (voice) | On screen (real) |
+|---|---|---|
+| Scene 3, after "It's evidence." | The company context comes from Crustdata, live — and on its own docs, Crustdata answered differently three times. Payments run on Dodo, in test mode only. | Checker anomalies on `notarize-crustdata-20261012T011404Z`: enrich no-match 400 vs 200, identify no-match 400 vs 200, identify invalid fields 403 vs 400. |
+| Scene 3, end | Every step is traced in neatlogs: the prediction lands before the call. | neatlogs trace `9db41ecd43406cef291c93ef8c9ab1cd`: the probe span with `notary.prediction`, then the TOOL span. |
+| Scene 4, on the Adversary | The models run through LiteLLM: a Sonnet reflector, and an Opus adversary that must be a different model. | Certificate detail showing the adversary model `claude-opus-4.6`. |
+| Scene 6, end | And Entire ties every commit to the agent session that wrote it — and its code graph proves no money call skips a guard. | Terminal: `pnpm notary guards coverage --backend entire` → `unguarded_call_sites = 0` (pre-run; it takes about a minute). |
+| Before scene 9 | What does certainty cost? About three cents and fifteen Crustdata credits per live run — and the business plan lives in cfo.ai. | `/app/business`: $0.0316 + 15.5 credits per live run from `economics.json`. Show the cfo.ai plan only if one has been synced (`plan` is `null` today). |
+
+## Production notes
+
+- Voice: calm, confident, neutral; ElevenLabs text-to-speech with word timestamps (captions and cursor moves sync to words).
+- UI walkthrough: the real dashboard driven by Playwright in replay, cut into the Remotion timeline with zooms and the animated cursor. Fixture shots are recorded with `?fixtures=1` so the dashboard's own banner is in frame.
+- Music + SFX: synthesized in code (as in the showreel), ducked under the voice.
+- Captions burned in + `notary-explainer.srt`. Output `docs/media/notary-explainer.mp4` (1080p).

@@ -1,0 +1,157 @@
+{
+  "clipId": "crustdata-anomalies",
+  "durationSec": 14.667,
+  "url": "/app/run?run=notarize-crustdata-20261012T011404Z&speed=instant&view=order",
+  "finalUrl": "/app/run?run=notarize-crustdata-20261012T011404Z&speed=instant&view=order",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "coordinates": "viewport pixels of the 1920x1080 frame",
+  "events": [
+    {
+      "tSec": 0,
+      "type": "move",
+      "x": 1500,
+      "y": 640,
+      "label": "start"
+    },
+    {
+      "tSec": 0.027,
+      "type": "move",
+      "x": 1500,
+      "y": 640
+    },
+    {
+      "tSec": 0.951,
+      "type": "move",
+      "x": 583,
+      "y": 184,
+      "label": "run id"
+    },
+    {
+      "tSec": 1.677,
+      "type": "move",
+      "x": 583,
+      "y": 184
+    },
+    {
+      "tSec": 2.134,
+      "type": "move",
+      "x": 673,
+      "y": 345,
+      "label": "probes run"
+    },
+    {
+      "tSec": 2.65,
+      "type": "move",
+      "x": 673,
+      "y": 345
+    },
+    {
+      "tSec": 3.17,
+      "type": "move",
+      "x": 1200,
+      "y": 560
+    },
+    {
+      "tSec": 3.175,
+      "type": "scroll",
+      "x": 1200,
+      "y": 560,
+      "label": "scroll to transcript (down 557px)"
+    },
+    {
+      "tSec": 4.381,
+      "type": "move",
+      "x": 1200,
+      "y": 560
+    },
+    {
+      "tSec": 4.699,
+      "type": "move",
+      "x": 1200,
+      "y": 560
+    },
+    {
+      "tSec": 5.321,
+      "type": "move",
+      "x": 620,
+      "y": 276,
+      "label": "enrich no-match: docs 200, observed 400"
+    },
+    {
+      "tSec": 5.447,
+      "type": "click",
+      "x": 620,
+      "y": 276,
+      "label": "enrich no-match: docs 200, observed 400"
+    },
+    {
+      "tSec": 6.471,
+      "type": "move",
+      "x": 620,
+      "y": 276
+    },
+    {
+      "tSec": 7.254,
+      "type": "move",
+      "x": 1486,
+      "y": 349,
+      "label": "recorded response 400"
+    },
+    {
+      "tSec": 8.375,
+      "type": "move",
+      "x": 1486,
+      "y": 349
+    },
+    {
+      "tSec": 9.251,
+      "type": "move",
+      "x": 620,
+      "y": 223,
+      "label": "identify no-match: docs 200, observed 400"
+    },
+    {
+      "tSec": 9.384,
+      "type": "click",
+      "x": 620,
+      "y": 223,
+      "label": "identify no-match: docs 200, observed 400"
+    },
+    {
+      "tSec": 10.883,
+      "type": "move",
+      "x": 620,
+      "y": 223
+    },
+    {
+      "tSec": 11.439,
+      "type": "move",
+      "x": 620,
+      "y": 170,
+      "label": "identify invalid fields: docs 400, observed 403"
+    },
+    {
+      "tSec": 11.562,
+      "type": "click",
+      "x": 620,
+      "y": 170,
+      "label": "identify invalid fields: docs 400, observed 403"
+    },
+    {
+      "tSec": 12.567,
+      "type": "move",
+      "x": 620,
+      "y": 170
+    },
+    {
+      "tSec": 13.364,
+      "type": "move",
+      "x": 1486,
+      "y": 349,
+      "label": "recorded response 403"
+    }
+  ]
+}

@@ -11,7 +11,13 @@
     "still": "tsx scripts/stills.ts",
     "typecheck": "tsc --noEmit",
     "audio": "tsx scripts/audio.ts",
-    "verify-audio": "tsx scripts/verify-audio.ts"
+    "verify-audio": "tsx scripts/verify-audio.ts",
+    "voice": "tsx scripts/voice.ts",
+    "captions": "tsx scripts/captions.ts",
+    "explainer-data": "tsx scripts/explainer-data.ts",
+    "explainer:prep": "tsx scripts/explainer-prep.ts",
+    "explainer:audio": "tsx scripts/explainer-audio.ts",
+    "explainer:render": "tsx scripts/explainer-render.ts"
   },
   "dependencies": {
     "@fontsource-variable/instrument-sans": "5.3.0",
