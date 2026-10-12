@@ -1698,3 +1698,41 @@ i wanted you to generate a api key of cfo.ai and we integerate directly in out w
 <status>completed</status>
 <summary>Background command "Rerun export to regenerate evaluation and incidents" completed (exit code 0)</summary>
 </task-notification>
+
+---
+
+<pasted_content id="5d97">
+C:\Users\Parth Chilwerwar\Desktop\notary\packages\core\src\cfo\map.ts:221
+    if (!isObj(item) || typeof item.id !== "string" || !item.id.trim()) throw new CfoMappingError(`${what} item ${i + 1}: has no string id (keys: ${keysOf(item)})`);
+                                                                          
+    ^
+
+CfoMappingError: list_orgs item 1: has no string id (keys: name, org_id, role, slug)
+    at <anonymous> (C:\Users\Parth Chilwerwar\Desktop\notary\packages\core\src\cfo\map.ts:221:79)
+    at Array.map (<anonymous>)
+    at extractIdNameList (C:\Users\Parth Chilwerwar\Desktop\notary\packages\core\src\cfo\map.ts:220:15)
+    at listOrgs (C:\Users\Parth Chilwerwar\Desktop\notary\packages\core\src\cfo\index.ts:167:10)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async cfoConnect (C:\Users\Parth Chilwerwar\Desktop\notary\packages\core\src\cfo\index.ts:208:20)
+    at async Command.<anonymous> (C:\Users\Parth Chilwerwar\Desktop\notary\packages\core\src\cli.ts:315:7)
+    at async Command.parseAsync (file:///C:/Users/Parth%20Chilwerwar/Desktop/notary/node_modules/.pnpm/commander@15.0.0/node_modules/commander/lib/command.js:1113:5)
+    at async main (C:\Users\Parth Chilwerwar\Desktop\notary\packages\core\src\cli.ts:509:5)
+    at async <anonymous> (C:\Users\Parth Chilwerwar\Desktop\notary\packages\core\src\cli.ts:522:3)
+
+Node.js v24.14.1
+C:\Users\Parth Chilwerwar\Desktop\notary\packages\core:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @notary/core@0.0.0 notary: `tsx src/cli.ts "cfo" "connect"`
+Exit status 1
+[ELIFECYCLE] Command failed with exit code 1.
+PS C:\Users\Parth Chilwerwar\Desktop\notary> pnpm notary cfo sync
+$ pnpm --filter @notary/core run notary "cfo" "sync"
+$ tsx src/cli.ts "cfo" "sync"
+BLOCKED: cfo.ai is not connected (or the sign-in expired and could not be refreshed). Run: pnpm notary cfo connect
+C:\Users\Parth Chilwerwar\Desktop\notary\packages\core:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @notary/core@0.0.0 notary: `tsx src/cli.ts "cfo" "sync"`
+Exit status 3
+[ELIFECYCLE] Command failed with exit code 3.
+PS C:\Users\Parth Chilwerwar\Desktop\notary>
+</pasted_content id="5d97">
+
+  fix this error as just update connection is working right just update in context and website context and readme file also got it as it's working or fake it
