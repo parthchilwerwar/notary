@@ -1736,3 +1736,31 @@ PS C:\Users\Parth Chilwerwar\Desktop\notary>
 </pasted_content id="5d97">
 
   fix this error as just update connection is working right just update in context and website context and readme file also got it as it's working or fake it
+
+---
+
+<pasted_content id="5d97">
+$ pnpm --filter @notary/core run notary "cfo" "sync" "--table" "Notary Plan" "--table" "Notary Pricing"
+$ tsx src/cli.ts "cfo" "sync" "--table" "Notary Plan" "--table" "Notary Pricing"
+C:\Users\Parth Chilwerwar\Desktop\notary\packages\core\src\cfo\client.ts:50
+  if (r.isError) throw new CfoMcpError(`cfo.ai ${tool} returned an error: ${(texts.join(" ") || "no message").slice(0, 400)}`);
+                       ^
+
+CfoMcpError: cfo.ai inspect_table_blocks returned an error: {"error":{"code":"not_found","message":"No available scenario named \"Main\" was found.","transient":false,"candidates":[{"display_name":"Main Scenario#52f","ref":"Main Scenario#52f","kind":"scenario","score":0.95}],"hint":"inspect_scenarios lists the visible scenarios."},"state_changed":"no"}
+    at resultJson (C:\Users\Parth Chilwerwar\Desktop\notary\packages\core\src\cfo\client.ts:50:24)
+    at Object.call (C:\Users\Parth Chilwerwar\Desktop\notary\packages\core\src\cfo\client.ts:93:27)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async cfoSync (C:\Users\Parth Chilwerwar\Desktop\notary\packages\core\src\cfo\index.ts:266:25)
+    at async Command.<anonymous> (C:\Users\Parth Chilwerwar\Desktop\notary\packages\core\src\cli.ts:334:9)
+    at async Command.parseAsync (file:///C:/Users/Parth%20Chilwerwar/Desktop/notary/node_modules/.pnpm/commander@15.0.0/node_modules/commander/lib/command.js:1113:5)
+    at async main (C:\Users\Parth Chilwerwar\Desktop\notary\packages\core\src\cli.ts:509:5)
+    at async <anonymous> (C:\Users\Parth Chilwerwar\Desktop\notary\packages\core\src\cli.ts:522:3)
+
+Node.js v24.14.1
+C:\Users\Parth Chilwerwar\Desktop\notary\packages\core:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @notary/core@0.0.0 notary: `tsx src/cli.ts "cfo" "sync" "--table" "Notary Plan" "--table" "Notary Pricing"`     
+Exit status 1
+[ELIFECYCLE] Command failed with exit code 1.
+</pasted_content id="5d97">
+
+ failed here fix it and done
